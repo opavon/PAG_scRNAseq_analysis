@@ -33,7 +33,7 @@ Once we have our `SingleCellExperiment` object with our data and annotations, we
 ## Step 2.1 | Set control features
 `scater` allows us to define control features (genes) that we can use for quality checks, such as ERCC spike-ins, Mitochondrial and Ribosomal genes if we have them, and any fluorophores used to identify the cells if they come from transgenic animals. 
 
-If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SCE` object. If you’re doing this on the gene symbols, beware of the human gene family that also starts with “ERCC”. We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `isSpike()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalization.
+If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SCE` object. If you are doing this on the gene symbols, beware of the human gene family that also starts with "ERCC". We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `isSpike()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalization.
 ```{r}
 options(stringsAsFactors = FALSE)
 library(SingleCellExperiment)
@@ -98,6 +98,8 @@ multiplot(cols=2,
 
 ## Step 2.3 | Cell QC
 We need to remove low-quality cells to ensure that technical effects do not distort downstream analyses. Some metrics we can use to assess quality are: Library size, Number of expressed features, Proportion of spike-in reads, Proportion of mitochondrial reads, etc. Together, these catch failures in cDNA capture (failed reverse transcription), sequencing and cell damage during isolation.
+
+_See the the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.8/workflows/html/simpleSingleCell.html) maintained by Aaron Lun for more details on this and following QC steps._
 
 ### 2.3.1 | Library size and Number of expressed features
 Two common measures of cell quality are the library size (total sum of counts across all features) and the number of expressed features in each library. 
@@ -312,7 +314,7 @@ abline(v = 0.0015, col = "blue", lwd=2, lty=2)
 # Calculate the ratio between counts for each cell
 PAG_sceset$fluorophor_ratio <- (PAG_sceset$total_counts_EYFP / (PAG_sceset$total_counts_EYFP + PAG_sceset$total_counts_tdTomato + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
 
-# 0s and 1s are good, as indicate that all the fluorophor counts belong to either EYFP or tdTomato. NaN belong to cells where no reads have been mapped to a fluorophor (could be due to dropout, so no reason to exclude these cells). Ratios between 0.2 and 0.8 are indicative that a significant proportion of counts from a EYFP cell have been assigned to tdTomato, and ther might've been a contamination.
+# 0s and 1s are good, as indicate that all the fluorophor counts belong to either EYFP or tdTomato. NaN belong to cells where no reads have been mapped to a fluorophor (could be due to dropout, so no reason to exclude these cells). Ratios between 0.2 and 0.8 are indicative that a significant proportion of counts from a EYFP cell have been assigned to tdTomato, and ther might have been a contamination.
 
 table(PAG_sceset$fluorophor_ratio > 0.2 & PAG_sceset$fluorophor_ratio < 0.8)
 
@@ -324,28 +326,31 @@ plot(PAG_sceset$fluorophor_ratio,
 ```
 
 ## Step 2.4 | Filtering low quality cells
-The histograms and plots from the previous section will allow us to see the distribution of our samples and see whether there are any outliers. After visual inspection, we can manually establish a cutoff to exclude any low quality cells. Although it is hard to set a threshold automatically, as it will depend on the dataset and sequencing depth, we can try to remove cells with log-library sizes that are more than 4 median absolute deviations (MADs) below the median log-library size by using the `isOutlier()` function. We will use both approaches in parallel and compare them to each other and to the automatic outlier detection implemented by scater before deciding which one to apply.
+Picking a filtering threshold for these quality metrics is not straightforward as their absolute values depend on the experimental protocol. For example, sequencing to greater depths will lead to more reads and more expressed features, regardless of the quality of the cells, and using more spike-in RNA in the protocol will result in higher spike-in proportions. The histograms and plots from the previous section should allow us to visualise the distribution of our samples and more easily identify any obvious outliers. 
 
-Picking a threshold for these metrics is not straightforward as their absolute values depend on the experimental protocol. For example, sequencing to greater depth will lead to more reads and more expressed features, regardless of the quality of the cells. Similarly, using more spike-in RNA in the protocol will result in higher spike-in proportions. 
+After visual inspection, we can follow several paths to exclude low quality cells. One way is to manually establish a cutoff to exclude any low quality cells. Although it is hard to set a threshold automatically, as it will depend on the dataset and sequencing depth, another thing we can try is to remove cells with log-library sizes that are more than 4 median absolute deviations (MADs) below the median log-library size by using the `isOutlier()` function. Finally, we can use scater to detect outliers based on PCA on quality metrics for each cell. We will use all these approaches in parallel and compare them to each other before deciding which one to apply.
 
-To obtain an adaptive threshold, we assume that most of the dataset consists of high-quality cells, and identify cells that are outliers for the various QC metrics.
+### 2.4.1 | Using the MADs filters
+An outlier-based definition for low-quality cells assumes that most cells are of high quality and that the QC metrics are independent on the biological state of each cell. This ensures that any outlier values for these metrics are driven by technical factors rather than biological processes. Thus, removing cells based on the metrics will not misrepresent the biology in downstream analyses.
 
-Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. We remove cells with log-library sizes that are more than 3 MADs below the median log-library size. A log-transformation improves resolution at small values, especially when the MAD of the raw values is comparable to or greater than the median. We also remove cells where the log-transformed number of expressed genes is 3 MADs below the median value.
+The second assumption is most likely to be violated in highly heterogeneous cell populations. For example, some cell types may naturally have less RNA or express fewer genes than other cell types. Such cell types are more likely to be considered outliers and removed, even if they are of high quality. The use of the MAD mitigates this problem by accounting for biological variability in the QC metrics. A heterogeneous population should have higher variability in the metrics among high-quality cells, increasing the MAD and reducing the chance of incorrectly removing particular cell types (at the cost of reducing power to remove low-quality cells). Nonetheless, filtering based on outliers may not be appropriate in extreme cases where one cell type is very different from the others.
 
-The batch= argument ensures that outliers are identified within each level of the specified plate/oncogene factor. This allows isOutlier() to accommodate systematic differences in the QC metrics across plates (Figure 1), which can arise due to technical differences in processing (e.g., differences in sequencing depth) rather than any changes in quality. The same reasoning applies to the oncogene induction status, where induced cells may have naturally fewer expressed genes for biological reasons. Failing to account for these systematic differences would inflate the MAD estimate and compromise the removal of low-quality cells.
+Systematic differences in the QC metrics can be handled to some extent using the batch= argument in the isOutlier() function. For example, setting batch to the plate of origin will identify outliers within each level of batch, using plate-specific median and MAD estimates. This is obviously useful for accommodating known differences in experimental processing, e.g., sequencing at different depth or different amounts of added spike-in RNA. We can also include biological factors in batch, if those factors could result in systematically fewer expressed genes or lower RNA content. However, this is not applicable in experiments where the factors are not known in advance.
 
-We identify outliers for the proportion-based metrics in a similar manner. Here, no transformation is required as we are identifying large outliers, for which the distinction should be fairly clear on the raw scale. We do not need to use the mitochondrial proportions as we already have the spike-in proportions (which serve a similar purpose) for this dataset. This avoids potential issues arising from genuine differences in mitochondrial content between cell types that may confound outlier identification.
+* In our case, we could add either the `mouse.id` or the `cell.type` (e.g. `batch=PAG_sceset$mouse.id`) as an argument that specifies the batch to which each sample belongs. A median/MAD is calculated for each batch, and outliers are then identified within each batch.
 
-
-### 2.4.1 | Set filters
-When using the `isOutlier()` function, we can add batch information (e.g. `PAG_sceset$mouse.id`) as an argument that specifies the batch to which each observation belongs. A median/MAD is calculated for each batch, and outliers are then identified within each batch.
+Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. We remove cells with log-library sizes that are more than 4 MADs below the median log-library size. A log-transformation improves resolution at small values, especially when the MAD of the raw values is comparable to or greater than the median. We also remove cells where the log-transformed number of expressed genes is 4 MADs below the median value.
 ```{r}
-# Set filters using the isOutlier function:
 filter_by_total_counts_MADs <- isOutlier(PAG_sceset$total_counts, nmads = 4, type = "lower", log = TRUE, batch = NULL)
 table(filter_by_total_counts_MADs)
 
 filter_by_expr_features_MADs <- isOutlier(PAG_sceset$total_features_by_counts, nmads = 4, type = "lower", log = TRUE, batch = NULL)
 table(filter_by_expr_features_MADs)
+```
+
+We identify outliers for the proportion-based metrics in a similar manner. Here, no transformation is required as we are identifying large outliers, for which the distinction should be fairly clear on the raw scale. We do not need to use the mitochondrial proportions as we already have the spike-in proportions (which serve a similar purpose) for this dataset. This avoids potential issues arising from genuine differences in mitochondrial content between cell types that may confound outlier identification.
+```{r}
+# filter_by_pct_ERCC_MADs
 
 filter_by_pct_Mitochondrial_MADs <- isOutlier(PAG_sceset$pct_counts_Mitochondrial, nmads = 4, type = "higher", batch = NULL)
 table(filter_by_pct_Mitochondrial_MADs)
@@ -354,25 +359,6 @@ filter_by_pct_Ribosomal_MADs <- isOutlier(PAG_sceset$pct_counts_Ribosomal, nmads
 table(filter_by_pct_Ribosomal_MADs)
 ```
 
-```{r}
-# Check how many cells you would exclude after visual inspection of data:
-filter_by_total_counts_manual <- (PAG_sceset$total_counts < 40.e4)
-table(filter_by_total_counts_manual)
-
-filter_by_expr_features_manual <- (PAG_sceset$total_features_by_counts < 6000)
-table(filter_by_expr_features_manual)
-
-filter_by_pct_Mitochondrial_manual <- (PAG_sceset$pct_counts_Mitochondrial > 20)
-table(filter_by_pct_Mitochondrial_manual)
-
-filter_by_pct_Ribosomal_manual <- (PAG_sceset$pct_counts_Ribosomal > 0.0015)
-table(filter_by_pct_Ribosomal_manual)
-
-filter_by_fluorophor_ratio_manual <- (PAG_sceset$fluorophor_ratio > 0.2 & PAG_sceset$fluorophor_ratio < 0.8)
-table(filter_by_fluorophor_ratio_manual)
-```
-
-### 2.4.2 | Using the MADs filters
 Subsetting by column will retain only the high-quality cells that pass each filter described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
 ```{r}
 # Create a subset of the PAG_sceset with the cells that pass the MADs filters:
@@ -400,7 +386,28 @@ data.frame(
 table(PAG_sceset$MADs_filters)
 ```
 
-### 2.4.3 | Using the Manual filters
+### 2.4.2 | Using the Manual filters
+An alternative strategy is to set pre-defined thresholds on each QC metric. For example, we might remove all cells with library sizes below 100,000 counts and numbers of expressed genes below 4000. This avoids any assumptions associated with the use of outliers to identify low-quality cells, but it requires considerable experience to determine appropriate thresholds for each experimental protocol and biological system (e.g. thresholds for read count-based data are simply not applicable for UMI-based data, and vice versa, and even with the same protocol and system, the appropriate threshold can vary from run to run due to the vagaries of RNA capture and sequencing).
+```{r}
+# Check how many cells you would exclude after visual inspection of data:
+filter_by_total_counts_manual <- (PAG_sceset$total_counts < 40.e4)
+table(filter_by_total_counts_manual)
+
+filter_by_expr_features_manual <- (PAG_sceset$total_features_by_counts < 6000)
+table(filter_by_expr_features_manual)
+
+# filter_by_pct_ERCC_manual
+
+filter_by_pct_Mitochondrial_manual <- (PAG_sceset$pct_counts_Mitochondrial > 20)
+table(filter_by_pct_Mitochondrial_manual)
+
+filter_by_pct_Ribosomal_manual <- (PAG_sceset$pct_counts_Ribosomal > 0.0015)
+table(filter_by_pct_Ribosomal_manual)
+
+filter_by_fluorophor_ratio_manual <- (PAG_sceset$fluorophor_ratio > 0.2 & PAG_sceset$fluorophor_ratio < 0.8)
+table(filter_by_fluorophor_ratio_manual)
+```
+
 ```{r}
 PAG_sceset$manual_filters <- !(
     # Sufficient library size
@@ -431,8 +438,8 @@ data.frame(
 table(PAG_sceset$manual_filters)
 ```
 
-### 2.4.4 | Using the Automatic cell filtering in scater
-Another option available in `scater` is to filter cells using the `runPCA()` function with `detect_outliers=TRUE`. This applies PCA on a set of QC metrics and then use automatic outlier detection to identify potentially problematic cells. By default, the following metrics are used for PCA-based outlier detection: `pct_counts_top_100_features`, `total_features_by_counts`, `pct_counts_feature_controls`, `n_detected_feature_controls`, `log10_counts_endogenous_features`, `log10_counts_feature_controls`.
+### 2.4.3 | Using the Automatic cell filtering in scater
+Another option available in `scater` is to filter cells using the `runPCA()` function with `detect_outliers=TRUE`. This performs PCA based on a set of QC metrics for each and then uses automatic outlier detection to identify potentially problematic cells. Outliers on a PCA plot may be indicative of low-quality cells that have aberrant technical properties compared to the (presumed) majority of high-quality cells. By default, the following metrics are used for PCA-based outlier detection: `pct_counts_top_100_features`, `total_features_by_counts`, `pct_counts_feature_controls`, `n_detected_feature_controls`, `log10_counts_endogenous_features`, `log10_counts_feature_controls`.
 
 `scater` first creates a matrix where the rows represent cells and the columns represent the different QC metrics. Here, the PCA plot provides a 2D representation of cells ordered by their quality metrics. The outliers are then detected using methods from the `mvoutlier` package.
 ```{r}
@@ -447,7 +454,9 @@ PAG_sceset$PCA_filters <- !PAG_sceset$outlier
 table(PAG_sceset$PCA_filters)
 ```
 
-### 2.4.5 | Compare filtering strategies
+Methods like PCA-based outlier detection and support vector machines can provide more power to distinguish low-quality cells from high-quality counterparts (Ilicic et al. 2016). This is because they are able to detect subtle patterns across many quality metrics simultaneously. However, this comes at some cost to interpretability, as the reason for removing a given cell may not always be obvious.
+
+### 2.4.4 | Compare filtering strategies
 We can use the `limma` package to plot a Venn diagram of the outlier cells from the different filtering approaches we have used.
 ```{r}
 library(limma)
@@ -467,7 +476,7 @@ vennDiagram(
 )
 ```
 
-### 2.4.6 | Apply chosen cell-filtering approach
+### 2.4.5 | Apply chosen cell-filtering approach
 After comparing the different filtering strategies, we can see that the Manual filter is actually the most stringent, contains the samples excluded by the MADs filter, and has the advantage that we know exactly why we remove each cell.
 ```{r}
 # Set the chosen filter as the "use" slot:
@@ -500,30 +509,22 @@ plot(assignments$score$G1, assignments$score$G2M, xlab="G1 score", ylab="G2/M sc
 ```
 
 ## Step 2.6 | Gene QC
-In addition to removing cells with poor quality, it is usually a good idea to exclude genes where we suspect that technical artefacts may have skewed the results, or genes that are not informative (have a lot of 0 in many cells).
+In addition to removing cells with poor quality, it is usually a good idea to exclude genes where we suspect that technical artefacts may have skewed the results, or genes that are not informative (have a lot of 0 in many cells). The “optimal” choice of filtering strategy depends on the downstream application, and the best practice is to filter at each step as needed, rather than applying a single filter for the entire analysis. We will see different filtering options, but in the end we will only remove the genes that are not expressed in any cell, as they don't provide any information and would be removed by any filtering strategy. This will ensure that the most appropriate filter is used in each type of analysis (and we don't remove now genes that we might need later if we do DE analysis, for example).
 
-It is important to keep in mind that genes must be filtered after cell filtering since some genes may only be detected in poor quality cells. Use `PAG_sceset[ , colData(PAG_sceset)$use]` to select only the filtered cells.
-
-We will run all the gene filters in both the QCed (i.e. after cell filtering) and the full dataset, to compare the effect of removing low-quality cells in the gene filters.
+__NB__: keep in mind that genes must be filtered after cell filtering since some genes may only be detected in poor quality cells. Use `PAG_sceset[ , colData(PAG_sceset)$use]` to select only the filtered cells. Here we will apply the filters both in the whole dataset and after filtering low quality cells to assess its impact.
 
 ### 2.6.1 | Filtering low-abundance genes
-Low-abundance genes are problematic as zero or near-zero counts do not contain enough information for reliable statistical inference (Bourgon et al. 2010) and are likely to be dominated by drop-out events (Brennecke et al. 2013), which limits their usefulness in later analyses.
+Low-abundance genes are problematic as zero or near-zero counts do not contain enough information for reliable statistical inference (Bourgon et al. 2010) and are likely to be dominated by drop-out events (Brennecke et al. 2013), which limits their usefulness in later analyses. Several metrics can be used to define low-abundance genes, one being the average count for each gene computed across all cells in the dataset. We can calculate this using the `calcAverage()` function, which can also perform some adjustment for library size differences between cells.
 ```{r}
-# We define low-abundance genes as those with an average count below a filter threshold of 1, as they are likely to be dominated by drop-out events.
-all_ave_counts <- rowMeans(counts(PAG_sceset)) 
-filter_low_Abundance_genes_all <- all_ave_counts >= 1 
-sum(filter_low_Abundance_genes_all)
+library(scater)
+# We can define low-abundance genes as those with an average count below a filter threshold of 1, as they are likely to be dominated by drop-out events.
+all_ave_counts <- calcAverage(PAG_sceset, use_size_factors=FALSE)
 
 # Do the same using the filtered cells:
-use_ave_counts <- rowMeans(counts(PAG_sceset[ , colData(PAG_sceset)$use])) 
-filter_low_Abundance_genes_use <- use_ave_counts >= 1 
-sum(filter_low_Abundance_genes_use)
-
-# Check difference with
-# ave_counts <- calcAverage(PAG_sceset)
+use_ave_counts <- calcAverage(PAG_sceset[ , colData(PAG_sceset)$use], use_size_factors=FALSE)
 ```
 
-We can check whether the chosen threshold is suitable by examining the distribution of log-mean counts across all genes. The peak represents the bulk of moderately expressed genes while the rectangular component corresponds to lowly expressed genes. The filter threshold should cut the distribution at some point along the rectangular component to remove the majority of low-abundance genes.
+We can check whether a chosen threshold would be suitable by examining the distribution of log-mean counts across all genes. The peak represents the bulk of moderately expressed genes while the rectangular component corresponds to lowly expressed genes. The filter threshold should cut the distribution at some point along the rectangular component to remove the majority of low-abundance genes.
 ```{r}
 # Using the whole dataset:
 hist(log10(all_ave_counts),
@@ -546,25 +547,31 @@ hist(log10(use_ave_counts),
 abline(v=log10(1), col="blue", lwd=2, lty=2)
 ```
 
+After looking at the histograms we could apply a minimum threshold to this average to filter out genes that are lowly expressed, and see how many genes we would be left with.
+```{r}
+filter_low_abundance_genes_all <- all_ave_counts >= 1 
+sum(filter_low_abundance_genes_all)
+
+filter_low_abundance_genes_use <- use_ave_counts >= 1 
+summary(filter_low_abundance_genes_use)
+```
+
 ### 2.6.2 | Filtering uninteresting genes
 An alternative approach to gene filtering is to select genes that have non-zero counts in at least n cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
 ```{r}
-# Select the genes with non-zero counts in at least n number of cells
-all_numcells <- nexprs(PAG_sceset, detection_limit = 3, byrow=TRUE) # Count the number of cells expressing each gene a certain number of times
-filter_low_Abundance_genes_alternative_all <- all_numcells >= 10 # Filter the genes not expressed in at least n cells
-sum(filter_low_Abundance_genes_alternative_all)
+# Count the number of non-zero counts (or any value set by the detection_limit) in each row (per feature) or column (per cell). With byrow=TRUE we count the number of cells that express each gene more than certain number of times.
+all_numcells <- nexprs(PAG_sceset, detection_limit = 0, byrow=TRUE) 
 
-use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 3, byrow=TRUE) 
-filter_low_Abundance_genes_alternative_use <- use_numcells >= 10
-sum(filter_low_Abundance_genes_alternative_use)
+# Same after removing low-quality cells:
+use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow=TRUE) 
 ```
 
-The number of cells expressing each gene is usually well-correlated to the average expression of each gene.
+The number of cells expressing each gene is usually well-correlated to the average expression of each gene, as expression in many cells will result in a higher average.
 ```{r}
 # Plot the number of expressing cells against the log-mean expression for each gene in the dataset. Control features are highlighted in red (ERCCs)
 smoothScatter(log10(all_ave_counts), 
               all_numcells, 
-              xlab=expression(Log[2]~"average count"), 
+              xlab=expression(Log[10]~"average count"), 
               ylab="Number of expressing cells",
               xlim=c(-2,5))
 control_features_all <- isSpike(PAG_sceset)
@@ -573,13 +580,24 @@ points(log10(all_ave_counts[control_features_all]), all_numcells[control_feature
 # After removing low-quality cells:
 smoothScatter(log10(use_ave_counts), 
               use_numcells, 
-              xlab=expression(Log[2]~"average count"), 
+              xlab=expression(Log[10]~"average count"), 
               ylab="Number of expressing cells",
               xlim=c(-2,5))
 control_features_use <- isSpike(PAG_sceset[ , colData(PAG_sceset)$use])
-# When you have Spike-ins: is.ercc <- isSpike(sce, type="ERCC")
 points(log10(use_ave_counts[control_features_use]), use_numcells[control_features_use], col="red", pch=16, cex=0.5)
 ```
+
+As we already mentioned, genes expressed in very few cells are often uninteresting as they might be driven by amplification artifacts (though they may also also arise from rare populations). We could then remove genes that are expressed in fewer than n cells. 
+```{r}
+# Filter the genes not expressed in at least n cells
+filter_low_abundance_genes_alternative_all <- all_numcells >= 1 
+sum(filter_low_abundance_genes_alternative_all)
+
+filter_low_abundance_genes_alternative_use <- use_numcells >= 1
+summary(filter_low_abundance_genes_alternative_use)
+```
+
+For now, we will only remove genes not expressed in any cell. Depending on which type of analysis we do later on, we can add a new round of gene filtering with different settings tailored to each particular step.
 
 ### 2.6.3 | Identities of the most highly expressed genes
 It is often instructive to consider the number of reads consumed by the top 50 expressed genes. This should generally be dominated by constitutively expressed transcripts, such as those for ribosomal or mitochondrial proteins. The presence of other classes of features may be cause for concern if they are not consistent with expected biology. Many spike-in transcripts in the top most expressed genes suggests that too much spike-in RNA was added during library preparation, while the absence of ribosomal proteins and/or the presence of their pseudogenes are indicative of suboptimal alignment.
@@ -604,17 +622,15 @@ In general, the mean-based filter tends to be less aggressive. A gene will be re
 
 In contrast, the "at least n" filter depends heavily on the choice of `n`. With `n = 10`, a gene expressed in a subset of 9 cells would be filtered out, regardless of the level of expression in those cells. This may result in the failure to detect rare subpopulations that are present at frequencies below `n`.
 
-While the mean-based filter will retain more outlier-driven genes, this can be handled by choosing methods that are robust to outliers in the downstream analyses. Thus, we apply the mean-based filter to the data by subsetting the `SCE` object as shown below. This removes all rows corresponding to endogenous genes or spike-in transcripts with abundances below the specified threshold.
+The safest option will be to apply these filters at each step rather than applying them globally by subsetting the `SCE` object. This ensures that the most appropriate filter is used in each application. For now, we only remove genes that are not expressed in any cell to reduce computational work in downstream steps. Such genes provide no information and would be removed by any filtering strategy. We thus use the result from the `nexprs` function with a `detection_limit=0` and `num_cells>=1`.
 ```{r}
-# Use the chosen list of filtered genes to set the dimensions of the QCed dataset:
-rowData(PAG_sceset)$use <- filter_low_Abundance_genes_use
-table(filter_low_Abundance_genes_use)
+# Assign the chosen list of filtered genes to $use slot corresponding to the rows (genes):
+rowData(PAG_sceset)$use <- filter_low_abundance_genes_alternative_use
+table(filter_low_abundance_genes_alternative_use)
 dim(PAG_sceset)
-
-# Alternative: discard genes not expressed in any cell.
-# PAG_sceset <- PAG_sceset[numcells > 0,]
-# summary(numcells > 0)
 ```
+
+Now, the `colData(PAG_sceset)$use` should point to the __samples__ that have passed our QC, whereas the `rowData(PAG_sceset)$use` should in turn point to the __genes__ that have passed our QC (i.e. that are expressed in at least one cell).
 
 ## Step 2.7 | Create and save a QCed SCE object
 We have now QCed our data. Before we proceed to normalization and downstream analyis, we save our progress.
@@ -630,7 +646,7 @@ saveRDS(PAG_sceset, file = "PAG_sceset.rds")
 PAG_sceset
 ```
 
-Once everything you have done is saved, use the `$use` slot, which points to the filtered and QCed data, to set the dimensions of a new `SCE` object, which we will call `PAG_sceset_qc` and use for downstream analysis. 
+Once everything you have done is saved, use the `PAG_sceset$use` slot, which points to the filtered and QCed data, to set the dimensions of a new `SCE` object, which we will call `PAG_sceset_qc` and use for downstream analysis. 
 ```{r}
 # Use the filtered dataset to set the dimensions of a QCed dataset:
 PAG_sceset_qc <- PAG_sceset[rowData(PAG_sceset)$use, colData(PAG_sceset)$use]
