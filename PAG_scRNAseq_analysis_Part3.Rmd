@@ -85,7 +85,15 @@ summary(sizeFactors(PAG_sceset_qc))
 
 Plotting the size factors against the library sizes should show some positive correlation.
 ```{r}
-plot(sizeFactors(PAG_sceset_qc), PAG_sceset_qc$total_counts/1e6, log="xy", ylab="Library size (millions)", xlab="Size factor")
+plot(PAG_sceset_qc$total_counts/1e6, 
+     sizeFactors(PAG_sceset_qc),
+     log="xy", 
+     xlab="Library size (millions)", 
+     ylab="Size factor", 
+     col=c("red", "black")[PAG_sceset_qc$cell.type], 
+     pch=16)
+legend("bottomright", col=c("red", "black"), pch=16, cex=1.2,
+    legend=levels(sce$Oncogene))
 ```
 The size factors are tightly correlated with the library sizes for all cells. This suggests that the systematic differences between cells are primarily driven by differences in capture efficiency or sequencing depth. Any DE between cells would yield a non-linear trend between the total count and size factor, and/or increased scatter around the trend. This does not occur here as strong DE is unlikely to exist within a homogeneous population of cells.
 
@@ -157,7 +165,7 @@ multiplot(p1, p2, p3, cols=2)
 
 # STEP 4 | Batch correction
 
-## STEP 3.2: Identifying confounding and technical factors [NEEDS COMPLETED METADATA]
+## Step 4.1 | Identifying confounding and technical factors [NEEDS COMPLETED METADATA]
 A big source of variability in scRNA-seq data, besides bad cells, are batch effects: the person processing the samples, date of processing, reagent kit, etc. We want to try to identify such effects and remove them, so our dataset picks up mainly biological effects.
 
 ### STEP 3.2.1: Checking for important technical factors or explanatory variables
@@ -410,10 +418,13 @@ plotExpression(PAG_sceset_qc, rownames(hvg.out)[1:20])
 ```
 
 ### Alternative [do check what happens with data]
-It’s wise to check the distribution of expression values for the top HVGs to ensure that the variance estimate is not being dominated by one or two outlier cells.
+It is wise to check the distribution of expression values for the top HVGs to ensure that the variance estimate is not being dominated by one or two outlier cells.
 ```{r}
 top <- rownames(var.out)[order(var.out$bio, decreasing=TRUE)[1:10]]
 plotExpression(sce, features = top)
+#OR
+chosen.genes <- order(var.out$bio, decreasing=TRUE)[1:10]
+plotExpression(sce, features=rownames(var.out)[chosen.genes]) + fontsize
 ```
 
 ## Step 5.2 | Identifying correlated gene pairs with Spearman's rho
@@ -504,7 +515,7 @@ multiplot(out5, out10, out20, out50, cols=2)
 ```
 
 # 2.7.1 | One last thing...
-Consider dropping any Ribosomal, Mitochondrial, ERCC, transgenes (EYFP, tdTomato, Cre) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
+Consider dropping any Ribosomal, Mitochondrial, ERCC, sex-related genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
 ```{r}
 # sceset <- sceset[!fData(sceset)$is_feature_control_Mitochondrial, ]
 ```

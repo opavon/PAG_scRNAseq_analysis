@@ -146,7 +146,7 @@ It is also worth looking at the proportion of reads mapped to genes in the Mitoc
 
 __IMPORTANT__: cells of small dimensions will have a higher fraction of ERCC reads than larger cells, so take this into account if you think this might be the case.
 
-__Using ERCC for normalization vs using them for QC__: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalization, but it will be useful for QC. If you want to use them for normalization, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only.
+__Using ERCC for normalization vs using them for QC__: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalization, but it will be useful for QC. If you want to use them for normalization, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only, in which case you would want about 5-10% of the reads going to the spike-ins. If this is not the case, it suggests that you need to alter the dilution.
 ```{r}
 # Plot the histograms of the percentage of feature controls in all cells:
 par(mfrow=c(1,3))
@@ -339,7 +339,10 @@ Systematic differences in the QC metrics can be handled to some extent using the
 
 * In our case, we could add either the `mouse.id` or the `cell.type` (e.g. `batch=PAG_sceset$mouse.id`) as an argument that specifies the batch to which each sample belongs. A median/MAD is calculated for each batch, and outliers are then identified within each batch.
 
-Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. We remove cells with log-library sizes that are more than 4 MADs below the median log-library size. A log-transformation improves resolution at small values, especially when the MAD of the raw values is comparable to or greater than the median. We also remove cells where the log-transformed number of expressed genes is 4 MADs below the median value.
+Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. A 3-MAD threshold has a fairly simple interpretation for normal distributions, enabling the removal of points with lower than 1% likelihood. 
+* The default MAD threshold in the `isOutlier()` function is set to `nmads=5`. 
+* We beging by removing cells with log-library sizes that are more than 4 MADs below the median log-library size. A log-transformation improves resolution at small values, especially when the MAD of the raw values is comparable to or greater than the median. We also remove cells where the log-transformed number of expressed genes is 4 MADs below the median value.
+* However, if the 4-MAD threshold is too restrictive or not restrictive enough, we can try to loosen it a bit by setting it to 5 or 3.
 ```{r}
 filter_by_total_counts_MADs <- isOutlier(PAG_sceset$total_counts, nmads = 4, type = "lower", log = TRUE, batch = NULL)
 table(filter_by_total_counts_MADs)
@@ -555,6 +558,8 @@ sum(filter_low_abundance_genes_all)
 filter_low_abundance_genes_use <- use_ave_counts >= 1 
 summary(filter_low_abundance_genes_use)
 ```
+
+__NOTE__: the `computeSumFactors()` function we will use prior to normalization will already implement this filter by default with the `min.mean=1` argument, so this is another reason to only remove non-expressed genes.
 
 ### 2.6.2 | Filtering uninteresting genes
 An alternative approach to gene filtering is to select genes that have non-zero counts in at least n cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
