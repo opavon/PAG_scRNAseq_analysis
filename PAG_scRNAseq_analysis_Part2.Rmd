@@ -2,7 +2,7 @@
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
 subtitle: "Part II: pre-processing and data quality control"
 author:
-  - name: "Oriol Pavón Arocas, Sarah F. Olesen and Tiago Branco"
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
     email: "oriol.pavon.16@ucl.ac.uk"
 date: "`r format(Sys.time(), '%d %B %Y')`"
@@ -512,7 +512,7 @@ plot(assignments$score$G1, assignments$score$G2M, xlab="G1 score", ylab="G2/M sc
 ```
 
 ## Step 2.6 | Gene QC
-In addition to removing cells with poor quality, it is usually a good idea to exclude genes where we suspect that technical artefacts may have skewed the results, or genes that are not informative (have a lot of 0 in many cells). The “optimal” choice of filtering strategy depends on the downstream application, and the best practice is to filter at each step as needed, rather than applying a single filter for the entire analysis. We will see different filtering options, but in the end we will only remove the genes that are not expressed in any cell, as they don't provide any information and would be removed by any filtering strategy. This will ensure that the most appropriate filter is used in each type of analysis (and we don't remove now genes that we might need later if we do DE analysis, for example).
+In addition to removing cells with poor quality, it is usually a good idea to exclude genes where we suspect that technical artefacts may have skewed the results, or genes that are not informative (have a lot of 0 in many cells). The optimal choice of filtering strategy depends on the downstream application, and the best practice is to filter at each step as needed, rather than applying a single filter for the entire analysis. We will see different filtering options, but in the end we will only remove the genes that are not expressed in any cell, as they don't provide any information and would be removed by any filtering strategy. This will ensure that the most appropriate filter is used in each type of analysis (and we don't remove now genes that we might need later if we do DE analysis, for example).
 
 __NB__: keep in mind that genes must be filtered after cell filtering since some genes may only be detected in poor quality cells. Use `PAG_sceset[ , colData(PAG_sceset)$use]` to select only the filtered cells. Here we will apply the filters both in the whole dataset and after filtering low quality cells to assess its impact.
 
@@ -659,7 +659,7 @@ dim(PAG_sceset)
 dim(PAG_sceset_qc)
 PAG_sceset_qc
 
-# Save the filtered and QCed data in a new SCE object that we can use for downstream analysis:
+# Save the filtered and QCed dataset:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")
 ```
 
