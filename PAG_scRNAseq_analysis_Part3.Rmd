@@ -90,10 +90,10 @@ plot(PAG_sceset_qc$total_counts/1e6,
      log="xy", 
      xlab="Library size (millions)", 
      ylab="Size factor", 
-     col=c("red", "black")[PAG_sceset_qc$cell.type], 
-     pch=16)
-legend("bottomright", col=c("red", "black"), pch=16, cex=1.2,
-    legend=levels(sce$Oncogene))
+     col=c("red","black")[factor(PAG_sceset_qc$cell.type)], 
+     pch=1)
+legend("bottomright", col=c("red", "black"), pch=1, cex=1.2,
+       legend=levels(factor(PAG_sceset_qc$cell.type)))
 ```
 The size factors are tightly correlated with the library sizes for all cells. This suggests that the systematic differences between cells are primarily driven by differences in capture efficiency or sequencing depth. Any DE between cells would yield a non-linear trend between the total count and size factor, and/or increased scatter around the trend. This does not occur here as strong DE is unlikely to exist within a homogeneous population of cells.
 
@@ -110,9 +110,9 @@ The two sets of size factors tend to agree less due to the effects of heterogene
 ```{r}
 plot(sizeFactors(PAG_sceset_qc, 'ERCC'), 
      sizeFactors(PAG_sceset_qc),
-    log="xy", 
-    xlab="Size factor (ERCC)", 
-    ylab="Size factor (genes)")
+     log="xy", 
+     xlab="Size factor (ERCC)", 
+     ylab="Size factor (genes)")
 ```
 
 _If we were to apply the the spike-in factors to all counts, we would set `general.use=TRUE` and use the `computeSpikeFactors` method to estimate size factors for all cells. This would compute the total count over all spike-in transcripts in each cell, and calculate size factors to equalize the total spike-in count across cells. Finally, running normalize would use the spike-in-based size factors to compute normalized log-expression values, and unlike what we actually did, we would not have to define separate size factors for the spike-in transcripts, as the relevant factors would already be used for all genes and spike-in transcripts when `general.use=TRUE`._
