@@ -83,7 +83,7 @@ PAG_sceset <- calculateQCMetrics(
     )
 )
 PAG_sceset
-head(colnames(colData(PAG_sceset)))
+tail(colnames(colData(PAG_sceset)))
 ```
 
 Quickly visualise the QC metrics calculated:
