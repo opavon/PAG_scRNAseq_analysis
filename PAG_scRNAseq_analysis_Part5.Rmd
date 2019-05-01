@@ -1,0 +1,390 @@
+---
+title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
+subtitle: "Part V: clustering"
+author:
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen and Tiago Branco"
+    affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
+    email: "oriol.pavon.16@ucl.ac.uk"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_notebook:
+    highlight: pygments
+    number_sections: FALSE
+    theme: lumen
+    toc: TRUE
+    toc_float: TRUE
+
+#output: rmdformats::readthedown:
+  #highlight: pygments
+---
+
+***
+This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al. Nature Protocols 2014). 
+
+This pipeline has been generated following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](http://hemberg-lab.github.io/scRNA.seq.course), the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.8/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, and by attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis).
+
+Other key resources are Bioconductor (Huber et al. Nature Methods 2015), scater (McCarty et al. Bioinformatics 2017), scran (Lun et al. F1000Res 2016), and SC3 (Kiselev et al. Nature Methods 2017).
+
+***
+
+# STEP 8 | Clustering
+Once we have normalized the data and removed confounders we can carry out analyses that are relevant to the biological questions at hand.
+
+scRNA-seq data allow de novo discovery and annotation of cell-types based on transcription profiles. Computationally, we need to identify groups of cells based on the similarities of the transcriptomes without any prior knowledge of the labels, nor the number of clusters we will end up with. This is very challenging due to the high level of noise (both technical and biological) and the large number of dimensions (i.e. genes).
+
+Unsupervised clustering is useful in many different applications and it has been widely studied in machine learning. Some of the most popular approaches are hierarchical clustering, k-means clustering and graph-based clustering.
+
+Ideally you want to run several tools on the same dataset and see whether we get similar results. 
+
+## Step 8.1 | Consensus clustering with SC3
+Single-Cell Consensus Clustering (SC3) is a tool for unsupervised clustering of scRNA-seq data. SC3 achieves high accuracy and robustness by consistently integrating different clustering solutions through a consensus approach. An interactive graphical implementation makes SC3 accessible to a wide audience of users. In addition, SC3 also aids biological interpretation by identifying marker genes, differentially expressed genes and outlier cells. A manuscript describing  SC3 in details is published in Nature Methods.
+
+The advantage of the SC3 is that it can directly ingest a `SingleCellExperiment` object, and it has a function that can estimate a number of cluster for us. SC3 is a purely clustering tool and it does not provide functions for the sequencing quality control (QC) or normalisation. On the contrary it is expected that these preprocessing steps are performed by a user in advance.
+
+SC3 requires both counts and logcounts slots to exist in the input  `SingleCellExperiment` object. The counts slot is used for gene filtering, which is based on gene dropout rates. logcounts slot, which is supposed to contain both normalised and log-transformed expression matrix, is used in the main clustering algorithm.
+
+SC3 also requires the `feature_symbol` column of the rowData slot of the input  `SingleCellExperiment` object to contain preferable feature names (genes/transcript) which will be used in the futher visualisations. Additionally, if spike-ins are defined via `isSpike function`, SC3 will automatically remove them before doing clustering.
+
+### 8.1.1 | Inspect the data and estimate k
+```{r}
+set.seed(1991)
+
+library(SC3)
+library(scater)
+library(SingleCellExperiment)
+library(pheatmap)
+```
+
+```{r}
+# Inspect data
+plotPCA(PAG_sceset_qc, colour_by = "cell.type", run_args = list(exprs_values="logcounts"))
+plotTSNE(PAG_sceset_qc, colour_by = "cell.type", run_args = list(exprs_values="logcounts"))
+```
+
+```{r}
+# SC3 is stochastic, if you run it different times you will get different results, so make sure you have set a seed before running it.
+PAG_sceset_qc <- sc3_estimate_k(PAG_sceset_qc)
+metadata(PAG_sceset_qc)$sc3$k_estimation
+```
+
+### 8.1.2 | Run SC3
+We now run SC3 and ask it to calculate biological properties of the clusters as well. We try a range of k and explore the different clustering solutions with the interactive `Shiny` session. We can check the stability of the different clusters and play with the thresholds for DE and Marker genes.
+```{r}
+rowData(PAG_sceset_qc)$feature_symbol <- rownames(PAG_sceset_qc)
+PAG_sceset_qc <- sc3(PAG_sceset_qc, ks = 2:10, biology = TRUE)
+# SC3 is based on k-means clustering, so we need to define the ks at the beginning. You could also set a range and try different solutions.
+# SC3 suggested us 5 clusters, but we have 2 cell-types from 4 subdivisions, so we choose ks = 8. The estimation function only gives us an idea, a number we can play around.
+```
+Importantly, SC3 applies a gene filter to remove genes very lowly expressed in all samples and also the ones that are expressed everywhere, so that these genes do not contribute to the clustering (see $sc3_gene_filter).
+
+SC3 can also be run in an interactive Shiny session: 
+```{r}
+sc3_interactive(PAG_sceset_qc)
+```
+
+SC3 writes all its results obtained for cells to the colData slot of the sce object by adding additional columns to it, and all its results obtained for features (genes/transcripts) to the rowData slot. This slot also contains all other cell features calculated by the scater package either automatically during the sce object creation or during the calculateQCMetrics call. One can identify the SC3 results using the "sc3_" prefix. We can use these results as highlights when plotting.
+```{r}
+# Consensus Matrix
+sc3_plot_consensus(PAG_sceset_qc, 
+                   k = 4, 
+                   show_pdata = "cell.type"
+)
+
+# DE Genes
+sc3_plot_de_genes(PAG_sceset_qc, 
+                 k = 4,
+                 p.val = 0.001,
+                 show_pdata = "cell.type")
+
+# Marker Genes
+sc3_plot_markers(PAG_sceset_qc, 
+                 k = 4,
+                 auroc = 0.8,
+                 p.val = 0.01,
+                 show_pdata = "cell.type")
+```
+
+### 8.1.3 | Consensus matrix
+The consensus matrix is a NxN matrix, where N is the number of cells. It represents similarity between the cells based on the averaging of clustering results from all combinations of clustering parameters. Similarity 0 (blue) means that the two cells are always assigned to different clusters. In contrast, similarity 1 (red) means that the two cells are always assigned to the same cluster. The consensus matrix is clustered by hierarchical clustering and has a diagonal-block structure. Intuitively, the perfect clustering is achieved when all diagonal blocks are completely red and all off-diagonal elements are completely blue. 
+```{r}
+sc3_plot_consensus(PAG_sceset_qc, 
+                   k = 8, 
+                   show_pdata = c(
+                     "cell.type",
+                     "PAG.areacollection",
+                     "sc3_8_clusters"
+                     )
+)
+```
+
+You can also generate a PCA plot with highlighted SC3 clusters:
+```{r}
+plotPCA(PAG_sceset_qc, colour_by = "sc3_8_clusters")
+```
+
+### 8.1.4 | Silhouette plot
+As opposed to visual exploration of the consensus matrix, a silhouette is a quantitative measure of the diagonality of the consensus matrix. An average silhouette width (shown at the bottom left of the silhouette plot) varies from 0 to 1, where 1 represents a perfectly block-diagonal consensus matrix and 0 represents a situation where there is no block-diagonal structure. The best clustering is achieved when the average silhouette width is close to 1.
+```{r}
+sc3_plot_silhouette(PAG_sceset_qc, k = 8)
+```
+See also the Stability Index, which shows how stable each cluster is accross the selected range of ks. The stability index varies between 0 and 1, where 1 means that the same cluster appears in every solution for different k.
+
+### 8.1.5 |Heatmap of expression matrix
+The expression panel represents the original input expression matrix (cells in columns and genes in rows) after cell and gene filters. Genes are clustered by k-means with k = 100 (dendrogram on the left) and the heatmap represents the expression levels of the gene cluster centers after log2-scaling.
+```{r}
+sc3_plot_expression(PAG_sceset_qc, k = 8, show_pdata = "cell.type")
+```
+
+### 8.1.6 | Differential Expression and Marker genes:
+Differential expression is calculated using the non-parametric Kruskal-Wallis test. A significant p-value indicates that gene expression in at least one cluster stochastically dominates one other cluster. SC3 provides a list of all differentially expressed genes with adjusted p-values < 0.01 and plots gene expression profiles of the 50 genes with the lowest p-values. Note that the calculation of differential expression after clustering can introduce a bias in the distribution of p-values, and thus we advise to use the p-values for ranking the genes only.
+
+To find marker genes, for each gene a binary classifier is constructed based on the mean cluster expression values. The classifier prediction is then calculated using the gene expression ranks. The area under the receiver operating characteristic (ROC) curve is used to quantify the accuracy of the prediction. A p-value is assigned to each gene by using the Wilcoxon signed rank test. The genes with the area under the ROC curve (AUROC) > 0.85 and with the p-value < 0.01 are defined as marker genes and the top 10 marker genes of each cluster are visualized in this panel. The AUROC and the p-value thresholds can be changed using the slider and radio buttons below.
+```{r}
+sc3_plot_markers(PAG_sceset_qc, k = 8, show_pdata = "cell.type")
+```
+
+## Step 8.2 | SC3 Clustering using ion channels genes
+Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
+```{r}
+PAG_ionchannels <- PAG_scRNAseq_gene_lists$genes.ionchannels
+sum(PAG_scRNAseq_gene_lists$genes.ionchannels != "") # Ion Channel genes present in the list
+
+# Filter any genes not present in our dataset by comparing the gene names with the rownames of our expression matrix (which contains gene names)
+PAG_ionchannels <- PAG_ionchannels[(PAG_ionchannels %in% rownames(PAG_sceset_qc))]
+length(PAG_ionchannels) # Ion Channel genes present in the dataset
+```
+
+Generate a SCE object with only ion channel genes:
+```{r}
+# Keep only the rows that correspond to ion channel genes:
+PAG_sceset_qc_ionchannels <- PAG_sceset_qc[rownames(PAG_sceset_qc) %in% PAG_ionchannels, ]
+dim(PAG_sceset_qc_ionchannels)
+```
+
+Estimate K:
+```{r}
+PAG_sceset_qc_ionchannels <- sc3_estimate_k(PAG_sceset_qc_ionchannels)
+metadata(PAG_sceset_qc_ionchannels)$sc3$k_estimation
+```
+
+Run SC3:
+```{r}
+rowData(PAG_sceset_qc_ionchannels)$feature_symbol <- rownames(PAG_sceset_qc_ionchannels)
+PAG_sceset_qc_ionchannels <- sc3(PAG_sceset_qc_ionchannels, ks = 2:6, biology = TRUE)
+```
+
+Explore results interactively:
+```{r}
+library(shiny)
+sc3_interactive(PAG_sceset_qc_ionchannels)
+```
+
+For k=2
+```{r}
+# Consensus Matrix
+sc3_plot_consensus(PAG_sceset_qc_ionchannels, 
+                   k = 2, 
+                   show_pdata = "cell.type"
+)
+
+# DE Genes
+sc3_plot_de_genes(PAG_sceset_qc_ionchannels, 
+                 k = 2,
+                 p.val = 0.01,
+                 show_pdata = "cell.type"
+                 )
+
+# Marker Genes
+sc3_plot_markers(PAG_sceset_qc_ionchannels, 
+                 k = 2,
+                 auroc = 0.65,
+                 p.val = 0.01,
+                 show_pdata = "cell.type"
+                 )
+
+```
+
+Figures for k=3
+```{r}
+# Consensus Matrix
+sc3_plot_consensus(PAG_sceset_qc_ionchannels, 
+                   k = 3, 
+                   show_pdata = "cell.type"
+                   )
+
+# DE Genes
+sc3_plot_de_genes(PAG_sceset_qc_ionchannels, 
+                 k = 3,
+                 p.val = 0.01,
+                 show_pdata = "cell.type"
+                 )
+
+# Marker Genes
+sc3_plot_markers(PAG_sceset_qc_ionchannels, 
+                 k = 3,
+                 auroc = 0.65,
+                 p.val = 0.01,
+                 show_pdata = c("cell.type", "PAG.areacollection")
+                 )
+```
+
+## Step 8.3 | SC3 Clustering using Neuropeptides and Neuromodulators
+Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
+```{r}
+PAG_Neuromodulators_Peptides <- PAG_scRNAseq_gene_lists$genes.NeuromodulatorsPeptides
+length(PAG_Neuromodulators_Peptides) # This won't be the length of the $genes.ionchannels column but the one of the longest column of the .csv file (there will be a lot of empty cells).
+#typeof(PAG_ionchannels)
+
+# Filter any genes not present in our dataset by comparing the gene names with the rownames of our expression matrix (which contains gene names)
+PAG_Neuromodulators_Peptides <- PAG_Neuromodulators_Peptides[(PAG_Neuromodulators_Peptides %in% rownames(PAG_sceset_qc))]
+length(PAG_Neuromodulators_Peptides)
+```
+
+Generate a SCE object with only ion channel genes:
+```{r}
+# Keep only the rows that correspond to ion channel genes:
+PAG_sceset_qc_Neuromodulators_Peptides <- PAG_sceset_qc[rownames(PAG_sceset_qc) %in% PAG_Neuromodulators_Peptides, ]
+dim(PAG_sceset_qc_Neuromodulators_Peptides)
+```
+
+Estimate K:
+```{r}
+PAG_sceset_qc_Neuromodulators_Peptides <- sc3_estimate_k(PAG_sceset_qc_Neuromodulators_Peptides)
+metadata(PAG_sceset_qc_Neuromodulators_Peptides)$sc3$k_estimation
+```
+
+Run SC3:
+```{r}
+rowData(PAG_sceset_qc_Neuromodulators_Peptides)$feature_symbol <- rownames(PAG_sceset_qc_Neuromodulators_Peptides)
+PAG_sceset_qc_Neuromodulators_Peptides <- sc3(PAG_sceset_qc_Neuromodulators_Peptides, ks = 2:6, biology = TRUE)
+```
+
+Explore results interactively:
+```{r}
+sc3_interactive(PAG_sceset_qc_Neuromodulators_Peptides)
+```
+
+```{r}
+# Consensus Matrix
+sc3_plot_consensus(PAG_sceset_qc_Neuromodulators_Peptides, 
+                   k = 2, 
+                   show_pdata = "cell.type"
+                   )
+
+# DE Genes
+sc3_plot_de_genes(PAG_sceset_qc_Neuromodulators_Peptides, 
+                 k = 2,
+                 p.val = 0.01,
+                 show_pdata = "cell.type"
+                 )
+
+# Marker Genes
+sc3_plot_markers(PAG_sceset_qc_Neuromodulators_Peptides, 
+                 k = 2,
+                 auroc = 0.65,
+                 p.val = 0.01,
+                 show_pdata = "cell.type"
+                 )
+```
+
+## Step 8.4 | SC3 Clustering ion channels genes instead of cells (need to transpose matrix in a new SCE object)
+Run STEP 5.1.2 first, so you already have the subset of genes and the SCE object. Then transpose the SCE object with only ion channel genes you generated in the previous step:
+```{r}
+# Keep only the rows that correspond to ion channel genes:
+dim(PAG_sceset_qc_ionchannels)
+# Trying to transpose a SCEset as follows doesn't work, so we have to transpose the original data prior to creating the SCEset
+# PAG_sceset_qc_ionchannels_T <- PAG_sceset_qc_ionchannels[colData(PAG_sceset_qc_ionchannels), rowData(PAG_sceset_qc_ionchannels)]
+dim(PAG_sceset_qc_ionchannels_T)
+```
+
+```{r}
+head(PAG_data)
+head(PAG_metadata)
+PAG_sceset_qc
+PAG_sceset_transposed <- SingleCellExperiment(
+  assays = list(counts = as.matrix(PAG_data)), 
+  colData = PAG_metadata, 
+  rowData = PAG_gene_information
+)
+```
+
+Estimate K:
+```{r}
+PAG_sceset_qc_ionchannels <- sc3_estimate_k(PAG_sceset_qc_ionchannels)
+metadata(PAG_sceset_qc_ionchannels)$sc3$k_estimation
+```
+
+Run SC3:
+```{r}
+rowData(PAG_sceset_qc_ionchannels)$feature_symbol <- rownames(PAG_sceset_qc_ionchannels)
+PAG_sceset_qc_ionchannels <- sc3(PAG_sceset_qc_ionchannels, ks = 2:6, biology = TRUE)
+```
+
+Explore results interactively:
+```{r}
+sc3_interactive(PAG_sceset_qc_ionchannels)
+```
+
+## Step 8.5 | Clustering VGAT and VGluT2 cells separately
+Do this when you are ready for downstream analysis, after quality checks.  
+```{r}
+# Is this the best way to subset the data? Probably not, there must be a way to do it without creating a new SCE object.
+VGAT_sceset <- PAG_sceset[,grep("^[I]", colnames(PAG_sceset), value=TRUE)]
+
+VGluT2_sceset <- PAG_sceset[,grep("^[E]", colnames(PAG_sceset), value=TRUE)]
+```
+
+# STEP 9 | Other clustering algorithms
+## Step 9.1 | clusterExperiment [TO TRY]
+
+## Step 9.2 | BackSPIN - biclustering hierarchical [MATLAB/Python]
+The BackSPIN biclustering algorithm was developed by Amit Zeisel and is described in Zeisel et al. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq Science 2015 (PMID: 25700174, doi: 10.1126/science.aaa1934). Please cite this paper if you use the BackSPIN algorithm in your work.
+
+Original MATLAB implementation by Amit Zeisel. This repo contains a standalone command-line version of BackSPIN, implemented in Python by Gioele La Manno (https://github.com/linnarsson-lab/BackSPIN)
+
+## Step 9.3 | SINCERA (hierarchical clustering) [not installed]
+It performs a gene-level z-score transformation before doing clustering.
+It can also identify k as the minimum height of the hierarchical tree that generates no more than a specified number of singleton clusters (clusters containing only 1 cell).
+
+SINCERA: a computational pipeline for SINgle CEll RNA-seq profiling Analysis, can be used for processing scRNA-seq data from a whole organ or sorted cells. The pipeline supports the analysis for: 1) the distinction and identification of major cell types; 2) the identification of cell type specific gene signatures; and 3) the determination of driving forces of given cell types.
+
+Website: https://research.cchmc.org/pbge/sincera.html
+Paper: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004575
+
+## Step 9.4 | pcaReduce [haven't tried, but very stochastic, does not provide a stable result] 
+pcaReduce combines PCA, k-means and iterative hierarchical clustering. Starting from a large number of clusters pcaReduce iteratively merges similar clusters; after each merging event it removes the principle component explaning the least variance in the data.
+
+pcaReduce operates directly on the expression matrix. It is recommended to use a gene filter and log transformation before running pcaReduce. We will use the default SC3 gene filter (note that the exprs slot of a scater object is log-transformed by default).
+```{r}
+# use the same gene filter as in SC3
+library(pcaReduce) # You need to install PCAReduce first
+input <- logcounts(PAG_sceset_qc[rowData(PAG_sceset_qc)$sc3_gene_filter, ])
+```
+
+There are several parameters used by pcaReduce: nbt defines a number of pcaReduce runs (it is stochastic and may have different solutions after different runs). q defines number of dimensions to start clustering with. The output will contain partitions for all k from 2 to q+1. method defines a method used for clustering. S - to perform sampling based merging, M - to perform merging based on largest probability.
+```{r}
+# run pcaReduce 1 time creating hierarchies from 1 to 30 clusters
+pca.red <- PCAreduce(t(input), nbt = 1, q = 30, method = 'S')[[1]]
+colData(PAG_sceset_qc)$pcaReduce <- as.character(pca.red[,32 - 10])
+plotPCA(PAG_sceset_qc, colour_by = "pcaReduce")
+```
+
+## Step 9.5 | tSNE followed by K-means clustering [not really good]
+```{r}
+PAG_sceset_qc <- plotTSNE(PAG_sceset_qc, rand_seed = 1991, perplexity = 50, return_SCE = TRUE)
+# return_SCE adds the results of the tSNE to the reducedDims slot of our object.
+```
+
+Once we have the tSNE we apply k-means clustering to the cloud of points on the tSNE map. Try different k (Centers) and perplexities.
+```{r}
+colData(PAG_sceset_qc)$tSNE_kmeans <- as.character(kmeans(PAG_sceset_qc@reducedDims$TSNE, centers = 5)$clust)
+plotTSNE(PAG_sceset_qc, rand_seed = 1991, colour_by = "tSNE_kmeans")
+# Try colour_by = "cell.type"
+```
+
+## Step 9.6 | SNN-Cliq (graph-based clustering) [not installed, python based]
+# 2.7.1 | One last thing...
+Consider dropping any Ribosomal, Mitochondrial, ERCC, sex-related genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
+```{r}
+# sceset <- sceset[!fData(sceset)$is_feature_control_Mitochondrial, ]
+```
