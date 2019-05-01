@@ -80,7 +80,7 @@ if (!requireNamespace("BiocManager"))
 library(BiocManager)
 
 # Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "GenomicRanges", "GenomeInfoDb", "ggfortify", "ggplot2", "httpuv", "iSEE", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Mm.eg.db", "purrr", "Rhdf5lib", "RUVSeq", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot"))
+BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "BiocStyle",  "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "GenomicRanges", "GenomeInfoDb", "ggfortify", "ggplot2", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Mm.eg.db", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot"))
 ```
 
 <!--
@@ -236,15 +236,15 @@ PAG_metadata[1:11,1:11]
 ## Step 1.5 | Build SingleCellExperiment object
 We have loaded both the data and the metadata. The next step is to create an object of the `SingleCellExperiment` class for downstream analysis. For an introduction to the `SCE` class see [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/data-infrastructure.html) by Robert Amezquita and Stephanie Hicks.
 
-The `assays` slot in a `SCE` object contains primary data such as counts in a list, where each entry of the list is in a matrix format, where rows correspond to features (genes) and columns correspond to samples (cells). We can extend the `assays` slot: `counts` are intended to be used for raw counts, but we can also have `logcounts` and other transformed values for normalized data (we will compute them below).
+* The `assays` slot in a `SCE` object contains primary data such as counts in a list, where each entry of the list is in a matrix format, where rows correspond to features (genes) and columns correspond to samples (cells). We can extend the `assays` slot: `counts` are intended to be used for raw counts, but we can also have `logcounts` and other transformed values for normalized data (we will compute them below).
 
-The `colData` slot is designed for metadata that describe the samples (cells) provided as a `data.frame`, where rows correspond to cells, and columns correspond to the sample (cells) metadata features (e.g. id, batch, date, etc.). Furthermore, `colData` can be used for subsetting (e.g. `PAG_sceset[, PAG_sceset$cell.type==VGAT]` or `PAG_sceset$cell.id`).
+* The `colData` slot is designed for metadata that describe the samples (cells) provided as a `data.frame`, where rows correspond to cells, and columns correspond to the sample (cells) metadata features (e.g. id, batch, date, etc.). Furthermore, `colData` can be used for subsetting (e.g. `PAG_sceset[, PAG_sceset$cell.type==VGAT]` or `PAG_sceset$cell.id`).
 
-The rows also have their own metadata slot to store information that pertains to the features of the `SCE` object: the `rowData` slot contains data in a `data.frame` format that describes aspects of the data corresponding to the rows of the primary data, whereas the `rowRanges` slot contains data in a `GRangesList` (where each entry is a `GenomicRanges` format) that describes the chromosome, start, and end coordinates of the features (genes, genomic regions).
+* The rows also have their own metadata slot to store information that pertains to the features of the `SCE` object: the `rowData` slot contains data in a `data.frame` format that describes aspects of the data corresponding to the rows of the primary data, whereas the `rowRanges` slot contains data in a `GRangesList` (where each entry is a `GenomicRanges` format) that describes the chromosome, start, and end coordinates of the features (genes, genomic regions).
 
-Lastly, the `sizeFactors` slot contains information in a numeric vector regarding the sample/cell normalization factors used to produce a normalized data representation, whereas the `reducedDims` slot contains a list of numeric matrix entries which describe dimensionality reduced representations of the primary data, such that rows represent the columns of the primary data (a.k.a. the samples/cells), and columns represent the dimensions (just like the `assays` slot, the `reducedDims` slot can hold a list of many entries like a PCA, TSNE, and UMAP representation of a given dataset all within the `reducedDims` slot).
+* Lastly, the `sizeFactors` slot contains information in a numeric vector regarding the sample/cell normalization factors used to produce a normalized data representation, whereas the `reducedDims` slot contains a list of numeric matrix entries which describe dimensionality reduced representations of the primary data, such that rows represent the columns of the primary data (a.k.a. the samples/cells), and columns represent the dimensions (just like the `assays` slot, the `reducedDims` slot can hold a list of many entries like a PCA, TSNE, and UMAP representation of a given dataset all within the `reducedDims` slot).
 
-Some analyses produce results that do not fit into the aforementioned slots. `SCE` has a slot just for this type of messy data, and in fact, can accommodate any type of data, so long as it is in a named list, it is the metadata slot, a named list of entries, where each entry in the list can be anything you want it to be (for instance, a list of favorite genes, such as highly variable genes, we want to save inside of sce for use in our analysis at a later point).
+* Some analyses produce results that do not fit into the aforementioned slots. `SCE` has a slot just for this type of messy data, and in fact, can accommodate any type of data, so long as it is in a named list, it is the metadata slot, a named list of entries, where each entry in the list can be anything you want it to be (for instance, a list of favorite genes, such as highly variable genes, we want to save inside of sce for use in our analysis at a later point).
 ```{r}
 # Create a SingleCellExperiment object
 library(SingleCellExperiment)
@@ -263,8 +263,10 @@ PAG_sceset
 #str(counts(PAG_sceset))
 ```
 
+<!--
 ### Alternative regarding cell-based annotation
-We should only retain relevant metadata fields to avoid storing unnecessary information in the colData of the SingleCellExperiment object.
+We should only retain relevant metadata fields to avoid storing unnecessary information in the `colData` of the `SingleCellExperiment` object.
+FACTORIZE the metadata you choose!
 ```{r}
 # Example from simpleSingleCell workflow by Aaron Lun:
 metadata <- read.delim(lun.sdrf, check.names=FALSE, header=TRUE)
@@ -278,6 +280,7 @@ levels(pheno) <- c("induced", "control")
 colData(sce)$Oncogene <- pheno
 table(colData(sce)$Oncogene, colData(sce)$Plate)
 ```
+-->
 
 ## Step 1.6 | Add gene-based annotations
 We can add gene-based annotation by pulling the annotation from `org.Mm.eg.db` to relate the ENSEMBL identifiers to gene symbols. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID.
