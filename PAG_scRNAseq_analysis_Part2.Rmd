@@ -31,7 +31,7 @@ Other key resources are Bioconductor (Huber et al. Nature Methods 2015), scater 
 Once we have our `SingleCellExperiment` object with our data and annotations, we can proceed to QC the data. 
 
 ## Step 2.1 | Set control features
-`scater` allows us to define control features (genes) that we can use for quality checks, such as ERCC spike-ins, Mitochondrial and Ribosomal genes if we have them, and any fluorophores used to identify the cells if they come from transgenic animals. 
+`scater` allows us to define control features (genes) that we can use for quality checks, such as ERCC spike-ins if we have them, Mitochondrial and Ribosomal genes, and any fluorophores used to identify the cells if they come from transgenic animals. 
 
 If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SCE` object. If you are doing this on the gene symbols, beware of the human gene family that also starts with "ERCC". We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `isSpike()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalization.
 ```{r}
@@ -67,7 +67,7 @@ head(rownames(PAG_sceset), 50)
 ```
 
 ## Step 2.2 | Calculate QC metrics
-Once we have defined the control features, there is a function in scater that allows us to automatically calculate QC metrics based on these features. For each cell, it calculates quality control metrics such as the total number of counts or the proportion of counts in mitochondrial genes or spike-in transcripts. These are stored in the  `colData` of the `SingleCellExperiment` for future reference:
+Once we have defined the control features, there is a function in scater (`calculateQCMetrics`) that allows us to automatically calculate QC metrics based on these features. For each cell, it calculates quality control metrics such as the total number of counts or the proportion of counts in mitochondrial genes or spike-in transcripts. These are stored in the  `colData` of the `SingleCellExperiment` for future reference:
 ```{r}
 # Calculate the quality metrics after defining the control features:
 library(scater)
@@ -502,13 +502,13 @@ library(org.Mm.eg.db)
 set.seed(1991)
 
 mm.pairs <- readRDS(system.file("exdata", "mouse_cycle_markers.rds", package="scran")) 
-anno <- select(org.Mm.eg.db, keys=rownames(PAG_sceset), keytype="SYMBOL", column="ENSEMBL") 
-ensembl <- anno$ENSEMBL[match(rownames(PAG_sceset), anno$SYMBOL)] 
-assignments <- cyclone(PAG_sceset, mm.pairs, gene.names=ensembl) 
+assignments <- cyclone(PAG_sceset, mm.pairs, gene.names=rowData(PAG_sceset)$ENSEMBL) 
 plot(assignments$score$G1, assignments$score$G2M, xlab="G1 score", ylab="G2/M score", pch=16, xlim=c(0,1), ylim=c(0,1))
+```
 
-# Alternative:
-# assignments <- cyclone(sce, mm.pairs, gene.names=rowData(sce)$ENSEMBL)
+We could store the cell cycle phases for future use:
+```{r}
+PAG_sceset$cycle_phase <- assignments$phases
 ```
 
 ## Step 2.6 | Gene QC
