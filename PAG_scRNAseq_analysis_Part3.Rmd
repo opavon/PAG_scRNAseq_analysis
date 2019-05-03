@@ -1,6 +1,6 @@
 ---
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
-subtitle: "Part III: normalization and batch correction"
+subtitle: "Part III: normalization"
 author:
   - name: "Oriol Pavon Arocas, Sarah F. Olesen and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
@@ -75,7 +75,7 @@ We should __not__ include spike-ins in the normalization step, as we want to nor
 # PAG_sceset_qc <- normalize(PAG_sceset_qc)
 
 # For small datasets like ours (< 1000 samples), the quickCluster step above can be ommited and we can run computeSumFactors straight away.
-PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, sizes=seq(21, 101, 5))
+PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, min.mean=1, sizes=seq(21, 101, 5))
 ```
 
 `scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find scran has calculated negative size factors try increasing the cluster and pool sizes until they are all positive. We can check the size factors scran has computed:
@@ -112,7 +112,11 @@ plot(sizeFactors(PAG_sceset_qc, 'ERCC'),
      sizeFactors(PAG_sceset_qc),
      log="xy", 
      xlab="Size factor (ERCC)", 
-     ylab="Size factor (genes)")
+     ylab="Size factor (genes)", 
+     col=c("red","black")[factor(PAG_sceset_qc$cell.type)], 
+     pch=1)
+legend("bottomright", col=c("red", "black"), pch=1, cex=1.2,
+       legend=levels(factor(PAG_sceset_qc$cell.type)))
 ```
 
 _If we were to apply the the spike-in factors to all counts, we would set `general.use=TRUE` and use the `computeSpikeFactors` method to estimate size factors for all cells. This would compute the total count over all spike-in transcripts in each cell, and calculate size factors to equalize the total spike-in count across cells. Finally, running normalize would use the spike-in-based size factors to compute normalized log-expression values, and unlike what we actually did, we would not have to define separate size factors for the spike-in transcripts, as the relevant factors would already be used for all genes and spike-in transcripts when `general.use=TRUE`._
