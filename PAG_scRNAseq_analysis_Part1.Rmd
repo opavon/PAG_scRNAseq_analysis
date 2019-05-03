@@ -56,7 +56,6 @@ sapply(pkgs.to.remove, remove.packages, lib = path.lib)
 length(installed.packages())
 ```
 
-
 ## Pre-required installation and necessary packages
 You will need to install the following: [R3.5.2](https://cran.r-project.org/) | [RTools35](https://cran.r-project.org/bin/windows/Rtools/) | [RStudio](https://www.rstudio.com/products/rstudio/download/) | [Git](https://git-scm.com/) | [Bioconductor 3.8](https://www.bioconductor.org/install/)
 
@@ -80,7 +79,7 @@ if (!requireNamespace("BiocManager"))
 library(BiocManager)
 
 # Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "BiocStyle",  "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "GenomicRanges", "GenomeInfoDb", "ggfortify", "ggplot2", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Mm.eg.db", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot"))
+BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "BiocStyle",  "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "GenomicRanges", "GenomeInfoDb", "ggfortify", "ggplot2", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Mm.eg.db", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
 ```
 
 <!--
@@ -108,7 +107,7 @@ https://github.com/KrishnaswamyLab/MAGIC
 # STEP 0 | Set working directory
 If we want to delete the current workspace we can run `rm(list=ls())`. We can also restart the R Session, and clean the current console by pressing `ctrl+l`.
 ```{r}
-# Set the directory where your data is:
+# Set the directory where your data and/or scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
 
 # If you work from local, choose:
@@ -175,6 +174,8 @@ We can also load metadata from a .csv file we have previously created and curate
 ```{r}
 PAG_metadata <- data.frame(read.table("PAG_scRNAseq_metadata_190418.csv", sep=",", header=TRUE, row.names=NULL))
 PAG_metadata[1:11,1:11]
+
+# Add the sequencing.id to the rownames so we can later check that the rownames of the matadata (sample names) matches that of the colnames of the data (also sample names):
 rownames(PAG_metadata) <- PAG_metadata$sequencing.id
 PAG_metadata[1:11,1:11]
 ```
@@ -185,16 +186,22 @@ PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", 
 PAG_scRNAseq_gene_lists[1:11,1:11]
 ```
 
+### One more thing...
+Carefully consider the annotations from the metadata that you will need for your biological analysis. Once you know the key ones, add them as `factor`. For example, `PAG.area` or `cell.type` are clearly important, so specifically convert them to factors in the `PAG_metadata` object. 
+```{r}
+PAG_metadata$cell.type <- factor(PAG_metadata$cell.type)
+```
+
 ## Step 1.4 | Tidy up metadata
-One thing we want to make sure of is that the ordering of the metadata actually matches up with the expression matrix. One way to enforce ordering is to use the `match()` command to ensure the ordering of metadata rows are the same as the ordering of count columns. match will give us an integer vector with the position in table of the first match if there is a match, otherwise nomatch: If x[i] is found to equal table[j] then the value returned in the i-th position of the return value is j, for the smallest possible j. If no match is found, the value is nomatch.
+One thing we want to make sure of is that the ordering of the metadata actually matches up with the expression matrix. One way to enforce ordering is to use the `match()` command to ensure the ordering of metadata rows are the same as the ordering of count columns. `match()` will give us an integer vector with the position in table of the first match if there is a match, otherwise nomatch: If x[i] is found to equal table[j] then the value returned in the i-th position of the return value is j, for the smallest possible j. If no match is found, the value is nomatch.
 ```{r}
 # Data column names and metadata row names should match:
 right_order <- match(colnames(PAG_data), rownames(PAG_metadata))
 
-# Check that nothing is missing
+# Check that nothing is missing:
 stopifnot(all(!is.na(right_order)))
 
-# Sort the metadata so it matches the data
+# Sort the metadata so it matches the data:
 PAG_metadata <- PAG_metadata[right_order,]
 ```
 
@@ -222,7 +229,7 @@ table(match(cell_id_QMUL, PAG_metadata$cell.id) == 1:length(cell_id_QMUL))
 dim(PAG_data)
 ```
 
-Now that we are certain the Cell IDs we assigned each cell at the collection stage (`PAG_metadata$cell.id`) match the IDs in the expression matrix provided by the sequencing facility (`cell_id_QMUL`), we can make things a bit more consistent by using them to identify both the `colnames` of the data and the `rowname`s` of the metadata:
+Now that we are certain the Cell IDs we assigned each cell at the collection stage (`PAG_metadata$cell.id`) match the IDs in the expression matrix provided by the sequencing facility (`cell_id_QMUL`), we can make things a bit more consistent by using them to identify both the `colnames` of the data and the `rownames` of the metadata:
 ```{r}
 # From the metadata, add the three-letter code that identifies each cell (cell.id column) to the column names of the data:
 colnames(PAG_data) <- PAG_metadata$cell.id
@@ -287,7 +294,7 @@ We can add gene-based annotation by pulling the annotation from `org.Mm.eg.db` t
 ```{r}
 library(org.Mm.eg.db)
 gene_symbols <- mapIds(org.Mm.eg.db, keys=rownames(PAG_sceset), 
-                  keytype ="ENSEMBL", column="SYMBOL")
+                       keytype ="ENSEMBL", column="SYMBOL")
 PAG_gene_annotations <- data.frame(ENSEMBL=rownames(PAG_sceset), SYMBOL=gene_symbols, stringsAsFactors=FALSE)
 head(PAG_gene_annotations)
 ```
@@ -295,11 +302,13 @@ head(PAG_gene_annotations)
 We can also identify which rows correspond to mitochondrial genes. To do that we need to use extra annotation describing the genomic location of each gene. For ENSEMBL, this involves using the `TxDb.Mmusculus.UCSC.mm10.ensGene` package.
 ```{r}
 library(TxDb.Mmusculus.UCSC.mm10.ensGene)
-gene_location <- mapIds(TxDbMmusculus.UCSC.mm10.ensGene, keys=rownames(PAG_sceset), column="CDSCHROM", keytype="GENEID")
+gene_location <- mapIds(TxDbMmusculus.UCSC.mm10.ensGene, keys=rownames(PAG_sceset), 
+                        column="CDSCHROM", keytype="GENEID")
 PAG_gene_annotations$Chromosome <- gene_location
 
 # Add the remaining bits of information provided in the original .txt file
 PAG_gene_annotations$Strand <- PAG_gene_information$Strand
+# Add the rest as well
 table(PAG_gene_annotations$CHR)
 ```
 
