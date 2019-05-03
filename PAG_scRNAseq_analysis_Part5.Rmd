@@ -26,8 +26,13 @@ This pipeline has been generated following the online course on [Analysis of sin
 Other key resources are Bioconductor (Huber et al. Nature Methods 2015), scater (McCarty et al. Bioinformatics 2017), scran (Lun et al. F1000Res 2016), and SC3 (Kiselev et al. Nature Methods 2017).
 
 ***
+# One important thing...
+Consider dropping any Ribosomal, Mitochondrial, ERCC, sex-related genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
+```{r}
+# sceset <- sceset[!fData(sceset)$is_feature_control_Mitochondrial, ]
+```
 
-# STEP 8 | Clustering
+# STEP 8 | Consensus Clustering with SC3
 Once we have normalized the data and removed confounders we can carry out analyses that are relevant to the biological questions at hand.
 
 scRNA-seq data allow de novo discovery and annotation of cell-types based on transcription profiles. Computationally, we need to identify groups of cells based on the similarities of the transcriptomes without any prior knowledge of the labels, nor the number of clusters we will end up with. This is very challenging due to the high level of noise (both technical and biological) and the large number of dimensions (i.e. genes).
@@ -127,9 +132,14 @@ As opposed to visual exploration of the consensus matrix, a silhouette is a quan
 ```{r}
 sc3_plot_silhouette(PAG_sceset_qc, k = 8)
 ```
-See also the Stability Index, which shows how stable each cluster is accross the selected range of ks. The stability index varies between 0 and 1, where 1 means that the same cluster appears in every solution for different k.
 
-### 8.1.5 |Heatmap of expression matrix
+See also the Stability Index, which shows how stable each cluster is accross the selected range of ks. The stability index varies between 0 and 1, where 1 means that the same cluster appears in every solution for different k.
+```{r}
+sc3_plot_cluster_stability(PAG_sceset_qc, k = 8)
+```
+
+
+### 8.1.5 | Heatmap of expression matrix
 The expression panel represents the original input expression matrix (cells in columns and genes in rows) after cell and gene filters. Genes are clustered by k-means with k = 100 (dendrogram on the left) and the heatmap represents the expression levels of the gene cluster centers after log2-scaling.
 ```{r}
 sc3_plot_expression(PAG_sceset_qc, k = 8, show_pdata = "cell.type")
@@ -137,10 +147,26 @@ sc3_plot_expression(PAG_sceset_qc, k = 8, show_pdata = "cell.type")
 
 ### 8.1.6 | Differential Expression and Marker genes:
 Differential expression is calculated using the non-parametric Kruskal-Wallis test. A significant p-value indicates that gene expression in at least one cluster stochastically dominates one other cluster. SC3 provides a list of all differentially expressed genes with adjusted p-values < 0.01 and plots gene expression profiles of the 50 genes with the lowest p-values. Note that the calculation of differential expression after clustering can introduce a bias in the distribution of p-values, and thus we advise to use the p-values for ranking the genes only.
+```{r}
+sc3_plot_de_genes(PAG_sceset_qc, 
+                   k = 8, 
+                   show_pdata = c(
+                     "cell.type",
+                     "PAG.areacollection",
+                     "sc3_8_clusters"
+                     )
+)
+```
 
 To find marker genes, for each gene a binary classifier is constructed based on the mean cluster expression values. The classifier prediction is then calculated using the gene expression ranks. The area under the receiver operating characteristic (ROC) curve is used to quantify the accuracy of the prediction. A p-value is assigned to each gene by using the Wilcoxon signed rank test. The genes with the area under the ROC curve (AUROC) > 0.85 and with the p-value < 0.01 are defined as marker genes and the top 10 marker genes of each cluster are visualized in this panel. The AUROC and the p-value thresholds can be changed using the slider and radio buttons below.
 ```{r}
 sc3_plot_markers(PAG_sceset_qc, k = 8, show_pdata = "cell.type")
+```
+
+### 8.1.7 | Export the results
+SC3 allows us to export the results into an Excel file:
+```{r}
+sc3_export_results_xls(PAG_sceset_qc, filename = "PAG_clustering")
 ```
 
 ## Step 8.2 | SC3 Clustering using ion channels genes
@@ -337,54 +363,89 @@ VGluT2_sceset <- PAG_sceset[,grep("^[E]", colnames(PAG_sceset), value=TRUE)]
 # STEP 9 | Other clustering algorithms
 ## Step 9.1 | clusterExperiment [TO TRY]
 
-## Step 9.2 | BackSPIN - biclustering hierarchical [MATLAB/Python]
-The BackSPIN biclustering algorithm was developed by Amit Zeisel and is described in Zeisel et al. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq Science 2015 (PMID: 25700174, doi: 10.1126/science.aaa1934). Please cite this paper if you use the BackSPIN algorithm in your work.
+## Step 9.2 | bigSCale2
+bigSCale is an analytical framework for big-scale single-cell data, available [here](https://github.com/iaconogi/bigSCale2).
 
-Original MATLAB implementation by Amit Zeisel. This repo contains a standalone command-line version of BackSPIN, implemented in Python by Gioele La Manno (https://github.com/linnarsson-lab/BackSPIN)
-
-## Step 9.3 | SINCERA (hierarchical clustering) [not installed]
-It performs a gene-level z-score transformation before doing clustering.
-It can also identify k as the minimum height of the hierarchical tree that generates no more than a specified number of singleton clusters (clusters containing only 1 cell).
-
-SINCERA: a computational pipeline for SINgle CEll RNA-seq profiling Analysis, can be used for processing scRNA-seq data from a whole organ or sorted cells. The pipeline supports the analysis for: 1) the distinction and identification of major cell types; 2) the identification of cell type specific gene signatures; and 3) the determination of driving forces of given cell types.
-
-Website: https://research.cchmc.org/pbge/sincera.html
-Paper: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004575
-
-## Step 9.4 | pcaReduce [haven't tried, but very stochastic, does not provide a stable result] 
-pcaReduce combines PCA, k-means and iterative hierarchical clustering. Starting from a large number of clusters pcaReduce iteratively merges similar clusters; after each merging event it removes the principle component explaning the least variance in the data.
-
-pcaReduce operates directly on the expression matrix. It is recommended to use a gene filter and log transformation before running pcaReduce. We will use the default SC3 gene filter (note that the exprs slot of a scater object is log-transformed by default).
 ```{r}
-# use the same gene filter as in SC3
-library(pcaReduce) # You need to install PCAReduce first
-input <- logcounts(PAG_sceset_qc[rowData(PAG_sceset_qc)$sc3_gene_filter, ])
+library(bigscale)
+PAG_sceset_qc <- bigscale(PAG_sceset_qc)
 ```
 
-There are several parameters used by pcaReduce: nbt defines a number of pcaReduce runs (it is stochastic and may have different solutions after different runs). q defines number of dimensions to start clustering with. The output will contain partitions for all k from 2 to q+1. method defines a method used for clustering. S - to perform sampling based merging, M - to perform merging based on largest probability.
+OR, if you want to run it step by step:
 ```{r}
-# run pcaReduce 1 time creating hierarchies from 1 to 30 clusters
-pca.red <- PCAreduce(t(input), nbt = 1, q = 30, method = 'S')[[1]]
-colData(PAG_sceset_qc)$pcaReduce <- as.character(pca.red[,32 - 10])
-plotPCA(PAG_sceset_qc, colour_by = "pcaReduce")
+# Pre-process the data and generate the model:
+PAG_sceset_qc = preProcess(PAG_sceset_qc)
+PAG_sceset_qc = storeNormalized(PAG_sceset_qc) # stores normalized data
+PAG_sceset_qc = setModel(PAG_sceset_qc) # computes the numerical model
+PAG_sceset_qc = storeTransformed(PAG_sceset_qc) # stores transformed expression data (needed for some plots)
+viewModel(PAG_sceset_qc) # check the model
+
+# Compute the highly variable genes and we calculate cell to cell distances. 
+PAG_sceset_qc = setODgenes(PAG_sceset_qc, min_ODscore=2.33) # min_ODscore is the Z-score treshold for selecting the genes (default 2.33). Increase it to be more stringent (less genes) and viceversa.
+viewODgenes(PAG_sceset_qc) # visually inspect the selected highly variable genes
+
+# Compute the distances and the t-SNE:
+PAG_sceset_qc = setDistances(PAG_sceset_qc)
+PAG_sceset_qc = storeTsne(PAG_sceset_qc)
+
+# Cluster the data
+PAG_sceset_qc = setClusters(PAG_sceset_qc)
+
+# Make pseudotime analysis:
+PAG_sceset_qc = storePseudo(PAG_sceset_qc)
+
+# Compute the differential expression for all genes. Select speed.preset='slow' for maximum accuracy with long computational time.
+PAG_sceset_qc = computeMarkers(PAG_sceset_qc, speed.preset='slow')
+
+# Organize all the genes into markers and signatures of co-expression. cutoff is a Z-score which filters the genes and retains only those with significant changes of expression. Inrease it if you want to be more stringent or viceversa.
+PAG_sceset_qc = setMarkers(PAG_sceset_qc, cutoff=3)
+
+# Restore some matrices from the virtual memory to complete the analysis.
+PAG_sceset_qc = restoreData(PAG_sceset_qc)
 ```
 
-## Step 9.5 | tSNE followed by K-means clustering [not really good]
+
+Plot of the clusters and signatures of coexpressed genes and visualise:
+
+* The dendrogram representing how the cells are phenotypically organized and clustered.
+* Colored bars representing the clusters, the library size (meant as a proxy to transcriptome size/complexity) and the pseudotime of the cells. An additional color bar is displayed for any user custom `colData()` (for example, sample batches, conditions and so on ...). For custom user `colData`, the color codes are automatically chosen upoen the type of data (numeric or factor).
+* The clustered signatures of coexpressed genes alogside their size. Here, all the genes differentially expressed are organized in signatures of co-expressed genes.
 ```{r}
-PAG_sceset_qc <- plotTSNE(PAG_sceset_qc, rand_seed = 1991, perplexity = 50, return_SCE = TRUE)
-# return_SCE adds the results of the tSNE to the reducedDims slot of our object.
+viewSignatures(PAG_sceset_qc)
 ```
 
-Once we have the tSNE we apply k-means clustering to the cloud of points on the tSNE map. Try different k (Centers) and perplexities.
+We can also inspect the markers of a specific cluster, with markers of level 1 being the most specific to a given cluster.
 ```{r}
-colData(PAG_sceset_qc)$tSNE_kmeans <- as.character(kmeans(PAG_sceset_qc@reducedDims$TSNE, centers = 5)$clust)
-plotTSNE(PAG_sceset_qc, rand_seed = 1991, colour_by = "tSNE_kmeans")
-# Try colour_by = "cell.type"
+viewSignatures(PAG_sceset_qc, selected.cluster=2)
 ```
 
-## Step 9.6 | SNN-Cliq (graph-based clustering) [not installed, python based]
-# 2.7.1 | One last thing...
-Consider dropping any Ribosomal, Mitochondrial, ERCC, sex-related genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
+Barplots and violin plots of selected genes to visualize gene expression at single cell level with colored clusters:
 ```{r}
-# sceset <- sceset[!fData(sceset)$is_feature_control_Mitochondrial, ]
+viewGeneBarPlot(PAG_sceset_qc, gene.list = c('Aqp4','Olig1','Thy1'))
+```
+
+```{r}
+viewGeneViolin(PAG_sceset_qc, 'Asic4')
+```
+
+t-SNE and UMAP plots:
+
+* If you want to color the cell according to some custom annotation you can pass a `factor` variable in place of a gene name. If you want to visualize a UMAP plot first compute the UMAP data with `sce=storeUMAP(sce)` and then `viewReduced(sce,method = 'UMAP')`
+```{r}
+viewReduced(PAG_sceset_qc) # to see t-SNE with clusters
+viewReduced(PAG_sceset_qc, color.by = 'Stmn2') # to see t-SNE with gene expression
+```
+
+Browsing markers:
+* To have a look to the markers found by bigscale we retrive `Mlist` from the single cell object. `Mlist` is a 2 dimensional list containing for each cluster the markers of the different levels. Let's inspect the markers of level 1 (most specific) of cluster 4. We will take advantage of the package `DT` for interactive visualization. Running the next command line we will see the markers specific to cluster 4 sorted from the highest (most significant) to the lowest (less significant) Zscore.
+```{r}
+Mlist = getMarkers(PAG_sceset_qc)
+DT::datatable(Mlist[[4,1]])
+```
+
+Browsing signatures:
+* Alternatevely to a cluster-based organization of the markers (as shown before, we have clusters and we have levels) there is also a more compact organization of markers into lists of co-expressed genes. This are the same lists shown with `viewSignatures(sce)`.
+```{r}
+Signatures = getSignatures(PAG_sceset_qc)
+DT::datatable(Signatures[[1]])
 ```
