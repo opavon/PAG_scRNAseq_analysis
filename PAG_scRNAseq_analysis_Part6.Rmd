@@ -1,0 +1,188 @@
+---
+title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
+subtitle: "Part VI: differential expression analysis"
+author:
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen and Tiago Branco"
+    affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
+    email: "oriol.pavon.16@ucl.ac.uk"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_notebook:
+    highlight: pygments
+    number_sections: FALSE
+    theme: lumen
+    toc: TRUE
+    toc_float: TRUE
+
+#output: rmdformats::readthedown:
+  #highlight: pygments
+---
+
+***
+This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al. Nature Protocols 2014). 
+
+This pipeline has been generated following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](http://hemberg-lab.github.io/scRNA.seq.course), the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.8/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, and by attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis).
+
+Other key resources are Bioconductor (Huber et al. Nature Methods 2015), scater (McCarty et al. Bioinformatics 2017), scran (Lun et al. F1000Res 2016), and SC3 (Kiselev et al. Nature Methods 2017).
+
+***
+
+# STEP 10 | Differential Expression Analysis
+One of the most common types of analyses when working with bulk RNA-seq data is to identify differentially expressed genes. By comparing the genes that change between two conditions, e.g. mutant and wild-type or stimulated and unstimulated, it is possible to characterize the molecular mechanisms underlying the change. Several different methods, e.g. DESeq2 and edgeR, have been developed for bulk RNA-seq. 
+
+In scRNA-seq we usually do not have a defined set of experimental conditions. Instead, we can identify the cell groups by using an unsupervised clustering approach. Once the groups have been identified one can find differentially expressed genes either by comparing the differences in variance between the groups (like the Kruskal-Wallis test implemented in SC3), or by comparing gene expression between clusters in a pairwise manner.
+
+The most common model of RNASeq data is the negative binomial model. However, a raw negative binomial model does not fit full-length transcript data as well due to the high dropout rates relative to the non-zero read counts. For this type of data a variety of zero-inflated negative binomial models have been proposed (e.g. MAST, SCDE). The model that makes more biological sense and with more experimental support (Kim and Marioni, 2013) is the Poisson-Beta distribution, based on a mechanistic model of transcriptional bursting.
+```{r}
+# Load libraries:
+#library(scRNA.seq.funcs)
+library(edgeR)
+library(monocle)
+library(MAST)
+library(ROCR)
+set.seed(1991)
+```
+
+## Step 10.1 | Kolmogorov-Smirnov test (non-parametric)
+To compare the distributions for each gene in the two individuals/groups. The KS-test quantifies the distance between the empirical cummulative distributions of the expression of each gene in each of the two populations. It is sensitive to changes in mean expression and changes in variability. However it assumes data is continuous and may perform poorly when data contains a large number of identical values (eg. zeros). Another issue with the KS-test is that it can be very sensitive for large sample sizes and thus it may end up as significant even though the magnitude of the difference is very small.
+```{r}
+pValues_KS <- apply(
+    norm, 1, function(x) {
+        ks.test(
+            x[PAG_sceset_qc$cell.type == "VGluT2"], 
+            x[PAG_sceset_qc$cell.type == "VGAT"]
+        )$p.value
+    }
+)
+# multiple testing correction
+pValues_KS <- p.adjust(pValues_KS, method = "fdr")
+```
+
+```{r}
+#How many of the significant DE genes are detected
+significant_DE_genes_KS <- names(pValues_KS)[pValues_KS < 0.05]
+length(significant_DE_genes_KS)
+```
+
+Often it is informative to vary the threshold and evaluate performance across a range of values. This is then plotted as a receiver-operating-characteristic curve (ROC) and a general accuracy statistic can be calculated as the area under this curve (AUC). The ROCR package facilitates this plotting.
+
+## Step 10.2 | Wilcox/Mann-Whitney-U Test (non-parametric)
+The Wilcox-rank-sum test is another non-parametric test, but tests specifically if values in one group are greater/less than the values in the other group. Thus it is often considered a test for difference in median expression between two groups; whereas the KS-test is sensitive to any change in distribution of expression values.
+```{r}
+pValues_W <- apply(
+    norm, 1, function(x) {
+        wilcox.test(
+            x[PAG_sceset_qc$cell.type == "VGluT2"], 
+            x[PAG_sceset_qc$cell.type == "VGAT"]
+        )$p.value
+    }
+)
+# multiple testing correction
+pValues_W <- p.adjust(pValues_W, method = "fdr")
+```
+
+```{r}
+#How many of the significant DE genes are detected
+significant_DE_genes_W <- names(pValues_W)[pValues_W < 0.05]
+length(significant_DE_genes_W)
+```
+
+## Step 10.3 | EBI-EMBL RNAseq workflow - DESeq2 and EdgeR (Charlotte Soneson)
+Count-based statistical methods such as DESeq2 (Love, Huber, and Anders 2014), edgeR (Robinson, McCarthy, and Smyth 2009), limma with the voom method (Law et al. 2014), DSS (Wu, Wang, and Wu 2013), EBSeq (Leng et al. 2013), BaySeq (Hardcastle and Kelly 2010) and DEXSeq (Anders, Reyes, and Huber 2012) expect input data as obtained, e.g., from RNA-seq or another high-throughput sequencing experiment in the form of a matrix of integer values, or "counts". The value in the i-th row and the j-th column of the matrix tells how many reads (or fragments, for paired-end RNA-seq) have been assigned to feature i in sample j. For RNA-seq, a feature is typically a gene, a transcript or an exon.
+
+The fact that the values in the matrix are counts of sequencing reads (in the case of single-end sequencing) or fragments (for paired-end sequencing) is important for the count-based statistical models, e.g. DESeq2 or edgeR, as only the counts allow assessing the measurement precision correctly. It is important to never provide counts that have been normalized for sequencing depth/library size to these packages, as the statistical model is most powerful when applied to counts, and is designed to account for library size differences internally.
+
+An alternative to using actual counts of reads or fragments aligned to the genome is to use estimated counts from software that use pseudo-alignment to the transcriptome. Since these represent expected counts rather than observed counts they are not necessarily integers, and thus may need to be rounded before they are fed to the count-based pipelines.
+```{r}
+# Round the counts to ensure they are integers:
+counts_PAG <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
+```
+
+Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. DESeq2 uses a `DESeqDataSet` and edgeR uses a `DGEList`.
+
+### DEseq2
+
+### EdgeR
+
+
+<!--
+edgeR is designed for bulkRNA and is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, the enables us to include other factors such as batch to the model.
+```{r}
+dge <- DGEList(
+    counts = counts, 
+    norm.factors = rep(1, length(counts[1,])), 
+    group = group
+)
+group_edgeR <- factor(group)
+design <- model.matrix(~ group_edgeR)
+dge <- estimateDisp(dge, design = design, trend.method = "none")
+fit <- glmFit(dge, design)
+res <- glmLRT(fit)
+pVals <- res$table[,4]
+names(pVals) <- rownames(res$table)
+
+pVals <- p.adjust(pVals, method = "fdr")
+DE_Quality_AUC(pVals)
+```
+-->
+
+## Step 10.4 | Limma-voom
+We use the raw counts here.
+```{r}
+library(limma)
+design <- model.matrix(~0 + cluster + Plate, data=colData(sce.416b))
+colnames(design)
+```
+
+```{r}
+keep <- calcAverage(sce.416b) > 1 # filter to remove very low-abundance genes.
+summary(keep)
+
+y <- convertTo(sce.416b, subset.row=keep)
+v <- voom(y, design)
+fit <- lmFit(v, design)
+```
+
+We perform pairwise moderated t-tests between clusters while blocking on the plate of origin. Here, we use the TREAT strategy (McCarthy and Smyth 2009) to test for log-fold changes that are significantly greater than 0.5.
+```{r}
+clust.terms <- head(colnames(design), length(unique(sce.416b$cluster)))
+all.results <- all.pairs <- list()
+counter <- 1L
+
+for (x in seq_along(clust.terms)) {
+    for (y in seq_len(x-1L)) {
+        con <- integer(ncol(design))
+        con[x] <- 1
+        con[y] <- -1
+        fit2 <- contrasts.fit(fit, con)
+        fit2 <- treat(fit2, robust=TRUE, lfc=0.5)
+
+        res <- topTreat(fit2, n=Inf, sort.by="none")
+        all.results[[counter]] <- res
+        all.pairs[[counter]] <- c(clust.terms[x], clust.terms[y])
+        counter <- counter+1L
+
+        # Also filling the reverse comparison.
+        res$logFC <- -res$logFC
+        all.results[[counter]] <- res
+        all.pairs[[counter]] <- c(clust.terms[y], clust.terms[x])
+        counter <- counter+1L
+    }
+}
+```
+
+The results of this comparison are consolidated into a single marker list for each cluster with the `combineMarkers()` function. This yields an ordering of genes that can be interpreted in the same manner as discussed previously for `findMarkers()` output.
+```{r}
+all.pairs <- do.call(rbind, all.pairs)
+combined <- combineMarkers(all.results, all.pairs, pval.field="P.Value")
+as.data.frame(head(combined[["cluster1"]][,1:3]))
+```
+
+It is worth noting that all of our DE strategies for detecting marker genes between clusters are statistically flawed to some extent. The DE analysis is performed on the same data used to obtain the clusters, which represents "data dredging" (also known as fishing or data snooping). The hypothesis of interest - that are there differences between clusters? - is formulated from the data, so we are more likely to get a positive result when we re-use the data set to test that hypothesis.
+
+The practical effect of data dredging is best illustrated with a simple simulation. We simulate i.i.d. normal values, perform k-means clustering and test for DE between clusters of cells with  findMarkers(). The resulting distribution of p-values is heavily skewed towards low values (Figure 2). Thus, we can detect "significant" differences between clusters even in the absence of any real substructure in the data. This effect arises from the fact that clustering, by definition, yields groups of cells that differ in their coordinates in expression space. Testing for DE genes between clusters will inevitably yield some significant results as that is how the clusters were defined in the first place.
+
+By and large, this effect does not cause problems for marker gene detection as the DE statistics from findMarkers() and counterparts are primarily used for ranking. It does become an issue when the p-values are used to define "significant differences" between clusters with respect to an error rate threshold. Meaningful interpretation of error rates require consideration of the long-run behaviour, i.e., the rate of incorrect rejections if the experiment were repeated many times. The concept of statistical significance for differences between clusters is not applicable if clusters are not stably reproducible across (hypothetical) replicate experiments.
+
+To overcome this conceptual hurdle, we need to annotate our clusters based on a few marker genes. This allows us to use the annotated clusters as proxies for the true (and presumably reproducible) biological subpopulations. We might then be tempted to interpret the significant genes as being DE between subpopulations. However, this would result in loss of error control when the clusters are not stable, due to overfitting of the cluster definitions for true null genes. This effect is exacerbated as the clusters become more unstable, e.g., due to poor separation between the underlying populations.
+
