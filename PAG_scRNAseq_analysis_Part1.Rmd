@@ -187,7 +187,7 @@ PAG_scRNAseq_gene_lists[1:11,1:11]
 ```
 
 ### One more thing...
-Carefully consider the annotations from the metadata that you will need for your biological analysis. Once you know the key ones, add them as `factor`. For example, `PAG.area` or `cell.type` are clearly important, so specifically convert them to factors in the `PAG_metadata` object. 
+Carefully consider the annotations from the metadata that you will need for your biological analysis. Once you know the key ones, add them as `factor`. For example, `PAG.area` or `cell.type` are clearly important, so specifically convert them to factors in the `PAG_metadata` object.
 ```{r}
 PAG_metadata$cell.type <- factor(PAG_metadata$cell.type)
 ```
