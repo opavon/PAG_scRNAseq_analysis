@@ -42,8 +42,8 @@ library(MAST)
 library(ROCR)
 set.seed(1991)
 ```
-
-## Step 10.1 | Kolmogorov-Smirnov test (non-parametric)
+## Step 10.1 | Hemberg Lab - scRNAseq Course
+### Kolmogorov-Smirnov test (non-parametric)
 To compare the distributions for each gene in the two individuals/groups. The KS-test quantifies the distance between the empirical cummulative distributions of the expression of each gene in each of the two populations. It is sensitive to changes in mean expression and changes in variability. However it assumes data is continuous and may perform poorly when data contains a large number of identical values (eg. zeros). Another issue with the KS-test is that it can be very sensitive for large sample sizes and thus it may end up as significant even though the magnitude of the difference is very small.
 ```{r}
 pValues_KS <- apply(
@@ -66,7 +66,7 @@ length(significant_DE_genes_KS)
 
 Often it is informative to vary the threshold and evaluate performance across a range of values. This is then plotted as a receiver-operating-characteristic curve (ROC) and a general accuracy statistic can be calculated as the area under this curve (AUC). The ROCR package facilitates this plotting.
 
-## Step 10.2 | Wilcox/Mann-Whitney-U Test (non-parametric)
+### Wilcox/Mann-Whitney-U Test (non-parametric)
 The Wilcox-rank-sum test is another non-parametric test, but tests specifically if values in one group are greater/less than the values in the other group. Thus it is often considered a test for difference in median expression between two groups; whereas the KS-test is sensitive to any change in distribution of expression values.
 ```{r}
 pValues_W <- apply(
@@ -87,7 +87,29 @@ significant_DE_genes_W <- names(pValues_W)[pValues_W < 0.05]
 length(significant_DE_genes_W)
 ```
 
-## Step 10.3 | EBI-EMBL RNAseq workflow - DESeq2 and EdgeR (Charlotte Soneson)
+### edgeR
+edgeR is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as batch to the model.
+```{r}
+counts_PAG <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
+dge <- DGEList(
+    counts = counts_PAG, # raw read counts (rounded)
+    norm.factors = rep(1, length(counts[1,])), # scran size factors here
+    samples = ,
+    group = group
+)
+
+group_edgeR <- factor(group)
+design <- model.matrix(~ group_edgeR)
+dge <- estimateDisp(dge, design = design, trend.method = "none")
+fit <- glmFit(dge, design)
+res <- glmLRT(fit)
+pVals <- res$table[,4]
+names(pVals) <- rownames(res$table)
+
+pVals <- p.adjust(pVals, method = "fdr")
+```
+
+## Step 10.2 | EBI-EMBL Differential Expression RNAseq workflow (Charlotte Soneson)
 Count-based statistical methods such as DESeq2 (Love, Huber, and Anders 2014), edgeR (Robinson, McCarthy, and Smyth 2009), limma with the voom method (Law et al. 2014), DSS (Wu, Wang, and Wu 2013), EBSeq (Leng et al. 2013), BaySeq (Hardcastle and Kelly 2010) and DEXSeq (Anders, Reyes, and Huber 2012) expect input data as obtained, e.g., from RNA-seq or another high-throughput sequencing experiment in the form of a matrix of integer values, or "counts". The value in the i-th row and the j-th column of the matrix tells how many reads (or fragments, for paired-end RNA-seq) have been assigned to feature i in sample j. For RNA-seq, a feature is typically a gene, a transcript or an exon.
 
 The fact that the values in the matrix are counts of sequencing reads (in the case of single-end sequencing) or fragments (for paired-end sequencing) is important for the count-based statistical models, e.g. DESeq2 or edgeR, as only the counts allow assessing the measurement precision correctly. It is important to never provide counts that have been normalized for sequencing depth/library size to these packages, as the statistical model is most powerful when applied to counts, and is designed to account for library size differences internally.
@@ -98,11 +120,70 @@ An alternative to using actual counts of reads or fragments aligned to the genom
 counts_PAG <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
 ```
 
-Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. DESeq2 uses a `DESeqDataSet` and edgeR uses a `DGEList`.
+Once we have a gene-level count matrix we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. DESeq2 uses a `DESeqDataSet` and edgeR uses a `DGEList`.
 
-### DEseq2
+### DEseq2 and the DESeqDatSet
+In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of the _SummarizedExperiment_ class, and it is easy to convert _SummarizedExperiment_ objects into _DESeqDataSet_ objects. 
 
-### EdgeR
+* One of the two main differences compared to a _SummarizedExperiment_ object is that the `assay` slot is instead accessed using the `counts` accessor function, and the _DESeqDataSet_ class enforces that the values in this matrix are non-negative integers.
+* A second difference is that the _DESeqDataSet_ has an associated _design_ formula. The experimental design is specified at the beginning of the analysis, as it will inform many of the _DESeq2_ functions how to treat the samples in the analysis (one exception is the size factor estimation, i.e., the adjustment for differing library sizes, which does not depend on the design formula). The design formula tells which columns in the sample information table (`colData`) specify the experimental design and how these factors should be used in the analysis.
+
+We have two types of cells (VGAT and VGluT2), across four different anatomical subdivisions. We want to find differences in expression (1) across cell-types, (2) across subdivisions within a cell-type, and (3) across subdivisions irrespective of cell-type. Importantly, each transgenic mouse will only allow us to capture one of the two cell-types, so the mouse ID will be confounded with one or the other cell.type. We want to control for this, as we are not interested in differences across mice, only across cell-types. 
+
+* An example of such design is obtained by writing `~ cell.type + mouse.id`. By including `cell.type`, terms will be added to the model which account for differences across VGAT and VGlut2 cells, and by adding `mouse.id` we get a single term which explains the differences between animals. We could also have `~ PAG.area + cell.type + mouse.id`, to find differences across subdivisions while controling both for cell.type and mouse.id.
+* __Note__: it will be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as 'treatment vs control', without needing to specify additional arguments.
+* If the research aim is to determine for which genes the effect of treatment is different across groups, then interaction terms can be included and tested using a design such as `~ group + treatment + group:treatment`. See the vignettes of DESeq2 and edgeR for more examples.
+
+```{r}
+# We can relevel any metadata factor as follows:
+#colData(sg)$dex <- relevel(colData(sg)$dex, ref = "untrt")
+#colData(sg)$dex
+# In our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for cell.type or mouse.id.
+```
+
+Starting from a _SummarizedExperiment_ object:
+```{r}
+library(DESeq2)
+ds_se <- DESeqDataSet(sg, design = ~ cell + dex)
+```
+
+Starting from a count matrix
+```{r}
+stopifnot(all(colnames(counts_salmon) == rownames(meta)))
+meta$dex <- relevel(meta$dex, ref = "untrt")
+ds_matrix <- DESeqDataSetFromMatrix(countData = counts_salmon, 
+                                    colData = meta,
+                                    design = ~ cell + dex)
+```
+
+### Exploratory analysis and visualisation
+The statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
+
+### Performing differential expression testing with DESeq2
+As we have already specified an experimental design when we created the DESeqDataSet, we can run the differential expression pipeline on the raw counts with a single call to the function DESeq. We can also plot the estimated dispersions.
+```{r}
+ds_se <- DESeq2::DESeq(ds_se)
+DESeq2::plotDispEsts(ds_se)
+```
+
+### EdgeR and the DGEList
+edgeR is designed for bulkRNA and is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as batch to the model. The _edgeR_ package uses another type of data container, namely a _DGEList_ object. We can create a DGEList object using a count matrix and a table with information about samples, and additionally add information about the genes. 
+```{r}
+library(edgeR)
+
+genetable <- data.frame(gene.id = rownames(counts_salmon),
+                        stringsAsFactors = FALSE)
+
+stopifnot(all(rownames(meta) == colnames(counts_salmon)))
+
+dge <- DGEList(counts = counts_salmon, 
+               samples = meta, 
+               genes = genetable)
+
+names(dge)
+
+# We would like to add the size factors we calculated with scran instead of using edgeR::calcNormFactors to calculate TMM, as this is a method for bulk RNA-seq.
+```
 
 
 <!--
@@ -126,7 +207,7 @@ DE_Quality_AUC(pVals)
 ```
 -->
 
-## Step 10.4 | Limma-voom
+## Step 10.3 | simpleSingleCell Workflow - Limma-voom
 We use the raw counts here.
 ```{r}
 library(limma)
@@ -185,4 +266,31 @@ The practical effect of data dredging is best illustrated with a simple simulati
 By and large, this effect does not cause problems for marker gene detection as the DE statistics from findMarkers() and counterparts are primarily used for ranking. It does become an issue when the p-values are used to define "significant differences" between clusters with respect to an error rate threshold. Meaningful interpretation of error rates require consideration of the long-run behaviour, i.e., the rate of incorrect rejections if the experiment were repeated many times. The concept of statistical significance for differences between clusters is not applicable if clusters are not stably reproducible across (hypothetical) replicate experiments.
 
 To overcome this conceptual hurdle, we need to annotate our clusters based on a few marker genes. This allows us to use the annotated clusters as proxies for the true (and presumably reproducible) biological subpopulations. We might then be tempted to interpret the significant genes as being DE between subpopulations. However, this would result in loss of error control when the clusters are not stable, due to overfitting of the cluster definitions for true null genes. This effect is exacerbated as the clusters become more unstable, e.g., due to poor separation between the underlying populations.
+
+## Step 10.4 | RNAseq123 Workflow
+This workflow uses the _edgeR_ package (Robinson, McCarthy, and Smyth 2010) to import, organise, filter and normalise the data, and the _limma_ package (Ritchie et al. 2015) with its _voom_ method for linear modelling and empirical Bayes moderation to assess differential expression and perform gene set testing.
+```{r}
+library(limma)
+library(Glimma)
+library(edgeR)
+library(Mus.musculus)
+```
+
+We take the raw counts from the PAG_sceset_qc (after filtering low quality cells and genes with zero counts) and we round them.
+```{r}
+# Round the counts to ensure they are integers:
+counts_PAG <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
+```
+
+As a first attempt, we want to look at the differences between VGAT and VGluT2 neurons across PAG subdivisions, controling for `mouse.id` (we are not interested in genetic differences across mice).
+
+
+
+```{r}
+PAG_DE$samples$cell.type
+PAG_DE$samples$PAG.area
+```
+
+For downstream analysis, sample-level information related to the experimental design needs to be associated with the columns of the counts matrix. 
+
 
