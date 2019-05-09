@@ -110,50 +110,70 @@ pVals <- p.adjust(pVals, method = "fdr")
 ```
 
 ## Step 10.2 | EBI-EMBL Differential Expression RNAseq workflow (Charlotte Soneson)
-Count-based statistical methods such as DESeq2 (Love, Huber, and Anders 2014), edgeR (Robinson, McCarthy, and Smyth 2009), limma with the voom method (Law et al. 2014), DSS (Wu, Wang, and Wu 2013), EBSeq (Leng et al. 2013), BaySeq (Hardcastle and Kelly 2010) and DEXSeq (Anders, Reyes, and Huber 2012) expect input data as obtained, e.g., from RNA-seq or another high-throughput sequencing experiment in the form of a matrix of integer values, or "counts". The value in the i-th row and the j-th column of the matrix tells how many reads (or fragments, for paired-end RNA-seq) have been assigned to feature i in sample j. For RNA-seq, a feature is typically a gene, a transcript or an exon.
+Count-based statistical methods such as _DESeq2_ (Love, Huber, and Anders 2014), _edgeR_ (Robinson, McCarthy, and Smyth 2009), _limma_ with the _voom_ method (Law et al. 2014), _DSS_ (Wu, Wang, and Wu 2013), _EBSeq_ (Leng et al. 2013), _BaySeq_ (Hardcastle and Kelly 2010) and _DEXSeq_ (Anders, Reyes, and Huber 2012) expect input data as obtained, e.g., from RNA-seq or another high-throughput sequencing experiment in the form of a matrix of integer values, or "counts". The value in the i-th row and the j-th column of the matrix tells how many reads (or fragments, for paired-end RNA-seq) have been assigned to feature i in sample j. For RNA-seq, a feature is typically a gene, a transcript or an exon.
 
-The fact that the values in the matrix are counts of sequencing reads (in the case of single-end sequencing) or fragments (for paired-end sequencing) is important for the count-based statistical models, e.g. DESeq2 or edgeR, as only the counts allow assessing the measurement precision correctly. It is important to never provide counts that have been normalized for sequencing depth/library size to these packages, as the statistical model is most powerful when applied to counts, and is designed to account for library size differences internally.
+The fact that the values in the matrix are counts of sequencing reads (in the case of single-end sequencing) or fragments (for paired-end sequencing) is important for the count-based statistical models, e.g. _DESeq2_ or _edgeR_, as only the counts allow assessing the measurement precision correctly. It is important to _never_ provide counts that have been normalized for sequencing depth/library size to these packages, as the statistical model is most powerful when applied to counts, and is designed to account for library size differences internally.
 
-An alternative to using actual counts of reads or fragments aligned to the genome is to use estimated counts from software that use pseudo-alignment to the transcriptome. Since these represent expected counts rather than observed counts they are not necessarily integers, and thus may need to be rounded before they are fed to the count-based pipelines.
+An alternative to using actual counts of reads or fragments aligned to the genome is to use estimated counts from software that use pseudo-alignment to the transcriptome. Since these represent expected counts rather than observed counts they are not necessarily integers, and thus may need to be rounded before they are fed to the count-based pipelines. In any case, we start the DE workflow from a gene-vs-sample matrix, where raw reads have been quality controlled and gene expression quantified.
 ```{r}
 # Round the counts to ensure they are integers:
-counts_PAG <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
+PAG_DE_counts <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
+head(PAG_DE_counts)
 ```
 
-Once we have a gene-level count matrix we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. DESeq2 uses a `DESeqDataSet` and edgeR uses a `DGEList`.
+Read the relevant metadata, converting the key annotations `factor`:
+```{r}
+PAG_DE_metadata <- PAG_metadata # Alternatively use colData(PAG_sceset_qc)
+PAG_DE_metadata
+rownames(PAG_DE_metadata)
 
-### DEseq2 and the DESeqDatSet
+# Factorize the relevant annotations for proper usage within the DE packages:
+PAG_DE_metadata$cell.type <- factor(PAG_DE_metadata$cell.type)
+PAG_DE_metadata$PAG.areacollection <- factor(PAG_DE_metadata$PAG.areacollection)
+```
+
+Once we have a gene-level count matrix and the relevant metadata we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. DESeq2 uses a `DESeqDataSet` and edgeR uses a `DGEList`.
+
+### 10.2.1 | DEseq2: the DESeqDatSet
 In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of the _SummarizedExperiment_ class, and it is easy to convert _SummarizedExperiment_ objects into _DESeqDataSet_ objects. 
 
 * One of the two main differences compared to a _SummarizedExperiment_ object is that the `assay` slot is instead accessed using the `counts` accessor function, and the _DESeqDataSet_ class enforces that the values in this matrix are non-negative integers.
 * A second difference is that the _DESeqDataSet_ has an associated _design_ formula. The experimental design is specified at the beginning of the analysis, as it will inform many of the _DESeq2_ functions how to treat the samples in the analysis (one exception is the size factor estimation, i.e., the adjustment for differing library sizes, which does not depend on the design formula). The design formula tells which columns in the sample information table (`colData`) specify the experimental design and how these factors should be used in the analysis.
 
-We have two types of cells (VGAT and VGluT2), across four different anatomical subdivisions. We want to find differences in expression (1) across cell-types, (2) across subdivisions within a cell-type, and (3) across subdivisions irrespective of cell-type. Importantly, each transgenic mouse will only allow us to capture one of the two cell-types, so the mouse ID will be confounded with one or the other cell.type. We want to control for this, as we are not interested in differences across mice, only across cell-types. 
-
-* An example of such design is obtained by writing `~ cell.type + mouse.id`. By including `cell.type`, terms will be added to the model which account for differences across VGAT and VGlut2 cells, and by adding `mouse.id` we get a single term which explains the differences between animals. We could also have `~ PAG.area + cell.type + mouse.id`, to find differences across subdivisions while controling both for cell.type and mouse.id.
-* __Note__: it will be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as 'treatment vs control', without needing to specify additional arguments.
-* If the research aim is to determine for which genes the effect of treatment is different across groups, then interaction terms can be included and tested using a design such as `~ group + treatment + group:treatment`. See the vignettes of DESeq2 and edgeR for more examples.
-
+We have two types of cells (VGAT and VGluT2), across four different anatomical subdivisions.
 ```{r}
-# We can relevel any metadata factor as follows:
-#colData(sg)$dex <- relevel(colData(sg)$dex, ref = "untrt")
-#colData(sg)$dex
-# In our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for cell.type or mouse.id.
+PAG_DE_metadata$cell.type
+PAG_DE_metadata$PAG.areacollection
 ```
 
-Starting from a _SummarizedExperiment_ object:
+__Note__: it could be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as 'treatment vs control', without needing to specify additional arguments. However, in our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for `cell.type` or `mouse.id`.
+```{r}
+# By default, R will choose a reference level for factors based on alphabetical order. We can relevel any metadata factor as follows:
+PAG_DE_metadata$cell.type <- relevel(PAG_DE_metadata$cell.type, ref = "VGAT")
+PAG_DE_metadata$cell.type
+
+PAG_DE_metadata$PAG.areacollection <- relevel(PAG_DE_metadata$PAG.areacollection, ref = "dmpag")
+PAG_DE_metadata$PAG.areacollection
+```
+
+We want to find differences in expression (1) across cell-types, (2) across subdivisions within a cell-type, and (3) across subdivisions irrespective of cell-type. Importantly, each transgenic mouse (`mouse.id`) only allows us to capture one of the two cell-types, so the mouse ID will be confounded with one or the other cell.type. We want to control for this, as we are not interested in differences across mice, only across cell-types. 
+
+* An example of a design to explore differences in gene expression associated to `cell.type` but controling for differences between `mouse.id` is obtained by writing `~ mouse.id + cell.type`. By including `mouse.id`, terms will be added to the model which account for differences across mice, and by adding `cell.type` we get a single term which explains the differences between cell types. Make sure the levels in the factors only contain letters, numbers, underscores and periods. The variable of interest should go at the end of the formula (the `results` function will by default pull the `cell.type` results unless `contrast` or `name` arguments are specified).
+* We an use R's formula notation to express any fixed-effects experimental design for _edgeR_ or _DESeq2_. If the research aim is to determine for which genes the effect of a treatment is different across groups, then interaction terms can be included and tested using a design such as `~ group + treatment + group:treatment`. See the vignettes of DESeq2 and edgeR for more examples.
+
+Generate a `DESeqDataSet` from a _SummarizedExperiment_ object:
 ```{r}
 library(DESeq2)
-ds_se <- DESeqDataSet(sg, design = ~ cell + dex)
+PAG_DESeq_set <- DESeqDataSet(PAG_sceset_qc, design = ~ mouse.id + cell.type)
 ```
 
-Starting from a count matrix
+Generate a `DESeqDataSet` when we only have a count matrix and a table of sample information:
 ```{r}
-stopifnot(all(colnames(counts_salmon) == rownames(meta)))
-meta$dex <- relevel(meta$dex, ref = "untrt")
-ds_matrix <- DESeqDataSetFromMatrix(countData = counts_salmon, 
-                                    colData = meta,
-                                    design = ~ cell + dex)
+library(DESeq2)
+stopifnot(all(colnames(PAG_DE_counts) == rownames(PAG_DE_metadata)))
+PAG_DESeq_set <- DESeqDataSetFromMatrix(countData = PAG_DE_counts, 
+                                        colData = PAG_DE_metadata,
+                                        design = ~ mouse.id + cell.type)
 ```
 
 ### Exploratory analysis and visualisation
@@ -166,24 +186,24 @@ ds_se <- DESeq2::DESeq(ds_se)
 DESeq2::plotDispEsts(ds_se)
 ```
 
-### EdgeR and the DGEList
-edgeR is designed for bulkRNA and is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as batch to the model. The _edgeR_ package uses another type of data container, namely a _DGEList_ object. We can create a DGEList object using a count matrix and a table with information about samples, and additionally add information about the genes. 
+### 10.2.2 | EdgeR: the DGEList
+edgeR is designed for bulkRNA and is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as batch to the model. The _edgeR_ package uses another type of data container, namely a _DGEList_ object. We can create a _DGEList_ object using a count matrix and a table with information about samples, and additionally add information about the genes. 
 ```{r}
 library(edgeR)
 
-genetable <- data.frame(gene.id = rownames(counts_salmon),
-                        stringsAsFactors = FALSE)
+PAG_genetable <- data.frame(gene.id = rownames(PAG_DE_counts),
+                            stringsAsFactors = FALSE)
 
-stopifnot(all(rownames(meta) == colnames(counts_salmon)))
+stopifnot(all(colnames(PAG_DE_counts) == rownames(PAG_DE_metadata)))
+PAG_DGE_set <- DGEList(counts = PAG_DE_counts,
+                       samples = PAG_DE_metadata, 
+                       genes = PAG_genetable)
 
-dge <- DGEList(counts = counts_salmon, 
-               samples = meta, 
-               genes = genetable)
-
-names(dge)
-
-# We would like to add the size factors we calculated with scran instead of using edgeR::calcNormFactors to calculate TMM, as this is a method for bulk RNA-seq.
+names(PAG_DGE_set)
 ```
+
+Just like the _SummarizedExperiment_ and the _DESeqDataSet_ the _DGEList_ contains all the information we need: the count matrix, information about the samples (the columns of the count matrix), and information about the genes (the rows of the count matrix). One difference compared to the _DESeqDataSet_ is that the experimental design is not defined when creating the _DGEList_, but later in the workflow.
+
 
 
 <!--
@@ -283,8 +303,6 @@ counts_PAG <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
 ```
 
 As a first attempt, we want to look at the differences between VGAT and VGluT2 neurons across PAG subdivisions, controling for `mouse.id` (we are not interested in genetic differences across mice).
-
-
 
 ```{r}
 PAG_DE$samples$cell.type
