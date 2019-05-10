@@ -21,7 +21,7 @@ output:
 ***
 This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al. Nature Protocols 2014). 
 
-This pipeline has been generated following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](http://hemberg-lab.github.io/scRNA.seq.course), the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.8/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, and by attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis).
+This pipeline has been generated following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](http://hemberg-lab.github.io/scRNA.seq.course), the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, and by attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis).
 
 Other key resources are Bioconductor (Huber et al. Nature Methods 2015), scater (McCarty et al. Bioinformatics 2017), scran (Lun et al. F1000Res 2016), and SC3 (Kiselev et al. Nature Methods 2017).
 
