@@ -67,7 +67,7 @@ Once you have this, start an RStudio session and install the following packages 
 options(stringsAsFactors = FALSE)
 
 # Install packages from CRAN:
-install.packages(c("devtools", "tidyverse", "rmarkdown"))
+install.packages(c("devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "metap", "parallel", "rmarkdown", "tidyverse"))
 install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
 
 # Install packages from github:
@@ -79,7 +79,7 @@ if (!requireNamespace("BiocManager"))
 library(BiocManager)
 
 # Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "BiocStyle",  "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "GenomicRanges", "GenomeInfoDb", "ggfortify", "ggplot2", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Mm.eg.db", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
+BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "BiocStyle",  "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "globaltest", "GSVA", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Mm.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
 ```
 
 <!--
