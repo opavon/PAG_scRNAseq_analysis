@@ -467,7 +467,7 @@ By and large, this effect does not cause problems for marker gene detection as t
 To overcome this conceptual hurdle, we need to annotate our clusters based on a few marker genes. This allows us to use the annotated clusters as proxies for the true (and presumably reproducible) biological subpopulations. We might then be tempted to interpret the significant genes as being DE between subpopulations. However, this would result in loss of error control when the clusters are not stable, due to overfitting of the cluster definitions for true null genes. This effect is exacerbated as the clusters become more unstable, e.g., due to poor separation between the underlying populations.
 
 ## Step 10.4 | RNAseq123 Workflow
-This workflow (https://bioconductor.org/packages/release/workflows/html/RNAseq123.html) uses the _edgeR_ package (Robinson, McCarthy, and Smyth 2010) to import, organise, filter and normalise the data, and the _limma_ package (Ritchie et al. 2015) with its _voom_ method for linear modelling and empirical Bayes moderation to assess differential expression and perform gene set testing.
+The [RNAseq123 Workflow](https://bioconductor.org/packages/release/workflows/html/RNAseq123.html) uses the _edgeR_ package (Robinson, McCarthy, and Smyth 2010) to import, organise, filter and normalise the data, and the _limma_ package (Ritchie et al. 2015) with its _voom_ method for linear modelling and empirical Bayes moderation to assess differential expression and perform gene set testing.
 ```{r}
 library(limma)
 library(Glimma)
@@ -527,7 +527,7 @@ PAG_limma_design <- model.matrix(~ mouse.id + cell.type + PAG.areacollection,
 PAG_limma_design
 
 PAG_limma_contrasts_matrix <- makeContrasts(VGATvsVGluT2 = VGAT-VGluT2,
-                                            levels = colnames(design))
+                                            levels = colnames(PAG_limma_design))
 PAG_limma_contrasts_matrix
 ```
 
