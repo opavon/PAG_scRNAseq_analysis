@@ -120,6 +120,10 @@ An alternative to using actual counts of reads or fragments aligned to the genom
 # Round the counts to ensure they are integers:
 PAG_DE_counts <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
 head(PAG_DE_counts)
+
+# Quickly check the millions of reads that uniquely aligned to the genes (the second argument of round tells how many decimal points to keep).
+# round( colSums(assay(PAG_DE_counts)) / 1e6, 1 )
+
 ```
 
 Read the relevant metadata, converting the key annotations `factor`:
@@ -184,29 +188,59 @@ There are two separate analysis paths we can follow from here: visual exploratio
 #### Exploratory analysis and visualisation
 Many common statistical methods for exploratory analysis of multidimensional data, for example clustering and principal components analysis (PCA), work best for data that generally has the same range of variance at different ranges of the mean values. When the expected amount of variance is approximately the same across different mean values, the data is said to be _homoskedastic_. For RNA-seq raw counts, however, the variance grows with the mean. For example, if one performs PCA directly on a matrix of size-factor-normalized read counts, the result typically depends only on the few most strongly expressed genes because they show the largest absolute differences between samples. A simple and often used strategy to avoid this is to take the logarithm of the normalized count values plus a small pseudocount; however, now the genes with the very lowest counts will tend to dominate the results because, due to the strong Poisson noise inherent to small count values, and the fact that the logarithm amplifies differences for the smallest values, these low count genes will show the strongest relative differences between samples.
 
-As a solution, _DESeq2_ offers transformations for count data that stabilize the variance across the mean: the regularized logarithm (`rlog`) and the variance stabilizing transformation (`VST`). These have slightly different implementations, discussed a bit in the _DESeq2_ paper and in the vignette, but a similar goal of stabilizing the variance across the range of values. Both produce log2-like values for high counts. Here we will use the variance stabilizing transformation implemented with the vst function.
+As a solution, _DESeq2_ offers two transformations for count data that stabilize the variance across the mean: the _variance stabilizing transformation_ (`VST`) for negative binomial data with a dispersion-mean trend (Anders and Huber 2010), implemented in the `vst` function, and the _regularized-logarithm_ transformation (`rlog`) (Love, Huber, and Anders 2014). These have slightly different implementations, discussed a bit in the _DESeq2_ paper and in the vignette, but a similar goal of stabilizing the variance across the range of values. Both produce log2-like values for high counts. For genes with high counts, both the `VST` and the `rlog` will give similar results to the ordinary log2 transformation of normalized counts. For genes with lower counts, however, the values are shrunken towards a middle value. The VST or rlog-transformed data then become approximately _homoskedastic_ (more flat trend in the `meanSdPlot`), and can be used directly for computing distances between samples, making PCA plots, or as input to downstream methods which perform best with homoskedastic data. The VST transformation should be used for datasets with n > 30. We will use the variance stabilizing transformation implemented with the `vst` function.
 ```{r}
-PAG_DESeq_vsd <- DESeq2::vst(PAG_DESeq_set) # uses 'avgTxLength' from assays(dds) to correct for library size
+PAG_DESeq_vsd <- DESeq2::vst(PAG_DESeq_set, blind = FALSE) 
+# uses 'avgTxLength' from assays(dds) to correct for library size
+# see ?varianceStabilizingTransformation for choice of blind
 
 # This returns a DESeqTransform object containing the column metadata attached to the DESeqDataSet:
 class(PAG_DESeq_vsd)
-head(colData(PAG_DESeq_vsd), 3)
+head(assay(PAG_DESeq_vsd), 3)
+head(colData(PAG_DESeq_vsd))
 ```
 
-PCA plot:
+Specifying `blind = FALSE` means that differences between `mouse.id` and `cell.type` (the variables in the _design_) will not contribute to the expected variance-mean trend of the experiment. The experimental design is not used directly in the transformation, only in estimating the global amount of variability in the counts. For a fully unsupervised transformation, one can set blind = TRUE (which is the default).
+
+***
+__Sample distances:__
+A useful first step in an RNA-seq analysis is often to assess overall similarity between samples: Which samples are similar to each other, which are different? Does this fit to the expectation from the experiment’s design?
+
+We use the R function `dist` to calculate the Euclidean distance between samples. To ensure we have a roughly equal contribution from all genes, we use it on the _VST_ data. We need to transpose the matrix of values using `t`, because the `dist` function expects the different samples to be rows of its argument, and different dimensions (here, genes) to be columns.
+```{r}
+sampleDists <- dist(t(assay(PAG_DESeq_vsd)))
+sampleDists
+```
+
+We visualize the distances in a heatmap in a figure below, using the function `pheatmap` from the `pheatmap` package. In order to plot the sample distance matrix with the rows/columns arranged by the distances in our distance matrix, we manually provide `sampleDists` to the `clustering_distance` argument of the `pheatmap` function. Otherwise the `pheatmap` function would assume that the matrix contains the data values themselves, and would calculate distances between the rows/columns of the distance matrix, which is not desired. We also manually specify a blue color palette using the `colorRampPalette` function from the `RColorBrewer` package.
+```{r}
+library("pheatmap")
+library("RColorBrewer")
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- paste( PAG_DESeq_vsd$mouse.id, PAG_DESeq_vsd$cell.type, sep = " - " )
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         col = colors)
+```
+
+***
+__PCA plot:__
 ```{r}
 DESeq2::plotPCA(PAG_DESeq_vsd, intgroup = "mouse.id")
 DESeq2::plotPCA(PAG_DESeq_vsd, intgroup = "cell.type")
 ```
 
 #### Differential expression testing with DESeq2
-As we have already specified an experimental design when we created the _DESeqDataSet_, we can run the differential expression pipeline on the raw counts with a single call to the function `DESeq`. This function will carry out: the estimation of size factors (controlling for differences in the sequencing depth of the samples), the estimation of dispersion values for each gene, and fitting a generalized linear model. A _DESeqDataSe_t is returned that contains all the fitted parameters within it. We can also plot the estimated dispersions.
+As we have already specified an experimental design when we created the _DESeqDataSet_, we can run the differential expression pipeline on the raw counts with a single call to the function `DESeq`. This function will carry out: the estimation of size factors (controlling for differences in the sequencing depth of the samples), the estimation of dispersion values for each gene, and fitting a generalized linear model. A _DESeqDataSet_ is returned that contains all the fitted parameters within it. We can also plot the estimated dispersions.
 ```{r}
 PAG_DESeq_set <- DESeq2::DESeq(PAG_DESeq_set) # This will print out a message for the various steps it performs
 DESeq2::plotDispEsts(PAG_DESeq_set)
 ```
 
-Next, calling results without any arguments will extract the estimated log2 fold changes and _p values_ for the last variable in the `design` formula. If there are more than 2 levels for this variable, results will extract the results table for a comparison of the last level over the first level.
+Next, calling `results` without any arguments will extract the estimated log2 fold changes and _p values_ for the last variable in the `design` formula. If there are more than 2 levels for this variable, results will extract the results table for a comparison of the last level over the first level.
 ```{r}
 PAG_DESeq_results <- DESeq2::results(PAG_DESeq_set, alpha = 0.1)
 head(PAG_DESeq_results)
@@ -215,7 +249,7 @@ head(PAG_DESeq_results)
 `DESeq_results` is a _DataFrame_ object, so it contains metadata with information:
 
 * The first column, `baseMean`, is a just the average of the normalized count values, dividing by size factors, taken over all samples in the _DESeqDataSet_. The remaining four columns refer to a specific contrast, namely the comparison of the `VGAT` level over the `VGluT2` level for the factor variable `cell.type`.
-* The column log2FoldChange is the effect size estimate. It tells us how much the gene’s expression seems to have changed due to our specified codition. This value is reported on a logarithmic scale to base 2: for example, a log2 fold change of 1.5 means that the gene’s expression is increased by a multiplicative factor of 2^1.5^≈2.82.
+* The column `log2FoldChange` is the effect size estimate. It tells us how much the gene’s expression seems to have changed due to our specified codition. This value is reported on a logarithmic scale to base 2: for example, a log2 fold change of 1.5 means that the gene’s expression is increased by a multiplicative factor of 2^1.5^≈2.82.
 
 Of course, this estimate has an uncertainty associated with it, which is available in the column `lfcSE`, the standard error estimate for the log2 fold change estimate. We can also express the uncertainty of a particular effect size estimate as the result of a statistical test. The purpose of a test for differential expression is to test whether the data provides sufficient evidence to conclude that this value is really different from zero. DESeq2 performs for each gene a hypothesis test to see whether evidence is sufficient to decide against the null hypothesis that there is zero effect of the treatment on the gene and that the observed difference between treatment and control was merely caused by experimental variability (i.e., the type of variability that you can expect between different samples in the same treatment group). As usual in statistics, the result of this test is reported as a p value, and it is found in the column  `pvalue`. Remember that a p value indicates the probability that an effect as strong as the observed one, or even stronger, would be seen under the situation described by the null hypothesis.
 ```{r}
@@ -251,52 +285,159 @@ summary(PAG_DESeq_results_LFC1)
 table(PAG_DESeq_results_LFC1$padj < 0.1)
 ```
 
-Sometimes a subset of the p values in `DESeq_results` will be NA (“not available”). This is DESeq’s way of reporting that all counts for this gene were zero, and hence no test was applied. In addition, p values can be assigned NA if the gene was excluded from analysis because it contained an extreme count outlier. For more information, see the outlier detection section of the DESeq2 vignette.
+Sometimes a subset of the p values in `DESeq_results` will be `NA` (“not available”). This is DESeq’s way of reporting that all counts for this gene were zero, and hence no test was applied. In addition, p values can be assigned `NA` if the gene was excluded from analysis because it contained an extreme count outlier. For more information, see the outlier detection section of the DESeq2 vignette.
 
-With DESeq2, there is also an easy way to plot the (normalized, transformed) counts for specific genes, using the  `plotCounts` function:
-```{r}
-plotCounts(PAG_DESeq_set, gene = "ENSG00000000003.14", intgroup = "cell.type", 
-           normalized = TRUE, transform = FALSE)
-```
-
-In high-throughput biology, we are careful to not use the p values directly as evidence against the null hypothesis, but to correct for multiple testing. _DESeq2_ and _edgeR_ use the Benjamini-Hochberg (BH) adjustment (Benjamini and Hochberg 1995) as implemented in the base R `p.adjust` function; in brief, this method calculates for each gene an adjusted p value that answers the following question: if one called significant all genes with an adjusted p value less than or equal to this gene’s adjusted p value threshold, what would be the fraction of false positives (the false discovery rate, FDR) among them, in the sense of the calculation outlined above? These values, called the BH-adjusted p values, are given in the column `padj` of the res object from _DESeq2_, and in the `FDR` column in the `TopTags` object from _edgeR_.
+***
+__Multiple Testing__
+In high-throughput biology, we are careful to not use the p values directly as evidence against the null hypothesis, but to correct for multiple testing. _DESeq2_ and _edgeR_ use the Benjamini-Hochberg (BH) adjustment (Benjamini and Hochberg 1995) as implemented in the base R `p.adjust` function; in brief, this method calculates for each gene an adjusted p value that answers the following question: if one called significant all genes with an adjusted p value less than or equal to this gene’s adjusted p value threshold, what would be the fraction of false positives (the false discovery rate, FDR) among them, in the sense of the calculation outlined above? These values, called the BH-adjusted p values, are given in the column `padj` of the `res` object from _DESeq2_, and in the `FDR` column in the `TopTags` object from _edgeR_.
 
 The FDR is a useful statistic for many high-throughput experiments, as we are often interested in reporting or focusing on a set of interesting genes, and we would like to put an upper bound on the percent of false positives in this set. Hence, if we consider a fraction of 5% false positives acceptable, we can consider all genes with an adjusted p value below 5% = 0.05 as significant. 
 ```{r}
 sum(PAG_DESeq_results_05$padj < 0.05, na.rm = TRUE)
 ```
 
-#### Plotting results
-An MA-plot (Dudoit et al. 2002) provides a useful overview for an experiment with a two-group comparison. The log2 fold change for a particular comparison is plotted on the y-axis and the average of the counts normalized by size factor is shown on the x-axis (“M” for minus, because a log ratio is equal to log minus log, and “A” for average). Each gene is represented with a dot. Genes with an adjusted p value below a threshold (here 0.1, the default with DESeq2) are shown in red.
+We subset the results table to these genes and then sort it by the log2 fold change estimate to get the significant genes:
 ```{r}
+resSig <- subset(PAG_DESeq_results_05, padj < 0.1)
+head(resSig[ order(resSig$log2FoldChange), ]) #  with the strongest down-regulation
+head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ]) # with the strongest up-regulation
+```
+
+#### Plotting results
+***
+__Counts plot__
+A quick way to visualize the counts for a particular gene is to use the `plotCounts` function that takes as arguments the DESeqDataSet, a gene name, and the group over which to plot the counts.
+```{r}
+plotCounts(PAG_DESeq_set, gene = "ENSG00000000003.14", intgroup = "cell.type", 
+           normalized = TRUE, transform = FALSE)
+
+topGene <- rownames(PAG_DESeq_results)[which.min(PAG_DESeq_results$padj)]
+plotCounts(PAG_DESeq_set, gene = topGene, intgroup=c("cell.type"))
+```
+
+We can also make custom plots using the `ggplot` function from the `ggplot2` package.
+```{r}
+library("ggbeeswarm")
+geneCounts <- plotCounts(PAG_DESeq_results, gene = topGene, intgroup = c("mouse.id","cell.type"),
+                         returnData = TRUE)
+
+ggplot(geneCounts, aes(x = mouse.id, y = count, color = cell.type)) +
+  scale_y_log10() +  geom_beeswarm(cex = 3)
+
+ggplot(geneCounts, aes(x = PAG.areacollectoin, y = count, color = cell.type, group = cell.type)) +
+  scale_y_log10() + geom_point(size = 3) + geom_line()
+```
+
+***
+__MA-plot__
+An MA-plot (Dudoit et al. 2002) provides a useful overview for the distribution of the estimated coefficients in the model, e.g. the comparisons of interest, across all genes. On the y-axis, the “M” stands for “minus” – subtraction of log values is equivalent to the log of the ratio – and on the x-axis, the “A” stands for “average”. You may hear this plot also referred to as a mean-difference plot, or a Bland-Altman plot. Each gene is represented with a dot. Genes with an adjusted p value below a threshold (the default with DESeq2 is 0.1) are shown in red.
+
+Before making the MA-plot, we use the `lfcShrink` function to shrink the log2 fold changes for the comparison of choice. There are three types of shrinkage estimators in DESeq2, which are covered in the DESeq2 vignette. Here we specify the `apeglm` method for shrinking coefficients, which is good for shrinking the noisy LFC estimates while giving low bias LFC estimates for true large differences (Zhu, Ibrahim, and Love 2018). To use `apeglm` we specify a coefficient from the model to shrink, either by name or number as the coefficient appears in `resultsNames(dds)`.
+```{r}
+library("apeglm")
+resultsNames(PAG_DESeq_results) # Check to see which coef to choose
+```
+
+```{r}
+PAG_DESeq_results <- lfcShrink(PAG_DESeq_results, coef="vgat_vs_vglut2", type="apeglm")
 DESeq2::plotMA(PAG_DESeq_results, ylim = c(-5, 5))
 ```
 
-Another way of representing the results of a differential expression analysis is to construct a heatmap of the top differentially expressed genes. Here, we would expect the contrasted sample groups to cluster separately. A heatmap is a “color coded expression matrix”, where the rows and columns are clustered using hierarchical clustering. Typically, it should not be applied to counts, but works better with transformed values. Here we show how it can be applied to the variance-stabilized values generated above. We choose the top 30 differentially expressed genes. There are many functions in R that can generate heatmaps, here we show the one from the `pheatmap` package.
+We can label individual points on the MA-plot as well. Here we use the `with` R function to plot a circle and text for a selected row of the results object. Within the `with` function, only the `baseMean` and `log2FoldChange` values for the selected rows of `PAG_DESeq_results` are used.
+```{r}
+plotMA(PAG_DESeq_results, ylim = c(-5,5))
+topGene <- rownames(PAG_DESeq_results)[which.min(PAG_DESeq_results$padj)]
+with(PAG_DESeq_results[topGene, ], {
+  points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
+  text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
+})
+```
+
+Another useful diagnostic plot is the histogram of the p values. This plot is best formed by excluding genes with very small counts, which otherwise generate spikes in the histogram.
+```{r}
+hist(PAG_DESeq_results$pvalue[PAG_DESeq_results$baseMean > 1], breaks = 0:20/20,
+     col = "grey50", border = "white")
+```
+
+***
+__Gene clustering__
+Another way of representing the results of a differential expression analysis is to construct a heatmap of the top differentially expressed genes. A heatmap is a “color coded expression matrix”, where the rows and columns are clustered using hierarchical clustering. Typically, it should not be applied to counts, but works better with transformed values. Here we show how it can be applied to the variance-stabilized values generated above. We choose the top 30 differentially expressed genes. There are many functions in R that can generate heatmaps, here we show the one from the `pheatmap` package.
+
+In the sample distance heatmap made previously, the dendrogram at the side shows us a hierarchical clustering of the samples. Such a clustering can also be performed for the genes. Since the clustering is only relevant for genes that actually carry a signal, one usually would only cluster a subset of the most highly variable genes. For example, let us select the 30 genes with the highest variance across samples. We will work with the VST data. In addition, the heatmap becomes more interesting if we do not look at absolute expression strength but rather at the amount by which each gene deviates in a specific sample from the gene’s average across all samples. Hence, we center each genes’ values across samples, and plot a heatmap. We provide a `data.frame` that instructs the `pheatmap` function how to label the columns.
 ```{r}
 library(pheatmap)
 
 PAG_DESeq_mat <- assay(PAG_DESeq_vsd)[head(order(PAG_DESeq_results$padj), 30), ] # Top 30 DE genes
 PAG_DESeq_mat <- PAG_DESeq_mat - rowMeans(PAG_DESeq_mat)
-df <- as.data.frame(colData(PAG_DESeq_vsd)[, c("mouse.id", "cell.type")])
-pheatmap(PAG_DESeq_mat, annotation_col = df)
+anno <- as.data.frame(colData(PAG_DESeq_vsd)[, c("mouse.id", "cell.type", "PAG.areacollection")])
+pheatmap(PAG_DESeq_mat, annotation_col = anno)
 ```
 
-#### Exporting results to CSV file
-You can easily save the results table in a CSV file that you can then share or load with a spreadsheet program such as Excel (note, however, that Excel sometimes does funny things to gene identifiers (Zeeberg et al. 2004; Ziemann, Eren, and El-Osta 2016)). The call to `as.data.frame` is necessary to convert the `DataFrame` object (`IRanges` package) to a `data.frame` object that can be processed by `write.csv`. Here, we first show how to add gene symbols to the output table, and then export just the top 100 genes for demonstration.
+***
+__Independent filtering__
+The MA plot highlights an important property of RNA-seq data. For weakly expressed genes, we have no chance of seeing differential expression, because the low read counts suffer from such high Poisson noise that any biological effect is drowned in the uncertainties from the sampling at a low rate. We can also show this by examining the ratio of small p values (say, less than 0.05) for genes binned by mean normalized count. We will use the results table subjected to the threshold to show what this looks like in a case when there are few tests with small p value.
+
+In the following code chunk, we create bins using the quantile function, bin the genes by base mean using cut, rename the levels of the bins using the middle point, calculate the ratio of p values less than 0.05 for each bin, and finally plot these ratios.
+
 ```{r}
-PAG_DESeq_results$symbol <- mapIds(org.Hs.eg.db,
-                                   keys = gsub("\\.[0-9]+$", "", row.names(PAG_DESeq_results)),
+qs <- c(0, quantile(PAG_DESeq_results_LFC1$baseMean[PAG_DESeq_results_LFC1$baseMean > 0], 0:6/6))
+bins <- cut(PAG_DESeq_results_LFC1$baseMean, qs)
+levels(bins) <- paste0("~", round(signif((qs[-1] + qs[-length(qs)])/2, 2)))
+fractionSig <- tapply(PAG_DESeq_results_LFC1$pvalue, bins, function(p)
+                          mean(p < .05, na.rm = TRUE))
+barplot(fractionSig, xlab = "mean normalized count",
+                     ylab = "fraction of small p values")
+```
+
+At first sight, there may seem to be little benefit in filtering out these genes. After all, the test found them to be non-significant anyway. However, these genes have an influence on the multiple testing adjustment, whose performance improves if such genes are removed. By removing the low count genes from the input to the FDR procedure, we can find more genes to be significant among those that we keep, and so improved the power of our test. This approach is known as independent filtering.
+
+The DESeq2 software automatically performs independent filtering that maximizes the number of genes with adjusted p value less than a critical value (by default, `alpha` is set to 0.1). This automatic independent filtering is performed by, and can be controlled by, the results function.
+
+The term independent highlights an important caveat. Such filtering is permissible only if the statistic that we filter on (here the mean of normalized counts across all samples) is independent of the actual test statistic (the p value) under the null hypothesis. Otherwise, the filtering would invalidate the test and consequently the assumptions of the BH procedure. The independent filtering software used inside DESeq2 comes from the `genefilter` package, that contains a reference to a paper describing the statistical foundation for independent filtering (Bourgon, Gentleman, and Huber 2010).
+
+#### Annotating and exporting results
+Our result table so far only contains the Ensembl gene IDs, but alternative gene names may be more informative for interpretation. Bioconductor’s annotation packages help with mapping various ID schemes to each other. We load the `AnnotationDbi` package and the annotation package `org.Mm.eg.db`, the organism annotation package (“org”) for Mus musculus (“Mm”), organized as an `AnnotationDbi` database package (“db”), using Entrez Gene IDs (“eg”) as primary key. To get a list of all available key types, use:
+```{r}
+library(AnnotationDbi)
+library(org.Mm.eg.db)
+columns(org.Mm.eg.db)
+```
+
+We can use the `mapIds` function to add individual columns to our results table. We provide the row names of our results table as a key, and specify that `keytype=ENSEMBL`. The column argument tells the `mapIds` function which information we want, and the `multiVals` argument tells the function what to do if there are multiple possible values for a single input value. Here we ask to just give us back the first one that occurs in the database. To add the gene symbol and Entrez ID, we call `mapIds` twice.
+```{r}
+PAG_DESeq_results$symbol <- mapIds(org.Mm.eg.db,
+                                   keys = row.names(PAG_DESeq_results),
                                    column = "SYMBOL",
                                    keytype = "ENSEMBL",
                                    multiVals = "first")
 
+PAG_DESeq_results$entrez <- mapIds(org.Mm.eg.db,
+                                   keys = row.names(PAG_DESeq_results),
+                                   column = "ENTREZID",
+                                   keytype = "ENSEMBL",
+                                   multiVals = "first")
+```
+
+We can easily save the results table in a CSV file that we can then share or load with a spreadsheet program such as Excel (note, however, that Excel sometimes does funny things to gene identifiers (Zeeberg et al. 2004; Ziemann, Eren, and El-Osta 2016)). The call to `as.data.frame` is necessary to convert the `DataFrame` object (`IRanges` package) to a `data.frame` object that can be processed by `write.csv`.
+```{r}
 PAG_DESeq_results_ordered <- PAG_DESeq_results[order(PAG_DESeq_results$padj), ]
 head(PAG_DESeq_results_ordered)
 
-PAG_DESeq_results_ordered_DF <- as.data.frame(PAG_DESeq_results_ordered)[seq_len(100), ]
+PAG_DESeq_results_ordered_DF <- as.data.frame(PAG_DESeq_results_ordered)[seq_len(100), ] # Exporting top 100 genes
 write.table(cbind(id = rownames(PAG_DESeq_results_ordered_DF), PAG_DESeq_results_ordered_DF), 
             file = "PAG_DE_results.txt", quote = FALSE, sep = "\t", row.names = FALSE)
+
+#write.csv(PAG_DESeq_results_ordered_DF, file = "PAG_DE_results.csv")
+```
+
+A more sophisticated way for exporting results the Bioconductor package `ReportingTools` (Huntley et al. 2013). `ReportingTools` will automatically generate dynamic HTML documents, including links to external databases using gene identifiers and boxplots summarizing the normalized counts across groups. See the `ReportingTools` vignettes for full details. The simplest version of creating a dynamic `ReportingTools` report is performed with the following code:
+```{r}
+library("ReportingTools")
+htmlRep <- HTMLReport(shortName="report", title="My report",
+                      reportDirectory="./report")
+publish(resOrderedDF, htmlRep)
+url <- finish(htmlRep)
+browseURL(url)
 ```
 
 ### 10.2.2 | edgeR: the DGEList
