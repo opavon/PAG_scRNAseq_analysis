@@ -1,6 +1,6 @@
 ---
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
-subtitle: "Part VII: seurat"
+subtitle: "Part VIII: seurat"
 author:
   - name: "Oriol Pavon Arocas, Sarah F. Olesen and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
