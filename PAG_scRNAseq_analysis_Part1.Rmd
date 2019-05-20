@@ -72,6 +72,7 @@ install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
 
 # Install packages from github:
 devtools::install_github("jlmelville/uwot")
+devtools::install_github("iaconogi/bigSCale2")
 
 # Install Bioconducor:
 if (!requireNamespace("BiocManager"))
@@ -79,7 +80,7 @@ if (!requireNamespace("BiocManager"))
 library(BiocManager)
 
 # Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "BiocStyle",  "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "globaltest", "GSVA", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Mm.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
+BiocManager::install(c("AnnotationDbi", "backports", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "globaltest", "GSVA", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
 ```
 
 <!--
@@ -187,9 +188,24 @@ PAG_scRNAseq_gene_lists[1:11,1:11]
 ```
 
 ### One more thing...
-Carefully consider the annotations from the metadata that you will need for your biological analysis. Once you know the key ones, add them as `factor`. For example, `PAG.area` or `cell.type` are clearly important, so specifically convert them to factors in the `PAG_metadata` object.
+Carefully consider the annotations from the metadata that you will need for your biological analysis. Are they numerical or categorical? Will you use them in downstream statistical modeling? Once you know the key ones, add them as `factor`. For example, `PAG.area` or `cell.type` are clearly important and categorical, so specifically convert them to factors in the `PAG_metadata` object.
+
+A longer discussion on factors can be found [here](https://www.stat.berkeley.edu/~s133/factors.html)
 ```{r}
+PAG_metadata$mouse.id <- factor(PAG_metadata$mouse.id)
+PAG_metadata$mouse.sex <- factor(PAG_metadata$mouse.sex)
 PAG_metadata$cell.type <- factor(PAG_metadata$cell.type)
+PAG_metadata$cell.fluorophor <- factor(PAG_metadata$cell.fluorophor)
+PAG_metadata$slice.number <- factor(PAG_metadata$slice.number)
+PAG_metadata$PAG.areacollection <- factor(PAG_metadata$PAG.areacollection)
+PAG_metadata$PAG.hemisphere <- factor(PAG_metadata$PAG.hemisphere)
+class(PAG_metadata$mouse.sex)
+class(PAG_metadata$slice.depth)
+class(PAG_metadata$sample.id)
+
+# Useful factor functions:
+#table(PAG_metadata$PAG.areacollection)
+#levels(PAG_metadata$mouse.id)
 ```
 
 ## Step 1.4 | Tidy up metadata
