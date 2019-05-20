@@ -292,13 +292,15 @@ _bigSCale2_ works with the `SingleCellExperiment` class. This class is a contain
 
 ### 11.3.1 | Running bigSCale2
 ```{r}
-data(PAG_sceset_qc)
+library(bigSCale)
+PAG_bigSCale2 <- SingleCellExperiment(assays = list(counts = as.matrix(PAG_data)))
+PAG_bigSCale2
 ```
 
-bigSCale2 can be run with one single command, and we can set `speed.preset="slow"` for mazimun accuracy. Once we've run this, the results are stored in the `SingleCellExperiment` object.
+bigSCale2 can be run with one single command, and we can set `speed.preset="slow"` for maximum accuracy. Once we've run this, the results are stored in the `SingleCellExperiment` object.
 ```{r}
-PAG_sceset_qc = bigscale(PAG_sceset_qc, speed.preset='fast', clustering='recursive') 
-
+PAG_bigSCale2 <- bigscale(PAG_bigSCale2, speed.preset = "slow", clustering = "recursive") 
+PAG_bigSCale2 <- bigscale(PAG_bigSCale2, speed.preset = "fast")
 # Or run it step by step
 # sce=preProcess(sce)
 # sce = storeNormalized(sce) # stores normalized data
@@ -323,41 +325,41 @@ Plot the clusters and signatures of coexpressed genes:
 * Colored bars representing the clusters, the library size (meant as a proxy to transcriptome size/complexity) and the pseudotime of the cells. An additional color bar is displayed for any user custom `colData()` (for example, sample batches, conditions and so on ...). For custom user `colData`, the color codes are automatically chosen upen the type of data (numeric or factor).
 * The clustered signatures of coexpressed genes alogside their size. Here, all the genes differentially expressed are organized in signatures of co-expressed genes.
 ```{r}
-viewSignatures(PAG_sceset_qc)
+viewSignatures(PAG_bigSCale2)
 ```
 
 Inspect the markers of a specific cluster: this plot is the same as before, but instead of the signatures of coexpressed genes we see the markers of the selected cluster stratified by level of specificity (see Iacono et al. 2018). Shortly, markers of level 1 are the most specific to a given cluster (only found in that cluster), whereas level 2 are shared between the chosen cluster and at most another cluster, level 3 are shared between the chosen cluster and at most two other clusters, and so on.
 ```{r}
-viewSignatures(PAG_sceset_qc, selected.cluster=2) 
+viewSignatures(PAG_bigSCale2, selected.cluster=2) 
 ```
 
 Barplot of selected genes to plot gene expression at single cell level with colored clusters:
 ```{r}
-viewGeneBarPlot(PAG_sceset_qc, gene.list = c('Aqp4','Olig1','Thy1'))
+viewGeneBarPlot(PAG_bigSCale2, gene.list = c('Aqp4','Olig1','Thy1'))
 ```
 
 Violin plots of a selected gene:
 ```{r}
-viewGeneViolin(PAG_sceset_qc, 'Aqp4')
+viewGeneViolin(PAG_bigSCale2, 'Aqp4')
 ```
 
 t-SNE and UMAP plots
 ```{r}
-viewReduced(PAG_sceset_qc) # to see t-SNE with clusters
-viewReduced(PAG_sceset_qc, color.by = 'Stmn2') # to see t-SNE with gene expression
+viewReduced(PAG_bigSCale2) # to see t-SNE with clusters
+viewReduced(PAG_bigSCale2, color.by = 'Stmn2') # to see t-SNE with gene expression
 ```
-If you want to color the cell according to some custom annotation you can pass a `factor` variable in place of a gene name. If you want to visualize a UMAP plot, first compute the UMAP data with `PAG_sceset_qc = storeUMAP(PAG_sceset_qc)` and then `viewReduced(PAG_sceset_qc, method = 'UMAP')`.
+If you want to color the cell according to some custom annotation you can pass a `factor` variable in place of a gene name. If you want to visualize a UMAP plot, first compute the UMAP data with `PAG_bigSCale2 = storeUMAP(PAG_bigSCale2)` and then `viewReduced(PAG_bigSCale2, method = 'UMAP')`.
 
 Browsing markers: To have a look at the markers found by bigSCale2 we retrive `Mlist` from the single cell object. `Mlist` is a 2 dimensional list containing for each cluster the markers of the different levels. Let's inspect the markers of level 1 (most specific) of cluster 4. We will take advantage of the package `DT` for interactive visualization. Running the next command line we will see the markers specific to cluster 4 sorted from the highest (most significant) to the lowest (less significant) Zscore.
 ```{r}
-Mlist = getMarkers(PAG_sceset_qc)
+Mlist = getMarkers(PAG_bigSCale2)
 DT::datatable(Mlist[[4,1]]) # Level 1 Markers of cluster 4
 DT::datatable(Mlist[[4,5]]) # Level 5 Markers of cluster 4
 ```
 
 We can also look at co-expressed genes:
 ```{r}
-Signatures = getSignatures(PAG_sceset_qc)
+Signatures = getSignatures(PAG_bigSCale2)
 DT::datatable(Signatures[[1]])
 ```
 
@@ -368,8 +370,8 @@ bigSCale2 allows to infer the putative gene regulatory network (GRN) from any si
 ```{r}
 # define gene.names and subset vgat and vglut2 cells
 
-results.vgat = compute.network(expr.data = PAG_sceset_qc$VGAT, gene.names = gene.names, clustering = 'recursive')
-results.vglut2 = compute.network(expr.data = PAG_sceset_qc$VGluT2, gene.names = gene.names, clustering = 'recursive')
+results.vgat = compute.network(expr.data = PAG_bigSCale2$VGAT, gene.names = gene.names, clustering = 'recursive')
+results.vglut2 = compute.network(expr.data = PAG_bigSCale2$VGluT2, gene.names = gene.names, clustering = 'recursive')
 ```
 
 We can have a look at the networks:
