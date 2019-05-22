@@ -33,6 +33,7 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 Setting up a Seurat object:
 ```{r}
 library(Seurat)
+library(dplyr)
 PAG_seurat <- CreateSeuratObject(counts = PAG_data,
                                  project = "PAG_seurat_analysis",
                                  min.cells = 1,
@@ -181,7 +182,6 @@ head(cluster3.markers, n = 10)
 ```
 
 ```{r}
-library(dplyr)
 # find markers for every cluster compared to all remaining cells, report only the positive ones
 PAG_seurat.markers <- FindAllMarkers(PAG_seurat, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
 PAG_seurat.markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_logFC)

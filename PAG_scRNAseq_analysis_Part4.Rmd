@@ -131,7 +131,7 @@ points(var_out_no_spikes$mean[current_spikes], var_out_no_spikes$total[current_s
 ## Step 4.2 | Identifying highly variable genes
 HVGs are defined as genes with biological components that are significantly greater than zero. These genes are interesting as they drive differences in the expression profiles between cells, and should be prioritized for further investigation. Formal detection of HVGs allows us to avoid genes that are highly variable due to technical factors such as sampling noise during RNA capture and library preparation. This adds another level of statistical rigour to our previous analyses, in which we only modelled the technical component.
 
-Identifying HVGs requires estimation of the variance in expression for each gene, followed by decomposition of the variance into biological and technical components (done in the previous step). HVGs are then identified as those genes with the largest biological components. 
+Identifying HVGs requires estimation of the variance in expression for each gene, followed by decomposition of the variance into biological and technical components (done in the previous step). HVGs are then identified as those genes with the largest biological components.
 
 We define HVGs as genes with biological components that are significantly greater than zero at a false discovery rate (FDR) of 5%. These genes are interesting as they drive differences in the expression profiles between cells, and should be prioritized for further investigation. In addition, we only consider a gene to be a HVG if it has a biological component greater than or equal to 0.5. For transformed expression values on the log2 scale, this means that the average difference in true expression between any two cells will be at least 2-fold. (This reasoning assumes that the true log-expression values are Normally distributed with variance of 0.5. The root-mean-square of the difference between two values is treated as the average log2-fold change between cells and is equal to unity.) We rank the results by the biological component to focus on genes with larger biological variability.
 ```{r}
@@ -370,7 +370,7 @@ You can't really use RUVseq (remove unwanted variation) as it depends on ERCCs h
 
 Try different methods and evaluate their effectiveness.
 
-See: http://hemberg-lab.github.io/scRNA.seq.course/cleaning-the-expression-matrix.html#dealing-with-confounders
+See: https://scrnaseq-course.cog.sanger.ac.uk/website/cleaning-the-expression-matrix.html#dealing-with-confounders
 
 ### Exploring obvious biases with the table function
 The table function allows us to quickly inspect if we have any obvious biases or confounds (i.e. all the cells come from male or female mice, or from a particular location or sequencing batch).

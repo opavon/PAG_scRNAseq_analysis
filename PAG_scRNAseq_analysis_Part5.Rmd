@@ -38,9 +38,9 @@ Once we have normalized the data and removed confounders we can carry out analys
 
 scRNA-seq data allow de novo discovery and annotation of cell-types based on transcription profiles. Computationally, we need to identify groups of cells based on the similarities of the transcriptomes without any prior knowledge of the labels, nor the number of clusters we will end up with. This is very challenging due to the high level of noise (both technical and biological) and the large number of dimensions (i.e. genes).
 
-Unsupervised clustering is useful in many different applications and it has been widely studied in machine learning. Some of the most popular approaches are hierarchical clustering, k-means clustering and graph-based clustering.
+Unsupervised clustering is useful in many different applications and it has been widely studied in machine learning. Some of the most popular approaches are __hierarchical clustering__, __k-means clustering__ and __graph-based clustering__.
 
-Ideally you want to run several tools on the same dataset and see whether we get similar results. 
+Ideally you want to run several tools on the same dataset and see whether we get similar results. To compare two sets of clustering labels we can use the _adjusted Rand index_ from the `mclust` package. The index is a measure of the similarity between two data clusterings. Values of the adjusted Rand index lie in [0;1] interval, where 1 means that two clusterings are identical and 0 means the level of similarity expected by chance.
 
 ## Step 8.1 | Consensus clustering with SC3
 Single-Cell Consensus Clustering (SC3) is a tool for unsupervised clustering of scRNA-seq data. SC3 achieves high accuracy and robustness by consistently integrating different clustering solutions through a consensus approach. An interactive graphical implementation makes SC3 accessible to a wide audience of users. In addition, SC3 also aids biological interpretation by identifying marker genes, differentially expressed genes and outlier cells. A manuscript describing  SC3 in details is published in Nature Methods.
@@ -59,6 +59,7 @@ library(SC3)
 library(scater)
 library(SingleCellExperiment)
 library(pheatmap)
+library(mclust) # contains adjustedRandIndex function to compare clustering results
 ```
 
 ```{r}
@@ -77,11 +78,15 @@ metadata(PAG_sceset_qc)$sc3$k_estimation
 We now run SC3 and ask it to calculate biological properties of the clusters as well. We try a range of k and explore the different clustering solutions with the interactive `Shiny` session. We can check the stability of the different clusters and play with the thresholds for DE and Marker genes.
 ```{r}
 rowData(PAG_sceset_qc)$feature_symbol <- rownames(PAG_sceset_qc)
-PAG_sceset_qc <- sc3(PAG_sceset_qc, ks = 2:10, biology = TRUE)
-# SC3 is based on k-means clustering, so we need to define the ks at the beginning. You could also set a range and try different solutions.
-# SC3 suggested us 5 clusters, but we have 2 cell-types from 4 subdivisions, so we choose ks = 8. The estimation function only gives us an idea, a number we can play around.
+PAG_sceset_qc <- sc3(PAG_sceset_qc, 
+                     ks = 2:10,
+                     gene_filter = FALSE,
+                     biology = TRUE, 
+                     n_cores = 2,
+                     rand_seed = 1991)
+# SC3 is based on k-means clustering, so we need to define the ks at the beginning. It is best to set a range of ks around the value estimated by sc3 to try and compare different solutions.
 ```
-Importantly, SC3 applies a gene filter to remove genes very lowly expressed in all samples and also the ones that are expressed everywhere, so that these genes do not contribute to the clustering (see $sc3_gene_filter).
+Importantly, SC3 applies a gene filter to remove genes very lowly expressed in all samples and also the ones that are expressed everywhere, so that these genes do not contribute to the clustering (see `$sc3_gene_filter`).
 
 SC3 can also be run in an interactive Shiny session: 
 ```{r}
@@ -139,14 +144,13 @@ See also the Stability Index, which shows how stable each cluster is accross the
 sc3_plot_cluster_stability(PAG_sceset_qc, k = 8)
 ```
 
-
 ### 8.1.5 | Heatmap of expression matrix
 The expression panel represents the original input expression matrix (cells in columns and genes in rows) after cell and gene filters. Genes are clustered by k-means with k = 100 (dendrogram on the left) and the heatmap represents the expression levels of the gene cluster centers after log2-scaling.
 ```{r}
 sc3_plot_expression(PAG_sceset_qc, k = 8, show_pdata = "cell.type")
 ```
 
-### 8.1.6 | Differential Expression and Marker genes:
+### 8.1.6 | Differential Expression and Marker genes
 Differential expression is calculated using the non-parametric Kruskal-Wallis test. A significant p-value indicates that gene expression in at least one cluster stochastically dominates one other cluster. SC3 provides a list of all differentially expressed genes with adjusted p-values < 0.01 and plots gene expression profiles of the 50 genes with the lowest p-values. Note that the calculation of differential expression after clustering can introduce a bias in the distribution of p-values, and thus we advise to use the p-values for ranking the genes only.
 ```{r}
 sc3_plot_de_genes(PAG_sceset_qc, 
@@ -404,7 +408,6 @@ PAG_sceset_qc = setMarkers(PAG_sceset_qc, cutoff=3)
 # Restore some matrices from the virtual memory to complete the analysis.
 PAG_sceset_qc = restoreData(PAG_sceset_qc)
 ```
-
 
 Plot of the clusters and signatures of coexpressed genes and visualise:
 

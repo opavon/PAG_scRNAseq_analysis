@@ -110,6 +110,23 @@ names(pVals) <- rownames(res$table)
 pVals <- p.adjust(pVals, method = "fdr")
 ```
 
+### MAST
+MAST is based on a zero-inflated negative binomial model. It tests for differential expression using a hurdle model to combine tests of discrete (0 vs not zero) and continuous (non-zero values) aspects of gene expression. Again this uses a linear modelling framework to enable complex models to be considered.
+```{r}
+log_counts <- log(counts + 1) / log(2)
+fData <- data.frame(names = rownames(log_counts))
+rownames(fData) <- rownames(log_counts);
+cData <- data.frame(cond = group)
+rownames(cData) <- colnames(log_counts)
+
+obj <- FromMatrix(as.matrix(log_counts), cData, fData)
+colData(obj)$cngeneson <- scale(colSums(assay(obj) > 0))
+cond <- factor(colData(obj)$cond)
+
+# Model expression as function of condition & number of detected genes
+zlmCond <- zlm.SingleCellAssay(~ cond + cngeneson, obj) 
+```
+
 ## Step 10.2 | EBI-EMBL Differential Expression RNAseq workflow (Charlotte Soneson)
 Count-based statistical methods such as _DESeq2_ (Love, Huber, and Anders 2014), _edgeR_ (Robinson, McCarthy, and Smyth 2009), _limma_ with the _voom_ method (Law et al. 2014), _DSS_ (Wu, Wang, and Wu 2013), _EBSeq_ (Leng et al. 2013), _BaySeq_ (Hardcastle and Kelly 2010) and _DEXSeq_ (Anders, Reyes, and Huber 2012) expect input data as obtained, e.g., from RNA-seq or another high-throughput sequencing experiment in the form of a matrix of integer values, or “counts”. The value in the i-th row and the j-th column of the matrix tells how many reads (or fragments, for paired-end RNA-seq) have been assigned to feature i in sample j. For RNA-seq, a feature is typically a gene, a transcript or an exon.
 
