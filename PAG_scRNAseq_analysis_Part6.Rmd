@@ -2,7 +2,7 @@
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
 subtitle: "Part VI: differential expression analysis"
 author:
-  - name: "Oriol Pavon Arocas, Sarah F. Olesen and Tiago Branco"
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
     email: "oriol.pavon.16@ucl.ac.uk"
 date: "`r format(Sys.time(), '%d %B %Y')`"
