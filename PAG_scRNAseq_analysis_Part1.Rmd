@@ -2,7 +2,7 @@
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
 subtitle: "Part I: from a gene expression matrix to a SingleCellExperiment object"
 author:
-  - name: "Oriol Pavon Arocas, Sarah F. Olesen and Tiago Branco"
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
     email: "oriol.pavon.16@ucl.ac.uk"
 date: "`r format(Sys.time(), '%d %B %Y')`"
@@ -127,56 +127,19 @@ Our starting point is a gene expression matrix, a .txt/csv file where each colum
 options(stringsAsFactors = FALSE)
 
 # Load data:
-PAG_data <- read.delim("PAG_scRNAseq_data_190118_Raw_Gene_counts.txt", sep="\t", header=TRUE, row.names=NULL)
+PAG_data <- read.delim("PAG_scRNAseq_data_190704_Raw_Gene_counts.txt", sep="\t", header=TRUE, row.names=NULL)
 
 # Inspect the data by printing the initial columns and rows:
-PAG_data[1:9, 1:9]
+PAG_data[1:10, 1:12]
 ```
 
-## Step 1.2 | Tidy up data
-Once we have loaded the data, we have to clean it and tidy it up a bit. We want to assign gene IDs to `rownames` and move any unnecessary columns from data to a separate variable.
-
-We can see that the seventh column in the data table contains the gene names, and that the eigth column has the first sequenced cell, whereas the previous columns have extra information added by the sequencing facility such as the chromosome each gene belongs to and the type of gene we have.
-
-We first move the gene IDs to the `rownames`:
-```{r}
-# Add gene IDs to row names:
-rownames(PAG_data) <- PAG_data[,7] 
-
-# Inspect what you have done and retrieve the dimensions of the object:
-PAG_data[1:9, 1:9] 
-dim(PAG_data)
-```
-
-Next we store the initial columns (chromosome, start, stop, gene symbol, etc.) into a new variable so we can then load them to `rowRanges` and `rowData` (in case we can use them in downstream analysis). We then remove them from the dataset so that we end up with a tidy count matrix:
-```{r}
-# Copy unnecessary columns:
-PAG_gene_information <- PAG_data[,c(1:7)]
-rownames(PAG_gene_information) <- rownames(PAG_data)
-
-# Delete unnecessary columns from data object:
-PAG_data <- PAG_data[,-c(1:7)]
-PAG_data[1:11,1:11]
-PAG_gene_information[1:6, 1:6]
-dim(PAG_data)
-
-# Save the column names (the cell IDs) for a later sanity check to confirm that the cell.ids from the .txt file provided by the sequencing facility match those in our metadata file:
-sequencing_id_QMUL <- colnames(PAG_data) 
-```
-
-We have now moved the gene names to `rownames` and removed unnecessary columns so that we are left with a clean expression matrix. Before we move on, we can calculate the gene lengths (we could potentially use them for normalization purposes, although there are better methods to do this and we will not be using gene lengths here).
-```{r}
-# Calculate gene length and store in a new column:
-PAG_gene_information$gene_length <- PAG_gene_information$Stop - PAG_gene_information$Start
-```
-
-## Step 1.3 | Load metadata from .csv file
+## Step 1.2 | Load metadata from .csv file
 We can also load metadata from a .csv file we have previously created and curated, with any relevant information we might use to assess the quality of the data and remove sub-optimal cells. In this metadata file, each column should be a variable/piece of information (i.e. cell.id, animal.id, sequencing.batch), and each row a cell and its metadata.
 ```{r}
-PAG_metadata <- data.frame(read.table("PAG_scRNAseq_metadata_190418.csv", sep=",", header=TRUE, row.names=NULL))
+PAG_metadata <- data.frame(read.table("PAG_scRNAseq_metadata_190704.csv", sep=",", header=TRUE, row.names=NULL))
 PAG_metadata[1:11,1:11]
 
-# Add the sequencing.id to the rownames so we can later check that the rownames of the matadata (sample names) matches that of the colnames of the data (also sample names):
+# Add the sequencing.id column within the metadata to the rownames so we can later check that the rownames of the matadata (sample names) match that of the colnames of the data (also sample names, but from the sequencing output):
 rownames(PAG_metadata) <- PAG_metadata$sequencing.id
 PAG_metadata[1:11,1:11]
 ```
@@ -208,8 +171,53 @@ class(PAG_metadata$sample.id)
 #levels(PAG_metadata$mouse.id)
 ```
 
+## Step 1.3 | Tidy up data
+Once we have loaded the data, we have to clean it and tidy it up a bit. We want to assign gene IDs to `rownames` and move any unnecessary columns from data to a separate variable.
+
+We can see that the seventh column in the data table contains the gene ENSEMBL IDs, and that the eleventh column has the first sequenced cell, whereas the previous columns have extra information added by the sequencing facility such as the chromosome each gene belongs to and the type of gene we have.
+
+We first move the gene IDs to the `rownames`:
+```{r}
+# Add gene IDs to row names:
+rownames(PAG_data) <- PAG_data[,7]
+
+# Inspect what you have done and retrieve the dimensions of the object:
+PAG_data[1:10, 1:12]
+dim(PAG_data)
+```
+
+Next we store the initial columns (chromosome, start, stop, gene symbol, etc.) into a new variable so we can then load them to `rowRanges` and `rowData` (in case we can use them in downstream analysis). We then remove them from the dataset so that we end up with a tidy count matrix:
+```{r}
+# Copy unnecessary columns:
+PAG_gene_information <- PAG_data[,c(1:10)]
+rownames(PAG_gene_information) <- rownames(PAG_data)
+PAG_data[1:10, 1:12]
+
+# Delete unnecessary columns from data object:
+PAG_data <- PAG_data[,-c(1:10)]
+PAG_data[1:10, 1:12]
+PAG_gene_information[1:10, 1:10]
+dim(PAG_data)
+```
+
+We also want to fix the current sample names stored in `colnames(PAG_data)`. Initially, each cell has the following id `GC.OP.7836.EBRAligned.sortedByCoord.out`. From this, we only care about the four-letter, four-digit number (ID of the sequencing project added by the facility, `GC.OP.7836`) and the three-letter code (ID of the cell added by us, `EBR`), which should match our `PAG_metadata$cell.id` (something we will check a few steps from now). To clean the current sample names, we can use the `stringr` package to remove the second half of the string. We also assign it to a separate variable to later check against `PAG_metadata$cell.id`:
+```{r}
+library(stringr)
+colnames(PAG_data) <- lapply(colnames(PAG_data), function(x){str_remove(x, "Aligned.sortedByCoord.out")})
+
+# Save the column names (the cell IDs as given by the sequencing facility) for a later sanity check to confirm that the cell.ids from the .txt file provided by the sequencing facility match those in our metadata file:
+sequencing_id_QMUL <- colnames(PAG_data)
+PAG_data[1:10, 1:12]
+```
+
+We have now moved the gene names to `rownames`, removed unnecessary columns so that we are left with a clean expression matrix, and cleaned the names in `colnames(PAG_data)`. Before we move on, we can calculate the gene lengths (we could potentially use them for normalization purposes, although there are better methods to do this and we will not be using gene lengths here).
+```{r}
+# Calculate gene length and store in a new column:
+PAG_gene_information$gene_length <- PAG_gene_information$Stop - PAG_gene_information$Start
+```
+
 ## Step 1.4 | Tidy up metadata
-One thing we want to make sure of is that the ordering of the metadata actually matches up with the expression matrix. One way to enforce ordering is to use the `match()` command to ensure the ordering of metadata rows are the same as the ordering of count columns. `match()` will give us an integer vector with the position in table of the first match if there is a match, otherwise nomatch: If x[i] is found to equal table[j] then the value returned in the i-th position of the return value is j, for the smallest possible j. If no match is found, the value is nomatch.
+One thing we want to make sure of is that the order of the metadata actually matches up with the expression matrix. One way to enforce ordering is to use the `match()` command to ensure the ordering of metadata rows are the same as the ordering of count columns. `match()` will give us an integer vector with the position in table of the first match if there is a match, otherwise nomatch: If x[i] is found to equal table[j] then the value returned in the i-th position of the return value is j, for the smallest possible j. If no match is found, the value is nomatch.
 ```{r}
 # Data column names and metadata row names should match:
 right_order <- match(colnames(PAG_data), rownames(PAG_metadata))
@@ -223,29 +231,24 @@ PAG_metadata <- PAG_metadata[right_order,]
 
 Now that we are certain our data and metadata are ordered, we want to check whether the `sequencing_id_QMUL` we extracted from the original .txt file the sequencing facility provided matches the `cell.id` from our metadata, just to be sure that it is safe to use the `cell.id` from the metadata as `colnames` of the `PAG_data`.
 
-Each cell has the following id `GC.OP.7836.EBR_S74`. Our `cell.id` is actually only the three-letter code, the rest was added by the sequencing facility. We want to isolate that three-letter code and assign it to the `colnames`, instead of the long code from the facility. To do this, we can use the `sequencing_id_QMUL` variable we stored at the beginning, which was extracted from the original `colnames` in the expression matrix:
+Initially, each cell has the following id `GC.OP.7836.EBRAligned.sortedByCoord.out`, from which we already removed the unnecessary "Aligned.sortedByCoord.out" and assigned to `sequencing_id_QMUL`. From this, we want to extract the four-digit number (ID of the sequencing project added by the facility) and the three-letter code (ID of the cell added by us), which should match our `PAG_metadata$cell.id` and which we want to isolate and assign to `colnames(PAG_metadata)`, instead of the long code from the facility. To do this, we can use the `sequencing_id_QMUL` variable we stored at the beginning, which was extracted from the original `colnames(PAG_data)` in the expression matrix:
 ```{r}
-# Split the string "GC.OP.7836.EBR_S74" at each dot:
+library(stringr)
+# Split the string "GC.OP.7836.EBR" at each dot:
 cell_id_QMUL <- strsplit(sequencing_id_QMUL, "\\.") 
 
 # Get the third element "7836" and assign it to the sequencing batch slot in the metadata:
-PAG_metadata$batch.sequencing <- lapply(cell_id_QMUL, function(x){x[3]})
+PAG_metadata$batch.sequencing_QMUL <- lapply(cell_id_QMUL, function(x){x[3]})
 
-# Get the fourth element "EBR_S33" and further split it at the underscore:
-cell_id_QMUL <- lapply(cell_id_QMUL, function(x){x[4]}) 
-cell_id_QMUL <- strsplit(as.character(cell_id_QMUL), "_")
+# Get the fourth element "EBR" and keep the only three-letter code that forms the cell.id:
+cell_id_QMUL <- lapply(cell_id_QMUL, function(x){x[4]})
 
-# Get the three letter code and store it:
-cell_id_QMUL <- lapply(cell_id_QMUL, function(x){x[1]})
-
-# Check that the PAG_metadata$cell.id and the cell.id_QMUL match and are in the same order:
+# Check that the PAG_metadata$cell.id and the cell.id_QMUL match and are in the same order. If they match and are in the same order, the following should print the a number of TRUE values equal to the number of samples in the dataset:
 table(match(cell_id_QMUL, PAG_metadata$cell.id) == 1:length(cell_id_QMUL))
-
-# If they match and are in the same order, this should print the a number of TRUE values equal to the number of samples in the dataset:
 dim(PAG_data)
 ```
 
-Now that we are certain the Cell IDs we assigned each cell at the collection stage (`PAG_metadata$cell.id`) match the IDs in the expression matrix provided by the sequencing facility (`cell_id_QMUL`), we can make things a bit more consistent by using them to identify both the `colnames` of the data and the `rownames` of the metadata:
+Now that we are certain the Cell IDs we assigned each cell at the collection stage (`PAG_metadata$cell.id`) match the IDs in the expression matrix provided by the sequencing facility (`cell_id_QMUL` and `colnames(PAG_data)`), we can make things a bit more consistent by using them to identify both the `colnames` of the data and the `rownames` of the metadata:
 ```{r}
 # From the metadata, add the three-letter code that identifies each cell (cell.id column) to the column names of the data:
 colnames(PAG_data) <- PAG_metadata$cell.id
