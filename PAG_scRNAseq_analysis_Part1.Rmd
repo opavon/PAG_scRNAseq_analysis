@@ -57,7 +57,7 @@ length(installed.packages())
 ```
 
 ## Pre-required installation and necessary packages
-You will need to install the following: [R3.5.2](https://cran.r-project.org/) | [RTools35](https://cran.r-project.org/bin/windows/Rtools/) | [RStudio](https://www.rstudio.com/products/rstudio/download/) | [Git](https://git-scm.com/) | [Bioconductor 3.8](https://www.bioconductor.org/install/)
+You will need to install the following: [R3.6.1](https://cran.r-project.org/) | [RTools35](https://cran.r-project.org/bin/windows/Rtools/) | [RStudio 1.1.463](https://www.rstudio.com/products/rstudio/download/) | [Git](https://git-scm.com/) | [Bioconductor 3.9](https://www.bioconductor.org/install/)
 
 Before installing any packages, check that both TLS1.1 and TLS1.2 are selected in _InternetOptions>Advanced_, otherwise you will have problems accessing the CRAN mirrors. If you go to Tools/Global Options/Packages, unselect both the "Use secure download method for HTTP" and the "Use Internet Explorer library/proxy for HTTP" options.
 
@@ -67,7 +67,7 @@ Once you have this, start an RStudio session and install the following packages 
 options(stringsAsFactors = FALSE)
 
 # Install packages from CRAN:
-install.packages(c("devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "metap", "parallel", "rmarkdown", "tidyverse"))
+install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "metap", "parallel", "rmarkdown", "tidyverse"))
 install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
 
 # Install packages from github:
@@ -80,7 +80,7 @@ if (!requireNamespace("BiocManager"))
 library(BiocManager)
 
 # Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "backports", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "globaltest", "GSVA", "httpuv", "iSEE", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
+BiocManager::install(c("AnnotationDbi", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "iSEE", "KEGG.db", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
 ```
 
 <!--
@@ -136,6 +136,8 @@ PAG_data[1:10, 1:12]
 ## Step 1.2 | Load metadata from .csv file
 We can also load metadata from a .csv file we have previously created and curated, with any relevant information we might use to assess the quality of the data and remove sub-optimal cells. In this metadata file, each column should be a variable/piece of information (i.e. cell.id, animal.id, sequencing.batch), and each row a cell and its metadata.
 ```{r}
+options(stringsAsFactors = FALSE)
+
 PAG_metadata <- data.frame(read.table("PAG_scRNAseq_metadata_190704.csv", sep=",", header=TRUE, row.names=NULL))
 PAG_metadata[1:11,1:11]
 
@@ -147,6 +149,7 @@ PAG_metadata[1:11,1:11]
 In addition, we can prepare another .csv file containing different lists of genes (i.e. ion channel genes, neuromodulator genes, etc.) we might later use for analysis.
 ```{r}
 PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", sep=",", header=TRUE, row.names=NULL))
+
 PAG_scRNAseq_gene_lists[1:11,1:11]
 ```
 
@@ -155,20 +158,41 @@ Carefully consider the annotations from the metadata that you will need for your
 
 A longer discussion on factors can be found [here](https://www.stat.berkeley.edu/~s133/factors.html)
 ```{r}
-PAG_metadata$mouse.id <- factor(PAG_metadata$mouse.id)
-PAG_metadata$mouse.sex <- factor(PAG_metadata$mouse.sex)
-PAG_metadata$cell.type <- factor(PAG_metadata$cell.type)
-PAG_metadata$cell.fluorophor <- factor(PAG_metadata$cell.fluorophor)
-PAG_metadata$slice.number <- factor(PAG_metadata$slice.number)
-PAG_metadata$PAG.areacollection <- factor(PAG_metadata$PAG.areacollection)
-PAG_metadata$PAG.hemisphere <- factor(PAG_metadata$PAG.hemisphere)
+PAG_metadata$date.collection <- as.factor(PAG_metadata$date.collection)
+PAG_metadata$sample.number <- as.factor(PAG_metadata$sample.number)
+PAG_metadata$mouse.id <- as.factor(PAG_metadata$mouse.id)
+PAG_metadata$mouse.sex <- as.factor(PAG_metadata$mouse.sex)
+PAG_metadata$cell.type <- as.factor(PAG_metadata$cell.type)
+PAG_metadata$cell.fluorophor <- as.factor(PAG_metadata$cell.fluorophor)
+PAG_metadata$slice.number <- as.factor(PAG_metadata$slice.number)
+PAG_metadata$PAG.areacollection <- as.factor(PAG_metadata$PAG.areacollection)
+PAG_metadata$PAG.hemisphere <- as.factor(PAG_metadata$PAG.hemisphere)
+PAG_metadata$PAG.APaxis <- as.factor(PAG_metadata$PAG.APaxis)
+PAG_metadata$time.slicing <- as.factor(PAG_metadata$time.slicing)
+PAG_metadata$time.sinceslicinghour <- as.factor(PAG_metadata$time.sinceslicinghour)
+PAG_metadata$RT.oligo <- as.factor(PAG_metadata$RT.oligo)
+PAG_metadata$RT.date <- as.factor(PAG_metadata$RT.date)
+PAG_metadata$RT.machine <- as.factor(PAG_metadata$RT.machine)
+PAG_metadata$RT.time <- as.factor(PAG_metadata$RT.time)
+PAG_metadata$preamp.date <- as.factor(PAG_metadata$preamp.date)
+PAG_metadata$preamp.machine <- as.factor(PAG_metadata$preamp.machine)
+PAG_metadata$preamp.time <- as.factor(PAG_metadata$preamp.time)
+PAG_metadata$date.purification <- as.factor(PAG_metadata$date.purification)
+PAG_metadata$date.nanodrop <- as.factor(PAG_metadata$date.nanodrop)
+PAG_metadata$date.qubit <- as.factor(PAG_metadata$date.qubit)
+PAG_metadata$date.bioanalyzer <- as.factor(PAG_metadata$date.bioanalyzer)
+PAG_metadata$batch.sequencing_round <- as.factor(PAG_metadata$batch.sequencing_round)
+```
+
+Some useful functions to examine the metadata:
+```{r}
 class(PAG_metadata$mouse.sex)
 class(PAG_metadata$slice.depth)
 class(PAG_metadata$sample.id)
 
 # Useful factor functions:
-#table(PAG_metadata$PAG.areacollection)
-#levels(PAG_metadata$mouse.id)
+table(PAG_metadata$PAG.areacollection)
+levels(PAG_metadata$mouse.id)
 ```
 
 ## Step 1.3 | Tidy up data
@@ -238,7 +262,11 @@ library(stringr)
 cell_id_QMUL <- strsplit(sequencing_id_QMUL, "\\.") 
 
 # Get the third element "7836" and assign it to the sequencing batch slot in the metadata:
-PAG_metadata$batch.sequencing_QMUL <- lapply(cell_id_QMUL, function(x){x[3]})
+sequencing_QMUL <- lapply(cell_id_QMUL, function(x){x[3]})
+batch.sequencing_QMUL <- data.frame(round=matrix(unlist(sequencing_QMUL)))
+
+PAG_metadata$batch.sequencing_QMUL <- batch.sequencing_QMUL$round
+PAG_metadata$batch.sequencing_QMUL <- as.factor(PAG_metadata$batch.sequencing_QMUL)
 
 # Get the fourth element "EBR" and keep the only three-letter code that forms the cell.id:
 cell_id_QMUL <- lapply(cell_id_QMUL, function(x){x[4]})
@@ -259,7 +287,35 @@ rownames(PAG_metadata) <- colnames(PAG_data)
 PAG_metadata[1:11,1:11]
 ```
 
-## Step 1.5 | Build SingleCellExperiment object
+## Step 1.5 | Add gene-based annotations
+We can add gene-based annotation by pulling the annotation from `org.Mm.eg.db` to relate the ENSEMBL identifiers to gene symbols. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID.
+```{r}
+library(org.Mm.eg.db)
+gene_symbols <- mapIds(org.Mm.eg.db, keys=rownames(PAG_data), 
+                       keytype ="ENSEMBL", column="SYMBOL")
+PAG_gene_annotations <- data.frame(ENSEMBL=rownames(PAG_data), 
+                                   gene_symbols=gene_symbols, 
+                                   stringsAsFactors=FALSE)
+head(PAG_gene_annotations)
+```
+
+We can also identify which rows correspond to mitochondrial genes. To do that we need to use extra annotation describing the genomic location of each gene. For ENSEMBL, this involves using the `TxDb.Mmusculus.UCSC.mm10.ensGene` package.
+```{r}
+library(TxDb.Mmusculus.UCSC.mm10.ensGene)
+gene_location <- mapIds(TxDb.Mmusculus.UCSC.mm10.ensGene, keys=rownames(PAG_data), 
+                        column="CDSCHROM", keytype="GENEID")
+PAG_gene_annotations$Chromosome <- gene_location
+```
+
+Add the annotations from the `mapIds()` function to the already existing `PAG_gene_information` variable to have everything in the same place.
+```{r}
+PAG_gene_information$gene_name_mapids <- PAG_gene_annotations$gene_symbols
+PAG_gene_information$gene_chromosome_mapids <- PAG_gene_annotations$Chromosome
+```
+
+In our case, however, the information provided by the Genome Centre Sequencing Facility is more complete than what we obtain with `mapIds()`, so we will stick with that one.
+
+## Step 1.6 | Build a SingleCellExperiment object
 We have loaded both the data and the metadata. The next step is to create an object of the `SingleCellExperiment` class for downstream analysis. For an introduction to the `SingleCellExperiment` class see [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/data-infrastructure.html) by Robert Amezquita and Stephanie Hicks.
 
 * The `assays` slot in a `SingleCellExperiment` object contains primary data such as counts in a list, where each entry of the list is in a matrix format, where rows correspond to features (genes) and columns correspond to samples (cells). We can extend the `assays` slot: `counts` are intended to be used for raw counts, but we can also have `logcounts` and other transformed values for normalized data (we will compute them below).
@@ -286,52 +342,4 @@ PAG_sceset
 
 # You can get the counts using str() => structure of the object
 #str(counts(PAG_sceset))
-```
-
-<!--
-### Alternative regarding cell-based annotation
-We should only retain relevant metadata fields to avoid storing unnecessary information in the `colData` of the `SingleCellExperiment` object.
-FACTORIZE the metadata you choose!
-```{r}
-# Example from simpleSingleCell workflow by Aaron Lun:
-metadata <- read.delim(lun.sdrf, check.names=FALSE, header=TRUE)
-m <- match(colnames(sce), metadata[["Source Name"]]) # Enforcing identical order.
-stopifnot(all(!is.na(m))) # Checking that nothing's missing.
-metadata <- metadata[m,]
-head(colnames(metadata))
-colData(sce)$Plate <- factor(metadata[["Factor Value[block]"]])
-pheno <- metadata[["Factor Value[phenotype]"]]
-levels(pheno) <- c("induced", "control")
-colData(sce)$Oncogene <- pheno
-table(colData(sce)$Oncogene, colData(sce)$Plate)
-```
--->
-
-## Step 1.6 | Add gene-based annotations
-We can add gene-based annotation by pulling the annotation from `org.Mm.eg.db` to relate the ENSEMBL identifiers to gene symbols. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID.
-```{r}
-library(org.Mm.eg.db)
-gene_symbols <- mapIds(org.Mm.eg.db, keys=rownames(PAG_sceset), 
-                       keytype ="ENSEMBL", column="SYMBOL")
-PAG_gene_annotations <- data.frame(ENSEMBL=rownames(PAG_sceset), SYMBOL=gene_symbols, stringsAsFactors=FALSE)
-head(PAG_gene_annotations)
-```
-
-We can also identify which rows correspond to mitochondrial genes. To do that we need to use extra annotation describing the genomic location of each gene. For ENSEMBL, this involves using the `TxDb.Mmusculus.UCSC.mm10.ensGene` package.
-```{r}
-library(TxDb.Mmusculus.UCSC.mm10.ensGene)
-gene_location <- mapIds(TxDbMmusculus.UCSC.mm10.ensGene, keys=rownames(PAG_sceset), 
-                        column="CDSCHROM", keytype="GENEID")
-PAG_gene_annotations$Chromosome <- gene_location
-
-# Add the remaining bits of information provided in the original .txt file
-PAG_gene_annotations$Strand <- PAG_gene_information$Strand
-# Add the rest as well
-table(PAG_gene_annotations$CHR)
-```
-
-We finally add this info to the `SingleCellExperiment` object:
-```{r}
-rowData(PAG_sceset) <- PAG_gene_annotations
-head(rowData(PAG_sceset))
 ```
