@@ -202,7 +202,7 @@ We can see that the seventh column in the data table contains the gene ENSEMBL I
 We first move the gene IDs to the `rownames`:
 ```{r}
 # Add gene IDs to row names:
-rownames(PAG_data) <- PAG_data[,7]
+rownames(PAG_data) <- PAG_data$gene_id
 
 # Inspect what you have done and retrieve the dimensions of the object:
 PAG_data[1:10, 1:12]
