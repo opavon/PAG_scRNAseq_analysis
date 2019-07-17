@@ -40,7 +40,7 @@ Library sizes vary because scRNA-seq data is often sequenced on highly multiplex
     + Spike-ins should be excluded from the calculation of total expression in order to correct for total cell RNA content (we should only use endogenous genes).
     + One potential drawback of CPM is if your sample contains genes that are both very highly expressed and differentially expressed across the cells. In this case, the total molecules in the cell may depend of whether such genes are on/off in the cell and normalizing by total molecules may hide the differential expression of those genes and/or falsely create differential expression for the remaining genes.  
 
-* __scran (scRNAseq specific)__: The `scran` package implements a variant on CPM specialized for single-cell data (Lun et al. Genome Biology 2016). Briefly this method deals with the problem of vary large numbers of zero values per cell by pooling cells together calculating a normalization factor (similar to CPM) for the sum of each pool. Since each cell is found in many different pools, cell-specific factors can be deconvoluted from the collection of pool-specific factors using linear algebra.
+* __scran (scRNAseq specific)__: The `scran` package implements a variant on CPM specialized for single-cell data (Lun et al. Genome Biology 2016). Briefly, this method deals with the problem of vary large numbers of zero values per cell by pooling cells together calculating a normalization factor (similar to CPM) for the sum of each pool. Since each cell is found in many different pools, cell-specific factors can be deconvoluted from the collection of pool-specific factors using linear algebra.
 
 * __SCnorm (scRNAseq specific)__: Another method developed to normalize scRNAseq data (Bacher et al. Nature Methods 2017).
 
@@ -75,7 +75,7 @@ We should __not__ include spike-ins in the normalization step, as we want to nor
 # PAG_sceset_qc <- normalize(PAG_sceset_qc)
 
 # For small datasets like ours (< 1000 samples), the quickCluster step above can be ommited and we can run computeSumFactors straight away.
-PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, min.mean=1, sizes=seq(21, 101, 5))
+PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, min.mean=1, sizes=seq(21, 201, 5))
 ```
 
 `scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find scran has calculated negative size factors try increasing the cluster and pool sizes until they are all positive. We can check the size factors scran has computed:
@@ -95,6 +95,7 @@ plot(PAG_sceset_qc$total_counts/1e6,
 legend("bottomright", col=c("red", "black"), pch=1, cex=1.2,
        legend=levels(factor(PAG_sceset_qc$cell.type)))
 ```
+
 The size factors are tightly correlated with the library sizes for all cells. This suggests that the systematic differences between cells are primarily driven by differences in capture efficiency or sequencing depth. Any DE between cells would yield a non-linear trend between the total count and size factor, and/or increased scatter around the trend. This does not occur here as strong DE is unlikely to exist within a homogeneous population of cells.
 
 ## Step 3.2 | Compute size factors for spike-in transcripts
@@ -103,7 +104,15 @@ Size factors computed from the counts for endogenous genes are usually not appro
 These size factors are stored in a separate field of the `SCE` object by setting `general.use=FALSE` in `computeSpikeFactors`. This ensures that they will only be used with the spike-in transcripts and not the endogenous genes. Although we are only using spike-ins for quality control, we could use the spike-in size factors to normalize all genes by setting `general.use=TRUE`.
 ```{r}
 PAG_sceset_qc <- computeSpikeFactors(PAG_sceset_qc, type="ERCC", general.use=FALSE)
+# The warning "zero spike-in counts during spike-in normalization" appears because some size factors are 0, which below 1e-8 (see https://github.com/MarioniLab/scran/blob/master/R/computeSpikeFactors.R).
 summary(sizeFactors(PAG_sceset_qc, "ERCC"))
+length(sizeFactors(PAG_sceset_qc, "ERCC"))
+which(sizeFactors(PAG_sceset_qc, "ERCC") < 1e-8)
+
+# To overcome this inconvenience, we add 1e-7 to each spike-in size factor. This should be okay as it is a change barely above this limit and it allows us to circumvent the warning and run normalize() later on. Otherwise normalize() requires all size factors to be positive real numbers, and unlike computeSizeFactors(), computeSpikeFactors() does not have a postive=TRUE argument as input.
+sizeFactors(PAG_sceset_qc, "ERCC") <- sizeFactors(PAG_sceset_qc, "ERCC") + 1e-8
+summary(sizeFactors(PAG_sceset_qc, "ERCC"))
+which(sizeFactors(PAG_sceset_qc, "ERCC") < 1e-8)
 ```
 
 The two sets of size factors tend to agree less due to the effects of heterogeneity in total RNA content between cells - this is expected.
@@ -136,14 +145,17 @@ To compare the efficiency of different normalization methods we can use visual i
 If we look at the RLE plot, the graph shows a box plot of the RLE values for each cell (each line is a boxplot), the circles indicate the median (nearly all should be at 0 after normalization), and the line indicates the interquartile range.
 ```{r}
 library(ggplot2)
+library(sgeostat)
+library(mvoutlier)
 
 # Without log-transformation
 p1 <- plotRLE(
     PAG_sceset_qc, 
     exprs_values = "counts",
     exprs_logged = TRUE,
-    legend = TRUE#,
-    #colour_by = "mouse.id"
+    style = "full",
+    legend = TRUE,
+    colour_by = "mouse.id"
 ) + ggtitle("Raw counts")
 
 # With log-transformation
@@ -151,6 +163,7 @@ p2 <- plotRLE(
     PAG_sceset_qc, 
     exprs_values = "logcounts_raw",
     exprs_logged = TRUE,
+    style = "full",
     legend = TRUE,
     colour_by = "mouse.id"
 ) + ggtitle("Logcounts Raw")
@@ -160,15 +173,19 @@ p3 <- plotRLE(
     PAG_sceset_qc, 
     exprs_values = "logcounts",
     exprs_logged = TRUE,
-    legend = TRUE#,
-    #colour_by = "mouse.id"
+    style = "full",
+    legend = TRUE,
+    colour_by = "mouse.id"
 ) + ggtitle("scran")
 
-multiplot(p1, p2, p3, cols=2)
+# This might be too heavy to plot at once, so plot each graph one at a time:
+plot(p1)
+plot(p2)
+plot(p3)
 ```
 
 ## Save Data
 ```{r}
 # Save the normalized data:
-saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")
+saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc_norm.rds")
 ```
