@@ -76,12 +76,10 @@ We should __not__ include spike-ins in the normalization step, as we want to nor
 
 # For small datasets like ours (< 1000 samples), the quickCluster step above can be ommited and we can run computeSumFactors straight away.
 PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, min.mean=1, sizes=seq(21, 201, 5))
-```
-
-`scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find scran has calculated negative size factors try increasing the cluster and pool sizes until they are all positive. We can check the size factors scran has computed:
-```{r}
 summary(sizeFactors(PAG_sceset_qc))
 ```
+
+`scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find scran has calculated negative size factors try increasing the cluster and pool sizes until they are all positive.
 
 Plotting the size factors against the library sizes should show some positive correlation.
 ```{r}
@@ -179,9 +177,9 @@ p3 <- plotRLE(
 ) + ggtitle("scran")
 
 # This might be too heavy to plot at once, so plot each graph one at a time:
-plot(p1)
-plot(p2)
-plot(p3)
+#plot(p1)
+#plot(p2)
+#plot(p3)
 ```
 
 ## Save Data

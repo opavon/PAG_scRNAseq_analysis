@@ -78,6 +78,10 @@ is_Cre <- which(rowData(PAG_sceset)$Chromosome == "C") # Cre transgene to expres
 
 is_SmartSeqTSO <- which(rowData(PAG_sceset)$Chromosome == "D") # TSO concatamers
 
+# VGAT and VGluT2
+is_VGAT <- which(rowData(PAG_sceset)$gene_name == "Slc32a1")
+is_VGluT2 <- which(rowData(PAG_sceset)$gene_name == "Slc17a6") 
+
 spikeNames(PAG_sceset) # Only ERCCs should appear as Spikes in the SCE object.
 ```
 
@@ -106,7 +110,9 @@ PAG_sceset <- calculateQCMetrics(
         tdTomato = is_tdTomato,
         EYFP = is_EYFP,
         Cre = is_Cre,
-        TSO_concatamers = is_SmartSeqTSO
+        TSO_concatamers = is_SmartSeqTSO,
+        VGAT = is_VGAT,
+        VGluT2 = is_VGluT2
     )
 )
 
@@ -290,7 +296,6 @@ hist(
     breaks = 50,
     xlab="EYFP expression (total counts)", ylab="Number of cells", main="", col="grey80"
 )
-#abline(v = 0.0015, col = "blue", lwd=2, lty=2)
 
 # tdTomato
 hist(
@@ -298,7 +303,6 @@ hist(
     breaks = 50,
     xlab="tdTomato expression (total counts)", ylab="Number of cells", main="", col="grey80"
 )
-#abline(v = 0.0015, col = "blue", lwd=2, lty=2)
 
 # Cre
 hist(
@@ -306,10 +310,22 @@ hist(
     breaks = 50,
     xlab="Cre expression (total counts)", ylab="Number of cells", main="", col="grey80"
 )
-#abline(v = 0.0015, col = "blue", lwd=2, lty=2)
 ```
 
 ```{r}
+# Plot Expression values of EYFP and tdTomato
+plotExpression(PAG_sceset, "EYFP", x="cell.fluorophor", 
+               exprs_values = "counts", 
+               colour_by = "PAG.areacollection")
+
+plotExpression(PAG_sceset, "tdTomato", x="cell.fluorophor", 
+               exprs_values = "counts", 
+               colour_by = "PAG.areacollection")
+
+plotExpression(PAG_sceset, "EYFP", x="tdTomato", 
+               exprs_values = "counts", 
+               colour_by = "PAG.areacollection")
+
 # Calculate the ratio between counts for each cell
 PAG_sceset$fluorophor_ratio <- (PAG_sceset$total_counts_EYFP / (PAG_sceset$total_counts_EYFP + PAG_sceset$total_counts_tdTomato + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
 
@@ -322,6 +338,53 @@ plot(PAG_sceset$fluorophor_ratio,
 )
 
 table(PAG_sceset$fluorophor_ratio > 0.2 & PAG_sceset$fluorophor_ratio < 0.8)
+```
+
+### 2.3.4 | VGAT/VGluT2 ratio
+We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2. Do they only express one or the other, or do some cells express both? If so, in which proportions? We can look at this the same way we looked at EYFP and tdTomato ratios.
+```{r}
+# Plot the histograms of the counts assigned to VGAT and VGluT2 in all cells:
+par(mfrow=c(1,2))
+
+# VGAT
+hist(
+    PAG_sceset$total_counts_VGAT,
+    breaks = 50,
+    xlab="VGAT expression (total counts)", ylab="Number of cells", main="", col="grey80"
+)
+
+# VGluT2
+hist(
+    PAG_sceset$total_counts_VGluT2,
+    breaks = 50,
+    xlab="VGluT2 expression (total counts)", ylab="Number of cells", main="", col="grey80"
+)
+```
+
+```{r}
+# Plot Expression values of VGAT and VGluT2
+plotExpression(PAG_sceset, "Slc32a1", x="cell.type", 
+               exprs_values = "counts", 
+               colour_by = "PAG.areacollection")
+
+plotExpression(PAG_sceset, "Slc17a6", x="cell.type", 
+               exprs_values = "counts", 
+               colour_by = "PAG.areacollection")
+
+plotExpression(PAG_sceset, "Slc32a1", x="Slc17a6", 
+               exprs_values = "counts", 
+               colour_by = "PAG.areacollection")
+
+# Calculate the ratio between counts for each cell
+PAG_sceset$VGAT_VGluT2_ratio <- (PAG_sceset$total_counts_VGAT / (PAG_sceset$total_counts_VGAT + PAG_sceset$total_counts_VGluT2 + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
+
+plot(PAG_sceset$VGAT_VGluT2_ratio,
+     type = "p", 
+     xlab = "Cell #",
+     ylab = "VGAT / VGluT2 ratio"
+)
+
+table(PAG_sceset$VGAT_VGluT2_ratio > 0.1 & PAG_sceset$VGAT_VGluT2_ratio < 0.9)
 ```
 
 ## Step 2.4 | Filtering low quality cells
@@ -363,7 +426,8 @@ filter_by_pct_counts_feature_control_manual <- (PAG_sceset$pct_counts_feature_co
 table(filter_by_pct_counts_feature_control_manual)
 
 # Keep cells with a fluorophor ratio below 0.2 or above 0.8
-filter_by_fluorophor_ratio_manual <- (PAG_sceset$fluorophor_ratio > 0.2 & PAG_sceset$fluorophor_ratio < 0.8)
+filter_by_fluorophor_ratio_manual <- (PAG_sceset$fluorophor_ratio > 0.2 &
+                                        PAG_sceset$fluorophor_ratio < 0.8)
 table(filter_by_fluorophor_ratio_manual)
 ```
 
@@ -658,13 +722,13 @@ It is often instructive to consider the number of reads consumed by the top 50 e
 ```{r}
 # Change the gene names from ENSEMBL IDs to Gene Symbols to facilitate interpretation
 rownames(PAG_sceset) <- rowData(PAG_sceset)$gene_name
-# To bring it back do:
-#rownames(PAG_sceset) <- rowData(PAG_sceset)$gene_id
 
 # Plot the total counts consumed by the top 50 expressed genes in the whole dataset and after filtering low quality cells:
 plotHighestExprs(PAG_sceset, n = 50, colour_cells_by = "cell.type")
 plotHighestExprs(PAG_sceset[ , colData(PAG_sceset)$use], n = 50, colour_cells_by = "cell.type")
 
+# To bring back the gene_names to ENSEMBL IDs do:
+#rownames(PAG_sceset) <- rowData(PAG_sceset)$gene_id
 ```
 
 It can also be useful to plot gene expression frequency versus mean expression level to assess the effects of technical dropout in the dataset. The `plotExprsFreqVsMean()` function fits a non-linear least squares curve for the relationship between expression frequency and mean expression and uses this to define the number of genes above high technical dropout and the numbers of genes that are expressed (here defined as at least 4 counts) in at least 50% and at least 25% of cells. A subset of genes to be treated as feature controls can be specified, otherwise any feature controls previously defined are used. 
@@ -694,7 +758,7 @@ summary(filter_genes)
 # Assign the chosen list of filtered genes to $use slot corresponding to the rows (genes):
 rowData(PAG_sceset)$use <- filter_genes
 table(filter_genes)
-dim(PAG_sceset)
+dim(PAG_sceset) # We haven't changed anything in the SCE object yet.
 ```
 
 Now, the `colData(PAG_sceset)$use` should point to the __samples__ that have passed our QC, whereas the `rowData(PAG_sceset)$use` should point to the __genes__ that have passed our QC (i.e. that are expressed in at least one cell).
@@ -718,6 +782,7 @@ PAG_sceset_qc <- PAG_sceset[rowData(PAG_sceset)$use, colData(PAG_sceset)$use]
 dim(PAG_sceset)
 dim(PAG_sceset_qc)
 PAG_sceset_qc
+table(PAG_sceset_qc$PAG.areacollection)
 
 # Save the filtered and QCed dataset:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")

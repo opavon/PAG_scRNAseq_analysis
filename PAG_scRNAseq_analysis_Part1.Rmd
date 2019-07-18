@@ -334,8 +334,8 @@ We have now loaded both the data and the metadata. The next step is to create an
 library(SingleCellExperiment)
 PAG_sceset <- SingleCellExperiment(assays = list(counts = as.matrix(PAG_data)),
                                    colData = PAG_metadata, 
-                                   rowData = PAG_gene_information#,
-                                   #metadata = PAG_scRNAseq_gene_lists
+                                   rowData = PAG_gene_information,
+                                   metadata = PAG_scRNAseq_gene_lists
                                    )
 PAG_sceset
 ```
