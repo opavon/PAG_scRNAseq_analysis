@@ -85,16 +85,16 @@ is_VGluT2 <- which(rowData(PAG_sceset)$gene_name == "Slc17a6")
 spikeNames(PAG_sceset) # Only ERCCs should appear as Spikes in the SCE object.
 ```
 
-### 2.1.1 | Uniquify feature names [skip for now]
+### 2.1.1 | Uniquify feature names
 To facilitate interpretation in the upcoming steps, we can use gene symbols as `rownames`. `scater` provides the `uniquifyFeatureNames()` function to avoid non-unique gene symbols (in which case we paste the ENSEMBL ID after it) or missing gene symbols (in which case we use the ENSEMBL ID). Only do this for your own interpretation and analysis, if you release the expression matrix, make sure you use a stable ID such as ENSEMBL as the row name.
-
 ```{r}
 library(scater)
-rownames(PAG_sceset) <- uniquifyFeatureNames(rowData(PAG_sceset)$ENSEMBL, rowData(PAG_sceset)$SYMBOL)
 head(rownames(PAG_sceset), 50)
+tail(rownames(PAG_sceset), 50)
+rownames(PAG_sceset) <- uniquifyFeatureNames(rowData(PAG_sceset)$gene_id, rowData(PAG_sceset)$gene_name)
+head(rownames(PAG_sceset), 50)
+tail(rownames(PAG_sceset), 50)
 ```
-
-We can continue working with ENSEMBL IDs, so we will skip this step for now.
 
 ## Step 2.2 | Calculate QC metrics
 Once we have defined the control features, there is a function in scater (`calculateQCMetrics`) that allows us to automatically calculate QC metrics based on these features. For each cell, it calculates quality control metrics such as the total number of counts or the proportion of counts in mitochondrial genes or spike-in transcripts. These are stored in the  `colData` of the `SingleCellExperiment` for future reference:
@@ -314,17 +314,18 @@ hist(
 
 ```{r}
 # Plot Expression values of EYFP and tdTomato
-plotExpression(PAG_sceset, "EYFP", x="cell.fluorophor", 
+plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="mouse.id", 
                exprs_values = "counts", 
-               colour_by = "PAG.areacollection")
+               colour_by = "cell.fluorophor")
 
-plotExpression(PAG_sceset, "tdTomato", x="cell.fluorophor", 
+plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="cell.fluorophor", 
                exprs_values = "counts", 
-               colour_by = "PAG.areacollection")
+               colour_by = "mouse.sex")
 
 plotExpression(PAG_sceset, "EYFP", x="tdTomato", 
                exprs_values = "counts", 
-               colour_by = "PAG.areacollection")
+               colour_by = "cell.fluorophor",
+               shape_by = "mouse.sex")
 
 # Calculate the ratio between counts for each cell
 PAG_sceset$fluorophor_ratio <- (PAG_sceset$total_counts_EYFP / (PAG_sceset$total_counts_EYFP + PAG_sceset$total_counts_tdTomato + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
@@ -363,17 +364,18 @@ hist(
 
 ```{r}
 # Plot Expression values of VGAT and VGluT2
-plotExpression(PAG_sceset, "Slc32a1", x="cell.type", 
+plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x="mouse.id", 
                exprs_values = "counts", 
-               colour_by = "PAG.areacollection")
+               colour_by = "cell.type")
 
-plotExpression(PAG_sceset, "Slc17a6", x="cell.type", 
+plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x="cell.type", 
                exprs_values = "counts", 
-               colour_by = "PAG.areacollection")
+               colour_by = "cell.type")
 
 plotExpression(PAG_sceset, "Slc32a1", x="Slc17a6", 
                exprs_values = "counts", 
-               colour_by = "PAG.areacollection")
+               colour_by = "cell.fluorophor",
+               shape_by = "cell.type")
 
 # Calculate the ratio between counts for each cell
 PAG_sceset$VGAT_VGluT2_ratio <- (PAG_sceset$total_counts_VGAT / (PAG_sceset$total_counts_VGAT + PAG_sceset$total_counts_VGluT2 + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
@@ -720,8 +722,8 @@ For now, we will only remove genes not expressed in any cell. Depending on which
 ### 2.6.3 | Identities of the most highly expressed genes
 It is often instructive to consider the number of reads consumed by the top 50 expressed genes. This should generally be dominated by constitutively expressed transcripts, such as those for ribosomal or mitochondrial proteins. The presence of other classes of features may be cause for concern if they are not consistent with expected biology. Many spike-in transcripts in the top most expressed genes suggests that too much spike-in RNA was added during library preparation, while the absence of ribosomal proteins and/or the presence of their pseudogenes are indicative of suboptimal alignment.
 ```{r}
-# Change the gene names from ENSEMBL IDs to Gene Symbols to facilitate interpretation
-rownames(PAG_sceset) <- rowData(PAG_sceset)$gene_name
+# If you did not run "Uniquify feature names"" you can change the gene names from ENSEMBL IDs to Gene Symbols to facilitate interpretation
+#rownames(PAG_sceset) <- rowData(PAG_sceset)$gene_name
 
 # Plot the total counts consumed by the top 50 expressed genes in the whole dataset and after filtering low quality cells:
 plotHighestExprs(PAG_sceset, n = 50, colour_cells_by = "cell.type")
@@ -749,7 +751,7 @@ In contrast, the "at least n" filter depends heavily on the choice of `n`. With 
 The safest option will be to apply these filters at each step rather than applying them globally by subsetting the `SingleCellExperiment` object. This ensures that the most appropriate filter is used in each application. For now, we only remove genes that are not expressed in any cell to reduce computational work in downstream steps. Such genes provide no information and would be removed by any filtering strategy. We thus use the result from the `nexprs` function with a `detection_limit=0` and `num_cells>=1`. Note that the `detection_limit` is a numeric scalar providing the value above which observations are deemed to be expressed.
 ```{r}
 # Set the filter with the chosen parameters:
-use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow=TRUE)
+use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow = TRUE)
 filter_genes <- use_numcells >= 1
 summary(filter_genes)
 ```
