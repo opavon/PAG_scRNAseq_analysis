@@ -44,6 +44,20 @@ assayNames(PAG_sceset_qc_norm)
 PAG_sceset_qc_norm
 ```
 
+__One important thing...__
+Consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
+```{r}
+dim(PAG_sceset_qc_norm)
+
+is_X_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X") # Find which genes correspond to chromosome X 
+is_Y_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y") # Find which genes correspond to chromosome Y
+is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find which genes correspond to feature controls (Ribosomal, Mitochondrial, ERCC, transgenes)
+
+filter_genes_qc_norm <- !(is_X_qc_norm | is_Y_qc_norm | is_feature_control_qc_norm)
+PAG_sceset_qc_norm <- PAG_sceset_qc_norm[filter_genes_qc_norm, ]
+dim(PAG_sceset_qc_norm)
+```
+
 ## Step 4.1 | Modelling the technical component of variation
 Variability in the observed expression values across genes can be driven by genuine biological heterogeneity or uninteresting technical noise. To distinguish between these two possibilties, we need to model the technical component of the variance of the expression values for each gene. 
 
@@ -138,8 +152,8 @@ Identifying HVGs requires estimation of the variance in expression for each gene
 We define HVGs as genes with biological components that are significantly greater than zero at a false discovery rate (FDR) of 5%. These genes are interesting as they drive differences in the expression profiles between cells, and should be prioritized for further investigation. In addition, we only consider a gene to be a HVG if it has a biological component greater than or equal to 0.5. For transformed expression values on the log2 scale, this means that the average difference in true expression between any two cells will be at least 2-fold. (This reasoning assumes that the true log-expression values are Normally distributed with variance of 0.5. The root-mean-square of the difference between two values is treated as the average log2-fold change between cells and is equal to unity.) We rank the results by the biological component to focus on genes with larger biological variability.
 ```{r}
 #hvg_out_spikes <- var_out_spikes[which(var_out_spikes$FDR <= 0.05 & var_out_spikes$bio >= 0.5),]
-hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio >= 0.5),]
-# Consider removing the $bio >= 0.5 filter
+hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio > 0.5),]
+# Consider removing the $bio >= 0.5 filter, switching to $bio >= 0.5 adds around 300 genes, so it doesn't make a massive difference.
 #nrow(hvg_out_spikes)
 nrow(hvg_out_no_spikes)
 ```
@@ -157,10 +171,16 @@ write.table(file="PAG_hvg_no_spikes.tsv", hvg_out_no_spikes, sep="\t", quote=FAL
 head(hvg_out_no_spikes)
 ```
 
-We finally check the distribution of expression values for the genes with the largest biological components to ensure that the variance estimate is not being dominated by one or two outlier cells.
+Before we store them in our `SingleCellExperiment` objecte, we check the distribution of expression values for the genes with the largest biological components to ensure that the variance estimate is not being dominated by one or two outlier cells.
 ```{r}
 fontsize <- theme(axis.text=element_text(size=12), axis.title=element_text(size=16))
 plotExpression(PAG_sceset_qc_norm, features=rownames(hvg_out_no_spikes)[1:20]) + fontsize
+```
+
+Now we can add the results into the `metadata` component of the `PAG_sceset_qc_norm` object. The metadata component can hold any object, as it is a list container. Any results that you’d like to keep are safe to store here, and a great way to save or share intermediate results that would otherwise be kept in separate objects.
+```{r}
+metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes <- rownames(hvg_out_no_spikes)
+metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes[1:20]
 ```
 
 ***
@@ -265,7 +285,7 @@ scRNA-seq is capable of measuring the expression of many thousands of genes in e
 
 Thus, it is often advantageous to perform feature selection to remove those genes which only exhibit technical noise from downstream analysis. Not only does this generally increase the signal:noise ratio in the data; it also reduces the computational complexity of analyses, by reducing the total amount of data to be processed.
 
-For scRNA-seq data, we will be focusing on unsupervised methods of feature selection which don't require any a priori information, such as cell-type labels or biological group, since they are not available, or may be unreliable, for many experiments. In contrast, differential expression can be considered a form of supervised feature selection since it uses the known biological label of each sample to identify features (i.e. genes) which are expressed at different levels across groups.
+For scRNA-seq data, we will be focusing on unsupervised methods of feature selection which don’t require any a priori information, such as cell-type labels or biological group, since they are not available, or may be unreliable, for many experiments. In contrast, differential expression can be considered a form of supervised feature selection since it uses the known biological label of each sample to identify features (i.e. genes) which are expressed at different levels across groups.
 
 Feature selection is performed after QC. `M3Drop` contains two different feature selection methods `M3DropFeatureSelection` which is based on a Michaelis-Menten curve and is designed for full-transcript single-cell RNA-seq data (such as Smartseq2) and `NBumiFeatureSelectionCombinedDrop` which is based on a negative binomial model and is designed for UMI count data.
 
@@ -309,7 +329,7 @@ HVG_genes <- Brennecke_HVG$Gene
 ```
 
 #### High Dropout Genes
-An alternative to finding HVGs is to identify genes with unexpectedly high numbers of zeros. The frequency of zeros, known as the "dropout rate", is very closely related to expression level in scRNASeq data. Zeros are the dominant feature of single-cell RNASeq data, typically accounting for over half of the entries in the final expression matrix. These zeros predominantly result from the failure of mRNAs failing to be reversed transcribed (Andrews and Hemberg, 2016). Reverse transcription is an enzyme reaction thus can be modelled using the Michaelis-Menten equation: Pdropout=1???S/(K+S) where S is the mRNA concentration in the cell (we will estimate this as average expression) and K is the Michaelis-Menten constant.
+An alternative to finding HVGs is to identify genes with unexpectedly high numbers of zeros. The frequency of zeros, known as the "dropout rate", is very closely related to expression level in scRNASeq data. Zeros are the dominant feature of single-cell RNASeq data, typically accounting for over half of the entries in the final expression matrix. These zeros predominantly result from the failure of mRNAs failing to be reversed transcribed (Andrews and Hemberg, 2016). Reverse transcription is an enzyme reaction thus can be modelled using the Michaelis-Menten equation: Pdropout=1−S/(K+S) where S is the mRNA concentration in the cell (we will estimate this as average expression) and K is the Michaelis-Menten constant.
 
 Because the Michaelis-Menten equation is a convex non-linear function, genes which are differentially expression across two or more populations of cells in our dataset will be shifted up/right of the Michaelis-Menten model. We use M3Drop to identify significant outliers to the right of the MM curve. We also apply 1% FDR multiple testing correction:
 ```{r}
@@ -364,9 +384,6 @@ We can also consider how consistent each feature selection method is with the ot
 ```{r}
 J <- sum(M3Drop_genes %in% HVG_genes)/length(unique(c(M3Drop_genes, HVG_genes)))
 ```
-
-
-
 
 # STEP 5 | Batch correction
 Our data have been collected from samples originated from several animals and processed on different days. Small uncontrollable differences in processing between batches (changes in operator, differences in reagent quality) can result in systematic differences in the observed expression in cells from different batches, which are refered to as "batch effects". Such differences are not interesting and can be problematic as they can be major drivers of heterogeneity in the data, masking the relevant biological differences and complicating interpretation of the results.
@@ -769,9 +786,3 @@ We strongly recommend selecting some markers for use in validation studies with 
 * By setting `direction="up"`, `findMarkers` will only return genes that are upregulated in each cluster compared to the others. This is convenient in highly heterogeneous populations to focus on genes that can immediately identify each cluster. While lack of expression may also be informative, it is less useful for positive identification.
 * `findMarkers` can also be directed to find genes that are DE between the chosen cluster and all other clusters. This should be done by setting `pval.type="all"`, which defines the p-value for each gene as the maximum value across all pairwise comparisons involving the chosen cluster. Combined with `direction="up"`, this can be used to identify unique markers for each cluster. However, this is sensitive to overclustering, as unique marker genes will no longer exist if a cluster is split into two smaller subclusters.
 * It must be stressed that the (adjusted) p-values computed here cannot be properly interpreted as measures of significance. This is because the clusters have been empirically identified from the data.
-
-# 2.7.1 | One last thing...
-Consider dropping any Ribosomal, Mitochondrial, ERCC, sex-related genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
-```{r}
-# PAG_sceset_qc_norm <- !rowData(PAG_sceset_qc_norm)$is_feature_control
-```
