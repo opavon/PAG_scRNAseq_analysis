@@ -256,24 +256,24 @@ We define HVGs as genes with biological components that are significantly greate
 # Consider playing with the $FDR threshold and the $bio threshold, try reducing/increasing them to make them more stringent or to get more genes.
 
 # from trendVar with spikes
-hvg_out_spikes_ <- var_out_spikes[which(var_out_spikes$FDR <= 0.01 & var_out_spikes$bio >= 0.5),]
+hvg_out_spikes <- var_out_spikes[which(var_out_spikes$FDR <= 0.05 & var_out_spikes$bio >= 0.5),]
 nrow(hvg_out_spikes)
 
-hvg_out_spikes_mouseid <- var_out_spikes_mouseid[which(var_out_spikes_mouseid$FDR <= 0.01 & var_out_spikes_mouseid$bio >= 0.5),]
+hvg_out_spikes_mouseid <- var_out_spikes_mouseid[which(var_out_spikes_mouseid$FDR <= 0.05 & var_out_spikes_mouseid$bio >= 0.5),]
 nrow(hvg_out_spikes_mouseid)
 
-hvg_out_spikes_batch <- var_out_spikes_batch[which(var_out_spikes_batch$FDR <= 0.01 & var_out_spikes_batch$bio >= 0.5),]
+hvg_out_spikes_batch <- var_out_spikes_batch[which(var_out_spikes_batch$FDR <= 0.05 & var_out_spikes_batch$bio >= 0.5),]
 nrow(hvg_out_spikes_batch)
 
 
 # from trendVar without spikes
-hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.01 & var_out_no_spikes$bio >= 0.5),]
+hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio >= 0.5),]
 nrow(hvg_out_no_spikes)
 
-hvg_out_no_spikes_mouseid <- var_out_no_spikes_mouseid[which(var_out_no_spikes_mouseid$FDR <= 0.01 & var_out_no_spikes_mouseid$bio >= 0.5),]
+hvg_out_no_spikes_mouseid <- var_out_no_spikes_mouseid[which(var_out_no_spikes_mouseid$FDR <= 0.05 & var_out_no_spikes_mouseid$bio >= 0.5),]
 nrow(hvg_out_no_spikes_mouseid)
 
-hvg_out_no_spikes_batch <- var_out_no_spikes_batch[which(var_out_no_spikes_batch$FDR <= 0.01 & var_out_no_spikes_batch$bio >= 0.5),]
+hvg_out_no_spikes_batch <- var_out_no_spikes_batch[which(var_out_no_spikes_batch$FDR <= 0.05 & var_out_no_spikes_batch$bio >= 0.5),]
 nrow(hvg_out_no_spikes_batch)
 ```
 
@@ -281,34 +281,34 @@ nrow(hvg_out_no_spikes_batch)
 We rank the results to focus on genes with larger biological components. This highlights an interesting aspect of the underlying hypothesis test, which is based on the ratio of the total variance to the expected technical variance. Ranking based on p-value tends to prioritize HVGs that are more likely to be true positives but, at the same time, less likely to be interesting. This is because the ratio can be very large for HVGs that have very low total variance and do not contribute much to the cell-cell heterogeneity.
 ```{r}
 # from trendVar with spikes
-hvg_out_spikes <- hvg_out_spikes[order(hvg_out_spikes$bio, decreasing=TRUE),]
+hvg_out_spikes <- hvg_out_spikes[order(hvg_out_spikes$bio, decreasing=TRUE), ]
 nrow(hvg_out_spikes)
 head(hvg_out_spikes)
 
-hvg_out_spikes_mouseid <- hvg_out_spikes_mouseid[order(hvg_out_spikes_mouseid$bio, decreasing=TRUE),]
+hvg_out_spikes_mouseid <- hvg_out_spikes_mouseid[order(hvg_out_spikes_mouseid$bio, decreasing=TRUE), ]
 nrow(hvg_out_spikes_mouseid)
 head(hvg_out_spikes_mouseid)
 
-hvg_out_spikes_batch <- hvg_out_spikes_batch[order(hvg_out_spikes_batch$bio, decreasing=TRUE),]
+hvg_out_spikes_batch <- hvg_out_spikes_batch[order(hvg_out_spikes_batch$bio, decreasing=TRUE), ]
 nrow(hvg_out_spikes_batch)
 head(hvg_out_spikes_batch)
 
 # from trendVar without spikes
-hvg_out_no_spikes <- hvg_out_no_spikes[order(hvg_out_no_spikes$bio, decreasing=TRUE),]
+hvg_out_no_spikes <- hvg_out_no_spikes[order(hvg_out_no_spikes$bio, decreasing=TRUE), ]
 nrow(hvg_out_no_spikes)
 head(hvg_out_no_spikes)
 
-hvg_out_no_spikes_mouseid <- hvg_out_no_spikes_mouseid[order(hvg_out_no_spikes_mouseid$bio, decreasing=TRUE),]
+hvg_out_no_spikes_mouseid <- hvg_out_no_spikes_mouseid[order(hvg_out_no_spikes_mouseid$bio, decreasing=TRUE), ]
 nrow(hvg_out_no_spikes_mouseid)
 head(hvg_out_no_spikes_mouseid)
 
-hvg_out_no_spikes_batch <- hvg_out_no_spikes_batch[order(hvg_out_no_spikes_batch$bio, decreasing=TRUE),]
+hvg_out_no_spikes_batch <- hvg_out_no_spikes_batch[order(hvg_out_no_spikes_batch$bio, decreasing=TRUE), ]
 nrow(hvg_out_no_spikes_batch)
 head(hvg_out_no_spikes_batch)
 ```
 
 __One important thing...__
-Before moving on to downstream analysis, consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
+Before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
 ```{r}
 # Identify the genes we want to drop:
 is_X_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X") # Find which genes correspond to chromosome X 
@@ -342,87 +342,146 @@ filt_hvg_6 <- rownames(hvg_out_no_spikes_batch) %in% rownames(PAG_sceset_qc_norm
 hvg_out_no_spikes_batch_filt <- hvg_out_no_spikes_batch[filt_hvg_6,]
 ```
 
-Before we store them in our `SingleCellExperiment` object, we check the distribution of expression values for the genes with the largest biological components to ensure that the variance estimate is not being dominated by one or two outlier cells.
+#### 4a.2.2 | Visualize, store, and export the results
+Now that we have removed the genes we are not interested in, we can use `limma` and `vennDiagram` to compare how many genes we get in each condition with or without spike-ins, and with or without blocking:
+```{r}
+library(limma)
+#####
+# Inspect the overlap between HVGs obtained with or without using spike-ins to fit a variance trend:
+sum(rownames(hvg_out_spikes_filt) %in% rownames(hvg_out_no_spikes_filt))
+sum(rownames(hvg_out_no_spikes_mouseid_filt) %in% rownames(hvg_out_spikes_mouseid_filt))
+sum(rownames(hvg_out_no_spikes_batch_filt) %in% rownames(hvg_out_spikes_batch_filt))
+venn_diag_spikes_nospikes <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_filt),
+                                              rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_filt))
+                                        )
+
+vennDiagram(venn_diag_spikes_nospikes,
+            names = c("Spikes", "No_Spikes"),
+            circle.col = c("#E69F00", "#56B4E9")
+            )
+venn_diag_spikes_nospikes_mouseid <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_mouseid_filt),
+                                                      rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_mouseid_filt))
+                                                )
+
+vennDiagram(venn_diag_spikes_nospikes_mouseid,
+            names = c("Spikes_MouseID", "No_Spikes_MouseID"),
+            circle.col = c("#E69F00", "#56B4E9")
+            )
+
+venn_diag_spikes_nospikes_batch <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_batch_filt),
+                                                    rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_batch_filt))
+                                              )
+vennDiagram(venn_diag_spikes_nospikes_batch,
+            names = c("Spikes_Batch", "No_Spikes_Batch"),
+            circle.col = c("#E69F00", "#56B4E9")
+            )
+
+#####
+# Inspect the overlap between HVGs obtained using spike-ins to fit a variance trend, and with or without blocking:
+sum(rownames(hvg_out_spikes_filt) %in% rownames(hvg_out_spikes_mouseid_filt))
+sum(rownames(hvg_out_spikes_batch_filt) %in% rownames(hvg_out_spikes_mouseid_filt))
+sum(rownames(hvg_out_spikes_filt) %in% rownames(hvg_out_spikes_batch_filt))
+venn_diag_spikes <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_filt),
+                                     rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_mouseid_filt),
+                                     rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_batch_filt))
+                               )
+vennDiagram(venn_diag_spikes,
+            names = c("Spikes", "Spikes_MouseID", "Spikes_Batch"),
+            circle.col = c("#E69F00", "#56B4E9", "#009E73")
+            )
+
+#####
+# Inspect the overlap between HVGs obtained without using spike-ins to fit a variance trend, and with or without blocking:
+sum(rownames(hvg_out_no_spikes_mouseid_filt) %in% rownames(hvg_out_no_spikes_filt))
+sum(rownames(hvg_out_no_spikes_batch_filt) %in% rownames(hvg_out_no_spikes_filt))
+sum(rownames(hvg_out_no_spikes_batch_filt) %in% rownames(hvg_out_no_spikes_mouseid_filt))
+venn_diag_no_spikes <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_filt),
+                                        rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_mouseid_filt),
+                                        rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_batch_filt))
+                                  )
+vennDiagram(venn_diag_no_spikes,
+            names = c("No_Spikes", "No_Spikes_MouseID", "No_Spikes_Batch"),
+            circle.col = c("#E69F00", "#56B4E9", "#009E73")
+            )
+```
+
+Taking into account the above Venn Diagrams, the plots of the mean-variance trend we obtained in `Step 4a.1`, and the profiles and total numbers of HVGs selected by each approach, we will proceed by using the HVGs obtained without using spike-ins and without blocking, the trend and variance-mean plot of which achieves the best compromise between spike-ins and endogenous genes.
+
+Before we store the identified HVGs in our `SingleCellExperiment` object, we check the distribution of expression values for the genes with the largest biological components to ensure that the variance estimate is not being dominated by one or two outlier cells.
 ```{r}
 fontsize <- theme(axis.text=element_text(size=12), axis.title=element_text(size=16))
 
-plotExpression(PAG_sceset_qc_norm, features=rownames(hvg_out_spikes_filt)[1:20]) + fontsize
-plotExpression(PAG_sceset_qc_norm, features=rownames(hvg_out_spikes_mouseid_filt)[1:20]) + fontsize
-plotExpression(PAG_sceset_qc_norm, features=rownames(hvg_out_spikes_batch_filt)[1:20]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_spikes_filt)[1:20]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_spikes_mouseid_filt)[1:20]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_spikes_batch_filt)[1:20]) + fontsize
 
-plotExpression(PAG_sceset_qc_norm, features=rownames(hvg_out_no_spikes_filt)[1:20]) + fontsize
-plotExpression(PAG_sceset_qc_norm, features=rownames(hvg_out_no_spikes_mouseid_filt)[1:20]) + fontsize
-plotExpression(PAG_sceset_qc_norm, features=rownames(hvg_out_no_spikes_batch_filt)[1:20]) + fontsize
+plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_no_spikes_filt)[1:50]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_no_spikes_mouseid_filt)[1:20]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_no_spikes_batch_filt)[1:20]) + fontsize
 ```
 
-#### 4a.2.2 | Store and export the results
-Once we have ordered and filtered the identified HVGs we can add the results into the `metadata` component of the `PAG_sceset_qc_norm` object. The metadata component can hold any object, as it is a list container. Any results that you’d like to keep are safe to store here, and a great way to save or share intermediate results that would otherwise be kept in separate objects.
+Now that we have ordered, filtered, and inspected the identified HVGs we can add the results into the `metadata` component of the `PAG_sceset_qc_norm_filt` object. The metadata component can hold any object, as it is a list container. Any results that we’d like to keep are safe to store here, and a great way to save or share intermediate results that would otherwise be kept in separate objects. Even though we have decided to use the HVGs identified by fitting `trendVar` to the endogenous genes (i.e. without using spike-ins) without any blocking factor, we store the HVGs from the different approaches we used (even without filtering) so we can go back and find them again for any future comparisons we might want to do:
 ```{r}
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes <- rownames(hvg_out_spikes)
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes_filt <- rownames(hvg_out_spikes_filt)
+# hvg_out_spikes
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes <- rownames(hvg_out_spikes)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes)
 
-length(metadata(PAG_sceset_qc_norm)$hvg_out_spikes)
-length(metadata(PAG_sceset_qc_norm)$hvg_out_spikes_filt)
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_filt <- rownames(hvg_out_spikes_filt)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_filt)
 
+# hvg_out_spikes_mouseid
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid <- rownames(hvg_out_spikes_mouseid)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid_filt <- rownames(hvg_out_spikes_mouseid_filt)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid_filt)
 
+# hvg_out_spikes_batch
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch <- rownames(hvg_out_spikes_batch)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch_filt <- rownames(hvg_out_spikes_batch_filt)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch_filt)
 
+# hvg_out_no_spikes
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes <- rownames(hvg_out_no_spikes)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt <- rownames(hvg_out_no_spikes_filt)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
 
+# hvg_out_no_spikes_mouseid
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid <- rownames(hvg_out_no_spikes_mouseid)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid_filt <- rownames(hvg_out_no_spikes_mouseid_filt)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid_filt)
 
+# hvg_out_no_spikes_batch
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch <- rownames(hvg_out_no_spikes_batch)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch_filt <- rownames(hvg_out_no_spikes_batch_filt)
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch_filt)
-
-##################
-###########
-#######
-
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes <- rownames(hvg_out_spikes)
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes[1:20]
-
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes_mouseid <- rownames(hvg_out_spikes_mouseid)
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes_mouseid[1:20]
-
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes_batch <- rownames(hvg_out_spikes_batch)
-metadata(PAG_sceset_qc_norm)$hvg_out_spikes_batch[1:20]
-
-metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes <- rownames(hvg_out_no_spikes)
-metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes[1:20]
-
-metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes_mouseid <- rownames(hvg_out_no_spikes_mouseid)
-metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes_mouseid[1:20]
-
-metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes_batch <- rownames(hvg_out_no_spikes_batch)
-metadata(PAG_sceset_qc_norm)$hvg_out_no_spikes_batch[1:20]
-
-# Compare how many genes you get in each condition with or without spike-ins
-sum(rownames(hvg_out_spikes) %in% rownames(hvg_out_no_spikes))
-sum(rownames(hvg_out_no_spikes_mouseid) %in% rownames(hvg_out_spikes_mouseid))
-sum(rownames(hvg_out_no_spikes_batch) %in% rownames(hvg_out_spikes_batch))
-
-sum(rownames(hvg_out_spikes) %in% rownames(hvg_out_spikes_mouseid))
-sum(rownames(hvg_out_spikes_batch) %in% rownames(hvg_out_spikes_mouseid))
-sum(rownames(hvg_out_spikes) %in% rownames(hvg_out_spikes_batch))
-
-sum(rownames(hvg_out_no_spikes_mouseid) %in% rownames(hvg_out_no_spikes))
-sum(rownames(hvg_out_no_spikes_batch) %in% rownames(hvg_out_no_spikes))
-sum(rownames(hvg_out_no_spikes_batch) %in% rownames(hvg_out_no_spikes_mouseid))
 ```
 
 We can also export them into a `.tsv` file:
 ```{r}
-write.table(file="PAG_hvg_out_spikes.tsv", hvg_out_spikes, sep="\t", quote=FALSE, col.names=NA)
-write.table(file="PAG_hvg_out_spikes_mouseid.tsv", hvg_out_spikes_mouseid, sep="\t", quote=FALSE, col.names=NA)
-write.table(file="PAG_hvg_out_spikes_batch.tsv", hvg_out_spikes_batch, sep="\t", quote=FALSE, col.names=NA)
-write.table(file="PAG_hvg_out_no_spikes.tsv", hvg_out_no_spikes, sep="\t", quote=FALSE, col.names=NA)
-write.table(file="PAG_hvg_out_no_spikes_mouseid.tsv", hvg_out_no_spikes_mouseid, sep="\t", quote=FALSE, col.names=NA)
-write.table(file="PAG_hvg_out_no_spikes_batch.tsv", hvg_out_no_spikes_batch, sep="\t", quote=FALSE, col.names=NA)
+# Before filtering unwanted genes:
+#write.table(file="PAG_hvg_out_spikes.tsv", hvg_out_spikes, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_mouseid.tsv", hvg_out_spikes_mouseid, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_batch.tsv", hvg_out_spikes_batch, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes.tsv", hvg_out_no_spikes, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_mouseid.tsv", hvg_out_no_spikes_mouseid, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_batch.tsv", hvg_out_no_spikes_batch, sep="\t", quote=FALSE, col.names=NA)
+
+# After filtering unwanted genes:
+#write.table(file="PAG_hvg_out_spikes_filt.tsv", hvg_out_spikes_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_mouseid_filt.tsv", hvg_out_spikes_mouseid_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_batch_filt.tsv", hvg_out_spikes_batch_filt, sep="\t", quote=FALSE, col.names=NA)
+write.table(file="PAG_hvg_out_no_spikes_filt.tsv", hvg_out_no_spikes_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_mouseid_filt.tsv", hvg_out_no_spikes_mouseid_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_batch_filt.tsv", hvg_out_no_spikes_batch_filt, sep="\t", quote=FALSE, col.names=NA)
 ```
 
 ***
