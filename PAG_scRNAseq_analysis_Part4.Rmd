@@ -496,12 +496,15 @@ One reason to use the variance of the log-expression values is the fact that the
 ### Step 4a.3 | Identifying correlated gene pairs with Spearman's rho
 Another useful procedure is to identify the HVGs that are highly correlated with one another. This distinguishes between HVGs caused by random noise and those involved in driving systematic differences between subpopulations. Correlations between genes can be quantified by computing Spearman's rho, which accommodates non-linear relationships in the expression values. Gene pairs with significantly large positive or negative values of rho are identified using the `correlatePairs` function. We only apply this function to the set of HVGs, because these genes have large biological components and are more likely to exhibit strong correlations driven by biology. In contrast, calculating correlations for all possible gene pairs would require too much computational time and increase the severity of the multiple testing correction. It may also prioritize uninteresting genes that have strong correlations but low variance, e.g., tightly co-regulated house-keeping genes.
 ```{r}
+# Takes around 1 min
 set.seed(1991)
 library(scran)
-
-var.cor <- correlatePairs(PAG_sceset_qc_norm, subset.row=rownames(hvg_out_no_spikes)) 
+start_time_c1 <- Sys.time()
+var.cor <- correlatePairs(PAG_sceset_qc_norm_filt, subset.row=rownames(hvg_out_no_spikes_filt)) 
 write.table(file="PAG_correlated_genes.tsv", var.cor, sep="\t", quote=FALSE, row.names=FALSE) 
 head(var.cor)
+end_time_c1 <- Sys.time()
+end_time_c1 - start_time_c1
 ```
 
 The significance of each correlation is determined using a permutation test. For each pair of genes, the null hypothesis is that the expression profiles of two genes are independent. Shuffling the profiles and recalculating the correlation yields a null distribution that is used to obtain a p-value for each observed correlation value (Phipson & Smyth, 2010). Correction for multiple testing across many gene pairs is performed by controlling the FDR at 5%. Correlated gene pairs can be directly used for experimental validation with orthogonal techniques (e.g., fluorescence-activated cell sorting, immunohistochemistry or RNA fluorescence in situ hybridization) to verify that these expression patterns are genuinely present across the cell population.
@@ -513,13 +516,16 @@ summary(sig.cor)
 The use of `correlatePairs` is primarily intended to identify correlated gene pairs for validation studies. Obviously, non-zero correlations do not provide evidence for a direct regulatory interaction, let alone specify causality. To construct regulatory networks involving many genes, we suggest using dedicated packages such as _[WGCNA](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/)_.
 
 #### Larger sets of genes
-Larger sets of correlated genes are assembled by treating genes as nodes in a graph and each pair of genes with significantly large correlations as an edge. In particular, an undirected graph is constructed using methods in the RBGL package. Highly connected subgraphs are then identified and defined as gene sets. This provides a convenient summary of the pairwise correlations between genes.
+Larger sets of correlated genes are assembled by treating genes as nodes in a graph and each pair of genes with significantly large correlations as an edge. In particular, an undirected graph is constructed using methods in the `RBGL` package. Highly connected subgraphs are then identified and defined as gene sets. This provides a convenient summary of the pairwise correlations between genes.
 ```{r}
 library(RBGL) 
+start_time_c2 <- Sys.time()
 g <- ftM2graphNEL(cbind(var.cor$gene1, var.cor$gene2)[sig.cor,], W=NULL, V=NULL, edgemode="undirected")
 cl <- highlyConnSG(g)$clusters # Time consuming step
 cl <- cl[order(lengths(cl), decreasing=TRUE)] 
 head(cl)
+end_time_c2 <- Sys.time()
+end_time_c2 - start_time_c2
 ```
 
 Significant correlations provide evidence for substructure in the dataset, i.e., subpopulations of cells with systematic differences in their expression profiles. The number of significantly correlated HVG pairs represents the strength of the substructure. If many pairs were significant, this would indicate that the subpopulations were clearly defined and distinct from one another. 
@@ -529,7 +535,7 @@ Significant correlations provide evidence for substructure in the dataset, i.e.,
 We visualize the expression profiles of the correlated HVGs with a heatmap. All expression values are mean-centred for each gene to highlight the relative differences in expression between cells. If any subpopulations were present, they would manifest as rectangular "blocks" in the heatmap, corresponding to sets of genes that are systematically up- or down-regulated in specific groups of cells. 
 ```{r}
 chosen <- unique(c(var.cor$gene1[sig.cor], var.cor$gene2[sig.cor])) 
-norm.exprs <- exprs(PAG_sceset_qc_norm)[chosen,,drop=FALSE] 
+norm.exprs <- exprs(PAG_sceset_qc_norm_filt)[chosen,,drop=FALSE] 
 heat.vals <- norm.exprs - rowMeans(norm.exprs) 
 library(gplots) 
 heat.out <- heatmap.2(heat.vals, col=bluered, symbreak=TRUE, trace='none', cexRow=0.6)
@@ -538,7 +544,7 @@ heat.out <- heatmap.2(heat.vals, col=bluered, symbreak=TRUE, trace='none', cexRo
 #### PCA
 We also apply dimensionality reduction techniques to visualize the relationships between cells. This is done by constructing a PCA plot from the normalized log-expression values of the correlated HVGs. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. We only use the correlated HVGs in plotPCA because any substructure should be most pronounced in the expression profiles of these genes.
 ```{r}
-out_pca <- plotPCA(PAG_sceset_qc_norm[endogenous_genes, ],
+out_pca <- plotPCA(PAG_sceset_qc_norm_filt,
                    rerun = TRUE,
                    run_args = list(feature_set = chosen),
                    colour_by = "PAG.areacollection",
@@ -553,29 +559,28 @@ Additional components can be visualized by increasing the ncomponents argument i
 Another widely used approach is the t-stochastic neighbour embedding (t-SNE) method (Van der Maaten & Hinton, 2008). t-SNE tends to work better than PCA for separating cells in more diverse populations. This is because the former can directly capture non-linear relationships in high-dimensional space, whereas the latter must represent them (suboptimally) as linear components. However, this improvement comes at the cost of more computational effort and complexity. In particular, t-SNE is a stochastic method, so users should run the algorithm several times to ensure that the results are representative, and then set a seed to ensure that the chosen results are reproducible. It is also advisable to test different settings of the "perplexity" parameter as this will affect the distribution of points in the low-dimensional space.
 ```{r}
 set.seed(1991) 
-out5 <- plotTSNE(PAG_sceset_qc_norm[endogenous_genes, ],
+out5 <- plotTSNE(PAG_sceset_qc_norm_filt,
                  rerun = TRUE, 
                  run_args = list(perplexity=5, feature_set=chosen),
-                 colour_by="Slc17a6"
+                 colour_by="cell.type"
                  ) + ggtitle("Perplexity = 5")
 
-out10 <- plotTSNE(PAG_sceset_qc_norm[endogenous_genes, ],
+out10 <- plotTSNE(PAG_sceset_qc_norm_filt,
                   rerun = TRUE, 
                   run_args = list(perplexity=10, feature_set=chosen),
-                  colour_by="Slc17a6"
+                  colour_by="mouse.id"
                   ) + ggtitle("Perplexity = 10")
 
-out20 <- plotTSNE(PAG_sceset_qc_norm[endogenous_genes, ],
+out20 <- plotTSNE(PAG_sceset_qc_norm_filt,
                   rerun = TRUE, 
                   run_args = list(perplexity=20, feature_set=chosen),
-                  colour_by="Slc17a6"
+                  colour_by="cell.type"
                   ) + ggtitle("Perplexity = 20")
 
-out50 <- plotTSNE(PAG_sceset_qc_norm[endogenous_genes, ],
+out50 <- plotTSNE(PAG_sceset_qc_norm_filt,
                   rerun = TRUE, 
                   run_args = list(perplexity=50, feature_set=chosen),
-                  colour_by="Drd1",
-                  shape_by="PAG.areacollection"
+                  colour_by="mouse.id"
                   ) + ggtitle("Perplexity = 50")
 
 multiplot(out5, out10, out20, out50, cols=2)
