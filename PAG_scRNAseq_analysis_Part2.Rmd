@@ -581,17 +581,16 @@ library(limma)
 Manual <- colnames(PAG_sceset)[!PAG_sceset$manual_filters]
 MADs <- colnames(PAG_sceset)[!PAG_sceset$MADs_filters]
 PCA_based <- colnames(PAG_sceset)[PAG_sceset$outlier]
-venn.diag <- vennCounts(
-    cbind(colnames(PAG_sceset) %in% Manual,
-    colnames(PAG_sceset) %in% MADs,
-    colnames(PAG_sceset) %in% PCA_based)
-)
 
-vennDiagram(
-    venn.diag,
-    names = c("Manual", "MADs", "PCA_based"),
-    circle.col = c("#E69F00", "#56B4E9", "#009E73")
-)
+venn.diag <- vennCounts(cbind(colnames(PAG_sceset) %in% Manual,
+                              colnames(PAG_sceset) %in% MADs,
+                              colnames(PAG_sceset) %in% PCA_based)
+                        )
+
+vennDiagram(venn.diag,
+            names = c("Manual", "MADs", "PCA_based"),
+            circle.col = c("#E69F00", "#56B4E9", "#009E73")
+            )
 ```
 
 ### 2.4.5 | Apply chosen cell filtering approach

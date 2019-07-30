@@ -27,12 +27,6 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 
 ***
 
-# One important thing...
-Consider dropping any Ribosomal, Mitochondrial, ERCC, sex-related genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as they will not be biologically informative.
-```{r}
-# sceset <- sceset[!fData(sceset)$is_feature_control_Mitochondrial, ]
-```
-
 # STEP 8 | Consensus Clustering with SC3
 Once we have normalized the data and removed confounders we can carry out analyses that are relevant to the biological questions at hand.
 
