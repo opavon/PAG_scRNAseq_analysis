@@ -28,9 +28,7 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 ***
 
 # STEP 4 | Modelling technical and biological variability in gene expression and identifying highly variable genes
-
-## PATH "A" to feature selection - trendVar
-__Based on the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun__.
+__Based on the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun.__
 
 We continue using the `PAG_sceset_qc_norm` after normalization. We should thus have a `logcounts` slot in`assays`:
 ```{r}
@@ -46,7 +44,7 @@ assayNames(PAG_sceset_qc_norm)
 PAG_sceset_qc_norm
 ```
 
-### Step 4a.1 | Modelling the technical component of variation
+## Step 4a.1 | Modelling the technical component of variation
 Variability in the observed expression values across genes can be driven by genuine biological heterogeneity or uninteresting technical noise. To distinguish between these two possibilties, we need to model the technical component of the variance of the expression values for each gene. 
 
 We will use the `trendVar()` function to fit a mean-variance trend to the read counts.
@@ -246,7 +244,7 @@ current_spikes <- isSpike(PAG_sceset_qc_norm)
 points(var_out_no_spikes_batch$mean[current_spikes], var_out_no_spikes_batch$total[current_spikes], col="red", pch=16)
 ```
 
-### Step 4a.2 | Identifying highly variable genes
+## Step 4a.2 | Identifying highly variable genes
 HVGs are defined as genes with biological components that are significantly greater than zero. These genes are interesting as they drive differences in the expression profiles between cells, and should be prioritized for further investigation. Formal detection of HVGs allows us to avoid genes that are highly variable due to technical factors such as sampling noise during RNA capture and library preparation. This adds another level of statistical rigour to our previous analyses, in which we only modelled the technical component.
 
 Identifying HVGs requires estimation of the variance in expression for each gene, followed by decomposition of the variance into biological and technical components (done in the previous step). HVGs are then identified as those genes with the largest biological components. 
@@ -256,24 +254,24 @@ We define HVGs as genes with biological components that are significantly greate
 # Consider playing with the $FDR threshold and the $bio threshold, try reducing/increasing them to make them more stringent or to get more genes.
 
 # from trendVar with spikes
-hvg_out_spikes <- var_out_spikes[which(var_out_spikes$FDR <= 0.05 & var_out_spikes$bio >= 0.5),]
+hvg_out_spikes <- var_out_spikes[which(var_out_spikes$FDR <= 0.05 & var_out_spikes$bio >= 0.5), ]
 nrow(hvg_out_spikes)
 
-hvg_out_spikes_mouseid <- var_out_spikes_mouseid[which(var_out_spikes_mouseid$FDR <= 0.05 & var_out_spikes_mouseid$bio >= 0.5),]
+hvg_out_spikes_mouseid <- var_out_spikes_mouseid[which(var_out_spikes_mouseid$FDR <= 0.05 & var_out_spikes_mouseid$bio >= 0.5), ]
 nrow(hvg_out_spikes_mouseid)
 
-hvg_out_spikes_batch <- var_out_spikes_batch[which(var_out_spikes_batch$FDR <= 0.05 & var_out_spikes_batch$bio >= 0.5),]
+hvg_out_spikes_batch <- var_out_spikes_batch[which(var_out_spikes_batch$FDR <= 0.05 & var_out_spikes_batch$bio >= 0.5), ]
 nrow(hvg_out_spikes_batch)
 
 
 # from trendVar without spikes
-hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio >= 0.5),]
+hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio >= 0.5), ]
 nrow(hvg_out_no_spikes)
 
-hvg_out_no_spikes_mouseid <- var_out_no_spikes_mouseid[which(var_out_no_spikes_mouseid$FDR <= 0.05 & var_out_no_spikes_mouseid$bio >= 0.5),]
+hvg_out_no_spikes_mouseid <- var_out_no_spikes_mouseid[which(var_out_no_spikes_mouseid$FDR <= 0.05 & var_out_no_spikes_mouseid$bio >= 0.5), ]
 nrow(hvg_out_no_spikes_mouseid)
 
-hvg_out_no_spikes_batch <- var_out_no_spikes_batch[which(var_out_no_spikes_batch$FDR <= 0.05 & var_out_no_spikes_batch$bio >= 0.5),]
+hvg_out_no_spikes_batch <- var_out_no_spikes_batch[which(var_out_no_spikes_batch$FDR <= 0.05 & var_out_no_spikes_batch$bio >= 0.5), ]
 nrow(hvg_out_no_spikes_batch)
 ```
 
@@ -342,8 +340,8 @@ filt_hvg_6 <- rownames(hvg_out_no_spikes_batch) %in% rownames(PAG_sceset_qc_norm
 hvg_out_no_spikes_batch_filt <- hvg_out_no_spikes_batch[filt_hvg_6,]
 ```
 
-#### 4a.2.2 | Visualize, store, and export the results
-Now that we have removed the genes we are not interested in, we can use `limma` and `vennDiagram` to compare how many genes we get in each condition with or without spike-ins, and with or without blocking:
+#### 4a.2.2 | Visualize, store, and export HVGs
+Now that we have removed thegenes we are not interested in, we can use `limma` and `vennDiagram` to compare how many genes we get in each condition with or without spike-ins, and with or without blocking:
 ```{r}
 library(limma)
 #####
@@ -493,45 +491,136 @@ One reason to use the variance of the log-expression values is the fact that the
 * the dispersion parameter in the negative binomial distribution, using the `estimateDisp()` function in _edgeR_ (McCarthy, Chen, and Smyth 2012).
 * a proportion of total variability, using methods in the _BASiCS_ package (Vallejos, Marioni, and Richardson 2015).
 
-### Step 4a.3 | Identifying correlated gene pairs with Spearman's rho
-Another useful procedure is to identify the HVGs that are highly correlated with one another. This distinguishes between HVGs caused by random noise and those involved in driving systematic differences between subpopulations. Correlations between genes can be quantified by computing Spearman's rho, which accommodates non-linear relationships in the expression values. Gene pairs with significantly large positive or negative values of rho are identified using the `correlatePairs` function. We only apply this function to the set of HVGs, because these genes have large biological components and are more likely to exhibit strong correlations driven by biology. In contrast, calculating correlations for all possible gene pairs would require too much computational time and increase the severity of the multiple testing correction. It may also prioritize uninteresting genes that have strong correlations but low variance, e.g., tightly co-regulated house-keeping genes.
+# STEP 5 | Identifying confounding factors and correcting batch effects factors
+To account for technical confounders we need to identify and remove sources of variation in the expression data that are not related to the biological signal of interest. We could use spike-ins for this (in theory you add the same amount of ERCC in each cell lysate, so any variability should be technical noise), but these can turn out to be extremely variable across cells. Instead, we could use endogenous or housekeeping genes that do not vary systematically between cells. Where we have a large number of endogenous genes that, on average, do not vary systematically between cells and where we expect technical effects to affect a large number of genes (a very common and reasonable assumption), then such methods of batch correction can perform well.
+
+The most prominent technical covariates in single-cell data are count depth and batch (Luecken & Theis, Mol Syst Biol. 2019). Correcting for batch effects between samples or cells in the same experiment is the classical scenario known as _batch correction_ from bulk RNA-seq. This is different from _data integration_ from multiple experiments or collaborative projects. Irrespective of computational methods, the best method of batch correction is pre-empting the effect and avoiding it altogether by clever experimental design (Hicks et al, 2017). Batch effects can be avoided by pooling cells across experimental conditions and samples. 
+
+Our data have been collected from samples originated from several animals and processed on different days. Small uncontrollable differences in processing between batches (changes in operator, differences in reagent quality) can result in systematic differences in the observed expression in cells from different batches, which are refered to as "batch effects". Such differences are not interesting and can be problematic as they can be major drivers of heterogeneity in the data, masking the relevant biological differences and complicating interpretation of the results.
+
+## Step 5.1 | Identifying confounding and technical factors
+As we have mentioned, a big source of variability in scRNA-seq data, besides bad cells, are batch effects: the person processing the samples, date of processing, reagent kit, etc. We want to try to identify such effects and remove them, so our analysis picks up mainly biological effects.
+
+### 5.1.1 | Screening for obvious biases with the table function
+The `table` and `summary` functions allow us to quickly inspect if we have any obvious biases or confounds (i.e. all the cells come from male or female mice, or from a particular location or sequencing batch).
 ```{r}
-# Takes around 1 min
-set.seed(1991)
-library(scran)
-start_time_c1 <- Sys.time()
-var.cor <- correlatePairs(PAG_sceset_qc_norm_filt, subset.row=rownames(hvg_out_no_spikes_filt)) 
-write.table(file="PAG_correlated_genes.tsv", var.cor, sep="\t", quote=FALSE, row.names=FALSE) 
-head(var.cor)
-end_time_c1 <- Sys.time()
-end_time_c1 - start_time_c1
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.hemisphere)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.areacollection)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.APaxis)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.sex)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.id)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$batch.processing)
 ```
 
-The significance of each correlation is determined using a permutation test. For each pair of genes, the null hypothesis is that the expression profiles of two genes are independent. Shuffling the profiles and recalculating the correlation yields a null distribution that is used to obtain a p-value for each observed correlation value (Phipson & Smyth, 2010). Correction for multiple testing across many gene pairs is performed by controlling the FDR at 5%. Correlated gene pairs can be directly used for experimental validation with orthogonal techniques (e.g., fluorescence-activated cell sorting, immunohistochemistry or RNA fluorescence in situ hybridization) to verify that these expression patterns are genuinely present across the cell population.
 ```{r}
-sig.cor <- var.cor$FDR <= 0.05 
-summary(sig.cor)
+summary(PAG_sceset_qc_norm_filt$cell.type)
+summary(PAG_sceset_qc_norm_filt$PAG.hemisphere)
+summary(PAG_sceset_qc_norm_filt$PAG.areacollection)
+summary(PAG_sceset_qc_norm_filt$mouse.sex)
 ```
 
-The use of `correlatePairs` is primarily intended to identify correlated gene pairs for validation studies. Obviously, non-zero correlations do not provide evidence for a direct regulatory interaction, let alone specify causality. To construct regulatory networks involving many genes, we suggest using dedicated packages such as _[WGCNA](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/)_.
+### 5.1.2 | Checking for important technical factors or explanatory variables
+We check whether there are technical factors that contribute substantially to the heterogeneity of gene expression. If so, the factor may need to be regressed out to ensure that it does not inflate the variances or introduce spurious correlations. scater can compute the marginal R^2^ for each variable when fitting a linear model regressing expression values for each gene against just that variable, and display a density plot of the gene-wise marginal R^2^ values for the variables.
 
-#### Larger sets of genes
-Larger sets of correlated genes are assembled by treating genes as nodes in a graph and each pair of genes with significantly large correlations as an edge. In particular, an undirected graph is constructed using methods in the `RBGL` package. Highly connected subgraphs are then identified and defined as gene sets. This provides a convenient summary of the pairwise correlations between genes.
+For each gene, it calculates the percentage of the variance of the expression values that is explained by the variable. Small percentages (1-3%) indicate that the expression profiles of most genes are not strongly associated with this factor. If, on the other hand, we get density curves that are shifted to the right (i.e. with a peak towards the 100% end of the x-axis), this tells us that for a large proportion of the genes in our dataset this particular variable explains a large proportion of the variation.
 ```{r}
-library(RBGL) 
-start_time_c2 <- Sys.time()
-g <- ftM2graphNEL(cbind(var.cor$gene1, var.cor$gene2)[sig.cor,], W=NULL, V=NULL, edgemode="undirected")
-cl <- highlyConnSG(g)$clusters # Time consuming step
-cl <- cl[order(lengths(cl), decreasing=TRUE)] 
-head(cl)
-end_time_c2 <- Sys.time()
-end_time_c2 - start_time_c2
+# How much of the variance does each variable explain? Some of these variables are calculated when we run the CalculateQC function from scater, and others are added by us in the metadata (such as batch or individual).
+
+# After scran normalization
+plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
+                         nvars_to_plot = 16,
+                         exprs_values = "logcounts",
+                         variables = c("mouse.id",
+                                       "mouse.sex",
+                                       "mouse.age",
+                                       "mouse.singlehousedays",
+                                       "cell.type",
+                                       "cell.fluorophor",
+                                       "slice.number",
+                                       "slice.depth",
+                                       "PAG.areacollection",
+                                       "PAG.hemisphere",
+                                       "PAG.APaxis",
+                                       "time.sinceslicinghour",
+                                       "batch.processing",
+                                       "batch.sequencing_round",
+                                       "total_features_by_counts",
+                                       "total_counts"
+                                       )
+                         ) + ggtitle("scran")
+
+# To check how the explanatory variables change before normalization, run the same using `exprs_values = "counts" + ggtitle("Raw counts")` or `exprs_values = "logcounts_raw" + ggtitle("Logcounts Raw")` and `multiplot(explV1, explV2, explV3, cols=1)`.
 ```
 
-Significant correlations provide evidence for substructure in the dataset, i.e., subpopulations of cells with systematic differences in their expression profiles. The number of significantly correlated HVG pairs represents the strength of the substructure. If many pairs were significant, this would indicate that the subpopulations were clearly defined and distinct from one another. 
+We can see that the two variables standing out are `batch.processing` and `mouse.id`. This makes perfect sense, as they illustrate how the cells were acquired and processed. Due to the way we isolated cells, however, `mouse.id` is confounded with `cell.type`: each transgenic mouse labeled either VGAT or VGluT2 neurons, which means that if we regress out the variability in `mouse.id` we will also be removing much of the biology linked to the `cell.type` that came from each mouse.
 
-### Step 4a.4 | Using correlated HVGs for further data exploration
-#### Heatmaps
+A better option would be to regress out the `batch.processing`, but only half of our samples were assigned to a balanced design. For the other half, all the cells obtained from the same animal were processed together, thereby confounding the `batch.processing` with the `mouse.id` (and by extension with `cell.type`) and leading to a similar scenario as above. 
+
+## Step 5.2 | Batch Correction (dealing with confounders)
+Computational correction of these effects is critical for eliminating batch-to-batch variation, allowing data across multiple batches to be combined for valid downstream analysis. One method to achieve this is `removeBatchEffect()` from the __limma__ package (Ritchie et al. 2015). `removeBatchEffect()` performs a linear regression and sets the coefficients corresponding to the blocking factors to zero. This is effective provided that the population composition within each batch is either known (and supplied as `design=`) or identical across batches. In our case we know exactly which cell type ended up in each batch. 
+
+In most scRNA-seq applications, however, the factors of variation are not identical across batches and not known in advance. This motivates the use of more sophisticated batch correction methods such as `mnnCorrect()`, based on the detection of mutual nearest neighbours (MNNs) (Haghverdi et al. 2018). The MNN approach does not rely on pre-defined or equal population compositions across batches, only requiring that a subset of the population be shared between batches. In our case, each animal could be treated as a separate batch in their own right, reflecting (presumably uninteresting) biological differences due to genotype, age, sex or other factors that are inherent to our experimental design. `mnnCorrect()` was developed to merge different datasets obtained from the same biological system. It assumes that each batch shares at least one biological condition with each other batch (in our case it can be the same cell type across animals). Thus it works well for a variety of balanced experimental designs. However, in a confounded/replicate design biological effects will not be fit/preserved and we will only be able to remove batch effects from each individual separately in order to preserve biological (and technical) variance between individuals.
+
+Manual batch correction is necessary for downstream procedures that are not model-based, e.g., clustering and most forms of dimensionality reduction. However, if an analysis method can accept a design matrix (such as differential expression analysis), blocking on nuisance factors in the design matrix is preferable to using `removeBatchEffect()`. This is because the latter does not account for the loss of residual degrees of freedom, nor the uncertainty of estimation of the blocking factor terms.
+
+### 5.2.1 | Applying removeBatchEffect()
+`removeBatchEffect()` performs a linear regression and sets the coefficients corresponding to the blocking factors to zero. This is effective provided that the population composition within each batch is known (and supplied as `design=`) or identical across batches. The composition of our cell poplulation is __not__ identical across batches, as each batch comes from one transgenic mouse and thus has only one out of two possible cell types. However, individually aspirating cells based on expression of a transgene has the advantage that it allows us to know exactly the composition of each batch, so we can set the design and batches as follows:
+```{r}
+library(limma)
+start_timec3 <- Sys.time() # Takes around 32min
+assay(PAG_sceset_qc_norm, "corrected") <- removeBatchEffect(logcounts(PAG_sceset_qc_norm_filt),
+                                                            design = model.matrix(~PAG_sceset_qc_norm_filt$cell.type), 
+                                                            batch = PAG_sceset_qc_norm_filt$batch.processing)
+
+assayNames(PAG_sceset_qc_norm_filt)
+end_timec3 <- Sys.time()
+end_timec3 - start_time3
+```
+
+### 5.2.3 | Effectiveness of the correction
+We can evaluate the effectiveness of the correction by inspecting the PCA plot where colour corresponds the technical replicates and shape corresponds to the individuals from which biological samples where acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed.
+```{r}
+for(n in assayNames(PAG_sceset_qc_norm_filt)) {
+    print(
+        plotPCA(
+            PAG_sceset_qc_norm_filt,
+            colour_by = "batch.processing",
+            shape_by = "mouse.id",
+            size_by = "total_features_by_counts",
+            exprs_values = n
+        ) +
+        ggtitle(n)
+    )
+}
+```
+
+## Step 5.3 | Save the filtered and corrected SCE object
+```{r}
+# Save the normalized data:
+saveRDS(PAG_sceset_qc_norm_filt, file = "PAG_sceset_qc_norm_filt.rds")
+print("Parts 4 and 5 - Done!")
+```
+
+# STEP 6 | Denoising expression values using PCA
+Once the technical noise is modelled and we have corrected our batch effects, we can use principal component analysis (PCA) to remove random technical noise. Consider that each cell represents a point in the high-dimensional expression space, where the spread of points represents the total variance. PCA identifies axes in this space that capture as much of this variance as possible. Each axis is a principal component (PC), where any early PC will explain more of the variance than a later PC.
+
+We assume that biological processes involving co-regulated groups of genes will account for the most variance in the data. If this is the case, this process should be represented by one or more of the earlier PCs. In contrast, random technical noise affects each gene independently and will be represented by later PCs. The `denoisePCA()` function removes later PCs until the total discarded variance is equal to the sum of technical components for all genes used in the PCA.
+
+We use all genes with a positive biological component in `denoisePCA` and perform PCA on the expression profiles, choosing the number of PCs to retain based on the total technical noise in the data set. The idea is to discard later PCs that contain random technical noise, thus enriching for early biological signal (and also reducing work in downstream steps).
+
+* `denoisePCA()` will only use genes that have positive biological components, i.e., variances greater than the fitted trend. This guarantees that the total technical variance to be discarded will not be greater than the total variance in the data.
+* For the `technical=` argument, the function will also accept the trend function directly (i.e., `var.fit$trend`) or a vector of technical components per gene. Here, we supply the  DataFrame from decomposeVar() to allow the function to adjust for the loss of residual degrees of freedom after batch correction. Specifically, the variance in the batch-corrected matrix is slightly understated, requiring some rescaling of the technical components to compensate.
+* No filtering is performed on abundance here, which ensures that PCs corresponding to rare subpopulations can still be detected. Discreteness is less of an issue as low-abundance genes also have lower variance, thus reducing their contribution to the PCA.
+* It is also possible to obtain a low-rank approximation of the original expression matrix, capturing the variance equivalent to the retained PCs. This is useful for denoising prior to downstream procedures that require gene-wise expression values.
+```{r}
+PAG_sceset_qc_norm <- denoisePCA(PAG_sceset_qc_norm, technical=var_out_no_spikes, assay.type="corrected")
+#technical=var_out_spikes or var_fit_spikes$trend
+dim(reducedDim(PAG_sceset_qc_norm, "PCA")) # Cells are rows, PCs are columns
+```
+
+The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
+## Step 4a.3 | Using HVGs for further data exploration
+### 4a.3.1 | Heatmaps
 We visualize the expression profiles of the correlated HVGs with a heatmap. All expression values are mean-centred for each gene to highlight the relative differences in expression between cells. If any subpopulations were present, they would manifest as rectangular "blocks" in the heatmap, corresponding to sets of genes that are systematically up- or down-regulated in specific groups of cells. 
 ```{r}
 chosen <- unique(c(var.cor$gene1[sig.cor], var.cor$gene2[sig.cor])) 
@@ -541,13 +630,13 @@ library(gplots)
 heat.out <- heatmap.2(heat.vals, col=bluered, symbreak=TRUE, trace='none', cexRow=0.6)
 ```
 
-#### PCA
+#### 4a.3.2 | PCA
 We also apply dimensionality reduction techniques to visualize the relationships between cells. This is done by constructing a PCA plot from the normalized log-expression values of the correlated HVGs. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. We only use the correlated HVGs in plotPCA because any substructure should be most pronounced in the expression profiles of these genes.
 ```{r}
 out_pca <- plotPCA(PAG_sceset_qc_norm_filt,
                    rerun = TRUE,
                    run_args = list(feature_set = chosen),
-                   colour_by = "PAG.areacollection",
+                   colour_by = "mouse.id",
                    size_by = "total_features_by_counts"
                    )
 plot(out_pca)
@@ -555,7 +644,7 @@ plot(out_pca)
 
 Additional components can be visualized by increasing the ncomponents argument in plotPCA to construct pairwise plots. The percentage of variance explained by each component can also be obtained by running plotPCA with return_SCESet=TRUE, and then calling reducedDimension on the returned object. This information may be useful for selecting high-variance components (possibly corresponding to interesting underlying factors) for further examination.
 
-#### tSNE
+#### 4a.3.3 | tSNE
 Another widely used approach is the t-stochastic neighbour embedding (t-SNE) method (Van der Maaten & Hinton, 2008). t-SNE tends to work better than PCA for separating cells in more diverse populations. This is because the former can directly capture non-linear relationships in high-dimensional space, whereas the latter must represent them (suboptimally) as linear components. However, this improvement comes at the cost of more computational effort and complexity. In particular, t-SNE is a stochastic method, so users should run the algorithm several times to ensure that the results are representative, and then set a seed to ensure that the chosen results are reproducible. It is also advisable to test different settings of the "perplexity" parameter as this will affect the distribution of points in the low-dimensional space.
 ```{r}
 set.seed(1991) 
@@ -586,443 +675,75 @@ out50 <- plotTSNE(PAG_sceset_qc_norm_filt,
 multiplot(out5, out10, out20, out50, cols=2)
 ```
 
-## PATH "B" to feature selection - M3Drop
-__Based on the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group).__
-
-We continue using the `PAG_sceset_qc_norm` after normalization. We should thus have a `logcounts` slot in`assays`:
+#### 4a.3.1 | Dimensionality reduction with HVGs
+We now can perform dimensionality reduction using our HVGs subset. To do this, we first calculate the PCA representation via the `runPCA()` function from the `scater` package. We will calculate 50 components on our highly variable genes. The results of these calculations will be stored in the `reducedDims` slot. This method saves the percent variance explained per component as an attribute, which can be accessed as follows, and subsequently plot using the “elbow plot”:
 ```{r}
-# If starting from stored results, load saved filtered dataset from previous Step:
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt, 
+                                  ncomponents = 50,
+                                  ntop = 2743, 
+                                  exprs_values = "logcounts",
+                                  feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
+pct_var_explained <- attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA"), "percentVar")
+
+plot(pct_var_explained) # elbow plot
+```
+
+To calculate a 2-dimensional representation of the data, we will use the top 20 components of our PCA result to compute the UMAP representation.
+```{r}
+PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt, use_dimred = 'PCA', n_dimred = 20)
+
+plotUMAP(PAG_sceset_qc_norm_filt, 
+         colour_by = "batch.processing")
+```
+
+#### 4a.3.1 | Clustering
+```{r}
 set.seed(1991)
-options(stringsAsFactors = FALSE)
-library(SingleCellExperiment)
-library(scater)
-library(scran)
-library(matrixStats)
-library(M3Drop)
-
-PAG_sceset_qc_norm <- readRDS("PAG_sceset_qc_norm.rds") # Contains filtered cells and genes, and normalized data
-assayNames(PAG_sceset_qc_norm)
-PAG_sceset_qc_norm
+snng <- buildSNNGraph(PAG_sceset_qc_norm_filt, k = 50, d = 20)
+snng_clusters <- igraph::cluster_louvain(snng)
+table(snng_clusters$membership)
+colData(PAG_sceset_qc_norm_filt)$clusters <- as.factor(snng_clusters$membership)
+plotUMAP(PAG_sceset_qc_norm_filt, colour_by = "clusters")
 ```
 
-scRNA-seq is capable of measuring the expression of many thousands of genes in every cell. However, in most situations only a portion of those will show a response to the biological condition of interest, e.g. differences in cell-type, drivers of differentiation, respond to an environmental stimulus. Most genes detected in a scRNA-seq experiment will only be detected at different levels due to technical noise. One consequence of this is that technical noise and batch effects can obscure the biological signal of interest. Thus, it is often advantageous to perform feature selection to remove those genes which only exhibit technical noise from downstream analysis. Not only does this generally increase the signal:noise ratio in the data; it also reduces the computational complexity of analyses, by reducing the total amount of data to be processed.
-
-For scRNA-seq data, we will be focusing on unsupervised methods of feature selection which don’t require any a priori information, such as cell-type labels or biological group, since they may not be available, or may be unreliable, for many experiments. In contrast, differential expression can be considered a form of supervised feature selection since it uses the known biological label of each sample to identify features (i.e. genes) which are expressed at different levels across groups.
-
-__One important thing...__
-Before identifying HVGs, consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as some of them are not be biologically informative and others have been used to select the cells.
+#### 4a.3.1 | Differential Expression
 ```{r}
-dim(PAG_sceset_qc_norm)
-
-is_X_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X") # Find which genes correspond to chromosome X 
-is_Y_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y") # Find which genes correspond to chromosome Y
-is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find which genes correspond to feature controls (Ribosomal, Mitochondrial, ERCC, transgenes)
-
-filter_genes_qc_norm <- !(is_X_qc_norm | is_Y_qc_norm | is_feature_control_qc_norm)
-PAG_sceset_qc_norm <- PAG_sceset_qc_norm[filter_genes_qc_norm, ]
-dim(PAG_sceset_qc_norm)
+markers <- findMarkers(PAG_sceset_qc_norm_filt, 
+                       clusters = colData(PAG_sceset_qc_norm_filt)$clusters,
+                       subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt[1:250],
+                       lfc = 1.5, 
+                       direction = 'up', 
+                       log.p = TRUE)
+markers[[1]][1:5, ]
+plotExpression(PAG_sceset_qc_norm_filt, 'Gad1', x = 'clusters')
 ```
 
-Feature selection is performed after QC. `M3Drop` contains two different feature selection methods `M3DropFeatureSelection` which is based on a Michaelis-Menten curve and is designed for full-transcript single-cell RNA-seq data (such as Smart-seq2) and `NBumiFeatureSelectionCombinedDrop` which is based on a negative binomial model and is designed for UMI count data. We will use the former.
 
-`M3Drop` feature selection runs on a normalized (but not log-transformed) expression matrix. This can be extracted from our `SingleCellExperiment` object using the command below. This function is compatible with most single-cell RNA-seq analysis packages including: `scater`, `SingleCellExperiment`, `monocle`, and `Seurat`. It can also convert an existing expression matrix to the correct form (removing undetected genes & normalizing/delogging) if you specify whether the matrix is raw counts, or log transformed. Check the manual for details.
-```{r}
-#expr_matrix <- M3Drop::M3DropConvertData(PAG_sceset_qc_norm) # For some reason it does not work
-#expr_matrix <- M3DropConvertData(PAG_sceset_qc_norm@assays[["logcounts_raw"]], is.log=TRUE, is.counts=FALSE)
-expr_matrix <- M3DropConvertData(PAG_sceset_qc_norm@assays[["counts"]], is.log=FALSE, is.counts=TRUE)
-nrow(counts(PAG_sceset_qc_norm)) - nrow(expr_matrix) # check the ConvertData function has dropped undetected genes
-```
-
-### Step 4b.1 | Identifying genes vs a Null Model
-There are two main approaches to unsupervised feature selection. The first is to identify genes which behave differently from a null model describing just the technical noise expected in the dataset.
-
-If the dataset contains spike-in RNAs they can be used to directly model technical noise. However, measurements of spike-ins may not experience the same technical noise as endogenous transcripts (Svensson et al., 2017). In addition, scRNA-seq experiments often contain only a small number of spike-ins which reduces our confidence in fitted model parameters. We will not use spike-in transcripts beyond QC in our analysis.
-
-#### 4b.1.1 | Highly Variable Genes
-The first method proposed to identify features in scRNA-seq datasets was to identify highly variable genes (HVG). HVG assumes that if genes have large differences in expression across cells some of those differences are due to biological difference between the cells rather than technical noise. However, because of the nature of count data, there is a positive relationship between the mean expression of a gene and the variance in the read counts across cells. This relationship must be corrected for to properly identify HVGs.
-```{r}
-# Plot the relationship between mean expression and variance for all genes in this dataset:
-plot(
-    rowMeans(expr_matrix), 
-    rowVars(expr_matrix), 
-    log="xy", 
-    pch=16,
-    xlab="Mean Expression", 
-    ylab="Variance", 
-    main=""
-)
-```
-
-A popular method to correct for the relationship between variance and mean expression was proposed by [Brennecke et al. 2013](http://www.nature.com/nmeth/journal/v10/n11/full/nmeth.2645.html). To use the Brennecke method, we first normalize for library size and then calculate the mean and the square coefficient of variation (variation divided by the squared mean expression). A quadratic curve is fit to the relationship between these two variables for the ERCC spike-in, and then a chi-square test is used to find genes significantly above the curve. This method is included in the `M3Drop` package as the `Brennecke_getVariableGenes(counts, spikes)` function. If the dataset does not contain spike-ins we can use the entire dataset to estimate the technical noise.
-
-In the figure below the red curve is the fitted technical noise model and the dashed line is the 95% CI. Pink dots are the genes with significant biological variability after multiple-testing correction.
-```{r}
-Brennecke_HVG <- M3Drop::BrenneckeGetVariableGenes(expr_matrix,
-                                                   fdr = 0.01,
-                                                   minBiolDisp = 0.5
-                                                   )
-```
-
-This function returns a matrix of significant genes as well as their estimated effect size (difference between observed and expected coefficient of variation), and their significance as raw p.values and FDR corrected q.values. For now we will just keep the names of the significant HVG genes.
-```{r}
-HVG_genes <- Brennecke_HVG$Gene
-length(HVG_genes)
-```
-
-#### 4b.1.2 | High Dropout Genes
-An alternative to finding HVGs is to identify genes with unexpectedly high numbers of zeros. The frequency of zeros, known as the "dropout rate", is very closely related to expression level in scRNASeq data. Zeros are the dominant feature of single-cell RNASeq data, typically accounting for over half of the entries in the final expression matrix. These zeros predominantly result from the failure of mRNAs failing to be reversed transcribed (Andrews and Hemberg, 2016). Reverse transcription is an enzyme reaction thus can be modelled using the Michaelis-Menten equation: Pdropout=1−S/(K+S) where S is the mRNA concentration in the cell (we will estimate this as average expression) and K is the Michaelis-Menten constant.
-
-Because the Michaelis-Menten equation is a convex non-linear function, genes which are differentially expression across two or more populations of cells in our dataset will be shifted up/right of the Michaelis-Menten model. We use M3Drop to identify significant outliers to the right of the MM curve. We also apply 1% FDR multiple testing correction:
-```{r}
-M3Drop_genes <- M3DropFeatureSelection(expr_matrix,
-                                       mt_method = "fdr",
-                                       mt_threshold = 0.01
-                                       )
-M3Drop_genes <- M3Drop_genes$Gene
-length(M3Drop_genes)
-```
-
-### Step 4b.2 | Correlated Expression
-A completely different approach to feature selection is to use gene-gene correlations. This method is based on the idea that multiple genes will be differentially expressed between different cell-types or cell-states. Genes which are expressed in the same cell-population will be positively correlated with each other where as genes expressed in different cell-populations will be negatively correated with each other. Thus important genes can be identified by the magnitude of their correlation with other genes.
-
-The limitation of this method is that it assumes technical noise is random and independent for each cell, thus shouldn't produce gene-gene correlations, but this assumption is violated by batch effects which are generally systematic between different experimental batches and will produce gene-gene correlations. As a result it is more appropriate to take the top few thousand genes as ranked by gene-gene correlation than consider the significance of the correlations.
-```{r}
-cor_feat <- M3Drop::corFS(expr_matrix) # Takes a long time
-Cor_genes <- names(cor_feat)[1:1500]
-```
-
-### Step 4b.3 | PCA loadings
-Lastly, another common method for feature selection in scRNASeq data is to use PCA loadings. Genes with high PCA loadings are likely to be highly variable and correlated with many other variable genes, thus may be relevant to the underlying biology. However, as with gene-gene correlations PCA loadings tend to be susceptible to detecting systematic variation due to batch effects; thus it is recommended to plot the PCA results to determine those components corresponding to the biological variation rather than batch effects.
-```{r}
-# PCA is typically performed on log-transformed expression data
-pca <- prcomp(log(expr_matrix + 1) / log(2))
-
-# plot projection
-plot(
-    pca$rotation[,1], 
-    pca$rotation[,2], 
-    pch = 16
-)
-```
-
-```{r}
-# calculate loadings for components 1 and 2
-score <- rowSums(abs(pca$x[,c(1,2)])) 
-names(score) <- rownames(expr_matrix)
-score <- score[order(-score)]
-PCA_genes <- names(score[1:1500])
-```
-
-```{r}
-#Consider the top 5 principal components. Which ones appear to be most biologically relevant? How do the top 1,500 features change if you consider the loadings for those components?
-plot(
-    pca$rotation[,2], 
-    pca$rotation[,3], 
-    pch = 16
-)
-
-plot(
-    pca$rotation[,3], 
-    pca$rotation[,4], 
-    pch = 16
-)
-
-# calculate loadings for components 1 and 2
-score <- rowSums(abs(pca$x[,c(2, 3, 4)]))
-names(score) <- rownames(expr_matrix)
-score <- score[order(-score)]
-PCA_genes2 = names(score[1:1500])
-```
-
-### Step 4b.4 | Comparing Methods
-We can check whether the identified features really do represent genes differentially expressed between cell-types in this dataset.
-```{r}
-M3DropExpressionHeatmap(M3Drop_genes,
-                        expr_matrix,
-                        cell_labels = PAG_sceset_qc_norm$cell.type
-                        )
-```
-
-```{r}
-M3DropExpressionHeatmap(HVG_genes,
-                        expr_matrix,
-                        cell_labels = PAG_sceset_qc_norm$cell.type
-                        )
-```
-
-```{r}
-M3DropExpressionHeatmap(Cor_genes,
-                        expr_matrix,
-                        cell_labels = PAG_sceset_qc_norm$cell.type
-                        )
-```
-
-```{r}
-M3DropExpressionHeatmap(PCA_genes,
-                        expr_matrix,
-                        cell_labels = PAG_sceset_qc_norm$cell.type
-                        )
-```
-
-```{r}
-M3DropExpressionHeatmap(PCA_genes2,
-                        expr_matrix,
-                        cell_labels = PAG_sceset_qc_norm$cell.type
-                        )
-```
-
-We can also consider how consistent each feature selection method is with the others using the Jaccard Index:
-```{r}
-list_of_features <- list(M3Drop_genes,
-                         HVG_genes, 
-                         Cor_genes, 
-                         PCA_genes, 
-                         PCA_genes2
-                         )
-
-Out <- matrix(0, 
-              ncol = length(list_of_features), 
-              nrow = length(list_of_features)
-              )
-
-for(i in 1:length(list_of_features) ) {
-    for(j in 1:length(list_of_features) ) {
-        Out[i,j] <- sum(list_of_features[[i]] %in% list_of_features[[j]])/
-            length(unique(c(list_of_features[[i]], list_of_features[[j]])))
-     }
-}
-
-colnames(Out) <- rownames(Out) <- c("M3Drop", "HVG", "Cor", "PCA", "PCA2")
-Out
-```
-
-# STEP 5 | Batch correction
-Our data have been collected from samples originated from several animals and processed on different days. Small uncontrollable differences in processing between batches (changes in operator, differences in reagent quality) can result in systematic differences in the observed expression in cells from different batches, which are refered to as "batch effects". Such differences are not interesting and can be problematic as they can be major drivers of heterogeneity in the data, masking the relevant biological differences and complicating interpretation of the results.
-
-Computational correction of these effects is critical for eliminating batch-to-batch variation, allowing data across multiple batches to be combined for valid downstream analysis. However, existing methods such as `removeBatchEffect()` from the __limma__ package (Ritchie et al. 2015) assume that the composition of cell populations are either known or the same across batches. An alternative strategy for batch correction is based on the detection of mutual nearest neighbours (MNNs) (Haghverdi et al. 2018). The MNN approach does not rely on pre-defined or equal population compositions across batches, only requiring that a subset of the population be shared between batches.
-
-We perform batch correction after modelling the technical variance and performing feature selection.
-
-## Step 5.1 | Identifying confounding and technical factors
-As we have mentioned, a big source of variability in scRNA-seq data, besides bad cells, are batch effects: the person processing the samples, date of processing, reagent kit, etc. We want to try to identify such effects and remove them, so our dataset picks up mainly biological effects.
-
-### 5.1.1 | Checking for important technical factors or explanatory variables
-We check whether there are technical factors that contribute substantially to the heterogeneity of gene expression. If so, the factor may need to be regressed out to ensure that it does not inflate the variances or introduce spurious correlations. scater can compute the marginal R^2^ for each variable when fitting a linear model regressing expression values for each gene against just that variable, and display a density plot of the gene-wise marginal R^2^ values for the variables.
-
-For each gene, it calculates the percentage of the variance of the expression values that is explained by the variable. Small percentages (1-3%) indicate that the expression profiles of most genes are not strongly associated with this factor. If, on the other hand, we get density curves that are shifted to the right (i.e. with a peak towards the 100% end of the x-axis), this tells us that for a large proportion of the genes in our dataset this particular variable explains a large proportion of the variation.
-```{r}
-# How much of the variance does each variable explain? Some of these variables are calculated when we run the CalculateQC function from scater, and others are added by us (such as batch or individual).
-
-# Without log-transformation
-explV1 <- plotExplanatoryVariables(
-    PAG_sceset_qc_norm,
-    nvars_to_plot = 10,
-    exprs_values = "counts",
-    variables = c(
-        "total_features_by_counts",
-        "total_counts",
-        #"pct_counts_ERCC",
-        "pct_counts_Mitochondrial",
-        "pct_counts_Ribosomal",
-        "mouse.id",
-        "mouse.sex",
-        "mouse.age",
-        "cell.type",
-        "PAG.hemisphere",
-        "PAG.areacollection"
-    )
-) + ggtitle("Raw counts")
-
-# With log-transformation
-explV2 <- plotExplanatoryVariables(
-    PAG_sceset_qc_norm,
-    nvars_to_plot = 10,
-    exprs_values = "logcounts_raw",
-    variables = c(
-        "total_features_by_counts",
-        "total_counts",
-        #"pct_counts_ERCC",
-        "pct_counts_Mitochondrial",
-        "pct_counts_Ribosomal",
-        "mouse.id",
-        "mouse.sex",
-        "mouse.age",
-        "cell.type",
-        "PAG.hemisphere",
-        "PAG.areacollection"
-    )
-) + ggtitle("Logcounts Raw")
-
-# After scran normalization
-explV3 <- plotExplanatoryVariables(
-    PAG_sceset_qc_norm,
-    nvars_to_plot = 10,
-    exprs_values = "logcounts",
-    variables = c(
-        "total_features_by_counts",
-        "total_counts",
-        #"pct_counts_ERCC",
-        "pct_counts_Mitochondrial",
-        "pct_counts_Ribosomal",
-        "mouse.id",
-        "mouse.sex",
-        "mouse.age",
-        "cell.type",
-        "PAG.hemisphere",
-        "PAG.areacollection"
-    )
-) + ggtitle("scran")
-
-multiplot(explV1, explV2, explV3, cols=2)
-```
-
-### 5.1.2 | Correlations with Principal Components
+## 5.1.3 | Correlations with Principal Components
 `scater` allows us to identify principal components that correlate with experimental and QC variables of interest (it ranks principle components by R^2^ from a linear model regressing PC value against any variable or annotation we have associated with each cell) to see which factor is driving a particular principal component.
 ```{r}
-plotExplanatoryPCs(PAG_sceset_qc_norm,
-                   nvars_to_plot = 10,
-                   npcs_to_plot = 10,
-                   exprs_values = "logcounts", 
-                   variables = c(
-                     "total_features_by_counts",
-                     "total_counts",
-                     #"pct_counts_ERCC",
-                     "pct_counts_Mitochondrial",
-                     "pct_counts_Ribosomal",
-                     "mouse.id",
-                     "mouse.sex",
-                     "mouse.age",
-                     "cell.type",
-                     "PAG.hemisphere",
-                     "PAG.areacollection"
+plotExplanatoryPCs(PAG_sceset_qc_norm_filt,
+                   nvars_to_plot = 16,
+                   npcs_to_plot = 10,                 
+                   variables = c("mouse.id",
+                                 "mouse.sex",
+                                 "mouse.age",
+                                 "mouse.singlehousedays",
+                                 "cell.type",
+                                 "cell.fluorophor",
+                                 "slice.number",
+                                 "slice.depth",
+                                 "PAG.areacollection",
+                                 "PAG.hemisphere",
+                                 "PAG.APaxis",
+                                 "time.sinceslicinghour",
+                                 "batch.processing",
+                                 "batch.sequencing_round",
+                                 "total_features_by_counts",
+                                 "total_counts"
+                                 )
                    )
-)
 ```
-
-## Step 5.2 | Dealing with confounders (batch correction) 
-To account for technical confounders we need to identify and remove sources of variation in the expression data that are not related to the biological signal of interest. We could use spike-ins for this (in theory you add the same amount of ERCC in each cell lysate, so any variability should be technical noise), but these can turn out to be extremely variable across cells. Instead, we could use endogenous or housekeeping genes that do not vary systematically between cells. Where we have a large number of endogenous genes that, on average, do not vary systematically between cells and where we expect technical effects to affect a large number of genes (a very common and reasonable assumption), then such methods (for example, the RUVs method) can perform well.
-
-NOTE: you can't really use any of the methods, as you don't have a balanced design (for the first samples each animal was processed in a different batch for library preparation). You could try it with the last samples, as we managed to get a balanced desing (samples from each animal were processed together).
-
-You can't really use RUVseq (remove unwanted variation) as it depends on ERCCs having a constant expression across samples (which we know is not the case in our data, as they are pretty variable). You could try GLM (generalised linear model) or RUVs.
-
-Try different methods and evaluate their effectiveness.
-
-See: https://scrnaseq-course.cog.sanger.ac.uk/website/cleaning-the-expression-matrix.html#dealing-with-confounders
-
-### Exploring obvious biases with the table function
-The table function allows us to quickly inspect if we have any obvious biases or confounds (i.e. all the cells come from male or female mice, or from a particular location or sequencing batch).
-```{r}
-# Check if any technical factors are confounded
-table(PAG_sceset_qc_norm$cell.type, PAG_sceset_qc_norm$PAG.hemisphere)
-table(PAG_sceset_qc_norm$cell.type, PAG_sceset_qc_norm$mouse.sex)
-#table(PAG_sceset_qc_norm$cell.type, PAG_sceset_qc_norm$reads.mitochondrial)
-```
-
-```{r}
-# You can also check the distribution of each of these metadata classifications:
-summary(factor(PAG_sceset_qc_norm$cell.type))
-summary(factor(PAG_sceset_qc_norm$PAG.hemisphere))
-summary(factor(PAG_sceset_qc_norm$PAG.areacollection))
-summary(factor(PAG_sceset_qc_norm$mouse.sex))
-```
-
-### 5.2.1 | removeBatchEffect()
-`removeBatchEffect()` performs a linear regression and sets the coefficients corresponding to the blocking factors to zero. This is effective provided that the population composition within each batch is known (and supplied as `design=`) or identical across batches. The composition of our cell poplulation is __not__ identical across batches, as each batch comes from one transgenic mouse and thus has only one out of two possible cell types. However, individually aspirating cells based on expression of a transgene has the advantage that it allows us to know exactly the composition of each batch.
-```{r}
-library(limma)
-assay(PAG_sceset_qc_norm, "corrected") <- removeBatchEffect(logcounts(PAG_sceset_qc_norm),
-                                                       design=model.matrix(~PAG_sceset_qc_norm$cell.type), 
-                                                       batch=PAG_sceset_qc_norm$mouse.id,
-                                                       batch2=PAG_sceset_qc_norm$batch.processing)
-assayNames(PAG_sceset_qc_norm)
-```
-
-Manual batch correction is necessary for downstream procedures that are not model-based, e.g., clustering and most forms of dimensionality reduction. However, if an analysis method can accept a design matrix, blocking on nuisance factors in the design matrix is preferable to using `removeBatchEffect()`. This is because the latter does not account for the loss of residual degrees of freedom, nor the uncertainty of estimation of the blocking factor terms.
-
-### 5.2.2 | Mutual Nearest Neighbours (mnnCorrect)
-In our case, each animal could be treated as a separate batch in their own right, reflecting (presumably uninteresting) biological differences due to genotype, age, sex or other factors that are inherent to our experimental design. We will apply the detection of mutual nearest neighbours (MNNs) (Haghverdi et al. 2018) to correct for batch effects.
-
-`mnnCorrect()` was developed to merge different datasets obtained from the same biological system. It assumes that each batch shares at least one biological condition with each other batch (in our case it can be the same cell type across animals). Thus it works well for a variety of balanced experimental designs. However, in a confounded/replicate design biological effects will not be fit/preserved and we will only be able to remove batch effects from each individual separately in order to preserve biological (and technical) variance between individuals.
-
-### 5.2.3 | Effectiveness of the methods
-We can evaluate the effectiveness of the normalization by inspecting the PCA plot where colour corresponds the technical replicates and shape corresponds to different biological samples (individuals). Separation of biological samples and interspersed batches indicates that technical variation has been removed. We always use log2-cpm normalized data to match the assumptions of PCA.
-```{r}
-for(n in assayNames(PAG_sceset_qc_norm)) {
-    print(
-        plotPCA(
-            PAG_sceset_qc_norm[endogenous_genes, ],
-            colour_by = "batch.processing",
-            shape_by = "mouse.id",
-            size_by = "total_features_by_counts",
-            exprs_values = n
-        ) +
-        ggtitle(n)
-    )
-}
-```
-
-We can also examine the effectiveness of correction using the relative log expression (RLE) across cells to confirm technical noise has been removed from the dataset. Note RLE only evaluates whether the number of genes higher and lower than average are equal for each cell - i.e. systemic technical effects. Random technical noise between batches may not be detected by RLE.
-```{r}
-res <- list()
-for(n in assayNames(PAG_sceset_qc_norm)) {
-    res[[n]] <- suppressWarnings(calc_cell_RLE(assay(PAG_sceset_qc_norm, n), erccs))
-}
-par(mar=c(6,4,1,1))
-boxplot(res, las=2)
-```
-
-```{r}
-for(n in assayNames(PAG_sceset_qc_norm)) {
-    print(
-        plotQC(
-            PAG_sceset_qc_norm[endogenous_genes, ],
-            type = "expl",
-            exprs_values = n,
-            variables = c(
-              "total_features_by_counts",
-              "total_counts",
-              "pct_counts_ERCC",
-              "pct_counts_MT",
-              "mouse.id",
-              "mouse.sex",
-              "mouse.age",
-              "cell.id",
-              "cell.type",
-              "cell.fluorophor",
-              "cell.number",
-              "PAG.hemisphere",
-              "PAG.areacollection",
-              "slice.depth", 
-              "slice.number",
-              "time.aspiration",
-              "time.sinceslicing",
-              "sequencing.round"
-            )
-        ) +
-        ggtitle(n)
-    )
-}
-```
-
-# STEP 6 | Denoising expression values using PCA
-Once the technical noise is modelled and we have corrected our batch effects, we can use principal component analysis (PCA) to remove random technical noise. Consider that each cell represents a point in the high-dimensional expression space, where the spread of points represents the total variance. PCA identifies axes in this space that capture as much of this variance as possible. Each axis is a principal component (PC), where any early PC will explain more of the variance than a later PC.
-
-We assume that biological processes involving co-regulated groups of genes will account for the most variance in the data. If this is the case, this process should be represented by one or more of the earlier PCs. In contrast, random technical noise affects each gene independently and will be represented by later PCs. The `denoisePCA()` function removes later PCs until the total discarded variance is equal to the sum of technical components for all genes used in the PCA.
-
-We use all genes with a positive biological component in `denoisePCA` and perform PCA on the expression profiles, choosing the number of PCs to retain based on the total technical noise in the data set. The idea is to discard later PCs that contain random technical noise, thus enriching for early biological signal (and also reducing work in downstream steps).
-
-* `denoisePCA()` will only use genes that have positive biological components, i.e., variances greater than the fitted trend. This guarantees that the total technical variance to be discarded will not be greater than the total variance in the data.
-* For the `technical=` argument, the function will also accept the trend function directly (i.e., `var.fit$trend`) or a vector of technical components per gene. Here, we supply the  DataFrame from decomposeVar() to allow the function to adjust for the loss of residual degrees of freedom after batch correction. Specifically, the variance in the batch-corrected matrix is slightly understated, requiring some rescaling of the technical components to compensate.
-* No filtering is performed on abundance here, which ensures that PCs corresponding to rare subpopulations can still be detected. Discreteness is less of an issue as low-abundance genes also have lower variance, thus reducing their contribution to the PCA.
-* It is also possible to obtain a low-rank approximation of the original expression matrix, capturing the variance equivalent to the retained PCs. This is useful for denoising prior to downstream procedures that require gene-wise expression values.
-```{r}
-PAG_sceset_qc_norm <- denoisePCA(PAG_sceset_qc_norm, technical=var_out_no_spikes, assay.type="corrected")
-#technical=var_out_spikes or var_fit_spikes$trend
-dim(reducedDim(PAG_sceset_qc_norm, "PCA")) # Cells are rows, PCs are columns
-```
-
-The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
 
 ## Step 6.1 | Visualizing data in low-dimensional space with PCA
 We can visualize the relationships between cells by constructing pairwise PCA plots for the first components. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart.
@@ -1071,129 +792,3 @@ set.seed(1991)
 PAG_sceset_qc_norm <- runTSNE(PAG_sceset_qc_norm, use_dimred="PCA", perplexity=20)
 reducedDimNames(PAG_sceset_qc_norm)
 ```
-
-# STEP 7 | Clustering
-## Step 7.1 | Hierarchical clustering on Euclidean distances
-The denoised log-expression values can be used to cluster cells into putative subpopulations. Specifically, we perform hierarchical clustering on the Euclidean distances between cells, using Ward's criterion to minimize the total variance within each cluster. This yields a dendrogram that groups together cells with similar expression patterns across the chosen genes.
-```{r}
-principal_components <- reducedDim(PAG_sceset_qc_norm, "PCA")
-PAG_dist <- dist(principal_components) # Making a distance matrix
-PAG_tree <- hclust(PAG_dist, method="ward.D2") # Building a tree
-plot(PAG_tree)
-```
-
-### 7.1.1 | Cutree
-We can next cut the tree into different clusters and see how these correspond to the known sample conditions:
-```{r}
-PAG_clusters <- cutree(PAG_tree, k=3) 
-table(PAG_clusters, PAG_sceset_qc_norm$PAG.area)
-```
-
-Color the t-SNE according to the cluster identity:
-```{r}
-PAG_sceset_qc_norm$Cluster <- factor(PAG_clusters)
-plotTSNE(PAG_sceset_qc_norm, colour_by='Cluster')
-```
-
-We next use a heatmap to visualize the expression profiles of the top 100 genes with the largest biological components. If there is structure, we should see "blocks" in expression that correspond nicely to known sample features. We possibly could have subclustered further, in which case we would subset and repeat the above process.
-```{r}
-library(pheatmap)
-plotHeatmap(PAG_sceset_qc_norm, 
-            features=rownames(var_out_no_spikes)[order(var_out_no_spikes$bio, decreasing=TRUE)[1:100]],
-            cluster_cols=PAG_tree, colour_columns_by="PAG.area",
-            center=TRUE, symmetric=TRUE)
-```
-
-When clustering, it is often useful to look at silhouette plots to assess cluster separatedness. Each bar corresponds to a cell, and is proportional to the difference in the average distances to all other cells in the same cluster versus cells in the nearest neighbouring cluster. A good gauge for the number of clusters is that which maximizes the average silhouette width.
-```{r}
-library(cluster)
-par(mfrow=c(2,2))
-for (k in 2:5) { 
-    example_clusters <- cutree(PAG_tree, k=k)
-    sil <- silhouette(example_clusters, dist=PAG_dist)
-    plot(sil, col=rainbow(k)[sort(sil[,1])])
-}
-```
-
-Other options for clustering are:
-
-* Use the `cutreeDynamic()` function in the _dynamicTreeCut_ package, for topology-aware cutting of the tree (doesn't require specifying the number of clusters).
-* Use graph-based methods such as `buildSNNGraph()` or `buildKNNGraph()`, followed by clustering methods from _igraph_.
-* Use methods with pre-specified number of clusters, e.g., k-means with `kmeans()` and _SC3_, self-organizing maps in _flowSOM_.
-
-### 7.1.2 | DynamicTreeCut
-Clusters are explicitly defined by applying a dynamic tree cut (Langfelder, Zhang, and Horvath 2008) to the dendrogram. This exploits the shape of the branches in the dendrogram to refine the cluster definitions, and is more appropriate than `cutree` for complex dendrograms. Greater control of the empirical clusters can be obtained by manually specifying cutHeight in  `cutreeDynamic`. We also set `minClusterSize` to a lower value than the default of 20, to avoid spurious aggregation of distant small clusters.
-```{r}
-library(dynamicTreeCut)
-PAG_clusters <- unname(cutreeDynamic(PAG_tree, distM=as.matrix(PAG_dist), 
-                                     minClusterSize=10, verbose=0))
-```
-
-We examine the distribution of cells in each cluster with respect to known factors. We check whether each cluster is comprised of cells from both batches, which would indicate that the clustering is not driven by a batch effect. Differences in the composition of each cluster are observed with respect to `cell.type` or `PAG.area`.
-```{r}
-table(PAG_clusters, PAG_sceset_qc_norm$cell.type)
-table(PAG_clusters, PAG_sceset_qc_norm$PAG.area)
-```
-
-We can now visualize the cluster assignments for all cells on the t-SNE we created before. Adjacent cells are generally assigned to the same cluster, indicating that the clustering procedure was applied correctly.
-```{r}
-PAG_sceset_qc_norm$Cluster <- factor(PAG_clusters)
-plotTSNE(PAG_sceset_qc_norm, colour_by="Cluster") + fontsize
-```
-
-We check the separatedness of the clusters using the silhouette width. Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in different clusters. Conversely, cells with negative widths are closer to other clusters than to other cells in the cluster to which it was assigned. Each cluster would ideally contain many cells with large positive widths, indicating that it is well-separated from other clusters.
-```{r}
-library(cluster)
-clust.col <- scater:::.get_palette("tableau10medium") # hidden scater colours
-sil <- silhouette(PAG_clusters, dist = PAG_dist)
-sil.cols <- clust.col[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
-sil.cols <- sil.cols[order(-sil[,1], sil[,3])]
-plot(sil, main = paste(length(unique(PAG_clusters)), "clusters"), 
-     border=sil.cols, col=sil.cols, do.col.sort=FALSE)
-```
-
-The silhouette width can be used to determine the parameter values that maximize the separation between clusters. For example, we could vary the cut height or splitting depth in `cutreeDynamic` to maximize the average silhouette width across all cells. This usually provides a satisfactory initial clustering for further examination. However, keep in mind that the granularity of clustering is much like the magnification on a microscope. Different views of the data can be obtained with different granularities, some of which may be suboptimal on measures of separation. Users should not fixate on the clustering with the greatest separation if it does not provide the desired granularity for a particular biological question.
-
-* Small silhouette positive widths indicates that the separation between clusters is weak. This may be symptomatic of over-clustering where clusters that are clearly defined are further split into subsets that are less well separated. 
-* An alternative clustering strategy is to use a matrix of distances derived from correlations (e.g., as in `quickCluster`). This is more robust to noise and normalization errors, but is also less sensitive to subtle changes in the expression profiles.
-* Both Ward's criterion and complete linkage yield spherical, compact clusters. In particular, complete linkage favours the formation of clusters with the same diameter. This may be desirable in some cases but is less appropriate when subpopulations differ in their variance. Thus, we typically use Ward's criterion for our initial clustering. Of course, it is simple (and recommended) to try other approaches provided that some assessment is performed, e.g., using the silhouette width.
-
-## Step 7.2 | Identifying marker genes between subpopulations
-Once putative subpopulations are identified by clustering, we can identify marker genes for each cluster using the `findMarkers` function. This performs Welch t-tests on the log-expression values for every gene and between every pair of clusters (Soneson and Robinson 2018). The aim is to test for DE in each cluster compared to the others while blocking on uninteresting factors such as the plate of origin. The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters.
-```{r}
-marker_genes <- findMarkers(PAG_sceset_qc_norm, clusters=PAG_clusters, block=PAG_sceset_qc_norm$mouse.id)
-```
-
-For each cluster, the DE results of the relevant comparisons are consolidated into a single output table. This allows a set of marker genes to be easily defined by taking the top DE genes from each pairwise comparison between clusters. For example, to construct a marker set for cluster 1 from the top 10 genes of each comparison, one would filter `marker.set` to retain rows with `Top` less than or equal to 10. Other statistics are also reported for each gene, including the adjusted p-values and the log-fold changes relative to every other cluster.
-```{r}
-marker_set_2 <- marker_genes[[2]] # Marker set for cluster 2
-head(marker_set_2)
-
-# Check what Top represents:
-#marker_set_2[marker_set_2$Top <= 1,]
-```
-
-We save the list of candidate marker genes for further examination.
-```{r}
-write.table(marker.set, file="PAG_marker_genes_2.tsv", sep="\t", 
-            quote=FALSE, col.names=NA)
-```
-
-We visualize the expression profiles of the top candidates to verify that the DE signature is robust. A more comprehensive investigation of the function of these markers can be performed with gene set enrichment analyses, e.g., using `kegga` or `goana` from _limma_.
-```{r}
-top_markers_2 <- rownames(marker_set_2)[marker_set_2$Top <= 10]
-plotHeatmap(PAG_sceset_qc_norm, 
-            features=top_markers_2,
-            columns=order(PAG_sceset_qc_norm$Cluster),
-            cluster_cols=PAG_tree, # try cluster_cols=FALSE
-            colour_columns_by=c("Cluster", "cell.type", "PAG.area"),
-            center=TRUE, symmetric=TRUE, zlim=c(-5, 5))
-```
-
-A valid alternative strategy is to detect marker genes that are uniquely up-regulated or down-regulated in each cluster (set `pval.type="all"`). However, be aware that no such genes may exist. Many of the markers might not uniquely up- or downregulated in the chosen cluster. Testing for unique DE tends to be too stringent as it overlooks important genes that are expressed in two or more clusters. A better approach is to pick up as candidate markers genes that will be DE between at least one pair of subpopulations. A combination of markers can then be chosen to characterize a subpopulation, which is more flexible than trying to find uniquely DE genes.
-
-We strongly recommend selecting some markers for use in validation studies with an independent replicate population of cells. The aim is to identify a corresponding subset of cells that express the upregulated markers and do not express the downregulated markers. Ideally, a different technique for quantifying expression would also be used during validation, e.g., fluorescent in situ hybridisation or quantitative PCR. This confirms that the subpopulation genuinely exists and is not an artifact of scRNA-seq or the computational analysis.
-
-* By setting `direction="up"`, `findMarkers` will only return genes that are upregulated in each cluster compared to the others. This is convenient in highly heterogeneous populations to focus on genes that can immediately identify each cluster. While lack of expression may also be informative, it is less useful for positive identification.
-* `findMarkers` can also be directed to find genes that are DE between the chosen cluster and all other clusters. This should be done by setting `pval.type="all"`, which defines the p-value for each gene as the maximum value across all pairwise comparisons involving the chosen cluster. Combined with `direction="up"`, this can be used to identify unique markers for each cluster. However, this is sensitive to overclustering, as unique marker genes will no longer exist if a cluster is split into two smaller subclusters.
-* It must be stressed that the (adjusted) p-values computed here cannot be properly interpreted as measures of significance. This is because the clusters have been empirically identified from the data.
