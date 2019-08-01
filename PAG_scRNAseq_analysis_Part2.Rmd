@@ -603,34 +603,12 @@ dim(PAG_sceset)
 PAG_sceset
 ```
 
-## Step 2.5 | Cell cycle phase [OPTIONAL]
-It is possible to classify cells into cell cycle phases based on the gene expression data using the function `cyclone` (Sciealdone et al. 2015). This, however, is not super useful in the brain, as many neuronal cell types are expected to lie in the G0 resting phase, which is distinct from the other phases of the cell cycle (Coller et al., 2006). We run it anyway and observe that all the cells are in G1.
-
-Cells are classified as being in G1 phase if the G1 score is above 0.5 and greater than the G2/M score; in G2/M phase if the G2/M score is above 0.5 and greater than the G1 score; and in S phase if neither score is above 0.5.
-
-*See McCarthy et al. F1000Research 2016 for an explanation of this step and the code.*
-```{r}
-library(scran)
-library(AnnotationDbi)
-library(org.Mm.eg.db)
-set.seed(1991)
-
-mm.pairs <- readRDS(system.file("exdata", "mouse_cycle_markers.rds", package="scran")) 
-assignments <- cyclone(PAG_sceset, mm.pairs, gene.names=rowData(PAG_sceset)$ENSEMBL) 
-plot(assignments$score$G1, assignments$score$G2M, xlab="G1 score", ylab="G2/M score", pch=16, xlim=c(0,1), ylim=c(0,1))
-```
-
-We could store the cell cycle phases for future use:
-```{r}
-PAG_sceset$cycle_phase <- assignments$phases
-```
-
-## Step 2.6 | Gene QC
+## Step 2.5 | Gene QC
 In addition to removing cells with poor quality, it is usually a good idea to exclude genes where we suspect that technical artefacts may have skewed the results, or genes that are not informative (have a lot of 0 in many cells). The optimal choice of filtering strategy depends on the downstream application, and the best practice is to filter at each step as needed, rather than applying a single filter for the entire analysis. We will see different filtering options, but in the end we will only remove the genes that are not expressed in any cell, as they don't provide any information and would be removed by any filtering strategy. This will ensure that the most appropriate filter is used in each type of analysis and we don't remove now genes that we might need later if we do DE analysis, for example.
 
 __NB__: keep in mind that genes must be filtered after cell filtering since some genes may only be detected in poor quality cells. Use `PAG_sceset[ , colData(PAG_sceset)$use]` to select only the filtered cells. Here we will apply the filters both in the whole dataset and after filtering low quality cells to assess its impact.
 
-### 2.6.1 | Filtering low-abundance genes
+### 2.5.1 | Filtering low-abundance genes
 Low-abundance genes are problematic as zero or near-zero counts do not contain enough information for reliable statistical inference (Bourgon et al. 2010) and are likely to be dominated by drop-out events (Brennecke et al. 2013), which limits their usefulness in later analyses. Several metrics can be used to define low-abundance genes, one being the average count for each gene computed across all cells in the dataset. We can calculate this using the `calcAverage()` function, which can also perform some adjustment for library size differences between cells.
 ```{r}
 library(scater)
@@ -675,7 +653,7 @@ summary(filter_low_abundance_genes_use)
 
 __NOTE__: the `computeSumFactors()` function we will use prior to normalization will already implement this filter by default with the `min.mean=1` argument, so this is another reason to only remove non-expressed genes.
 
-### 2.6.2 | Filtering uninteresting genes
+### 2.5.2 | Filtering uninteresting genes
 An alternative approach to gene filtering is to select genes that have non-zero counts in at least n cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
 ```{r}
 # Count the number of non-zero counts (or any value set by the detection_limit) in each row (per feature) or column (per cell). With byrow=TRUE we count the number of cells that express each gene more than certain number of times.
@@ -718,7 +696,7 @@ summary(filter_low_abundance_genes_alternative_use)
 
 For now, we will only remove genes not expressed in any cell. Depending on which type of analysis we do later on, we can add a new round of gene filtering with different settings tailored to each particular step.
 
-### 2.6.3 | Identities of the most highly expressed genes
+### 2.5.3 | Identities of the most highly expressed genes
 It is often instructive to consider the number of reads consumed by the top 50 expressed genes. This should generally be dominated by constitutively expressed transcripts, such as those for ribosomal or mitochondrial proteins. The presence of other classes of features may be cause for concern if they are not consistent with expected biology. Many spike-in transcripts in the top most expressed genes suggests that too much spike-in RNA was added during library preparation, while the absence of ribosomal proteins and/or the presence of their pseudogenes are indicative of suboptimal alignment.
 ```{r}
 # If you did not run "Uniquify feature names"" you can change the gene names from ENSEMBL IDs to Gene Symbols to facilitate interpretation
@@ -738,11 +716,13 @@ Plot frequency of expression (number of cells with non-zero expression) against 
 
 *Check out the "Scater Case Study" by McCarthy et al. 2016 for more information.*
 ```{r}
-plotExprsFreqVsMean(PAG_sceset) 
-plotExprsFreqVsMean(PAG_sceset[ , colData(PAG_sceset)$use])
+plotExprsFreqVsMean(PAG_sceset,
+                    control = "is_spike") 
+plotExprsFreqVsMean(PAG_sceset[ , colData(PAG_sceset)$use],
+                    control = "is_spike")
 ```
 
-### 2.6.4 | Apply chosen gene-filtering approach
+### 2.5.4 | Apply chosen gene-filtering approach
 In general, the mean-based filter tends to be less aggressive. A gene will be retained as long as it has sufficient expression in any subset of cells. Genes expressed in fewer cells require higher levels of expression in those cells to be retained, but this is not undesirable as it avoids selecting uninformative genes (with low expression in few cells) that contribute little to downstream analyses such as HVG detection or clustering.
 
 In contrast, the "at least n" filter depends heavily on the choice of `n`. With `n = 10`, a gene expressed in a subset of 9 cells would be filtered out, regardless of the level of expression in those cells. This may result in the failure to detect rare subpopulations that are present at frequencies below `n`.
@@ -764,7 +744,7 @@ dim(PAG_sceset) # We haven't changed anything in the SCE object yet.
 
 Now, the `colData(PAG_sceset)$use` should point to the __samples__ that have passed our QC, whereas the `rowData(PAG_sceset)$use` should point to the __genes__ that have passed our QC (i.e. that are expressed in at least one cell).
 
-## Step 2.7 | Create and save a QCed SCE object
+## Step 2.6 | Create and save a QCed SCE object
 We have now QCed our data. Before we proceed to normalization and downstream analyis, we save our progress.
 ```{r}
 # Create an additional assay slot with log-transformed counts:
@@ -787,6 +767,7 @@ table(PAG_sceset_qc$PAG.areacollection)
 
 # Save the filtered and QCed dataset:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")
+print("Part 2 - Done!")
 ```
 
 __IMP__: once you have filtered out low-quality cells and stored the resulting dataset into a QCed one, use the QCed for the following steps.

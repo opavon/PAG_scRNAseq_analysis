@@ -182,8 +182,9 @@ p3 <- plotRLE(
 #plot(p3)
 ```
 
-## Save Data
+## Step 3.5 | Save a normalized SCE object
 ```{r}
 # Save the normalized data:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc_norm.rds")
+print("Part 3 - Done!")
 ```

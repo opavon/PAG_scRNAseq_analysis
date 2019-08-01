@@ -28,7 +28,7 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 ***
 
 # STEP 8 | Consensus Clustering with SC3
-Once we have normalized the data and removed confounders we can carry out analyses that are relevant to the biological questions at hand.
+Once we have normalized the data and identified highly variable genes and confounding factors we can carry out analyses that are relevant to the biological questions at hand.
 
 scRNA-seq data allow de novo discovery and annotation of cell-types based on transcription profiles. Computationally, we need to identify groups of cells based on the similarities of the transcriptomes without any prior knowledge of the labels, nor the number of clusters we will end up with. This is very challenging due to the high level of noise (both technical and biological) and the large number of dimensions (i.e. genes).
 
