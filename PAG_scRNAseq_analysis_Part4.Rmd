@@ -30,7 +30,7 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 # STEP 4 | Modelling technical and biological variability in gene expression and identifying highly variable genes
 __Based on the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun.__
 
-We continue using the `PAG_sceset_qc_norm` after normalization. We should thus have a `logcounts` slot in`assays`:
+We continue using the `PAG_sceset_qc_norm` after normalization. We should thus have a `logcounts` slot in `assays`:
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
 set.seed(1991)
@@ -312,6 +312,7 @@ Before moving on to downstream analysis, we consider dropping any Ribosomal, Mit
 is_X_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X") # Find which genes correspond to chromosome X 
 is_Y_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y") # Find which genes correspond to chromosome Y
 is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find which genes correspond to feature controls (Ribosomal, Mitochondrial, ERCC, transgenes)
+# ADD IS PREDICTED GENE
 
 filter_genes_qc_norm <- !(is_X_qc_norm | is_Y_qc_norm | is_feature_control_qc_norm)
 
@@ -567,27 +568,40 @@ Manual batch correction is necessary for downstream procedures that are not mode
 `removeBatchEffect()` performs a linear regression and sets the coefficients corresponding to the blocking factors to zero. This is effective provided that the population composition within each batch is known (and supplied as `design=`) or identical across batches. The composition of our cell poplulation is __not__ identical across batches, as each batch comes from one transgenic mouse and thus has only one out of two possible cell types. However, individually aspirating cells based on expression of a transgene has the advantage that it allows us to know exactly the composition of each batch, so we can set the design and batches as follows:
 ```{r}
 library(limma)
-start_timec3 <- Sys.time() # Takes around 32min
-assay(PAG_sceset_qc_norm, "corrected") <- removeBatchEffect(logcounts(PAG_sceset_qc_norm_filt),
-                                                            design = model.matrix(~PAG_sceset_qc_norm_filt$cell.type), 
-                                                            batch = PAG_sceset_qc_norm_filt$batch.processing)
-
+assay(PAG_sceset_qc_norm_filt, "corrected") <- removeBatchEffect(logcounts(PAG_sceset_qc_norm_filt),
+                                                                 #design = model.matrix(~PAG_sceset_qc_norm_filt$cell.type),
+                                                                 batch = PAG_sceset_qc_norm_filt$batch.processing)
 assayNames(PAG_sceset_qc_norm_filt)
-end_timec3 <- Sys.time()
-end_timec3 - start_time3
 ```
 
-### 5.2.3 | Effectiveness of the correction
+### 5.2.2 | Effectiveness of the correction
 We can evaluate the effectiveness of the correction by inspecting the PCA plot where colour corresponds the technical replicates and shape corresponds to the individuals from which biological samples where acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed.
 ```{r}
 for(n in assayNames(PAG_sceset_qc_norm_filt)) {
     print(
         plotPCA(
             PAG_sceset_qc_norm_filt,
-            colour_by = "batch.processing",
-            shape_by = "mouse.id",
+            rerun = TRUE, 
+            colour_by = "PAG.areacollection",
+            shape_by = "cell.type",
             size_by = "total_features_by_counts",
-            exprs_values = n
+            run_args=list(exprs_values = n)
+        ) +
+        ggtitle(n)
+    )
+}
+```
+
+```{r}
+for(n in assayNames(PAG_sceset_qc_norm_filt)) {
+    print(
+        plotPCA(
+            PAG_sceset_qc_norm_filt,
+            rerun = TRUE, 
+            colour_by = "PAG.areacollection",
+            shape_by = "cell.type",
+            size_by = "total_features_by_counts",
+            run_args=list(exprs_values = n, feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
         ) +
         ggtitle(n)
     )
@@ -609,11 +623,13 @@ We assume that biological processes involving co-regulated groups of genes will 
 We use all genes with a positive biological component in `denoisePCA` and perform PCA on the expression profiles, choosing the number of PCs to retain based on the total technical noise in the data set. The idea is to discard later PCs that contain random technical noise, thus enriching for early biological signal (and also reducing work in downstream steps).
 
 * `denoisePCA()` will only use genes that have positive biological components, i.e., variances greater than the fitted trend. This guarantees that the total technical variance to be discarded will not be greater than the total variance in the data.
-* For the `technical=` argument, the function will also accept the trend function directly (i.e., `var.fit$trend`) or a vector of technical components per gene. Here, we supply the  DataFrame from decomposeVar() to allow the function to adjust for the loss of residual degrees of freedom after batch correction. Specifically, the variance in the batch-corrected matrix is slightly understated, requiring some rescaling of the technical components to compensate.
+* For the `technical=` argument, the function will also accept the trend function directly (i.e., `var.fit$trend`) or a vector of technical components per gene. Here, we supply the  DataFrame from `decomposeVar()` to allow the function to adjust for the loss of residual degrees of freedom after batch correction. Specifically, the variance in the batch-corrected matrix is slightly understated, requiring some rescaling of the technical components to compensate.
 * No filtering is performed on abundance here, which ensures that PCs corresponding to rare subpopulations can still be detected. Discreteness is less of an issue as low-abundance genes also have lower variance, thus reducing their contribution to the PCA.
 * It is also possible to obtain a low-rank approximation of the original expression matrix, capturing the variance equivalent to the retained PCs. This is useful for denoising prior to downstream procedures that require gene-wise expression values.
 ```{r}
-PAG_sceset_qc_norm <- denoisePCA(PAG_sceset_qc_norm, technical=var_out_no_spikes, assay.type="corrected")
+PAG_sceset_qc_norm_filt <- denoisePCA(PAG_sceset_qc_norm_filt, 
+                                      technical=var_out_no_spikes, 
+                                      assay.type="corrected")
 #technical=var_out_spikes or var_fit_spikes$trend
 dim(reducedDim(PAG_sceset_qc_norm, "PCA")) # Cells are rows, PCs are columns
 ```
