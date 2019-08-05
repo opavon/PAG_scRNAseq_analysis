@@ -27,14 +27,6 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 
 ***
 
-```{r}
-# How many predicted genes to we have in the HVGs?
-is_predicted <- grepl("^Gm", rownames(PAG_sceset_qc_norm_filt))
-rowData(PAG_sceset_qc_norm_filt)$predicted_genes <- is_predicted
-sum(is_predicted %in% metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
-```
-
-
 # STEP 7 | Clustering
 Once we have normalized the data, identified highly variable genes, and corrected confounding factors we can carry out analyses that are relevant to the biological questions at hand.
 
@@ -63,42 +55,96 @@ Single-Cell Consensus Clustering (SC3) is a tool for unsupervised clustering of 
 
 The advantage of the SC3 is that it can directly ingest a `SingleCellExperiment` object, and it has a function that can estimate a number of clusters for us. SC3 is a purely clustering tool and it does not provide functions for the sequencing quality control (QC) or normalisation. On the contrary, it is expected that these preprocessing steps are performed by a user in advance. SC3 requires both `counts` and `logcounts` slots to exist in the input `SingleCellExperiment` object. The `counts` slot is used for gene filtering, which is based on gene dropout rates. The `logcounts` slot, which is supposed to contain both normalised and log-transformed expression matrix, is used in the main clustering algorithm.  Additionally, if spike-ins are defined via `isSpike function`, SC3 will automatically remove them before doing clustering.
 
-### 7.1.1 | Estimate k and prepare SingleCellExperiment object for SC3
-```{r}
-# SC3 is stochastic, if we run it different times we will get different results, so we need to make sure we have set a seed before running it.
-set.seed(1991)
-
-# Estimate K
-PAG_sceset_qc_norm_filt <- sc3_estimate_k(PAG_sceset_qc_norm_filt)
-metadata(PAG_sceset_qc_norm_filt)$sc3$k_estimation
-```
-
-SC3 also requires a `feature_symbol` column of the `rowData` slot of the input `SingleCellExperiment` object to contain preferable feature names (genes/transcript) which will be used in the future visualisations. In addition, SC3 applies a gene filter to remove genes very lowly expressed in all samples and also the ones that are expressed everywhere, so that these genes do not contribute to the clustering (see `$sc3_gene_filter`). However, we have already selected highly variable genes, which we could use for it. We can manually define genes that we want to use for clustering by setting the `sc3_gene_filter` column of the `rowData` slot:
+### 7.1.1 | Prepare SingleCellExperiment object for SC3
+SC3 requires a `feature_symbol` column of the `rowData` slot of the input `SingleCellExperiment` object to contain preferable feature names (genes/transcript) which will be used in the future visualisations. 
 ```{r}
 rowData(PAG_sceset_qc_norm_filt)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt)
-rowData(PAG_sceset_qc_norm_filt)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt) %in% metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt
-# WE CURRENTLY HAVE MANY PREDICTED GENES AMONG HVG, FILTER THOSE OUT BEFORE HVG DETECTION
 ```
 
-### 7.1.2 | Running SC3 with the wrapper function
-We can also run SC3 with the wrapper function and ask it to calculate biological properties of the clusters as well. We try a range of k and explore the different clustering solutions with the interactive `Shiny` session. We can check the stability of the different clusters and play with the thresholds for DE and Marker genes. 
+We can next run `sc3_prepare`. This method prepares an object of `SCE` class for `SC3` clustering, defining all parameters needed for clustering and storing them in the `sc3` slot. The parameters have their own defaults but can be manually changed (see `?sc3_prepare` for more details). 
+```{r}
+PAG_sceset_qc_norm_filt <- sc3_prepare(PAG_sceset_qc_norm_filt,
+                                       gene_filter = FALSE, # Set your own filter by changing the sc3_gene_filter slot
+                                       n_cores = 4,
+                                       rand_seed = 1991) 
+# SC3 is stochastic, if we run it different times we will get different results, so we need to make sure we have set a seed before running it.
 
-SC3 is based on k-means clustering, so we need to define the ks at the beginning. It is best to set a range of ks around the estimated value to try and compare different solutions.
+str(metadata(PAG_sceset_qc_norm_filt)$sc3)
+```
+
+As we can see above, `SC3` applies a gene filter to remove genes very lowly expressed in all samples and also the ones that are expressed everywhere, so that these genes do not contribute to the clustering (see `$sc3_gene_filter`). However, we have already filtered genes in previous steps and selected highly variable genes, which we could use for it. We can manually define a list of genes that we want to use for clustering by setting the `sc3_gene_filter` column of the `rowData` slot:
+```{r}
+# Check which lists of genes you have available to use from loaded metadata or calculated highly variable genes:
+names(metadata(PAG_sceset_qc_norm_filt))
+
+# Use Highly Variable Genes:
+rowData(PAG_sceset_qc_norm_filt)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt) %in% metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt
+
+# Use Ion Channel Genes:
+#rowData(PAG_sceset_qc_norm_filt)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt) %in% metadata(PAG_sceset_qc_norm_filt)$genes.ionchannels
+```
+
+### 7.1.2 | Estimate k
+Once the `SCE` object is prepared for clustering, `Sc3` has a method to estimate the optimal number of cluster `k` for a scRNA-seq expression matrix, which uses Tracy-Widom theory on random matrices to estimate the optimal number of clusters k.
+```{r}
+PAG_sceset_qc_norm_filt <- sc3_estimate_k(PAG_sceset_qc_norm_filt)
+metadata(PAG_sceset_qc_norm_filt)$sc3$k_estimation
+str(metadata(PAG_sceset_qc_norm_filt)$sc3)
+```
+
+### 7.1.3 | Calculate distances and transformations
+We are now ready to perform the clustering itself. The method `sc3_calc_dists` calculates distances between the cells and creates and populates the `distances` slot, which contains a list of distance matrices corresponding to Euclidean, Pearson and Spearman distances.
+```{r}
+PAG_sceset_qc_norm_filt <- sc3_calc_dists(PAG_sceset_qc_norm_filt)
+names(metadata(PAG_sceset_qc_norm_filt)$sc3$distances)
+```
+
+Next, the method `sc3_calc_transfs` calculates the transformations of the distance matrices contained in the distances item of the `sc3` slot, and creates and populates the `transformations` slot, which contains a list of transformations of the distance matrices corresponding to PCA and graph Laplacian transformations. It also removes the previously calculated `distances` item from the `sc3` slot:
+```{r}
+PAG_sceset_qc_norm_filt <- sc3_calc_transfs(PAG_sceset_qc_norm_filt)
+names(metadata(PAG_sceset_qc_norm_filt)$sc3$transformations)
+metadata(PAG_sceset_qc_norm_filt)$sc3$distances
+```
+
+### 7.1.4 | K-means
+We use the `sce_kmeans` method to perform k-means on the transformed distance matrices contained in the `transformations` item of the `sc3` slot. The method `sc3_kmeans` also creates and populates the `kmeans` item, which contains a list of kmeans clusterings. Given that we need to define the ks at the beginning, it is best to set a range of ks around the estimated value obtained from `sc3_estimate` to try and compare different solutions.
+```{r}
+PAG_sceset_qc_norm_filt <- sc3_kmeans(PAG_sceset_qc_norm_filt,
+                                      ks = 2:10)
+names(metadata(PAG_sceset_qc_norm_filt)$sc3$kmeans)
+```
+
+### 7.1.5 | Calculate consensus
+In this step `SC3` provides a clustering solution. When calculating consensus for each value of `k`, `SC3` averages the clustering results of `kmeans` using a consensus approach. The method `sc3_calc_consens` calculates consensus matrices based on the clustering solutions contained in the `kmeans` item of the `sc3` slot, and it then creates and populates the `consensus` item, which for each value of k it contains a consensus matrix, an `hclust` object corresponding to hierarchical clustering of the consensus matrix, and the Silhouette indices of the clusters. It also removes the previously calculated `kmeans` item from the `sc3` slot.
+```{r}
+PAG_sceset_qc_norm_filt <- sc3_calc_consens(PAG_sceset_qc_norm_filt)
+names(metadata(PAG_sceset_qc_norm_filt)$sc3$consensus)
+names(metadata(PAG_sceset_qc_norm_filt)$sc3$consensus$`1`)
+metadata(PAG_sceset_qc_norm_filt)$sc3$kmeans
+```
+
+### 7.1.6 | Calculate biology
+`SC3` can also calculate DE genes, marker genes, and cell outliers based on the calculated consensus clusterings. Similary to the clustering solutions, the method `sc3_calc_biology` writes the results for the cell outliers (cell-related information) to the `colData` slot of the `SCE` object. In contrast, DE and marker genes results (gene-related information) are written to the `rowData` slot.
+```{r}
+PAG_sceset_qc_norm_filt <- sc3_calc_biology(PAG_sceset_qc_norm_filt, 
+                                            ks = 2:10)
+```
+
+### 7.1.7 | Running SC3 with the wrapper function [OPTIONAL]
+Alternatively, we can run SC3 with the wrapper function and ask it to calculate biological properties of the clusters as well. This should do the same steps as we just did in the same order. However, make sure you have at least prepared the `SCE` object and have estimated ks beforehand.
 ```{r}
 start_time_sc3 <- Sys.time() # Takes around 35 min
 PAG_sceset_qc_norm_filt <- sc3(PAG_sceset_qc_norm_filt,
                                ks = 2:10,
                                gene_filter = FALSE,
                                biology = TRUE, 
-                               n_cores = 2,
+                               n_cores = 4,
                                rand_seed = 1991)
 end_time_sc3 <- Sys.time()
 end_time_sc3 - start_time_sc3
 ```
 
-### 7.1.3 | Running SC3 step by step
-
-### 7.1.4 | Explore the results
+### 7.1.8 | Explore the results
 To run the interactive `Shiny` session, we can do the following: 
 ```{r}
 sc3_interactive(PAG_sceset_qc_norm_filt)
@@ -192,7 +238,7 @@ sc3_plot_markers(PAG_sceset_qc_norm_filt,
                  )
 ```
 
-### 7.1.5 | Export the results
+### 7.1.9 | Export the results
 SC3 allows us to export the results into an Excel file:
 ```{r}
 sc3_export_results_xls(PAG_sceset_qc_norm_filt, filename = "PAG_clustering_SC3")
