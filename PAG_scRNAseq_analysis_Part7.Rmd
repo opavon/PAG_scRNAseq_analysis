@@ -115,7 +115,7 @@ Another important parameter in EGSEA is the list of base GSE methods (`baseMetho
 egsea.base()
 ```
 
-The _plage_, _zscore_ and _ssgsea_ algorithms are available in the GSVA package and _camera_, _fry_ and _roast_ are implemented in the `limma` package (Ritchie et al. 2015). The _ora_ method is implemented using the `phyper` function from the `stats` package (R Core Team 2017), which estimates the hypergeometric distribution for a 2×2 contingency table. The remaining algorithms are implemented in Bioconductor packages of the same name. A wrapper function is provided for each individual GSE method to utilize this existing R code and create a universal interface for all methods.
+The _plage_, _zscore_ and _ssgsea_ algorithms are available in the GSVA package and _camera_, _fry_ and _roast_ are implemented in the `limma` package (Ritchie et al. 2015). The _ora_ method is implemented using the `phyper` function from the `stats` package (R Core Team 2017), which estimates the hypergeometric distribution for a 2x2 contingency table. The remaining algorithms are implemented in Bioconductor packages of the same name. A wrapper function is provided for each individual GSE method to utilize this existing R code and create a universal interface for all methods.
 
 We next select the base methods of the EGSEA analysis. In the workflow, eleven base methods are selected for our EGSEA analysis: _camera, safe, gage, padog, plage, zscore, gsva, ssgsea, globaltest, ora_ and _fry_. _Fry_ is a fast approximation of _roast_ that assumes equal gene-wise variances across samples to produce similar p-values to a _roast_ analysis run with an infinite number of rotations, and is selected here to save time.
 ```{r}
@@ -130,7 +130,7 @@ Since each base method generates different p-values, EGSEA supports six differen
 egsea.combine()
 ```
 
-Finally, the sorting of EGSEA results plays an essential role in identifying relevant gene sets. Any of EGSEA’s combined scores or the rankings from individual base methods can be used for sorting the results. The possible values of this argument can be seen as follows:
+Finally, the sorting of EGSEA results plays an essential role in identifying relevant gene sets. Any of EGSEA's combined scores or the rankings from individual base methods can be used for sorting the results. The possible values of this argument can be seen as follows:
 ```{r}
 egsea.sort()
 ```
@@ -167,7 +167,7 @@ A summary of the top 10 gene sets in each collection for each contrast in additi
 summary(gsa)
 ```
 
-EGSEA’s comparative analysis allows researchers to estimate the significance of a gene set across multiple experimental contrasts. This analysis helps in the identification of biological processes that are perturbed in multiple experimental conditions simultaneously.
+EGSEA's comparative analysis allows researchers to estimate the significance of a gene set across multiple experimental contrasts. This analysis helps in the identification of biological processes that are perturbed in multiple experimental conditions simultaneously.
 
 Another way of exploring the EGSEA results is to retrieve the top ranked N sets in each collection and contrast using the method `topSets`. For example, the top 10 gene sets in the c2 collection for the comparative analysis can be retrieved as follows:
 ```{r}
@@ -192,7 +192,7 @@ topSets(gsa, gs.label="kegg", contrast="comparison", sort.by="med.rank")
 ```
 
 ### 11.1.5 | Visualizing results at the gene set level
-When using `plotHeatmap`, the `gene.set` value must match the name returned from the `topSets` method. The rows of the heatmap represent the genes in the set and the columns represent the experimental contrasts. The heatmap colour-scale ranges from down-regulated (blue) to up-regulated (red) while the row labels (Gene symbols) are coloured in green when the genes are statistically significant in the DE analysis (i.e. FDR ≤ 0.05 in at least one contrast). Heatmaps can be generated for individual comparisons by changing the contrast argument of `plotHeatmap`. The `plotHeatmap` method also generates a CSV file that includes the DE analysis results from `limma::topTable` for all expressed genes in the selected gene set and for each contrast (in the case of  contrast = "comparison").
+When using `plotHeatmap`, the `gene.set` value must match the name returned from the `topSets` method. The rows of the heatmap represent the genes in the set and the columns represent the experimental contrasts. The heatmap colour-scale ranges from down-regulated (blue) to up-regulated (red) while the row labels (Gene symbols) are coloured in green when the genes are statistically significant in the DE analysis (i.e. FDR <= 0.05 in at least one contrast). Heatmaps can be generated for individual comparisons by changing the contrast argument of `plotHeatmap`. The `plotHeatmap` method also generates a CSV file that includes the DE analysis results from `limma::topTable` for all expressed genes in the selected gene set and for each contrast (in the case of  contrast = "comparison").
 ```{r}
 plotHeatmap(gsa, gene.set="LIM_MAMMARY_STEM_CELL_UP", gs.label="c2",
             contrast = "comparison", file.name = "hm_cmp_LIM_MAMMARY_STEM_CELL_UP", format="png")
@@ -220,13 +220,13 @@ plotMethods(gsa, gs.label = "c5BP", contrast = "BasalvsLP",
             file.name = "mds_c5_BasalvsLP", format="png")
 ```
 
-The significance of each gene set in a given collection for a selected contrast can be visualized using EGSEA’s `plotSummary` method. The summary plot visualizes the gene sets as bubbles based on the −log10(p-value) (X-axis) and the average absolute log fold-change of the set genes (Y-axis). The sets that appear towards the top-right corner of this plot are most likely to be biologically relevant. EGSEA generates two types of summary plots: the directional summary plot, which colours the bubbles based on the regulation direction of the gene set (the direction of the majority of genes), and the ranking summary plot, which colours the bubbles based on the gene set ranking in a given collection (according to the `sort.by` argument). The bubble size is based on the EGSEA significance score in the former plot and the gene set size in the latter. The blue colour labels on the ranking plot represents gene sets that do not appear in the top 10 gene sets that are selected based on the `sort.by` argument while their EGSEA significance scores are among the top 5 in the entire collection. This is used to identify gene sets with high significance scores that were not captured by the `sort.by` score. The gene set IDs and more information about each set can be found in the EGSEA HTML report generated later.
+The significance of each gene set in a given collection for a selected contrast can be visualized using EGSEA's `plotSummary` method. The summary plot visualizes the gene sets as bubbles based on the -log10(p-value) (X-axis) and the average absolute log fold-change of the set genes (Y-axis). The sets that appear towards the top-right corner of this plot are most likely to be biologically relevant. EGSEA generates two types of summary plots: the directional summary plot, which colours the bubbles based on the regulation direction of the gene set (the direction of the majority of genes), and the ranking summary plot, which colours the bubbles based on the gene set ranking in a given collection (according to the `sort.by` argument). The bubble size is based on the EGSEA significance score in the former plot and the gene set size in the latter. The blue colour labels on the ranking plot represents gene sets that do not appear in the top 10 gene sets that are selected based on the `sort.by` argument while their EGSEA significance scores are among the top 5 in the entire collection. This is used to identify gene sets with high significance scores that were not captured by the `sort.by` score. The gene set IDs and more information about each set can be found in the EGSEA HTML report generated later.
 ```{r}
 plotSummary(gsa, gs.label = 3, contrast = 3, 
             file.name = "summary_kegg_LPvsML", format="png")
 ```
 
-By default, `plotSummary` uses a gene set’s `p.adj` score for the X-axis. This behaviour can be easily modified by assigning any of the available `sort.by` scores into the parameter `x.axis`, for example, `med.rank` can be used to create an EGSEA summary plot:
+By default, `plotSummary` uses a gene set's `p.adj` score for the X-axis. This behaviour can be easily modified by assigning any of the available `sort.by` scores into the parameter `x.axis`, for example, `med.rank` can be used to create an EGSEA summary plot:
 ```{r}
 plotSummary(gsa, gs.label = 1, contrast = 3, 
             file.name = "summary_c2_LPvsML", 
@@ -261,7 +261,7 @@ Another way to visualize results at the experiment level is via a summary bar pl
 plotBars(gsa, gs.label = "c2", contrast="comparison", file.name="comparison-c2-bars", format="png")
 ```
 
-The colour of each bar is based on the regulation direction of the gene sets, i.e., red for up-regulated, blue for down-regulated and purple for neutral regulation (in the case of comparative analysis of experimental contrasts that have show opposite behaviours). By default, the −log10(p.adj) values are plotted for the top 20 gene sets selected and ordered based on the `sort.by` parameter. The parameters `bar.vals`, `number` and `sort.by` of `plotBars` can be changed to customize the bar plot.
+The colour of each bar is based on the regulation direction of the gene sets, i.e., red for up-regulated, blue for down-regulated and purple for neutral regulation (in the case of comparative analysis of experimental contrasts that have show opposite behaviours). By default, the -log10(p.adj) values are plotted for the top 20 gene sets selected and ordered based on the `sort.by` parameter. The parameters `bar.vals`, `number` and `sort.by` of `plotBars` can be changed to customize the bar plot.
 
 When changes over multiple conditions are of interest, a summary heatmap can be a useful visualization. The method `plotSummaryHeatmaps` generates a heatmap of the top N gene sets in the comparative analysis across all experimental conditions. By default, 20 gene sets are selected based on the `sort.by` parameter and the values plotted are the average log-fold changes at the set level for the genes regulated in the same direction as the set regulation direction, i.e. `avg.logfc.dir`. The parameters `number`, `sort.by` and `hm.vals` of the `plotSummaryHeatmaps` can be used to customize the summary heatmap. Additionally, the parameter `show.vals` can be used to display the values of a specific EGSEA score on the heatmap cells. 
 ```{r}
