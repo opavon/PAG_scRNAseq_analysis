@@ -82,6 +82,9 @@ rowData(PAG_sceset_qc_norm_filt)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_
 
 # Use Ion Channel Genes:
 #rowData(PAG_sceset_qc_norm_filt)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt) %in% metadata(PAG_sceset_qc_norm_filt)$genes.ionchannels
+
+# Use Neuropeptides and Neuromodulators Genes:
+#rowData(PAG_sceset_qc_norm_filt)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt) %in% metadata(PAG_sceset_qc_norm_filt)$genes.NeuromodulatorsPeptides
 ```
 
 ### 7.1.2 | Estimate k
@@ -130,13 +133,15 @@ PAG_sceset_qc_norm_filt <- sc3_calc_biology(PAG_sceset_qc_norm_filt,
                                             ks = 2:10)
 ```
 
-### 7.1.7 | Running SC3 with the wrapper function [OPTIONAL]
+### 7.1.7 | Running SC3 with the wrapper function [OPTIONAL ALTERNATIVE]
 Alternatively, we can run SC3 with the wrapper function and ask it to calculate biological properties of the clusters as well. This should do the same steps as we just did in the same order. However, make sure you have at least prepared the `SCE` object and have estimated ks beforehand.
 ```{r}
+rowData(PAG_sceset_qc_norm_filt)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt)
+
 start_time_sc3 <- Sys.time() # Takes around 35 min
 PAG_sceset_qc_norm_filt <- sc3(PAG_sceset_qc_norm_filt,
                                ks = 2:10,
-                               gene_filter = FALSE,
+                               gene_filter = TRUE, # Set to FALSE if you want to determine a list of genes to be used instead
                                biology = TRUE, 
                                n_cores = 4,
                                rand_seed = 1991)
@@ -244,200 +249,8 @@ SC3 allows us to export the results into an Excel file:
 sc3_export_results_xls(PAG_sceset_qc_norm_filt, filename = "PAG_clustering_SC3")
 ```
 
-## Step 8.2 | SC3 Clustering using ion channels genes
-Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
-```{r}
-PAG_ionchannels <- PAG_scRNAseq_gene_lists$genes.ionchannels
-sum(PAG_scRNAseq_gene_lists$genes.ionchannels != "") # Ion Channel genes present in the list
-
-# Filter any genes not present in our dataset by comparing the gene names with the rownames of our expression matrix (which contains gene names)
-PAG_ionchannels <- PAG_ionchannels[(PAG_ionchannels %in% rownames(PAG_sceset_qc))]
-length(PAG_ionchannels) # Ion Channel genes present in the dataset
-```
-
-Generate a SCE object with only ion channel genes:
-```{r}
-# Keep only the rows that correspond to ion channel genes:
-PAG_sceset_qc_ionchannels <- PAG_sceset_qc[rownames(PAG_sceset_qc) %in% PAG_ionchannels, ]
-dim(PAG_sceset_qc_ionchannels)
-```
-
-Estimate K:
-```{r}
-PAG_sceset_qc_ionchannels <- sc3_estimate_k(PAG_sceset_qc_ionchannels)
-metadata(PAG_sceset_qc_ionchannels)$sc3$k_estimation
-```
-
-Run SC3:
-```{r}
-rowData(PAG_sceset_qc_ionchannels)$feature_symbol <- rownames(PAG_sceset_qc_ionchannels)
-PAG_sceset_qc_ionchannels <- sc3(PAG_sceset_qc_ionchannels, ks = 2:6, biology = TRUE)
-```
-
-Explore results interactively:
-```{r}
-library(shiny)
-sc3_interactive(PAG_sceset_qc_ionchannels)
-```
-
-For k=2
-```{r}
-# Consensus Matrix
-sc3_plot_consensus(PAG_sceset_qc_ionchannels, 
-                   k = 2, 
-                   show_pdata = "cell.type"
-)
-
-# DE Genes
-sc3_plot_de_genes(PAG_sceset_qc_ionchannels, 
-                 k = 2,
-                 p.val = 0.01,
-                 show_pdata = "cell.type"
-                 )
-
-# Marker Genes
-sc3_plot_markers(PAG_sceset_qc_ionchannels, 
-                 k = 2,
-                 auroc = 0.65,
-                 p.val = 0.01,
-                 show_pdata = "cell.type"
-                 )
-
-```
-
-Figures for k=3
-```{r}
-# Consensus Matrix
-sc3_plot_consensus(PAG_sceset_qc_ionchannels, 
-                   k = 3, 
-                   show_pdata = "cell.type"
-                   )
-
-# DE Genes
-sc3_plot_de_genes(PAG_sceset_qc_ionchannels, 
-                 k = 3,
-                 p.val = 0.01,
-                 show_pdata = "cell.type"
-                 )
-
-# Marker Genes
-sc3_plot_markers(PAG_sceset_qc_ionchannels, 
-                 k = 3,
-                 auroc = 0.65,
-                 p.val = 0.01,
-                 show_pdata = c("cell.type", "PAG.areacollection")
-                 )
-```
-
-## Step 8.3 | SC3 Clustering using Neuropeptides and Neuromodulators
-Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
-```{r}
-PAG_Neuromodulators_Peptides <- PAG_scRNAseq_gene_lists$genes.NeuromodulatorsPeptides
-length(PAG_Neuromodulators_Peptides) # This won't be the length of the $genes.ionchannels column but the one of the longest column of the .csv file (there will be a lot of empty cells).
-#typeof(PAG_ionchannels)
-
-# Filter any genes not present in our dataset by comparing the gene names with the rownames of our expression matrix (which contains gene names)
-PAG_Neuromodulators_Peptides <- PAG_Neuromodulators_Peptides[(PAG_Neuromodulators_Peptides %in% rownames(PAG_sceset_qc))]
-length(PAG_Neuromodulators_Peptides)
-```
-
-Generate a SCE object with only ion channel genes:
-```{r}
-# Keep only the rows that correspond to ion channel genes:
-PAG_sceset_qc_Neuromodulators_Peptides <- PAG_sceset_qc[rownames(PAG_sceset_qc) %in% PAG_Neuromodulators_Peptides, ]
-dim(PAG_sceset_qc_Neuromodulators_Peptides)
-```
-
-Estimate K:
-```{r}
-PAG_sceset_qc_Neuromodulators_Peptides <- sc3_estimate_k(PAG_sceset_qc_Neuromodulators_Peptides)
-metadata(PAG_sceset_qc_Neuromodulators_Peptides)$sc3$k_estimation
-```
-
-Run SC3:
-```{r}
-rowData(PAG_sceset_qc_Neuromodulators_Peptides)$feature_symbol <- rownames(PAG_sceset_qc_Neuromodulators_Peptides)
-PAG_sceset_qc_Neuromodulators_Peptides <- sc3(PAG_sceset_qc_Neuromodulators_Peptides, ks = 2:6, biology = TRUE)
-```
-
-Explore results interactively:
-```{r}
-sc3_interactive(PAG_sceset_qc_Neuromodulators_Peptides)
-```
-
-```{r}
-# Consensus Matrix
-sc3_plot_consensus(PAG_sceset_qc_Neuromodulators_Peptides, 
-                   k = 2, 
-                   show_pdata = "cell.type"
-                   )
-
-# DE Genes
-sc3_plot_de_genes(PAG_sceset_qc_Neuromodulators_Peptides, 
-                 k = 2,
-                 p.val = 0.01,
-                 show_pdata = "cell.type"
-                 )
-
-# Marker Genes
-sc3_plot_markers(PAG_sceset_qc_Neuromodulators_Peptides, 
-                 k = 2,
-                 auroc = 0.65,
-                 p.val = 0.01,
-                 show_pdata = "cell.type"
-                 )
-```
-
-## Step 8.4 | SC3 Clustering ion channels genes instead of cells (need to transpose matrix in a new SCE object)
-Run STEP 5.1.2 first, so you already have the subset of genes and the SCE object. Then transpose the SCE object with only ion channel genes you generated in the previous step:
-```{r}
-# Keep only the rows that correspond to ion channel genes:
-dim(PAG_sceset_qc_ionchannels)
-# Trying to transpose a SCEset as follows doesn't work, so we have to transpose the original data prior to creating the SCEset
-# PAG_sceset_qc_ionchannels_T <- PAG_sceset_qc_ionchannels[colData(PAG_sceset_qc_ionchannels), rowData(PAG_sceset_qc_ionchannels)]
-dim(PAG_sceset_qc_ionchannels_T)
-```
-
-```{r}
-head(PAG_data)
-head(PAG_metadata)
-PAG_sceset_qc
-PAG_sceset_transposed <- SingleCellExperiment(
-  assays = list(counts = as.matrix(PAG_data)), 
-  colData = PAG_metadata, 
-  rowData = PAG_gene_information
-)
-```
-
-Estimate K:
-```{r}
-PAG_sceset_qc_ionchannels <- sc3_estimate_k(PAG_sceset_qc_ionchannels)
-metadata(PAG_sceset_qc_ionchannels)$sc3$k_estimation
-```
-
-Run SC3:
-```{r}
-rowData(PAG_sceset_qc_ionchannels)$feature_symbol <- rownames(PAG_sceset_qc_ionchannels)
-PAG_sceset_qc_ionchannels <- sc3(PAG_sceset_qc_ionchannels, ks = 2:6, biology = TRUE)
-```
-
-Explore results interactively:
-```{r}
-sc3_interactive(PAG_sceset_qc_ionchannels)
-```
-
-## Step 8.5 | Clustering VGAT and VGluT2 cells separately
-Do this when you are ready for downstream analysis, after quality checks.  
-```{r}
-# Is this the best way to subset the data? Probably not, there must be a way to do it without creating a new SCE object.
-VGAT_sceset <- PAG_sceset[,grep("^[I]", colnames(PAG_sceset), value=TRUE)]
-
-VGluT2_sceset <- PAG_sceset[,grep("^[E]", colnames(PAG_sceset), value=TRUE)]
-```
-
-# STEP 9 | Other clustering algorithms
-## Step 9.1 | clusterExperiment [TO TRY]
-## Step 9.2 | bigSCale2
+## STEP 7.2 | clusterExperiment [TO TRY]
+## STEP 7.3 | bigSCale2
 bigSCale is an analytical framework for big-scale single-cell data, available [here](https://github.com/iaconogi/bigSCale2).
 
 ```{r}
@@ -522,7 +335,7 @@ Browsing signatures:
 Signatures = getSignatures(PAG_sceset_qc)
 DT::datatable(Signatures[[1]])
 ```
-## Step 7.1 | Hierarchical clustering on Euclidean distances
+## STEP 7.4 | Hierarchical clustering on Euclidean distances
 The denoised log-expression values can be used to cluster cells into putative subpopulations. Specifically, we perform hierarchical clustering on the Euclidean distances between cells, using Ward's criterion to minimize the total variance within each cluster. This yields a dendrogram that groups together cells with similar expression patterns across the chosen genes.
 ```{r}
 principal_components <- reducedDim(PAG_sceset_qc_norm, "PCA")
@@ -607,7 +420,7 @@ The silhouette width can be used to determine the parameter values that maximize
 * An alternative clustering strategy is to use a matrix of distances derived from correlations (e.g., as in `quickCluster`). This is more robust to noise and normalization errors, but is also less sensitive to subtle changes in the expression profiles.
 * Both Ward's criterion and complete linkage yield spherical, compact clusters. In particular, complete linkage favours the formation of clusters with the same diameter. This may be desirable in some cases but is less appropriate when subpopulations differ in their variance. Thus, we typically use Ward's criterion for our initial clustering. Of course, it is simple (and recommended) to try other approaches provided that some assessment is performed, e.g., using the silhouette width.
 
-## Step 7.2 | Identifying marker genes between subpopulations
+## STEP 7.5 | Identifying marker genes between subpopulations
 Once putative subpopulations are identified by clustering, we can identify marker genes for each cluster using the `findMarkers` function. This performs Welch t-tests on the log-expression values for every gene and between every pair of clusters (Soneson and Robinson 2018). The aim is to test for DE in each cluster compared to the others while blocking on uninteresting factors such as the plate of origin. The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters.
 ```{r}
 marker_genes <- findMarkers(PAG_sceset_qc_norm, clusters=PAG_clusters, block=PAG_sceset_qc_norm$mouse.id)
