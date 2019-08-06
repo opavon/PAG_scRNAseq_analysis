@@ -30,6 +30,8 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 # STEP 12 | Seurat
 [Seurat](https://satijalab.org/seurat/) is an R package designed for QC, analysis, and exploration of single-cell RNA-seq data. Seurat aims to enable users to identify and interpret sources of heterogeneity from single-cell transcriptomic measurements, and to integrate diverse types of single-cell data. For more info see Butler et al. 2018 and Stuart, Butler et al. 2018.
 
+_IMP:_ Before starting this, run Part I again.
+
 Setting up a Seurat object:
 ```{r}
 library(Seurat)
@@ -69,7 +71,7 @@ Filter the dataset according to specific quality  metrics:
 PAG_seurat <- subset(PAG_seurat, subset = nFeature_RNA > 2000 & percent.mt < 5)
 ```
 
-After removing unwanted cells from the dataset, the next step is to normalize the data. By default, Seurat employs a global-scaling normalization method “LogNormalize” that normalizes the feature expression measurements for each cell by the total expression, multiplies this by a scale factor (10,000 by default), and log-transforms the result. Normalized values are stored in `SeuratObject[["RNA"]]@data`.
+After removing unwanted cells from the dataset, the next step is to normalize the data. By default, Seurat employs a global-scaling normalization method `LogNormalize` that normalizes the feature expression measurements for each cell by the total expression, multiplies this by a scale factor (10,000 by default), and log-transforms the result. Normalized values are stored in `SeuratObject[["RNA"]]@data`.
 ```{r}
 PAG_seurat <- NormalizeData(PAG_seurat, normalization.method = "LogNormalize", scale.factor = 10000)
 PAG_seurat <- NormalizeData(PAG_seurat)
@@ -89,8 +91,8 @@ plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
 CombinePlots(plots = list(plot1, plot2))
 ```
 
-## Step 12.3 | Scaling the data, peforming dimensionality reduction and determining the ‘dimensionality’ of the dataset
-Linear transformation (‘scaling’) is a standard pre-processing step prior to dimensionality reduction techniques like PCA. The `ScaleData` function:
+## Step 12.3 | Scaling the data, peforming dimensionality reduction and determining the dimensionality of the dataset
+Linear transformation (scaling) is a standard pre-processing step prior to dimensionality reduction techniques like PCA. The `ScaleData` function:
 
 * Shifts the expression of each gene, so that the mean expression across cells is 0
 * Scales the expression of each gene, so that the variance across cells is and highly-expressed genes do not dominate
@@ -115,15 +117,15 @@ VizDimLoadings(PAG_seurat, dims = 1:2, reduction = "pca")
 DimPlot(PAG_seurat, reduction = "pca")
 ```
 
-`DimHeatmap` allows for easy exploration of the primary sources of heterogeneity in a dataset, and can be useful when trying to decide which PCs to include for further downstream analyses. Both cells and features are ordered according to their PCA scores. Setting cells to a number plots the ‘extreme’ cells on both ends of the spectrum, which dramatically speeds plotting for large datasets. Though clearly a supervised analysis, this is a valuable tool for exploring correlated feature sets.
+`DimHeatmap` allows for easy exploration of the primary sources of heterogeneity in a dataset, and can be useful when trying to decide which PCs to include for further downstream analyses. Both cells and features are ordered according to their PCA scores. Setting cells to a number plots the extreme cells on both ends of the spectrum, which dramatically speeds plotting for large datasets. Though clearly a supervised analysis, this is a valuable tool for exploring correlated feature sets.
 ```{r}
 DimHeatmap(PAG_seurat, dims = 1, cells = 500, balanced = TRUE)
 DimHeatmap(PAG_seurat, dims = 1:15, cells = 500, balanced = TRUE)
 ```
 
-To overcome the extensive technical noise in any single feature for scRNA-seq data, Seurat clusters cells based on their PCA scores, with each PC essentially representing a ‘metafeature’ that combines information across a correlated feature set. The top principal components therefore represent a robust compression of the dataset. However, how many componenets should we choose to include? 10? 20? 100?
+To overcome the extensive technical noise in any single feature for scRNA-seq data, Seurat clusters cells based on their PCA scores, with each PC essentially representing a metafeature that combines information across a correlated feature set. The top principal components therefore represent a robust compression of the dataset. However, how many componenets should we choose to include? 10? 20? 100?
 
-In Macosko et al, they implemented a resampling test inspired by the JackStraw procedure. They randomly permuted a subset of the data (1% by default) and rerun PCA, constructing a ‘null distribution’ of feature scores, and repeat this procedure. They then identify ‘significant’ PCs as those with a strong enrichment of low p-value features.
+In Macosko et al, they implemented a resampling test inspired by the JackStraw procedure. They randomly permuted a subset of the data (1% by default) and rerun PCA, constructing a null distribution of feature scores, and repeat this procedure. They then identify significant PCs as those with a strong enrichment of low p-value features.
 ```{r}
 # NOTE: This process can take a long time for big datasets.
 # Other techniques such as those implemented in ElbowPlot() can be used to reduce computation time
@@ -131,12 +133,12 @@ PAG_seurat <- JackStraw(PAG_seurat, num.replicate = 100)
 PAG_seurat <- ScoreJackStraw(PAG_seurat, dims = 1:20)
 ```
 
-The `JackStrawPlot` function provides a visualization tool for comparing the distribution of p-values for each PC with a uniform distribution (dashed line). ‘Significant’ PCs will show a strong enrichment of features with low p-values (solid curve above the dashed line).
+The `JackStrawPlot` function provides a visualization tool for comparing the distribution of p-values for each PC with a uniform distribution (dashed line). Significant PCs will show a strong enrichment of features with low p-values (solid curve above the dashed line).
 ```{r}
 JackStrawPlot(PAG_seurat, dims = 1:15)
 ```
 
-An alternative heuristic method generates an ‘Elbow plot’: a ranking of principle components based on the percentage of variance explained by each one (`ElbowPlot` function). The elbow suggests a point by which the majority of true signal is captured.
+An alternative heuristic method generates an `Elbow plot`: a ranking of principle components based on the percentage of variance explained by each one (`ElbowPlot` function). The elbow suggests a point by which the majority of true signal is captured.
 ```{r}
 ElbowPlot(PAG_seurat)
 ```
@@ -146,7 +148,7 @@ Identifying the true dimensionality of a dataset can be challenging/uncertain fo
 ## Step 12.4 | Clustering
 Seurat v3 applies a graph-based clustering approach. It first constructs a KNN graph based on the euclidean distance in PCA space, and refine the edge weights between any two cells based on the shared overlap in their local neighborhoods (Jaccard similarity). This step is performed using the `FindNeighbors` function, and takes as input the previously defined dimensionality of the dataset.
 
-To cluster the cells, Seurat next applies modularity optimization techniques such as the Louvain algorithm (default) or SLM [SLM, Blondel et al., Journal of Statistical Mechanics], to iteratively group cells together, with the goal of optimizing the standard modularity function. The `FindClusters` function implements this procedure, and contains a resolution parameter that sets the ‘granularity’ of the downstream clustering, with increased values leading to a greater number of clusters. We find that setting this parameter between 0.4-1.2 typically returns good results for single-cell datasets of around 3K cells. Optimal resolution often increases for larger datasets. The clusters can be found using the `Idents` function.
+To cluster the cells, Seurat next applies modularity optimization techniques such as the Louvain algorithm (default) or SLM [SLM, Blondel et al., Journal of Statistical Mechanics], to iteratively group cells together, with the goal of optimizing the standard modularity function. The `FindClusters` function implements this procedure, and contains a resolution parameter that sets the "granularity" of the downstream clustering, with increased values leading to a greater number of clusters. We find that setting this parameter between 0.4-1.2 typically returns good results for single-cell datasets of around 3K cells. Optimal resolution often increases for larger datasets. The clusters can be found using the `Idents` function.
 ```{r}
 PAG_seurat <- FindNeighbors(PAG_seurat, dims = 1:10)
 PAG_seurat <- FindClusters(PAG_seurat, resolution = 0.5)
@@ -187,7 +189,7 @@ PAG_seurat.markers <- FindAllMarkers(PAG_seurat, only.pos = TRUE, min.pct = 0.25
 PAG_seurat.markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_logFC)
 ```
 
-Seurat has several tests for differential expression which can be set with the `test.use` parameter. For example, the ROC test returns the ‘classification power’ for any individual marker (ranging from 0 - random, to 1 - perfect).
+Seurat has several tests for differential expression which can be set with the `test.use` parameter. For example, the ROC test returns the "classification power" for any individual marker (ranging from 0 - random, to 1 - perfect).
 ```{r}
 cluster1.markers <- FindMarkers(PAG_seurat, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
 ```
