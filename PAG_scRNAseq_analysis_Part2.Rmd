@@ -431,6 +431,12 @@ table(filter_by_pct_counts_feature_control_manual)
 filter_by_fluorophor_ratio_manual <- (PAG_sceset$fluorophor_ratio > 0.2 &
                                         PAG_sceset$fluorophor_ratio < 0.8)
 table(filter_by_fluorophor_ratio_manual)
+
+# Custom filters: remove Aqueduct cell and Patch-seq cells:
+filter_patchseq_cells <- (PAG_sceset_qc_norm$patch.recorded == "yes")
+filter_AQ_cells <- (PAG_sceset_qc_norm$cell.id == "AQ")
+table(filter_patchseq_cells)
+table(filter_AQ_cells)
 ```
 
 Subsetting by column will retain only the high-quality cells that pass each filter described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
@@ -451,7 +457,11 @@ PAG_sceset$manual_filters <- !(
     # Remove cells with unusual proportion of reads in control features
     filter_by_pct_counts_feature_control_manual |
     # Remove cells with unusual EYFP/tdTomato ratios
-    filter_by_fluorophor_ratio_manual
+    filter_by_fluorophor_ratio_manual |
+    # Remove cells from patch-seq
+    filter_patchseq_cells |
+    # Remove cells from the Aqueduct Ependymal layer
+    filter_AQ_cells
 )
 
 data.frame(
@@ -463,6 +473,8 @@ data.frame(
   ByTSOconcatamer=sum(filter_by_pct_TSO_concatamer_manual),
   ByCtrlFeatures=sum(filter_by_pct_counts_feature_control_manual),
   ByFluorophor=sum(filter_by_fluorophor_ratio_manual),
+  ByPatchseq=sum(filter_patchseq_cells),
+  ByAqueduct=sum(filter_AQ_cells),
   Remaining=sum(PAG_sceset$manual_filters)
   )
 
@@ -727,11 +739,14 @@ In general, the mean-based filter tends to be less aggressive. A gene will be re
 
 In contrast, the "at least n" filter depends heavily on the choice of `n`. With `n = 10`, a gene expressed in a subset of 9 cells would be filtered out, regardless of the level of expression in those cells. This may result in the failure to detect rare subpopulations that are present at frequencies below `n`.
 
-The safest option will be to apply these filters at each step rather than applying them globally by subsetting the `SingleCellExperiment` object. This ensures that the most appropriate filter is used in each application. For now, we only remove genes that are not expressed in any cell to reduce computational work in downstream steps. Such genes provide no information and would be removed by any filtering strategy. We thus use the result from the `nexprs` function with a `detection_limit=0` and `num_cells>=1`. Note that the `detection_limit` is a numeric scalar providing the value above which observations are deemed to be expressed.
+The safest option will be to apply these filters at each step rather than applying them globally by subsetting the `SingleCellExperiment` object. This ensures that the most appropriate filter is used in each application. For now, we only remove genes that are not expressed in any cell to reduce computational work in downstream steps. Such genes provide no information and would be removed by any filtering strategy. We thus use the result from the `nexprs` function with a `detection_limit=0` and `num_cells>=1`. Note that the `detection_limit` is a numeric scalar providing the value above which observations are deemed to be expressed. We will also remove all predicted genes from the dataset, which can be identified by starting with "Gm" (Gene model). 
 ```{r}
 # Set the filter with the chosen parameters:
 use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow = TRUE)
-filter_genes <- use_numcells >= 1
+# Find predicted genes (Gm stands for gene model)
+is_predicted_gene <- grepl("^Gm", rownames(PAG_sceset))
+
+filter_genes <- ((use_numcells >= 1) | is_predicted_gene) # Try 5 cells (1% of dataset)
 summary(filter_genes)
 ```
 
