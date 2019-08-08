@@ -670,6 +670,78 @@ print("Parts 4 and 5 - Done!")
 
 # STEP 6 | Data exploration
 ## Step 6.1 | Visualizing data in low-dimensional space with PCA
+
+Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components (PCs). The number of principal components is less than or equal to the number of original variables.
+
+Mathematically, the PCs correspond to the eigenvectors of the covariance matrix. The eigenvectors are sorted by eigenvalue so that the first principal component accounts for as much of the variability in the data as possible, and each succeeding component in turn has the highest variance possible under the constraint that it is orthogonal to the preceding components (the figure below is taken from here).
+
+Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. BUT - it is not a proper normalisation step. Log-transformation is not enough to account for different technical factors between the cells (e.g. sequencing depth). Do not use logcounts_raw for your downstream analysis, instead as a minimum suitable data use the __logcounts__ slot of the SingleCellExperiment object, which not just log-transformed, but also normalised by library size (e.g. CPM normalisation).
+
+By default only the top 500 most variable genes are used by scater to calculate the PCA. This can be adjusted by changing the __ntop__ argument. Ideally use it with logcounts normalised.
+```{r}
+# If you plot the PCAs using the size_by = total_features_by_counts you can assess whether the total features correlates with the PCs: if there is a correlation with the total features, you will see that the cells are distributed in a particular way (large bubbles on the left, and small bubbles on the right).
+set.seed(1991)
+
+# Without log-transformation
+pca1 <- plotPCA(
+    PAG_sceset_qc[endogenous_genes, ],
+    rerun = TRUE,
+    run_args = list(exprs_values="counts"),
+    colour_by = "cell.type",
+    size_by = "total_features_by_counts"
+) + ggtitle("Raw counts")
+
+# With log-transformation
+pca2 <- plotPCA(
+    PAG_sceset_qc[endogenous_genes, ], 
+    rerun = TRUE,
+    run_args = list(exprs_values="logcounts_raw"),
+    colour_by = "cell.type",
+    size_by = "total_features_by_counts"
+) + ggtitle("Logcounts Raw")
+
+# After scran normalisation
+pca3 <- plotPCA(
+    PAG_sceset_qc[endogenous_genes, ], 
+    rerun = TRUE,
+    run_args = list(exprs_values="logcounts"),
+    colour_by = "cell.type",
+    size_by = "total_features_by_counts"
+) + ggtitle("Scran")
+
+pca4 <- plotPCA(
+    PAG_sceset_qc[endogenous_genes, ], 
+    rerun = TRUE, 
+    run_args = list(ntop = 200, exprs_values = "logcounts"),
+    colour_by = "Gad1",
+    shape_by = "cell.type"#,
+    #size_by = "total_features_by_counts"
+) + ggtitle("Scran")
+
+
+multiplot(pca1, pca2, pca3, pca4, cols=2)
+```
+After QC the data should look more homogeneous, because we removed the bad cells.
+
+### runPCA
+scater allows you to store the results of PCA in the reducedDim slot
+```{r}
+PAG_sceset_qc <- runPCA(PAG_sceset_qc,
+                        run_args = list(exprs_values="logcounts"),
+                        rerun = TRUE,
+                        ncomponents = 10,
+                        #ntop = 20835,
+                        #ntop = 100,
+                        colour_by = "cell.type"#,
+                        #shape_by = "PAG.areacollection",
+                        #size_by = "total_features_by_counts"
+)
+
+plotReducedDim(PAG_sceset_qc, use_dimred="PCA", colour_by = "Slc32a1", shape_by = "cell.type", size_by = "total_features_by_counts")
+
+reducedDimNames(PAG_sceset_qc)
+```
+
 We can visualize the relationships between cells by constructing pairwise PCA plots for the first components. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart.
 ```{r}
 plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -721,6 +793,59 @@ set.seed(1991)
 PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt, use_dimred="PCA", perplexity=20)
 reducedDimNames(PAG_sceset_qc_norm_filt)
 ```
+
+An alternative to PCA for visualizing scRNASeq data is a tSNE plot. tSNE (t-Distributed Stochastic Neighbor Embedding) combines dimensionality reduction (e.g. PCA) with random walks on the nearest-neighbour network to map high dimensional data to a 2-dimensional space while preserving local distances between cells. In contrast with PCA, tSNE is a stochastic algorithm which means running the method multiple times on the same dataset will result in different plots. Due to the non-linear and stochastic nature of the algorithm, tSNE is more difficult to intuitively interpret. To ensure reproducibility, we fix the seed of the random-number generator in the code below so that we always get the same plot.
+
+tSNE plots are good for visualising your data, but should NOT be used for clustering. Furthermore tSNE requires you to provide a value of perplexity which reflects the number of neighbours used to build the nearest-neighbour network; a high value creates a dense network which clumps cells together while a low value makes the network more sparse allowing groups of cells to separate from each other. scater uses a default perplexity of the total number of cells divided by five (rounded down). You should try different perplexities and run it several times to make sure you are not getting a weird result. If your data are very homogeneous the tSNE plots are going to be hard to interpret, whereas if they contain very well defined clusters it will visualize them very nicely.
+```{r}
+set.seed(1991)
+
+# With log-transformation
+tsne1 <- plotTSNE(
+  PAG_sceset_qc[endogenous_genes, ],
+  rerun = TRUE, 
+  run_args = list(ntop = 200, exprs_values = "logcounts", perplexity=20, pca = TRUE, initial_dims = 2),
+  colour_by="Accn4",
+  shape_by="cell.type"
+) +  ggtitle("Scran (p=20, dims=2)")
+
+tsne2 <- plotTSNE(
+  PAG_sceset_qc[endogenous_genes, ],
+  rerun = TRUE, 
+  run_args = list(ntop = 200, exprs_values = "logcounts", perplexity=20, pca = TRUE, initial_dims = 10),
+  colour_by="Accn4",
+  shape_by="cell.type"
+) +  ggtitle("Scran (p=20, dims=10)")
+
+tsne3 <- plotTSNE(
+  PAG_sceset_qc[endogenous_genes, ],
+  rerun = TRUE, 
+  run_args = list(ntop = 200, exprs_values = "logcounts", perplexity=50, pca = TRUE, initial_dims = 2),
+  colour_by="Slc30a3",
+  shape_by="cell.type"
+) +  ggtitle("Scran (p=50, dims=2)")
+
+tsne4 <- plotTSNE(
+  PAG_sceset_qc[endogenous_genes, ],
+  rerun = TRUE, 
+  run_args = list(ntop = 200, exprs_values = "logcounts", perplexity=50, pca = TRUE, initial_dims = 10),
+  colour_by="Gad1",
+  shape_by="cell.type"
+) +  ggtitle("Scran (p=50, dims=10)")
+
+multiplot(tsne1, tsne2, tsne3, tsne4, cols=2)
+```
+
+#### runTSNE
+```{r}
+set.seed(1991)
+PAG_sceset_qc <- runTSNE(PAG_sceset_qc,
+                      rerun = TRUE,
+                      run_args = list(exprs_values = "logcounts", perplexity=20)
+                      )
+plotTSNE(PAG_sceset_qc, colour_by="Gad1", shape_by="cell.type")
+```
+
 
 ## Step 6.3 | Using HVGs for further data exploration
 ### 4a.3.1 | Heatmaps
@@ -799,6 +924,23 @@ plotUMAP(PAG_sceset_qc_norm_filt,
          colour_by = "batch.processing")
 ```
 
+## STEP 4.3: uMAP
+Perform uniform manifold approximation and projection (UMAP) for the cells, based on the data in a SingleCellExperiment object.
+Paper: McInnes L, Healy J (2018). UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction. arXiv (https://arxiv.org/abs/1802.03426)
+```{r}
+library(umap)
+
+PAG_sceset_qc <- runUMAP(
+  PAG_sceset_qc[endogenous_genes, ],
+  rerun = TRUE,
+  run_args = list(exprs_values = "logcounts"),
+  colour_by="Gad1",
+  shape_by="cell.type")
+
+plotUMAP(PAG_sceset_qc, colour_by="Gad1", shape_by="cell.type")
+```
+
+
 #### 4a.3.1 | Clustering
 ```{r}
 set.seed(1991)
@@ -820,3 +962,8 @@ markers <- findMarkers(PAG_sceset_qc_norm_filt,
 markers[[1]][1:5, ]
 plotExpression(PAG_sceset_qc_norm_filt, 'Gad1', x = 'clusters')
 ```
+
+## STEP 4.4: iSEE - interactive SummarizedExperiment Explorer
+iSEE is a package that provides functions for creating an interactive Shiny-based graphical user interface for exploring data stored in SummarizedExperiment objects, including row- and column-level metadata. Particular attention is given to single-cell data in a SingleCellExperiment object with visualization of dimensionality reduction results.
+
+Citation: Rue-Albrecht K, Marini F, Soneson C, Lun ATL (2018). "iSEE: Interactive SummarizedExperiment Explorer." F1000Research, 7, 741. doi: 10.12688/f1000research.14966.1.
