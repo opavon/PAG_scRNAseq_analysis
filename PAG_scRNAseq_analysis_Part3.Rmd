@@ -147,34 +147,31 @@ library(sgeostat)
 library(mvoutlier)
 
 # Without log-transformation
-p1 <- plotRLE(
-    PAG_sceset_qc, 
-    exprs_values = "counts",
-    exprs_logged = TRUE,
-    style = "full",
-    legend = TRUE,
-    colour_by = "mouse.id"
-) + ggtitle("Raw counts")
+p1 <- plotRLE(PAG_sceset_qc, 
+              exprs_values = "counts",
+              exprs_logged = TRUE,
+              style = "full",
+              legend = TRUE,
+              colour_by = "mouse.id"
+              ) + ggtitle("Raw counts")
 
 # With log-transformation
-p2 <- plotRLE(
-    PAG_sceset_qc, 
-    exprs_values = "logcounts_raw",
-    exprs_logged = TRUE,
-    style = "full",
-    legend = TRUE,
-    colour_by = "mouse.id"
-) + ggtitle("Logcounts Raw")
+p2 <- plotRLE(PAG_sceset_qc, 
+              exprs_values = "logcounts_raw",
+              exprs_logged = TRUE,
+              style = "full",
+              legend = TRUE,
+              colour_by = "mouse.id"
+              ) + ggtitle("Logcounts Raw")
 
 # After scran normalization
-p3 <- plotRLE(
-    PAG_sceset_qc, 
-    exprs_values = "logcounts",
-    exprs_logged = TRUE,
-    style = "full",
-    legend = TRUE,
-    colour_by = "mouse.id"
-) + ggtitle("scran")
+p3 <- plotRLE(PAG_sceset_qc, 
+              exprs_values = "logcounts",
+              exprs_logged = TRUE,
+              style = "full",
+              legend = TRUE,
+              colour_by = "mouse.id"
+              ) + ggtitle("scran")
 
 # This might be too heavy to plot at once, so plot each graph one at a time:
 #plot(p1)

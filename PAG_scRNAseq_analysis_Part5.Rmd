@@ -34,7 +34,7 @@ scRNA-seq data allow de novo discovery and annotation of cell-types based on tra
 
 Unsupervised clustering is useful in many different applications and it has been widely studied in machine learning. Some of the most popular approaches are __hierarchical clustering__, __k-means clustering__ and __graph-based clustering__.
 
-Ideally you want to run several tools on the same dataset and see whether we get similar results. To compare two sets of clustering labels we can use the _adjusted Rand index_ from the `mclust` package. The index is a measure of the similarity between two data clusterings. Values of the adjusted Rand index lie in [0;1] interval, where 1 means that two clusterings are identical and 0 means the level of similarity expected by chance.
+Ideally we want to run several tools on the same dataset and see whether we get similar results. To compare two sets of clustering labels we can use the _adjusted Rand index_ from the `mclust` package. The index is a measure of the similarity between two data clusterings. Values of the adjusted Rand index lie in [0;1] interval, where 1 means that two clusterings are identical and 0 means the level of similarity expected by chance.
 
 We continue using the `PAG_sceset_qc_norm_filt` after normalization. We should thus have a `corrected` slot in `assays`:
 ```{r}
