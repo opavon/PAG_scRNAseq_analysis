@@ -30,6 +30,20 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 Below are some code scraps that have been taken out of the pipeline in favour of other preferred alternatives. They most likely require further adaptations before being reincorporated. 
 
 # STEP 2 | Quality Control and pre-processing
+## Step 2.5 | Gene QC
+### 2.5.3 | Identities of the most highly expressed genes
+It can also be useful to plot gene expression frequency versus mean expression level to assess the effects of technical dropout in the dataset. The `plotExprsFreqVsMean()` function fits a non-linear least squares curve for the relationship between expression frequency and mean expression and uses this to define the number of genes above high technical dropout and the numbers of genes that are expressed (here defined as at least 4 counts) in at least 50% and at least 25% of cells. A subset of genes to be treated as feature controls can be specified, otherwise any feature controls previously defined are used. 
+
+Plot frequency of expression (number of cells with non-zero expression) against the mean. These two metrics should be positively correlated with each other for most genes. Outliers from the trend may warrant further investigation. For example, alignment errors for pseudo-genes of highly-expressed genes will result in features with low means that are expressed in all cells. Conversely, PCR amplification biases (or the presence of rare populations) may result in genes with very high means that are expressed in very few cells. 
+
+*Check out the "Scater Case Study" by McCarthy et al. 2016 for more information.*
+```{r}
+plotExprsFreqVsMean(PAG_sceset,
+                    control = "is_spike") 
+plotExprsFreqVsMean(PAG_sceset[ , colData(PAG_sceset)$use],
+                    control = "is_spike")
+```
+
 ## Step 2.5b | Cell cycle phase [OPTIONAL]
 It is possible to classify cells into cell cycle phases based on the gene expression data using the function `cyclone` (Sciealdone et al. 2015). This, however, is not super useful in the brain, as many neuronal cell types are expected to lie in the G0 resting phase, which is distinct from the other phases of the cell cycle (Coller et al., 2006). We run it anyway and observe that all the cells are in G1.
 
@@ -541,8 +555,6 @@ colData(PAG_sceset_qc)$tSNE_kmeans <- as.character(kmeans(PAG_sceset_qc@reducedD
 plotTSNE(PAG_sceset_qc, rand_seed = 1991, colour_by = "tSNE_kmeans")
 # Try colour_by = "cell.type"
 ```
-
-## Step 7.10 | SNN-Cliq (graph-based clustering) [not installed, python based]
 
 # STEP 8 | Differential Expression Analysis
 One of the most common types of analyses when working with bulk RNA-seq data is to identify differentially expressed genes. By comparing the genes that change between two conditions, e.g. mutant and wild-type or stimulated and unstimulated, it is possible to characterize the molecular mechanisms underlying the change. Several different methods, e.g. DESeq2 and edgeR, have been developed for bulk RNA-seq. 
