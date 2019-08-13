@@ -672,37 +672,9 @@ print("Parts 4 and 5 - Done!")
 ## Step 6.1 | Visualizing data in low-dimensional space with PCA
 Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components (PCs). The number of principal components is less than or equal to the number of original variables. Mathematically, the PCs correspond to the eigenvectors of the covariance matrix. The eigenvectors are sorted by eigenvalue so that the first principal component accounts for as much of the variability in the data as possible, and each succeeding component in turn has the highest variance possible under the constraint that it is orthogonal to the preceding components.
 
-Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. BUT - it is not a proper normalisation step. Log-transformation is not enough to account for different technical factors between the cells (e.g. sequencing depth). Do not use `logcounts_raw` for your downstream analysis, instead use the __logcounts__ slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalised by library size. By default only the top 500 most variable genes are used by `scater` to calculate the PCA. This can be adjusted by changing the __ntop__ argument.
+We can apply PCA to visualize the relationships between cells in our dataset. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Ideally, we do this using the `logcounts` of our `SingleCellExperiment` object. Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. BUT - log-transformation is not a proper normalisation step and is not enough to account for different technical factors between the cells (e.g. sequencing depth). Therefore, we should not use `logcounts_raw` for our downstream analysis, but instead use the __logcounts__ slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalised by library size. By default `scater` only uses the top 500 most variable genes to calculate the PCA, but this can be adjusted by changing the __ntop__ argument. We can also choose to only use our HVGs, or any given list of genes we may obtain by other feature selection strategies.
 
-
-
-
-We also apply dimensionality reduction techniques to visualize the relationships between cells. This is done by constructing a PCA plot from the normalized log-expression values of the correlated HVGs. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. We only use the correlated HVGs in plotPCA because any substructure should be most pronounced in the expression profiles of these genes.
-
-Additional components can be visualized by increasing the ncomponents argument in plotPCA to construct pairwise plots. The percentage of variance explained by each component can also be obtained by running `plotPCA` with `return_SCESet = TRUE`, and then calling reducedDimension on the returned object. This information may be useful for selecting high-variance components (possibly corresponding to interesting underlying factors) for further examination.
-
-
-We can use PCA to compare the effects of our normalisation and batch correction. If we plot the PCAs using the `size_by = total_features_by_counts` we can assess whether the total features correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right).
-
-We can visualize the relationships between cells by constructing pairwise PCA plots for the first components. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart.
-```{r}
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               use_dimred = "PCA",
-               ncomponents = 4,
-               colour_by="cell.type") + fontsize
-```
-
-By comparison, we should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
-```{r}
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               use_dimred = "PCA",
-               ncomponents = 4,
-               colour_by="batch.processing") + fontsize
-```
-
-Note that `plotReducedDim()` will use the PCA results that were already stored in `SCE` by `denoisePCA()`. This allows us to rapidly generate new plots with different aesthetics, without repeating the entire PCA computation. Similarly, `plotPCA()` will use existing results if they are available in the `SingleCellExperiment`, and will recalculate them otherwise. If we want, we can set `rerun=TRUE` to forcibly recalculate the PCs in the presence of existing results. Additional cell-specific information can be incorporated into the size or shape of each point (e.g. `size_by=` and `shape_by=` arguments).
-
-
+We can use PCA to compare the effects of our normalisation and batch correction. If we plot the PCAs using the `size_by = total_features_by_counts` we can assess whether the total features correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
 ```{r}
 set.seed(1991)
 
@@ -742,34 +714,29 @@ pca4 <- plotPCA(PAG_sceset_qc_norm_filt,
 multiplot(pca1, pca2, pca3, pca4, cols=2)
 ```
 
+We can also visualize the relationships between cells by constructing pairwise PCA plots for the first components. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Additional components can be visualized by increasing the `ncomponents` argument in `plotPCA` to construct pairwise plots. The percentage of variance explained by each component can also be obtained by running `plotPCA` with `return_SCESet = TRUE`, and then calling `reducedDimension` on the returned object. This information may be useful for selecting high-variance components (possibly corresponding to interesting underlying factors) for further examination.
 ```{r}
-PAG_sceset_qc <- runPCA(PAG_sceset_qc,
-                        run_args = list(exprs_values="logcounts"),
-                        rerun = TRUE,
-                        ncomponents = 10,
-                        #ntop = 20835,
-                        #ntop = 100,
-                        colour_by = "cell.type"#,
-                        #shape_by = "PAG.areacollection",
-                        #size_by = "total_features_by_counts"
-                        )
-
-plotReducedDim(PAG_sceset_qc, use_dimred="PCA", colour_by = "Slc32a1", shape_by = "cell.type", size_by = "total_features_by_counts")
-
-reducedDimNames(PAG_sceset_qc)
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               use_dimred = "PCA",
+               ncomponents = 4,
+               colour_by="batch.processing") + fontsize
 ```
 
-We now can perform dimensionality reduction using our HVGs subset. To do this, we first calculate the PCA representation via the `runPCA()` function from the `scater` package. We will calculate 50 components on our highly variable genes. The results of these calculations will be stored in the `reducedDims` slot. This method saves the percent variance explained per component as an attribute, which can be accessed as follows, and subsequently plot using the “elbow plot”:
+Note that `plotReducedDim()` will use the PCA results that were already stored in `SCE` by `denoisePCA()` or any other instance of `runPCA()`. This allows us to rapidly generate new plots with different aesthetics, without repeating the entire PCA computation. Similarly, `plotPCA()` will use existing results if they are available in the `SingleCellExperiment`, and will recalculate them otherwise. If we want, we can set `rerun=TRUE` to forcibly recalculate the PCs in the presence of existing results. Additional cell-specific information can be incorporated into the size or shape of each point (e.g. `size_by=` and `shape_by=` arguments).
+
+We can also perform dimensionality reduction using our HVGs subset. To do this, we first calculate the PCA representation via the `runPCA()` function from the `scater` package. We will calculate 50 components on our highly variable genes. The results of these calculations will be stored in the `reducedDims` slot. This method saves the percent variance explained per component as an attribute, which can be accessed and subsequently ploted using the “elbow plot” as follows:
 ```{r}
 PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt, 
                                   ncomponents = 50,
                                   ntop = 2743, 
                                   exprs_values = "logcounts",
                                   feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
+reducedDimNames(PAG_sceset_qc_norm_filt)
+plotReducedDim(PAG_sceset_qc_norm_filt, use_dimred="PCA", colour_by = "Slc32a1", shape_by = "cell.type", size_by = "total_features_by_counts")
 
+# Elbow plot
 pct_var_explained <- attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA"), "percentVar")
-
-plot(pct_var_explained) # elbow plot
+plot(pct_var_explained)
 ```
 
 ## Step 6.2 | Visualizing data in low-dimensional space with t-SNE
