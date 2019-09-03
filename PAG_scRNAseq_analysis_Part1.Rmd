@@ -137,26 +137,26 @@ options(stringsAsFactors = FALSE)
 
 PAG_metadata <- data.frame(read.table("PAG_scRNAseq_metadata_190704.csv", 
                                       sep=",", header=TRUE, row.names=NULL))
-PAG_metadata[1:11,1:11]
+PAG_metadata[1:10,1:10]
 ```
 
 We can add the `sequencing.id` column within the metadata to the `rownames` so we can later check that the `rownames` of the matadata (sample names) match that of the `colnames` of the data (also sample names, but obtained from the sequencing output):
 ```{r}
 rownames(PAG_metadata) <- PAG_metadata$sequencing.id
-PAG_metadata[1:11,1:11]
+PAG_metadata[1:10,1:10]
 ```
 
 In addition, we can prepare another .csv file containing different lists of genes (i.e. ion channel genes, neuromodulator genes, etc.) we might later use for analysis.
 ```{r}
 PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", sep=",", header=TRUE, row.names=NULL))
 
-PAG_scRNAseq_gene_lists[1:11,1:11]
+PAG_scRNAseq_gene_lists[1:10,1:10]
 ```
 
 ### One more thing...
 Finally, we want to carefully consider the annotations from the metadata that we will need for our biological analysis. Are they numerical or categorical? Will we use them in downstream statistical modeling? Once we know the key ones, we can add them as a `factor`. For example, `PAG.area` or `cell.type` are clearly important and categorical, so specifically convert them to factors in the `PAG_metadata` object.
 
-A longer discussion on factors can be found [here](https://www.stat.berkeley.edu/~s133/factors.html)
+A longer discussion on `factors` can be found [here](https://www.stat.berkeley.edu/~s133/factors.html)
 ```{r}
 PAG_metadata$date.collection <- as.factor(PAG_metadata$date.collection)
 PAG_metadata$sample.number <- as.factor(PAG_metadata$sample.number)
@@ -257,7 +257,7 @@ PAG_metadata <- PAG_metadata[right_order,]
 head(PAG_metadata)
 ```
 
-Now that we are certain our data and metadata are ordered, we want to check whether the `sequencing_id_QMUL` we extracted from the original .txt file the sequencing facility provided matches the `cell.id` from our metadata, just to be sure that it is safe to use the `cell.id` from the metadata as `colnames` of the `PAG_data`.
+Now that we are certain our data and metadata are in the same order, we want to check whether the `sequencing_id_QMUL` we extracted from the original .txt file the sequencing facility provided matches the `cell.id` from our metadata, just to be sure that it is safe to use the `cell.id` from the metadata as `colnames` of the `PAG_data`.
 
 Initially, each cell has the following id `GC.OP.7836.EBRAligned.sortedByCoord.out`, from which we already removed the unnecessary "Aligned.sortedByCoord.out" and assigned to `sequencing_id_QMUL`. From this, we want to extract the four-digit number (ID of the sequencing project added by the facility) and the three-letter code (ID of the cell added by us), which should match our `PAG_metadata$cell.id` and which we want to isolate and assign to `colnames(PAG_metadata)`, instead of the long code from the facility. To do this, we can use the `sequencing_id_QMUL` variable we stored at the beginning, which was extracted from the original `colnames(PAG_data)` in the expression matrix:
 ```{r}
@@ -284,11 +284,11 @@ Now that we are certain the Cell IDs we assigned each cell at the collection sta
 ```{r}
 # From the metadata, add the three-letter code that identifies each cell (cell.id column) to the column names of the data:
 colnames(PAG_data) <- PAG_metadata$cell.id
-PAG_data[1:11,1:11]
+PAG_data[1:10,1:10]
 
 # Add that same three-letter code that identifies each cell to the row names of the metadata:
 rownames(PAG_metadata) <- colnames(PAG_data)
-PAG_metadata[1:11,1:11]
+PAG_metadata[1:10,1:10]
 ```
 
 ## Step 1.5 | Add gene-based annotations
