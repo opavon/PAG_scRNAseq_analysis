@@ -69,13 +69,10 @@ is_Y <- which(rowData(PAG_sceset)$Chromosome == "Y")
 # EYFP, tdTomato, Cre, and TSO concatamers
 is_tdTomato <- which(rowData(PAG_sceset)$Chromosome == "A") # tdTomato fluorophor
 # Alternatively, if using gene_name use <- grepl("^tdTomato", rownames(PAG_sceset))
-
 is_EYFP <- which(rowData(PAG_sceset)$Chromosome == "B") # EYFP fluorophor
 # Alternatively, if using gene_name use <- grepl("^EYFP", rownames(PAG_sceset))
-
 is_Cre <- which(rowData(PAG_sceset)$Chromosome == "C") # Cre transgene to express fluorophors
 # Alternatively, if using gene_name use <- grepl("^Cre", rownames(PAG_sceset))
-
 is_SmartSeqTSO <- which(rowData(PAG_sceset)$Chromosome == "D") # TSO concatamers
 
 # VGAT and VGluT2
@@ -149,7 +146,7 @@ par(mfrow=c(1,2)) # Draw figures in a 1 by 2 array.
 hist(
     PAG_sceset$total_counts/1e6,
     breaks = 50,
-    xlab="Library sizes (millions)", main="", col="grey80", ylab="Number of cells"
+    xlab="Read per sample (millions)", main="", col="grey80", ylab="Number of cells"
 )
 abline(v = 0.4, col = "blue", lwd=2, lty=2) # 400,000 reads
 summary(PAG_sceset$total_counts/1e6)
@@ -315,30 +312,78 @@ hist(
 ```{r}
 # Plot Expression values of EYFP and tdTomato
 plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="mouse.id", 
-               exprs_values = "counts", 
+               exprs_values = "counts",
+               log2_values = TRUE,
+               colour_by = "cell.fluorophor")
+
+plotExpression(PAG_sceset, c("Slc17a6", "Slc32a1"), x="mouse.id", 
+               exprs_values = "counts",
+               log2_values = TRUE,
                colour_by = "cell.fluorophor")
 
 plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="cell.fluorophor", 
                exprs_values = "counts", 
+               log2_values = TRUE,
                colour_by = "mouse.sex")
 
 plotExpression(PAG_sceset, "EYFP", x="tdTomato", 
-               exprs_values = "counts", 
+               exprs_values = "counts",
                colour_by = "cell.fluorophor",
                shape_by = "mouse.sex")
 
-# Calculate the ratio between counts for each cell
-PAG_sceset$fluorophor_ratio <- (PAG_sceset$total_counts_EYFP / (PAG_sceset$total_counts_EYFP + PAG_sceset$total_counts_tdTomato + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
 
-# 0s and 1s are good, as indicate that all the fluorophor counts belong to either EYFP or tdTomato. NaN belong to cells where no reads have been mapped to a fluorophor (could be due to dropout, so no reason to exclude these cells). Ratios between 0.2 and 0.8 are indicative that a significant proportion of counts from a EYFP cell have been assigned to tdTomato, and ther might have been a contamination.
+PAG_sceset$log2_total_counts_EYFP <- log2(PAG_sceset$total_counts_EYFP + 1)
+PAG_sceset$log2_total_counts_tdTomato <- log2(PAG_sceset$total_counts_tdTomato + 1)
 
-plot(PAG_sceset$fluorophor_ratio,
+plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_EYFP,
+     PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_tdTomato,
+     xlim = c(0, max(PAG_sceset$log2_total_counts_EYFP, PAG_sceset$log2_total_counts_tdTomato)),
+     ylim = c(0, max(PAG_sceset$log2_total_counts_EYFP, PAG_sceset$log2_total_counts_tdTomato)),
+     xlab = "EYFP", ylab = "tdTomato",
+     type = "p", pch = 19, cex = 2, 
+     col = rgb(255, 200, 0, 255/3, maxColorValue = 255))
+points(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EYFP,
+       PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_tdTomato,
+       type = "p", pch = 19, cex = 1.5,
+       col = rgb(255, 0, 0, 255/5, maxColorValue = 255))
+
+plotExpression(PAG_sceset[, (PAG_sceset$cell.fluorophor=="tdTomato")], "EYFP", x="tdTomato", 
+               exprs_values = "counts",
+               log2_values = TRUE,
+               colour_by = "EYFP",
+               xlab = "tdTomato counts in tdTomato cells")
+
+# Calculate the ratio between fluorophor counts for each cell
+PAG_sceset$EYFP_tdTomato_ratio <- (PAG_sceset$total_counts_EYFP / PAG_sceset$total_counts_tdTomato)
+PAG_sceset$tdTomato_EYFP_ratio <- (PAG_sceset$total_counts_tdTomato / PAG_sceset$total_counts_EYFP)
+
+PAG_sceset$tdTomato_normcounts <- PAG_sceset$total_counts_tdTomato/PAG_sceset$total_counts
+PAG_sceset$EYFP_normcounts <- PAG_sceset$total_counts_EYFP/PAG_sceset$total_counts
+PAG_sceset$EYFP_minus_tdTomato_normcounts <- log10(PAG_sceset$EYFP_normcounts) - log10(PAG_sceset$tdTomato_normcounts)
+
+plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$EYFP_tdTomato_ratio,
      type = "p", 
      xlab = "Cell #",
-     ylab = "EYFP / tdTomato ratio"
+     ylab = "EYFP / tdTomato ratio in EYFP cells" # Should all be close to 1
 )
 
-table(PAG_sceset$fluorophor_ratio > 0.2 & PAG_sceset$fluorophor_ratio < 0.8)
+plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$tdTomato_EYFP_ratio,
+     type = "p", 
+     xlab = "Cell #",
+     ylab = "tdTomato / EYFP ratio in tdTomato cells" # Should all be close to 1
+)
+
+# 0s and 1s are good, as indicate that all the fluorophor counts belong to either EYFP or tdTomato. NaN belong to cells where no reads have been mapped to a fluorophor (could be due to dropout, so no reason to exclude these cells). Ratios between 0.2 and 0.8 are indicative that a significant proportion of counts from a EYFP cell have been assigned to tdTomato, and there might have been a contamination.
+
+table(PAG_sceset$EYFP_tdTomato_ratio > 0.2 & PAG_sceset$EYFP_tdTomato_ratio < 0.8)
+table(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$EYFP_tdTomato_ratio < 0.5)
+table(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$tdTomato_EYFP_ratio < 0.5)
+
+hist(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$EYFP_minus_tdTomato_normcounts, xlim=c(-0.0003,0.0003), ylim=c(0,30), breaks = sum(PAG_sceset$cell.fluorophor=="tdTomato")/5, col=rgb(0,0,1,1/4))
+hist(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$EYFP_minus_tdTomato_normcounts, xlim=c(-0.0003,0.0003), ylim=c(0,30), breaks = sum(PAG_sceset$cell.fluorophor=="EYFP")/5, col=rgb(1,0,0,1/4), add=TRUE)
+
+hist(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$tdTomato_EYFP_ratio, breaks = (sum(PAG_sceset$cell.fluorophor=="tdTomato"))/5, col=rgb(0,0,1,1/4))
+hist(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$EYFP_tdTomato_ratio, breaks = (sum(PAG_sceset$cell.fluorophor=="EYFP"))/5, col=rgb(1,0,0,1/4), add=TRUE)
 ```
 
 ### 2.3.4 | VGAT/VGluT2 ratio
@@ -366,19 +411,34 @@ hist(
 # Plot Expression values of VGAT and VGluT2
 plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x="mouse.id", 
                exprs_values = "counts", 
-               colour_by = "cell.type")
+               colour_by = "cell.type", 
+               xlab = "Mouse ID")
 
 plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x="cell.type", 
                exprs_values = "counts", 
-               colour_by = "cell.type")
+               colour_by = "cell.type", 
+               xlab = "Cell type")
 
 plotExpression(PAG_sceset, "Slc32a1", x="Slc17a6", 
                exprs_values = "counts", 
-               colour_by = "cell.fluorophor",
-               shape_by = "cell.type")
+               colour_by = "cell.type",
+               xlab = "VGluT2 (counts)")
 
-# Calculate the ratio between counts for each cell
+VGAT <- subset(PAG_sceset, , cell.type=="VGAT")
+plotExpression(VGAT, "Slc32a1", x="Slc17a6", 
+               exprs_values = "counts",
+               xlab = "VGluT2 counts in VGAT cells")
+
+VGluT2 <- subset(PAG_sceset, , cell.type=="VGluT2")
+plotExpression(VGluT2, "Slc32a1", x="Slc17a6", 
+               exprs_values = "counts",
+               xlab = "VGluT2 counts in VGluT2 cells"
+               )
+
+# Calculate the ratio between VGAT and VGluT2 counts for each cell
 PAG_sceset$VGAT_VGluT2_ratio <- (PAG_sceset$total_counts_VGAT / (PAG_sceset$total_counts_VGAT + PAG_sceset$total_counts_VGluT2 + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
+VGAT$VGAT_VGluT2_ratio <- (VGAT$total_counts_VGAT / (VGAT$total_counts_VGAT + VGAT$total_counts_VGluT2 + 0.0000000001))
+VGluT2$VGluT2_VGAT_ratio <- (VGluT2$total_counts_VGluT2 / (VGluT2$total_counts_VGAT + VGluT2$total_counts_VGluT2 + 0.0000000001))
 
 plot(PAG_sceset$VGAT_VGluT2_ratio,
      type = "p", 
@@ -386,7 +446,21 @@ plot(PAG_sceset$VGAT_VGluT2_ratio,
      ylab = "VGAT / VGluT2 ratio"
 )
 
+plot(VGAT$VGAT_VGluT2_ratio,
+     type = "p", 
+     xlab = "Cell #",
+     ylab = "VGAT / VGluT2 ratio in VGAT cells"
+)
+
+plot(VGluT2$VGluT2_VGAT_ratio,
+     type = "p", 
+     xlab = "Cell #",
+     ylab = "VGluT2 / VGAT ratio in VGluT2 cells"
+)
+
 table(PAG_sceset$VGAT_VGluT2_ratio > 0.1 & PAG_sceset$VGAT_VGluT2_ratio < 0.9)
+table(VGAT$VGAT_VGluT2_ratio < 0.5)
+table(VGluT2$VGluT2_VGAT_ratio < 0.5)
 ```
 
 ## Step 2.4 | Filtering low quality cells
@@ -428,9 +502,9 @@ filter_by_pct_counts_feature_control_manual <- (PAG_sceset$pct_counts_feature_co
 table(filter_by_pct_counts_feature_control_manual)
 
 # Keep cells with a fluorophor ratio below 0.2 or above 0.8
-filter_by_fluorophor_ratio_manual <- (PAG_sceset$fluorophor_ratio > 0.2 &
-                                        PAG_sceset$fluorophor_ratio < 0.8)
-table(filter_by_fluorophor_ratio_manual)
+#filter_by_fluorophor_ratio_manual <- (PAG_sceset$fluorophor_ratio > 0.2 &
+                                        #PAG_sceset$fluorophor_ratio < 0.8)
+#table(filter_by_fluorophor_ratio_manual)
 
 # Custom filters: remove Aqueduct cell and Patch-seq cells:
 filter_patchseq_cells <- (PAG_sceset$patch.recorded == "yes")
@@ -457,7 +531,7 @@ PAG_sceset$manual_filters <- !(
     # Remove cells with unusual proportion of reads in control features
     filter_by_pct_counts_feature_control_manual |
     # Remove cells with unusual EYFP/tdTomato ratios
-    filter_by_fluorophor_ratio_manual |
+    #filter_by_fluorophor_ratio_manual |
     # Remove cells from patch-seq
     filter_patchseq_cells |
     # Remove cells from the Aqueduct Ependymal layer
@@ -472,7 +546,7 @@ data.frame(
   ByRibosomal=sum(filter_by_pct_Ribosomal_manual),
   ByTSOconcatamer=sum(filter_by_pct_TSO_concatamer_manual),
   ByCtrlFeatures=sum(filter_by_pct_counts_feature_control_manual),
-  ByFluorophor=sum(filter_by_fluorophor_ratio_manual),
+  #ByFluorophor=sum(filter_by_fluorophor_ratio_manual),
   ByPatchseq=sum(filter_patchseq_cells),
   ByAqueduct=sum(filter_AQ_cells),
   Remaining=sum(PAG_sceset$manual_filters)
