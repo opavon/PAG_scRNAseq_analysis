@@ -28,18 +28,16 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 ***
 
 # STEP 12 | Seurat
-[Seurat](https://satijalab.org/seurat/) is an R package designed for QC, analysis, and exploration of single-cell RNA-seq data. Seurat aims to enable users to identify and interpret sources of heterogeneity from single-cell transcriptomic measurements, and to integrate diverse types of single-cell data. For more info see Butler et al. 2018 and Stuart, Butler et al. 2018.
+[Seurat](https://satijalab.org/seurat/) is an R package designed for QC, analysis, and exploration of single-cell RNA-seq data. Seurat aims to enable users to identify and interpret sources of heterogeneity from single-cell transcriptomic measurements, and to integrate diverse types of single-cell data. For more info see Butler et al. 2018 and Stuart, Butler et al. 2018. The following code has been adapted from the [Guided Clustering Tutorial](https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html).
 
-_IMP:_ Before starting this, run "Part I: from a gene expression matrix to a SingleCellExperiment object" again.
-
-Setting up a Seurat object:
+_IMP:_ Before starting this, run "Part I: from a gene expression matrix to a SingleCellExperiment object" again to load the raw data. Seurat uses its own object class, so we need to create a new object with the raw (non-normalised) data. Setting up a Seurat object:
 ```{r}
 library(Seurat)
 library(dplyr)
 PAG_seurat <- CreateSeuratObject(counts = PAG_data,
                                  project = "PAG_seurat_analysis",
-                                 min.cells = 1,
-                                 min.features = 2000,
+                                 min.cells = 1, # keep genes expressed in more than 1 cell
+                                 min.features = 2000, # keep cells with at least 2000 detected genes
                                  meta.data = PAG_metadata)
 ```
 
@@ -211,7 +209,7 @@ top10 <- PAG_seurat.markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log
 DoHeatmap(PAG_seurat, features = top10$gene) + NoLegend()
 ```
 
-## Step 12.7 |Assigning cell type identity to clusters
+## Step 12.7 | Assigning cell type identity to clusters
 Finally, we can rename/assign an identity to the clusters we have been able to identify based on the data.
 ```{r}
 new.cluster.ids <- c("Naive CD4 T", "Memory CD4 T", "CD14+ Mono", "B", 
