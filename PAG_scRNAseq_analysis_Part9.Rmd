@@ -1,0 +1,1263 @@
+---
+title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
+subtitle: "Violin and Heatmap plots"
+author:
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
+    affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
+    email: "oriol.pavon.16@ucl.ac.uk"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_notebook:
+    highlight: pygments
+    number_sections: FALSE
+    theme: lumen
+    toc: TRUE
+    toc_float: TRUE
+
+#output: rmdformats::readthedown:
+  #highlight: pygments
+---
+
+***
+This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al. Nature Protocols 2014). 
+
+This pipeline has been generated after attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis) and [attending](https://training.csx.cam.ac.uk/bioinformatics/event/2823386) and following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group). Many other resources have been used, including the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, the [rnaseqGene workflow](https://bioconductor.org/packages/release/workflows/html/rnaseqGene.html) maintained by Michael Love, the [RNAseq123 workflow](https://bioconductor.org/packages/release/workflows/html/RNAseq123.html) maintained by Matthew Ritchie, and the [EGSEA123 workflow](https://bioconductor.org/packages/release/workflows/html/EGSEA123.html) maintained by Matthew Ritchie.
+
+Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA-tools](https://www.scrna-tools.org/), `scater` (McCarty et al., Bioinformatics 2017), `scran` (Lun et al. F1000Res 2016), `SC3` (Kiselev et al., Nature Methods 2017), `Seurat` (Butler et al., Nature Biotechnology 2018), `clusterExperiment` (Risso et al., PLOS Computational Biology 2018), `limma` (Ritchie et al., Nucleic Acids Research 2015), `DESeq2` (Love et al., Genome Biology 2014), `iSEE` (Rue-Albrecht & Marini et al., F1000Research 2018), `t-SNE` (van der Maaten & Hinton, Journal of Machine Learning Research 2008).
+
+***
+
+# STEP X | Inspecting the data using violin and heatmaps plots
+The following code aims at facilitating visualization by plotting the expression of different list of genes stored in the `SingleCellExperiment` object using heatmaps and violing plots.
+
+Load `PAG_sceset_qc_norm` after clustering and differential expression analysis. We should thus have a `logcounts` slot in `assays`, as well as cluster identities and lists of HVG and DE genes. We should also still have our gene lists loaded into the `metadata` slot:
+```{r}
+# If starting from stored results, load saved filtered dataset from previous Step:
+set.seed(1991)
+options(stringsAsFactors = FALSE)
+library(SingleCellExperiment)
+library(scater)
+library(scran)
+
+PAG_sceset_qc_norm <- readRDS("PAG_sceset_qc_norm.rds") # Contains filtered cells and genes, normalized data, cluster IDs, and DE genes
+assayNames(PAG_sceset_qc_norm)
+PAG_sceset_qc_norm
+names(metadata(PAG_sceset_qc_norm))
+```
+
+The following code chunks will have the same structure. We first get the gene names we want to inspect from our previously loaded `PAG_scRNAseq_gene_lists`. We then filter any genes not present in our QCed dataset by comparing the gene names in the metadata list with the rownames of our expression matrix. We can next generate the violin or heatmap plots.
+
+Some visualisation tricks:
+* Use `PAG_ionchannels[1:20]` to select a subset of ion channels
+* Alternate between `x = "PAG.areacollection", colour_by = "cell.type"` or `x = "cell.type", colour_by = "PAG.areacollection"`
+* Use `ncol = 5` to speficy the number of columns the plot will be divided into
+
+## Step X.1 | Ion Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_ionchannels <- metadata(PAG_sceset_qc_norm)$genes.ionchannels[(metadata(PAG_sceset_qc_norm)$genes.ionchannels %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_ionchannels)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_ionchannels[1:20],  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_ionchannels[1:20],  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_ionchannels[1:15],
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of ion channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_ionchannels[1:15], 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of ion channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_ionchannels[1:15], 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of ion channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_ionchannels[1:15],
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of ion channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_ionchannels[1:15], 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of ion channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_ionchannels[1:15],
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of ion channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Potassium Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_potassium <- metadata(PAG_sceset_qc_norm)$genes.icPotassium[(metadata(PAG_sceset_qc_norm)$genes.icPotassium %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_potassium)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_potassium,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_potassium,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_potassium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Potassium channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_potassium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Potassium channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_potassium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Potassium channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_potassium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Potassium channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_potassium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Potassium channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_potassium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Potassium channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Calcium Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_calcium <- metadata(PAG_sceset_qc_norm)$genes.icCalcium[(metadata(PAG_sceset_qc_norm)$genes.icCalcium %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_calcium)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_calcium,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_calcium,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_calcium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Calcium channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_calcium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Calcium channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_calcium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Calcium channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_calcium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Calcium channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_calcium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Calcium channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_calcium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Calcium channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Sodium Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_sodium <- metadata(PAG_sceset_qc_norm)$genes.icSodium[(metadata(PAG_sceset_qc_norm)$genes.icSodium %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_sodium)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_sodium,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_sodium,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_sodium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Sodium channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_sodium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Sodium channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_sodium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Sodium channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_sodium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Sodium channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_sodium, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Sodium channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_sodium,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Sodium channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Chloride Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_chloride <- metadata(PAG_sceset_qc_norm)$genes.icChloride[(metadata(PAG_sceset_qc_norm)$genes.icChloride %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_chloride)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_chloride,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_chloride,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_chloride,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Chloride channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_chloride, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Chloride channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_chloride, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Chloride channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_chloride,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Chloride channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_chloride, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Chloride channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_chloride,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Chloride channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Asic Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_asic <- metadata(PAG_sceset_qc_norm)$genes.icAsic[(metadata(PAG_sceset_qc_norm)$genes.icAsic %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_asic)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_asic,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_asic,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_asic,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Asic channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_asic, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Asic channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_asic, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Asic channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_asic,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Asic channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_asic, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Asic channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_asic,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Asic channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Cyclic Nucleotide Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_cyclic_nucleotides <- metadata(PAG_sceset_qc_norm)$genes.icCyclicnucleotides[(metadata(PAG_sceset_qc_norm)$genes.icCyclicnucleotides %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_cyclic_nucleotides)
+ 
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_cyclic_nucleotides,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_cyclic_nucleotides,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_cyclic_nucleotides,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Cyclic Nucelotide channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_cyclic_nucleotides, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Cyclic Nucelotide channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_cyclic_nucleotides, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Cyclic Nucelotide channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_cyclic_nucleotides,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Cyclic Nucelotide channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_cyclic_nucleotides, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Cyclic Nucelotide channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_cyclic_nucleotides,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Cyclic Nucelotide channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### TRP Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_trp <- metadata(PAG_sceset_qc_norm)$genes.icTRP[(metadata(PAG_sceset_qc_norm)$genes.icTRP %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_trp)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_trp,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_trp,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_trp,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of TRP channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_trp, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of TRP channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_trp, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of TRP channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_trp,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of TRP channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_trp, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of TRP channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_trp,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of TRP channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Connexins Channels
+```{r} 
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_connexins <- metadata(PAG_sceset_qc_norm)$genes.icConnexins[(metadata(PAG_sceset_qc_norm)$genes.icConnexins %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_connexins)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_connexins,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_connexins,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_connexins,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Connexin channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_connexins, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Connexin channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_connexins, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Connexin channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_connexins,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Connexin channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_connexins, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Connexin channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_connexins,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Connexin channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Purinergic Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_purinergic <- metadata(PAG_sceset_qc_norm)$genes.icP2X[(metadata(PAG_sceset_qc_norm)$genes.icP2X %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_purinergic)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_purinergic,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_purinergic,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_purinergic,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Purinergic channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_purinergic, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Purinergic channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_purinergic, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Purinergic channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_purinergic,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Purinergic channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_purinergic, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Purinergic channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_purinergic,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Purinergic channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Aquaporins Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_aquaporins <- metadata(PAG_sceset_qc_norm)$genes.icAquaporins[(metadata(PAG_sceset_qc_norm)$genes.icAquaporins %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_aquaporins)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_aquaporins,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_aquaporins,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_aquaporins,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Aquaporin channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_aquaporins, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Aquaporin channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_aquaporins, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Aquaporin channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_aquaporins,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Aquaporin channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_aquaporins, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Aquaporin channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_aquaporins,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Aquaporin channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Other Channels
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_otherchannels <- metadata(PAG_sceset_qc_norm)$genes.icOther[(metadata(PAG_sceset_qc_norm)$genes.icOther %in% rownames(PAG_sceset_qc_norm))]
+length(PAG_otherchannels)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, PAG_otherchannels,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, PAG_otherchannels,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], PAG_otherchannels,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Other channels in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], PAG_otherchannels, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Other channels in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], PAG_otherchannels, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Other channels in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], PAG_otherchannels,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Other channels in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], PAG_otherchannels, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Other channels in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], PAG_otherchannels,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Other channels in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### GABA
+```{r}
+PAG_gaba <- PAG_scRNAseq_gene_lists$genes.GABA
+PAG_gaba <- PAG_gaba[(PAG_gaba %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_gaba, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_gaba, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_gaba, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_gaba, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Glutamate
+```{r}
+PAG_glutamate <- PAG_scRNAseq_gene_lists$genes.Glutamate
+PAG_glutamate <- PAG_glutamate[(PAG_glutamate %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_glutamate, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_glutamate, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_glutamate, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_glutamate, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Acetylcholine
+```{r}
+PAG_acetylcholine <- PAG_scRNAseq_gene_lists$genes.Acetylcholine
+PAG_acetylcholine <- PAG_acetylcholine[(PAG_acetylcholine %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_acetylcholine, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_acetylcholine, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_acetylcholine, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_acetylcholine, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+```
+
+### Monoamines
+```{r}
+PAG_monoamines <- PAG_scRNAseq_gene_lists$genes.Monoamines
+PAG_monoamines <- PAG_monoamines[(PAG_monoamines %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_monoamines, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_monoamines, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_monoamines, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_monoamines, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+```
+
+### Transporters
+```{r}
+PAG_transporters <- PAG_scRNAseq_gene_lists$genes.Transporters
+PAG_transporters <- PAG_transporters[(PAG_transporters %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_transporters, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_transporters, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_transporters, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_transporters, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Cell types
+(i) oligodendrocytes (mRNAs for myelin basic protein (Mbp) and UDP glyco- syltransferase-8 (Ugt8) involved in sphingolipid metabolism70,71); (ii) astrocytes (genes Fabp7 and Ntsr2)9,72; (iii) ependymal cells (genes associated with motile cilia, including Enkur9 and the transcription factor Foxj1 (ref. 73)); (iv) microglia (mRNAs for macrophage lineage marker allograft inflammatory factor 1 (Aif1) and immunoglobulin E receptor (Fcer1g)74); (v) endothelial cells (genes encoding fibronectin (Fn1) and organic anion transporter (Slco1a4)75); (vi) vascular and smooth muscle lineage (mRNAs for the α2 subunit of actin (Acta2) and transgelin (Tagln)76); and (vii) neurons (genes Ndrg4 and Stmn2)9,18,77.
+```{r}
+PAG_celltypes <- c("Mbp", "Ugt8", "Fabp7", "Ntsr2", "Enkur9", "Foxj1", "Aif1", "Fcer1g", "Fn1", "Slco1a4", "Acta2", "Tagln", "Ndrg4", "Stmn2", "Gfap", "Aldh1l1", "Cx3cr1", "Csf1r", "Mog")
+PAG_celltypes <- PAG_celltypes[(PAG_celltypes %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_celltypes, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", show_median = TRUE, log=TRUE)
+```
+
+### Cornelius Gross' Genes
+```{r}
+PAG_Gross <- PAG_scRNAseq_gene_lists$genes.Gross
+PAG_Gross <- PAG_Gross[(PAG_Gross %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_Gross, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_Gross, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_Gross, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_Gross, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### DE genes from QMUL
+```{r}
+PAG_DEgenesQMUL <- PAG_scRNAseq_gene_lists$genes.QMULDE
+PAG_DEgenesQMUL <- PAG_DEgenesQMUL[(PAG_DEgenesQMUL %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_DEgenesQMUL, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_DEgenesQMUL, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_DEgenesQMUL, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_DEgenesQMUL, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### DE genes from Miguel Branco
+```{r}
+PAG_DEgenesMB <- PAG_scRNAseq_gene_lists$genes.MBrancoDE
+PAG_DEgenesMB <- PAG_DEgenesMB[(PAG_DEgenesMB %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_DEgenesMB, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_DEgenesMB, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_DEgenesMB, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_DEgenesMB, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Neuromodulators
+```{r}
+PAG_neuromodulators <- PAG_scRNAseq_gene_lists$genes.DulacNeuromodulators
+PAG_neuromodulators <- PAG_neuromodulators[(PAG_neuromodulators %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_neuromodulators, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_neuromodulators, x = "PAG.areacollection", colour_by = "mouse.sex", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_neuromodulators, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_neuromodulators, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Neuropeptides
+```{r}
+PAG_neuropeptides <- PAG_scRNAseq_gene_lists$genes.DulacNeuropeptides
+PAG_neuropeptides <- PAG_neuropeptides[(PAG_neuropeptides %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_neuropeptides, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_neuropeptides, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 5, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_neuropeptides, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_neuropeptides, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Transcription Factors
+```{r}
+PAG_transcription_factors <- PAG_scRNAseq_gene_lists$genes.DulacTranscriptionfactors
+PAG_transcription_factors <- PAG_transcription_factors[(PAG_transcription_factors %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, PAG_transcription_factors, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, PAG_transcription_factors, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, PAG_transcription_factors, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, PAG_transcription_factors, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Data Club Ion Channels
+```{r}
+DataClub_ionchannels <- PAG_scRNAseq_gene_lists$genes.icDataClub
+DataClub_ionchannels <- DataClub_ionchannels[(DataClub_ionchannels %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, DataClub_ionchannels, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, DataClub_ionchannels, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, DataClub_ionchannels, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, DataClub_ionchannels, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
+
+### Data Club Neuromodulators
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+DataClub_neuromodulators <- metadata(PAG_sceset_qc_norm)$genes.nmDataClub[(metadata(PAG_sceset_qc_norm)$genes.nmDataClub %in% rownames(PAG_sceset_qc_norm))]
+length(DataClub_neuromodulators)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm, DataClub_neuromodulators,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm, DataClub_neuromodulators,  
+               x = "PAG.areacollection", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Make Heatmaps by cell type
+par(mfrow=c(1,2))
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGAT"], DataClub_neuromodulators,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#ff777c"))(100), border_color = NA, 
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Neuromodulators in VGAT cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$cell.type=="VGluT2"], DataClub_neuromodulators, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#009CB5"))(100), border_color = NA,
+            colour_columns_by = "PAG.areacollection", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Neuromodulators in VGluT2 cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+# Make Heatmaps by PAG subdivision
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dmpag"], DataClub_neuromodulators, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#F6C324"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Neuromodulators in dmPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="dlpag"], DataClub_neuromodulators,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#E3AE09"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Neuromodulators in dlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="lpag"], DataClub_neuromodulators, 
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#B78C08"))(100), border_color = NA,
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3,
+            show_colnames = FALSE,
+            main = "Expression of Neuromodulators in lPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+
+plotHeatmap(PAG_sceset_qc_norm[, PAG_sceset_qc_norm$PAG.areacollection=="vlpag"], DataClub_neuromodulators,
+            exprs_values = "logcounts", 
+            center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+            color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+            colour_columns_by = "cell.type", 
+            fontsize = 12,# cellwidth = 2, cellheight = 3, 
+            show_colnames = FALSE,
+            main = "Expression of Neuromodulators in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
+```
+
+### Data Club Neuropeptides
+```{r} 
+DataClub_neuropeptides <- PAG_scRNAseq_gene_lists$genes.npDataClub
+DataClub_neuropeptides <- DataClub_neuropeptides[(DataClub_neuropeptides %in% rownames(PAG_data))]
+plotExpression(PAG_sceset, DataClub_neuropeptides, x = "cell.type", colour_by = "PAG.areacollection", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+plotExpression(PAG_sceset, DataClub_neuropeptides, x = "PAG.areacollection", colour_by = "cell.type", exprs_values = "counts", ncol = 10, show_median = TRUE, log=TRUE)
+
+plotHeatmap(PAG_sceset, DataClub_neuropeptides, columns = 1:48, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#009CB5"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+plotHeatmap(PAG_sceset, DataClub_neuropeptides, columns = 49:96, exprs_values = "logcounts_raw", center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10), color = colorRampPalette(c("white", "#ff777c"))(100), border_color=NA, fontsize=12, cellwidth = 15, cellheight = 25, show_colnames=FALSE)
+
+```
