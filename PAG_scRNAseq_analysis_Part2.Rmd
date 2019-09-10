@@ -99,19 +99,17 @@ Once we have defined the control features, there is a function in scater (`calcu
 # Calculate the quality metrics after defining the control features:
 library(scater)
 PAG_sceset <- calculateQCMetrics(PAG_sceset,
-                                 feature_controls = list(
-                                   ERCC = isSpike(PAG_sceset, "ERCC"), 
-                                   Mitochondrial = is_mitochondrial,
-                                   Ribosomal = is_ribosomal,
-                                   tdTomato = is_tdTomato,
-                                   EYFP = is_EYFP,
-                                   Cre = is_Cre,
-                                   TSO_concatamers = is_SmartSeqTSO,
-                                   VGAT = is_VGAT,
-                                   VGluT2 = is_VGluT2
-                                   )
+                                 feature_controls = list(ERCC = isSpike(PAG_sceset, "ERCC"), 
+                                                         Mitochondrial = is_mitochondrial,
+                                                         Ribosomal = is_ribosomal,
+                                                         tdTomato = is_tdTomato,
+                                                         EYFP = is_EYFP,
+                                                         Cre = is_Cre,
+                                                         TSO_concatamers = is_SmartSeqTSO,
+                                                         VGAT = is_VGAT,
+                                                         VGluT2 = is_VGluT2
+                                                         )
                                  )
-
 PAG_sceset
 tail(colnames(colData(PAG_sceset)))
 ```
