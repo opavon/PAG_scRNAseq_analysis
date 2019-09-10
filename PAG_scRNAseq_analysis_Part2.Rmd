@@ -281,8 +281,8 @@ plotColData(
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
 ```
 
-### 2.3.3 | EYFP/tdTomato ratio
-We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter. This means that while cells should always express Cre, they should only express either EYFP or tdTomato. An easy way to check this is to calculate the percentage of counts assigned to one of the fluorophors. If it is close to 1, the cell is fine as it expresses one fluorophor only. But if the ratio is lower than 0.8 there might have been a contamination at a processing stage (we could expect to find some counts assigned to tdTomato in a EYFP cell or viceversa, perhaps due to similarity in the sequence, but too many counts for EYFP in an animal expressing Cre-tdTomato might be indicative of a contamination during the processing steps), and the cell should be excluded as a precaution.
+### 2.3.3 | EYFP/tdTomato expression
+We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter. This means that while cells should always express Cre, they should only express either EYFP or tdTomato.
 ```{r}
 # Plot the histograms of the counts assigned to transgenes in all cells:
 par(mfrow=c(1,3))
@@ -309,58 +309,66 @@ hist(
 )
 ```
 
+An easy way to check everything is as it should be is to check that each cell expresses only the fluorophor it should according to the transgenic line it was acquired from. A simple scatterplot of log-transformed counts of EYFP and tdTomato  be enough.
 ```{r}
-# Plot Expression values of EYFP and tdTomato
+# Plot Expression values of EYFP and tdTomato in several ways:
 plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="mouse.id", 
                exprs_values = "counts",
                log2_values = TRUE,
-               colour_by = "cell.fluorophor")
-
-plotExpression(PAG_sceset, c("Slc17a6", "Slc32a1"), x="mouse.id", 
-               exprs_values = "counts",
-               log2_values = TRUE,
-               colour_by = "cell.fluorophor")
+               colour_by = "cell.fluorophor", 
+               xlab = "Mouse ID")
 
 plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="cell.fluorophor", 
                exprs_values = "counts", 
                log2_values = TRUE,
-               colour_by = "mouse.sex")
+               colour_by = "mouse.sex", 
+               xlab = "Cell fluorophor")
 
 plotExpression(PAG_sceset, "EYFP", x="tdTomato", 
                exprs_values = "counts",
                colour_by = "cell.fluorophor",
-               shape_by = "mouse.sex")
+               shape_by = "mouse.sex", 
+               xlab = "tdTomato (total counts)")
 
-
+# Log transform the counts for EYFP and tdTomato
 PAG_sceset$log2_total_counts_EYFP <- log2(PAG_sceset$total_counts_EYFP + 1)
 PAG_sceset$log2_total_counts_tdTomato <- log2(PAG_sceset$total_counts_tdTomato + 1)
 
+# In EYFP cells, plot the EYFP counts against the tdTomato counts
 plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_EYFP,
      PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_tdTomato,
      xlim = c(0, max(PAG_sceset$log2_total_counts_EYFP, PAG_sceset$log2_total_counts_tdTomato)),
      ylim = c(0, max(PAG_sceset$log2_total_counts_EYFP, PAG_sceset$log2_total_counts_tdTomato)),
-     xlab = "EYFP", ylab = "tdTomato",
+     xlab = "EYFP (log2 counts)", ylab = "tdTomato (log2 counts)",
      type = "p", pch = 19, cex = 2, 
      col = rgb(255, 200, 0, 255/3, maxColorValue = 255))
+
+# Add the equivalent plot for tdTomato cells
 points(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EYFP,
        PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_tdTomato,
        type = "p", pch = 19, cex = 1.5,
        col = rgb(255, 0, 0, 255/5, maxColorValue = 255))
 
-plotExpression(PAG_sceset[, (PAG_sceset$cell.fluorophor=="tdTomato")], "EYFP", x="tdTomato", 
-               exprs_values = "counts",
-               log2_values = TRUE,
-               colour_by = "EYFP",
-               xlab = "tdTomato counts in tdTomato cells")
+filter_by_wrong_flurorophor_EYFP_cells <- PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_tdTomato > 0
+sum(filter_by_wrong_flurorophor_EYFP_cells)
+filter_by_wrong_flurorophor_tdTomato_cells <- PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EYFP > 0
+sum(filter_by_wrong_flurorophor_tdTomato_cells)
+cells_nofluorophor <- PAG_sceset$log2_total_counts_EYFP == 0 & PAG_sceset$log2_total_counts_tdTomato == 0
+sum(cells_nofluorophor)
+```
 
+We can also calculate the percentage of counts assigned to each of the fluorophors. If it is close to 1, the cell is fine as it expresses one fluorophor only. But if the ratio is lower than a certain percentage there might have been a contamination at a processing stage. Ideally, we could check the percentage overlap between the sequences of both fluorophors, and set that as a threshold (if it has more than that percentage of counts assigned to the wrong flurorophor we exclude the cell). We could expect to find some counts assigned to tdTomato in a EYFP cell or viceversa, perhaps due to similarity in the sequence, but too many counts for EYFP in an animal expressing Cre-tdTomato might be indicative of a contamination during the processing steps, and the cell should be excluded as a precaution.
+```{r}
 # Calculate the ratio between fluorophor counts for each cell
 PAG_sceset$EYFP_tdTomato_ratio <- (PAG_sceset$total_counts_EYFP / PAG_sceset$total_counts_tdTomato)
 PAG_sceset$tdTomato_EYFP_ratio <- (PAG_sceset$total_counts_tdTomato / PAG_sceset$total_counts_EYFP)
 
+# Calculate the difference between counts normalized by library size
 PAG_sceset$tdTomato_normcounts <- PAG_sceset$total_counts_tdTomato/PAG_sceset$total_counts
 PAG_sceset$EYFP_normcounts <- PAG_sceset$total_counts_EYFP/PAG_sceset$total_counts
 PAG_sceset$EYFP_minus_tdTomato_normcounts <- log10(PAG_sceset$EYFP_normcounts) - log10(PAG_sceset$tdTomato_normcounts)
 
+# Plot the ratios. For EYFP cells, the ratio of EYFP_tdTomato_ratio should be
 plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$EYFP_tdTomato_ratio,
      type = "p", 
      xlab = "Cell #",
@@ -386,8 +394,8 @@ hist(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$tdTomato_EYFP_ratio, b
 hist(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$EYFP_tdTomato_ratio, breaks = (sum(PAG_sceset$cell.fluorophor=="EYFP"))/5, col=rgb(1,0,0,1/4), add=TRUE)
 ```
 
-### 2.3.4 | VGAT/VGluT2 ratio
-We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2. Do they only express one or the other, or do some cells express both? If so, in which proportions? We can look at this the same way we looked at EYFP and tdTomato ratios.
+### 2.3.4 | VGAT/VGluT2 expression
+We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2. Do they only express one or the other, or do some cells express both? If so, in which proportions? The coexpression of VGAT and VGluT2 has been reported previously, so it shouldnt't surprise us if this ocurs. However, if we find cells that only express the opposite transporter as they should (e.g. if a VGAT-Cre cell only expresses VGluT2) we should consider excluding it. 
 ```{r}
 # Plot the histograms of the counts assigned to VGAT and VGluT2 in all cells:
 par(mfrow=c(1,2))
@@ -408,32 +416,54 @@ hist(
 ```
 
 ```{r}
-# Plot Expression values of VGAT and VGluT2
+# Plot Expression values of VGAT and VGluT2 in several ways:
 plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x="mouse.id", 
-               exprs_values = "counts", 
-               colour_by = "cell.type", 
+               exprs_values = "counts",
+               log2_values = TRUE,
+               colour_by = "cell.type",
                xlab = "Mouse ID")
 
 plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x="cell.type", 
                exprs_values = "counts", 
+               log2_values = TRUE,
                colour_by = "cell.type", 
                xlab = "Cell type")
 
 plotExpression(PAG_sceset, "Slc32a1", x="Slc17a6", 
                exprs_values = "counts", 
                colour_by = "cell.type",
+               shape_by = "mouse.sex",
                xlab = "VGluT2 (counts)")
 
-VGAT <- subset(PAG_sceset, , cell.type=="VGAT")
-plotExpression(VGAT, "Slc32a1", x="Slc17a6", 
-               exprs_values = "counts",
-               xlab = "VGluT2 counts in VGAT cells")
+# Log transform the counts for VGAT and VGluT2
+PAG_sceset$log2_total_counts_VGAT <- log2(PAG_sceset$total_counts_VGAT + 1)
+PAG_sceset$log2_total_counts_VGluT2 <- log2(PAG_sceset$total_counts_VGluT2 + 1)
 
-VGluT2 <- subset(PAG_sceset, , cell.type=="VGluT2")
-plotExpression(VGluT2, "Slc32a1", x="Slc17a6", 
-               exprs_values = "counts",
-               xlab = "VGluT2 counts in VGluT2 cells"
-               )
+# In VGAT cells, plot the VGAT counts against the VGluT2 counts
+plot(PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$log2_total_counts_VGAT,
+     PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$log2_total_counts_VGluT2,
+     xlim = c(0, max(PAG_sceset$log2_total_counts_VGAT, PAG_sceset$log2_total_counts_VGluT2)),
+     ylim = c(0, max(PAG_sceset$log2_total_counts_VGAT, PAG_sceset$log2_total_counts_VGluT2)),
+     xlab = "VGAT (log2 counts)", ylab = "VGluT2 (log2 counts)",
+     type = "p", pch = 19, cex = 2, 
+     col = rgb(255, 200, 0, 255/3, maxColorValue = 255))
+
+# Add the equivalent plot for VGluT2 cells
+points(PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$log2_total_counts_VGAT,
+       PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$log2_total_counts_VGluT2,
+       type = "p", pch = 19, cex = 1,
+       col = rgb(255, 0, 0, 255/5, maxColorValue = 255))
+
+# From the VGAT cells not expressing VGAT, mark the ones expressing VGluT2
+VGAT_cells_noVGAT <- PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$log2_total_counts_VGAT == 0
+filter_by_wrong_transporter_VGAT_cells <- PAG_sceset[, VGAT_cells_noVGAT]$log2_total_counts_VGluT2 > 0
+sum(filter_by_wrong_transporter_VGAT_cells)
+# From the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT
+VGluT2_cells_noVGluT2 <- PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$log2_total_counts_VGluT2 == 0
+filter_by_wrong_transporter_VGluT2_cells <- PAG_sceset[, VGluT2_cells_noVGluT2]$log2_total_counts_VGAT > 0
+sum(filter_by_wrong_transporter_VGluT2_cells)
+cells_noVGAT_noVGluT2 <- PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
+sum(cells_noVGAT_noVGluT2)
 
 # Calculate the ratio between VGAT and VGluT2 counts for each cell
 PAG_sceset$VGAT_VGluT2_ratio <- (PAG_sceset$total_counts_VGAT / (PAG_sceset$total_counts_VGAT + PAG_sceset$total_counts_VGluT2 + 0.0000000001)) # Add 0.0000000001 to avoid NaN in case of dropout
