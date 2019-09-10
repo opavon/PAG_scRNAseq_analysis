@@ -98,20 +98,19 @@ Once we have defined the control features, there is a function in scater (`calcu
 ```{r}
 # Calculate the quality metrics after defining the control features:
 library(scater)
-PAG_sceset <- calculateQCMetrics(
-    PAG_sceset,
-    feature_controls = list(
-        ERCC = isSpike(PAG_sceset, "ERCC"), 
-        Mitochondrial = is_mitochondrial,
-        Ribosomal = is_ribosomal,
-        tdTomato = is_tdTomato,
-        EYFP = is_EYFP,
-        Cre = is_Cre,
-        TSO_concatamers = is_SmartSeqTSO,
-        VGAT = is_VGAT,
-        VGluT2 = is_VGluT2
-    )
-)
+PAG_sceset <- calculateQCMetrics(PAG_sceset,
+                                 feature_controls = list(
+                                   ERCC = isSpike(PAG_sceset, "ERCC"), 
+                                   Mitochondrial = is_mitochondrial,
+                                   Ribosomal = is_ribosomal,
+                                   tdTomato = is_tdTomato,
+                                   EYFP = is_EYFP,
+                                   Cre = is_Cre,
+                                   TSO_concatamers = is_SmartSeqTSO,
+                                   VGAT = is_VGAT,
+                                   VGluT2 = is_VGluT2
+                                   )
+                                 )
 
 PAG_sceset
 tail(colnames(colData(PAG_sceset)))
@@ -120,13 +119,13 @@ tail(colnames(colData(PAG_sceset)))
 Quickly visualise some of the QC metrics calculated:
 ```{r}
 multiplot(cols=2,
-    plotColData(PAG_sceset, x="cell.type", y="total_counts"),
-    plotColData(PAG_sceset, x="cell.type", y="total_features_by_counts"),
-    plotColData(PAG_sceset, x="cell.type", y="pct_counts_ERCC"),
-    plotColData(PAG_sceset, x="cell.type", y="pct_counts_Mitochondrial"),
-    plotColData(PAG_sceset, x="cell.type", y="pct_counts_Ribosomal"),
-    plotColData(PAG_sceset, x="cell.type", y="pct_counts_TSO_concatamers")
-)
+          plotColData(PAG_sceset, x="cell.type", y="total_counts"),
+          plotColData(PAG_sceset, x="cell.type", y="total_features_by_counts"),
+          plotColData(PAG_sceset, x="cell.type", y="pct_counts_ERCC"),
+          plotColData(PAG_sceset, x="cell.type", y="pct_counts_Mitochondrial"),
+          plotColData(PAG_sceset, x="cell.type", y="pct_counts_Ribosomal"),
+          plotColData(PAG_sceset, x="cell.type", y="pct_counts_TSO_concatamers")
+          )
 ```
 
 ## Step 2.3 | Cell QC
@@ -143,32 +142,32 @@ Additionally, the number of expressed features in each cell is defined as the nu
 ```{r}
 # Plot the histograms of the library sizes and number of expressed genes:
 par(mfrow=c(1,2)) # Draw figures in a 1 by 2 array.
-hist(
-    PAG_sceset$total_counts/1e6,
-    breaks = 50,
-    xlab="Read per sample (millions)", main="", col="grey80", ylab="Number of cells"
-)
+
+hist(PAG_sceset$total_counts/1e6,
+     breaks = 50,
+     xlab="Read per sample (millions)", main="", col="grey80", ylab="Number of cells"
+     )
 abline(v = 0.4, col = "blue", lwd=2, lty=2) # 400,000 reads
 summary(PAG_sceset$total_counts/1e6)
 
 hist(PAG_sceset$total_features_by_counts, 
      breaks = 50,
-     xlab="Number of expressed genes", main="", col="grey80", ylab="Number of cells")
+     xlab="Number of expressed genes", main="", col="grey80", ylab="Number of cells"
+     )
 abline(v = 5000, col = "blue", lwd=2, lty=2) # 5,000 features
 summary(PAG_sceset$total_features_by_counts)
 ```
 
 ```{r}
 # Plot the library size against the total number of expressed features:
-plotColData(
-    PAG_sceset,
-    x = "total_features_by_counts",
-    y = "total_counts",
-    colour_by = "PAG.areacollection", 
-    size_by = "cell.type") +
+plotColData(PAG_sceset,
+            x = "total_features_by_counts",
+            y = "total_counts",
+            colour_by = "PAG.areacollection", 
+            size_by = "cell.type") +
   theme(legend.position = "top") +
-  xlab("Number of expressed genes")+
-  ylab("Library size")+
+  xlab("Number of expressed genes") +
+  ylab("Library size") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
 ```
 
@@ -185,43 +184,38 @@ __Using ERCC for normalization vs using them for QC__: ERCCs contain 96 differen
 par(mfrow=c(3,2))
 
 # ERCCs
-hist(
-    PAG_sceset$pct_counts_ERCC,
-    breaks = 50,
-    xlab="ERCC proportion (%)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$pct_counts_ERCC,
+     breaks = 50,
+     xlab="ERCC proportion (%)", ylab="Number of cells", main="", col="grey80"
+     )
 abline(v = 0.6, col = "blue", lwd=2, lty=2)
 
 # Mitochondrial genes
-hist(
-    PAG_sceset$pct_counts_Mitochondrial,
-    breaks = 50,
-    xlab="Mitochondrial proportion (%)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$pct_counts_Mitochondrial,
+     breaks = 50,
+     xlab="Mitochondrial proportion (%)", ylab="Number of cells", main="", col="grey80"
+     )
 abline(v = 15, col = "blue", lwd=2, lty=2)
 
 # Ribosomal genes
-hist(
-    PAG_sceset$pct_counts_Ribosomal,
-    breaks = 50,
-    xlab="Ribosomal proportion (%)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$pct_counts_Ribosomal,
+     breaks = 50,
+     xlab="Ribosomal proportion (%)", ylab="Number of cells", main="", col="grey80"
+     )
 abline(v = 30, col = "blue", lwd=2, lty=2)
 
 # TSO concatamers
-hist(
-    PAG_sceset$pct_counts_TSO_concatamers,
-    breaks = 50,
-    xlab="TSO concatamers proportion (%)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$pct_counts_TSO_concatamers,
+     breaks = 50,
+     xlab="TSO concatamers proportion (%)", ylab="Number of cells", main="", col="grey80"
+     )
 abline(v = 5, col = "blue", lwd=2, lty=2)
 
 # Proportion of counts in control features
-hist(
-    PAG_sceset$pct_counts_feature_control,
-    breaks = 50,
-    xlab="Control features proportion (%)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$pct_counts_feature_control,
+     breaks = 50,
+     xlab="Control features proportion (%)", ylab="Number of cells", main="", col="grey80"
+     )
 abline(v = 30, col = "blue", lwd=2, lty=2)
 ```
 
@@ -229,55 +223,50 @@ abline(v = 30, col = "blue", lwd=2, lty=2)
 # Plot the same as above but with each cell represented individually
 par(mfrow=c(2,2))
 
-plotColData(
-    PAG_sceset,
-    x = "total_features_by_counts",
-    y = "pct_counts_ERCC",
-    colour_by = "PAG.areacollection", 
-    size_by = "cell.type")+
+plotColData(PAG_sceset,
+            x = "total_features_by_counts",
+            y = "pct_counts_ERCC",
+            colour_by = "PAG.areacollection", 
+            size_by = "cell.type") +
   theme(legend.position = "top") +
-  xlab("Number of expressed genes")+
-  ylab("ERCC proportion (%)")+
+  xlab("Number of expressed genes") +
+  ylab("ERCC proportion (%)") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
 
-plotColData(
-    PAG_sceset,
-    x = "total_features_by_counts",
-    y = "pct_counts_Mitochondrial",
-    colour_by = "PAG.areacollection", 
-    size_by = "cell.type") +
-  xlab("Number of expressed genes")+
-  ylab("Mitochondrial proportion (%)")+
+plotColData(PAG_sceset,
+            x = "total_features_by_counts",
+            y = "pct_counts_Mitochondrial",
+            colour_by = "PAG.areacollection", 
+            size_by = "cell.type") +
+  xlab("Number of expressed genes") +
+  ylab("Mitochondrial proportion (%)") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
 
-plotColData(
-    PAG_sceset,
-    x = "total_features_by_counts",
-    y = "pct_counts_Ribosomal",
-    colour_by = "PAG.areacollection", 
-    size_by = "cell.type") +
-  xlab("Number of expressed genes")+
-  ylab("Ribosomal proportion (%)")+
+plotColData(PAG_sceset,
+            x = "total_features_by_counts",
+            y = "pct_counts_Ribosomal",
+            colour_by = "PAG.areacollection", 
+            size_by = "cell.type") +
+  xlab("Number of expressed genes") +
+  ylab("Ribosomal proportion (%)") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
 
-plotColData(
-    PAG_sceset,
-    x = "total_features_by_counts",
-    y = "pct_counts_TSO_concatamers",
-    colour_by = "PAG.areacollection", 
-    size_by = "cell.type") +
-  xlab("Number of expressed genes")+
-  ylab("TSO contatamers proportion (%)")+
+plotColData(PAG_sceset,
+            x = "total_features_by_counts",
+            y = "pct_counts_TSO_concatamers",
+            colour_by = "PAG.areacollection", 
+            size_by = "cell.type") +
+  xlab("Number of expressed genes") +
+  ylab("TSO contatamers proportion (%)") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
 
-plotColData(
-    PAG_sceset,
-    x = "total_features_by_counts",
-    y = "pct_counts_feature_control",
-    colour_by = "PAG.areacollection", 
-    size_by = "cell.type") +
-  xlab("Number of expressed genes")+
-  ylab("Control features proportion (%)")+
+plotColData(PAG_sceset,
+            x = "total_features_by_counts",
+            y = "pct_counts_feature_control",
+            colour_by = "PAG.areacollection", 
+            size_by = "cell.type") +
+  xlab("Number of expressed genes") +
+  ylab("Control features proportion (%)") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
 ```
 
@@ -288,25 +277,22 @@ We isolated cells from transgenic animals expressing either EYFP or tdTomato as 
 par(mfrow=c(1,3))
 
 # EYFP
-hist(
-    PAG_sceset$total_counts_EYFP,
-    breaks = 50,
-    xlab="EYFP expression (total counts)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$total_counts_EYFP,
+     breaks = 50,
+     xlab="EYFP expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     )
 
 # tdTomato
-hist(
-    PAG_sceset$total_counts_tdTomato,
-    breaks = 50,
-    xlab="tdTomato expression (total counts)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$total_counts_tdTomato,
+     breaks = 50,
+     xlab="tdTomato expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     )
 
 # Cre
-hist(
-    PAG_sceset$total_counts_Cre,
-    breaks = 50,
-    xlab="Cre expression (total counts)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$total_counts_Cre,
+     breaks = 50,
+     xlab="Cre expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     )
 ```
 
 An easy way to check everything is as it should be is to check that each cell expresses only the fluorophor it should according to the transgenic line it was acquired from. A simple scatterplot of log-transformed counts of EYFP and tdTomato  be enough.
@@ -351,8 +337,10 @@ points(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EY
 
 filter_by_wrong_flurorophor_EYFP_cells <- PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_tdTomato > 0
 sum(filter_by_wrong_flurorophor_EYFP_cells)
+
 filter_by_wrong_flurorophor_tdTomato_cells <- PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EYFP > 0
 sum(filter_by_wrong_flurorophor_tdTomato_cells)
+
 cells_nofluorophor <- PAG_sceset$log2_total_counts_EYFP == 0 & PAG_sceset$log2_total_counts_tdTomato == 0
 sum(cells_nofluorophor)
 ```
@@ -373,13 +361,13 @@ plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$EYFP_tdTomato_ratio,
      type = "p", 
      xlab = "Cell #",
      ylab = "EYFP / tdTomato ratio in EYFP cells" # Should all be close to 1
-)
+     )
 
 plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$tdTomato_EYFP_ratio,
      type = "p", 
      xlab = "Cell #",
      ylab = "tdTomato / EYFP ratio in tdTomato cells" # Should all be close to 1
-)
+     )
 
 # 0s and 1s are good, as indicate that all the fluorophor counts belong to either EYFP or tdTomato. NaN belong to cells where no reads have been mapped to a fluorophor (could be due to dropout, so no reason to exclude these cells). Ratios between 0.2 and 0.8 are indicative that a significant proportion of counts from a EYFP cell have been assigned to tdTomato, and there might have been a contamination.
 
@@ -401,18 +389,16 @@ We isolated cells from transgenic animals expressing either EYFP or tdTomato as 
 par(mfrow=c(1,2))
 
 # VGAT
-hist(
-    PAG_sceset$total_counts_VGAT,
-    breaks = 50,
-    xlab="VGAT expression (total counts)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$total_counts_VGAT,
+     breaks = 50,
+     xlab="VGAT expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     )
 
 # VGluT2
-hist(
-    PAG_sceset$total_counts_VGluT2,
-    breaks = 50,
-    xlab="VGluT2 expression (total counts)", ylab="Number of cells", main="", col="grey80"
-)
+hist(PAG_sceset$total_counts_VGluT2,
+     breaks = 50,
+     xlab="VGluT2 expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     )
 ```
 
 ```{r}
@@ -458,6 +444,7 @@ points(PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$log2_total_counts_VGAT,
 VGAT_cells_noVGAT <- PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$log2_total_counts_VGAT == 0
 filter_by_wrong_transporter_VGAT_cells <- PAG_sceset[, VGAT_cells_noVGAT]$log2_total_counts_VGluT2 > 0
 sum(filter_by_wrong_transporter_VGAT_cells)
+
 # From the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT
 VGluT2_cells_noVGluT2 <- PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$log2_total_counts_VGluT2 == 0
 filter_by_wrong_transporter_VGluT2_cells <- PAG_sceset[, VGluT2_cells_noVGluT2]$log2_total_counts_VGAT > 0
@@ -474,19 +461,19 @@ plot(PAG_sceset$VGAT_VGluT2_ratio,
      type = "p", 
      xlab = "Cell #",
      ylab = "VGAT / VGluT2 ratio"
-)
+     )
 
 plot(VGAT$VGAT_VGluT2_ratio,
      type = "p", 
      xlab = "Cell #",
      ylab = "VGAT / VGluT2 ratio in VGAT cells"
-)
+     )
 
 plot(VGluT2$VGluT2_VGAT_ratio,
      type = "p", 
      xlab = "Cell #",
      ylab = "VGluT2 / VGAT ratio in VGluT2 cells"
-)
+     )
 
 table(PAG_sceset$VGAT_VGluT2_ratio > 0.1 & PAG_sceset$VGAT_VGluT2_ratio < 0.9)
 table(VGAT$VGAT_VGluT2_ratio < 0.5)
@@ -566,7 +553,7 @@ PAG_sceset$manual_filters <- !(
     filter_patchseq_cells |
     # Remove cells from the Aqueduct Ependymal layer
     filter_AQ_cells
-)
+    )
 
 data.frame(
   ByLibSize=sum(filter_by_total_counts_manual), 
@@ -739,22 +726,22 @@ We can check whether a chosen threshold would be suitable by examining the distr
 ```{r}
 # Using the whole dataset:
 hist(log10(all_ave_counts),
-  breaks = 200,
-  main="", 
-  col="grey80", 
-  xlab=expression(Log[10]~"average count (all)"),
-  xlim=c(-10,10)
-)
+     breaks = 200,
+     main="", 
+     col="grey80", 
+     xlab=expression(Log[10]~"average count (all)"),
+     xlim=c(-10,10)
+     )
 abline(v=log10(1), col="blue", lwd=2, lty=2)
 
 # After removing low-quality cells:
 hist(log10(use_ave_counts), 
-  breaks = 200,
-  main="", 
-  col="grey80", 
-  xlab=expression(Log[10]~"average count (use)"),
-  xlim=c(-10,10)
-)
+     breaks = 200,
+     main="", 
+     col="grey80", 
+     xlab=expression(Log[10]~"average count (use)"),
+     xlim=c(-10,10)
+     )
 abline(v=log10(1), col="blue", lwd=2, lty=2)
 ```
 
