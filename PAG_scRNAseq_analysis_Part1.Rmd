@@ -134,7 +134,6 @@ PAG_data[1:10, 1:12]
 We next load our metadata from a .csv file we have previously created and curated, with any relevant information we might use to identify our samples, assess the quality of the data, and remove sub-optimal cells. In this metadata file, each column should be a variable/piece of information (i.e. cell.id, animal.id, sequencing.batch), and each row a cell and its metadata.
 ```{r}
 options(stringsAsFactors = FALSE)
-
 PAG_metadata <- data.frame(read.table("PAG_scRNAseq_metadata_190704.csv", 
                                       sep=",", header=TRUE, row.names=NULL))
 PAG_metadata[1:10,1:10]
@@ -149,7 +148,6 @@ PAG_metadata[1:10,1:10]
 In addition, we can prepare another .csv file containing different lists of genes (i.e. ion channel genes, neuromodulator genes, etc.) we might later use for analysis.
 ```{r}
 PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", sep=",", header=TRUE, row.names=NULL))
-
 PAG_scRNAseq_gene_lists[1:10,1:10]
 ```
 
