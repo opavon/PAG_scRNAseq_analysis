@@ -186,7 +186,7 @@ hist(PAG_sceset$pct_counts_ERCC,
      breaks = 50,
      xlab="ERCC proportion (%)", ylab="Number of cells", main="", col="grey80"
      )
-abline(v = 0.6, col = "blue", lwd=2, lty=2)
+abline(v = 1, col = "blue", lwd=2, lty=2)
 
 # Mitochondrial genes
 hist(PAG_sceset$pct_counts_Mitochondrial,
@@ -214,7 +214,7 @@ hist(PAG_sceset$pct_counts_feature_control,
      breaks = 50,
      xlab="Control features proportion (%)", ylab="Number of cells", main="", col="grey80"
      )
-abline(v = 30, col = "blue", lwd=2, lty=2)
+abline(v = 40, col = "blue", lwd=2, lty=2)
 ```
 
 ```{r}
@@ -298,13 +298,15 @@ hist(PAG_sceset$total_counts_Cre,
 plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"], c("EYFP", "tdTomato", "Cre"), x="mouse.id", 
                exprs_values = "counts",
                log2_values = TRUE,
-               colour_by = "batch.processing", 
+               colour_by = "batch.processing",
+               ncol = 3,
                xlab = "Mouse ID")
 
 plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"], c("EYFP", "tdTomato", "Cre"), x="mouse.id", 
                exprs_values = "counts",
                log2_values = TRUE,
                colour_by = "batch.processing", 
+               ncol = 3,
                xlab = "Mouse ID")
 
 plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="cell.fluorophor", 
@@ -328,8 +330,8 @@ PAG_sceset$log2_total_counts_tdTomato <- log2(PAG_sceset$total_counts_tdTomato +
 # In EYFP cells, plot the EYFP log2 total counts against the tdTomato counts
 plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_EYFP,
      PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_tdTomato,
-     xlim = c(0, max(PAG_sceset$log2_total_counts_EYFP, PAG_sceset$log2_total_counts_tdTomato)),
-     ylim = c(0, max(PAG_sceset$log2_total_counts_EYFP, PAG_sceset$log2_total_counts_tdTomato)),
+     xlim = c(0, max(PAG_sceset$log2_total_counts_EYFP)),
+     ylim = c(0, max(PAG_sceset$log2_total_counts_tdTomato)),
      xlab = "EYFP (log2 counts)", ylab = "tdTomato (log2 counts)",
      type = "p", pch = 19, cex = 1.25, 
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
@@ -343,8 +345,8 @@ points(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EY
 # In EYFP cells, plot the EYFP total counts against the tdTomato counts
 plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$total_counts_EYFP,
      PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$total_counts_tdTomato,
-     xlim = c(0, max(PAG_sceset$total_counts_EYFP, PAG_sceset$total_counts_tdTomato)),
-     ylim = c(0, max(PAG_sceset$total_counts_EYFP, PAG_sceset$total_counts_tdTomato)),
+     xlim = c(0, max(PAG_sceset$total_counts_EYFP)),
+     ylim = c(0, max(PAG_sceset$total_counts_tdTomato)),
      xlab = "EYFP (counts)", ylab = "tdTomato (counts)",
      type = "p", pch = 19, cex = 1.25, 
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
@@ -400,6 +402,7 @@ plotExpression(PAG_sceset, "Slc32a1", x="Slc17a6",
                colour_by = "cell.type",
                xlab = "VGluT2 (total counts)")
 ```
+
 We again use a scatterplot of log-transformed counts of VGAT and VGluT2 to quickly visualise their expression.
 ```{r}
 # Log transform the counts for VGAT and VGluT2
@@ -448,108 +451,108 @@ A possible strategy is to set pre-defined thresholds on each QC metric. For exam
 # Check how many cells you would exclude after visual inspection of data:
  
 # At least 400,000 counts
-filter_by_total_counts_manual <- (PAG_sceset$total_counts < 40.e4)
-table(filter_by_total_counts_manual)
+PAG_sceset$filter_by_total_counts_manual <- (PAG_sceset$total_counts < 40.e4)
+table(PAG_sceset$filter_by_total_counts_manual)
 
 # At least 5,000 genes detected
-filter_by_expr_features_manual <- (PAG_sceset$total_features_by_counts < 5000) 
-table(filter_by_expr_features_manual)
+PAG_sceset$filter_by_expr_features_manual <- (PAG_sceset$total_features_by_counts < 5000) 
+table(PAG_sceset$filter_by_expr_features_manual)
 
 # Less than 0.6% of counts in ERCCs
-filter_by_pct_ERCC_manual <- (PAG_sceset$pct_counts_ERCC > 0.6) 
-table(filter_by_pct_ERCC_manual)
+PAG_sceset$filter_by_pct_ERCC_manual <- (PAG_sceset$pct_counts_ERCC > 1) 
+table(PAG_sceset$filter_by_pct_ERCC_manual)
 
 # Less than 15% of counts in Mitochondrial genes
-filter_by_pct_Mitochondrial_manual <- (PAG_sceset$pct_counts_Mitochondrial > 15) 
-table(filter_by_pct_Mitochondrial_manual)
+PAG_sceset$filter_by_pct_Mitochondrial_manual <- (PAG_sceset$pct_counts_Mitochondrial > 15) 
+table(PAG_sceset$filter_by_pct_Mitochondrial_manual)
 
 # Less than 30% of counts in Ribosomal genes
-filter_by_pct_Ribosomal_manual <- (PAG_sceset$pct_counts_Ribosomal > 30)
-table(filter_by_pct_Ribosomal_manual)
+PAG_sceset$filter_by_pct_Ribosomal_manual <- (PAG_sceset$pct_counts_Ribosomal > 30)
+table(PAG_sceset$filter_by_pct_Ribosomal_manual)
 
 # Less than 5% of counts in TSO concatamers
-filter_by_pct_TSO_concatamer_manual <- (PAG_sceset$pct_counts_TSO_concatamers > 5)
-table(filter_by_pct_TSO_concatamer_manual)
+PAG_sceset$filter_by_pct_TSO_concatamer_manual <- (PAG_sceset$pct_counts_TSO_concatamers > 5)
+table(PAG_sceset$filter_by_pct_TSO_concatamer_manual)
 
 # Less than 35% of counts in control features
-filter_by_pct_counts_feature_control_manual <- (PAG_sceset$pct_counts_feature_control > 35)
-table(filter_by_pct_counts_feature_control_manual)
+PAG_sceset$filter_by_pct_counts_feature_control_manual <- (PAG_sceset$pct_counts_feature_control > 40)
+table(PAG_sceset$filter_by_pct_counts_feature_control_manual)
 
 # Custom filters: remove Aqueduct cell and Patch-seq cells:
-filter_AQ_cells <- (PAG_sceset$cell.id == "AQ")
-table(filter_AQ_cells)
+PAG_sceset$filter_AQ_cells <- (PAG_sceset$cell.id == "AQ")
+table(PAG_sceset$filter_AQ_cells)
 
-filter_patchseq_cells <- (PAG_sceset$patch.recorded == "yes")
-table(filter_patchseq_cells)
+PAG_sceset$filter_patchseq_cells <- (PAG_sceset$patch.recorded == "yes")
+table(PAG_sceset$filter_patchseq_cells)
 
 # Custom filters: identify the cells that have no expression of the expected fluorophor and express the wrong one
-filter_by_wrong_flurorophor_EYFP_cells <- PAG_sceset$cell.fluorophor=="EYFP" & PAG_sceset$log2_total_counts_tdTomato > 0
-table(filter_by_wrong_flurorophor_EYFP_cells)
+PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells <- PAG_sceset$cell.fluorophor=="EYFP" & PAG_sceset$log2_total_counts_tdTomato > 0
+table(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells)
 
-filter_by_wrong_flurorophor_tdTomato_cells <- PAG_sceset$cell.fluorophor=="tdTomato" & PAG_sceset$log2_total_counts_EYFP > 0
-table(filter_by_wrong_flurorophor_tdTomato_cells)
+PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells <- PAG_sceset$cell.fluorophor=="tdTomato" & PAG_sceset$log2_total_counts_EYFP > 0
+table(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells)
 
 # Custom filters: also label the cells not expressing any fluorophor, although they are likely to be dropout events and don't really tell us much
-cells_nofluorophor <- PAG_sceset$log2_total_counts_EYFP == 0 & PAG_sceset$log2_total_counts_tdTomato == 0
-table(cells_nofluorophor)
+PAG_sceset$cells_nofluorophor <- PAG_sceset$log2_total_counts_EYFP == 0 & PAG_sceset$log2_total_counts_tdTomato == 0
+table(PAG_sceset$cells_nofluorophor)
 
 # Custom filters: from the VGAT cells not expressing VGAT, mark the ones expressing VGluT2
-filter_by_wrong_transporter_VGAT_cells <- PAG_sceset$cell.type=="VGAT" & PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 > 0
-table(filter_by_wrong_transporter_VGAT_cells)
+PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- PAG_sceset$cell.type=="VGAT" & PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 > 0
+table(PAG_sceset$filter_by_wrong_transporter_VGAT_cells)
 
 # Custom filters: from the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT
-filter_by_wrong_transporter_VGluT2_cells <- PAG_sceset$cell.type=="VGluT2" & PAG_sceset$log2_total_counts_VGAT > 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
-table(filter_by_wrong_transporter_VGluT2_cells)
+PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- PAG_sceset$cell.type=="VGluT2" & PAG_sceset$log2_total_counts_VGAT > 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
+table(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells)
 
 # Custom filters: mark any cells with no expression of either VGAT nor VGluT2 (again, these are likely to be dropouts)
-cells_noVGAT_noVGluT2 <- PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
-table(cells_noVGAT_noVGluT2)
+PAG_sceset$cells_noVGAT_noVGluT2 <- PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
+table(PAG_sceset$cells_noVGAT_noVGluT2)
 ```
 
 Subsetting by column will retain only the high-quality cells that pass each filter described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
 ```{r}
 PAG_sceset$manual_filters <- !(
     # Sufficient library size
-    filter_by_total_counts_manual |
+    PAG_sceset$filter_by_total_counts_manual |
     # Sufficient genes detected
-    filter_by_expr_features_manual |
+    PAG_sceset$filter_by_expr_features_manual |
     # Remove cells with unusual proportion of reads in ERCCs
-    filter_by_pct_ERCC_manual |
+    PAG_sceset$filter_by_pct_ERCC_manual |
     # Remove cells with unusual proportion of reads in Mitochondrial genes
-    filter_by_pct_Mitochondrial_manual |
+    PAG_sceset$filter_by_pct_Mitochondrial_manual |
     # Remove cells with unusual proportion of reads in Ribosomal genes
-    filter_by_pct_Ribosomal_manual |
+    PAG_sceset$filter_by_pct_Ribosomal_manual |
     # Remove cells with unusual proportion of reads in TSO concatamers
-    filter_by_pct_TSO_concatamer_manual | 
+    PAG_sceset$filter_by_pct_TSO_concatamer_manual | 
     # Remove cells with unusual proportion of reads in control features
-    filter_by_pct_counts_feature_control_manual |
+    PAG_sceset$filter_by_pct_counts_feature_control_manual |
     # Remove cells from the Aqueduct Ependymal layer
-    filter_AQ_cells |
+    PAG_sceset$filter_AQ_cells |
     # Remove cells from patch-seq
-    filter_patchseq_cells |
+    PAG_sceset$filter_patchseq_cells |
     # Remove EYFP cells expressing tdTomato
-    filter_by_wrong_flurorophor_EYFP_cells |
+    PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells |
     # Remove tdTomato cells expressing EYFP
-    filter_by_wrong_flurorophor_tdTomato_cells |   
+    PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells |   
     # Remove VGAT cells expressing only VGluT2
-    filter_by_wrong_transporter_VGAT_cells |    
+    PAG_sceset$filter_by_wrong_transporter_VGAT_cells |    
     # Remove VGluT2 cells expressing only VGAT
-    filter_by_wrong_transporter_VGluT2_cells
+    PAG_sceset$filter_by_wrong_transporter_VGluT2_cells
     )
 
-data.frame(ByLibSize=sum(filter_by_total_counts_manual), 
-           ByExprFeatures=sum(filter_by_expr_features_manual), 
-           ByERCC=sum(filter_by_pct_ERCC_manual), 
-           ByMitochondrial=sum(filter_by_pct_Mitochondrial_manual), 
-           ByRibosomal=sum(filter_by_pct_Ribosomal_manual),
-           ByTSOconcatamer=sum(filter_by_pct_TSO_concatamer_manual),
-           ByCtrlFeatures=sum(filter_by_pct_counts_feature_control_manual),
-           ByAqueduct=sum(filter_AQ_cells),
-           ByPatchseqRecorded=sum(filter_patchseq_cells),
-           ByWrongFlurorophorEYFP=sum(filter_by_wrong_flurorophor_EYFP_cells),
-           ByWrongFlurorophortdTomato=sum(filter_by_wrong_flurorophor_tdTomato_cells),
-           ByWrongTransporterVGAT=sum(filter_by_wrong_transporter_VGAT_cells),
-           ByWrongTransporterVGluT2=sum(filter_by_wrong_transporter_VGluT2_cells),
+data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_manual), 
+           ByExprFeatures=sum(PAG_sceset$filter_by_expr_features_manual), 
+           ByERCC=sum(PAG_sceset$filter_by_pct_ERCC_manual), 
+           ByMitochondrial=sum(PAG_sceset$filter_by_pct_Mitochondrial_manual), 
+           ByRibosomal=sum(PAG_sceset$filter_by_pct_Ribosomal_manual),
+           ByTSOconcatamer=sum(PAG_sceset$filter_by_pct_TSO_concatamer_manual),
+           ByCtrlFeatures=sum(PAG_sceset$filter_by_pct_counts_feature_control_manual),
+           ByAqueduct=sum(PAG_sceset$filter_AQ_cells),
+           ByPatchseqRecorded=sum(PAG_sceset$filter_patchseq_cells),
+           ByWrongFlurorophorEYFP=sum(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells),
+           ByWrongFlurorophortdTomato=sum(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells),
+           ByWrongTransporterVGAT=sum(PAG_sceset$filter_by_wrong_transporter_VGAT_cells),
+           ByWrongTransporterVGluT2=sum(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells),
            Remaining=sum(PAG_sceset$manual_filters)
            )
 
@@ -558,19 +561,19 @@ table(PAG_sceset$manual_filters)
 
 Inspect the cells excluded by each filter. Are there cells that consistently fail the filters?
 ```{r}
-plyr::ldply(list(ByLibSize=colnames(PAG_sceset[, filter_by_total_counts_manual]),
-                 ByExprFeatures=colnames(PAG_sceset[, filter_by_expr_features_manual]),
-                 ByERCC=colnames(PAG_sceset[, filter_by_pct_ERCC_manual]),
-                 ByMitochondrial=colnames(PAG_sceset[, filter_by_pct_Mitochondrial_manual]),
-                 ByRibosomal=colnames(PAG_sceset[, filter_by_pct_Ribosomal_manual]),
-                 ByTSOconcatamer=colnames(PAG_sceset[, filter_by_pct_TSO_concatamer_manual]),
-                 ByCtrlFeatures=colnames(PAG_sceset[, filter_by_pct_counts_feature_control_manual]),
-                 ByAqueduct=colnames(PAG_sceset[, filter_AQ_cells]),
-                 ByPatchseqRecorded=colnames(PAG_sceset[, filter_patchseq_cells]),
-                 ByWrongFlurorophorEYFP=colnames(PAG_sceset[, filter_by_wrong_flurorophor_EYFP_cells]),
-                 ByWrongFlurorophortdTomato=colnames(PAG_sceset[, filter_by_wrong_flurorophor_tdTomato_cells]),
-                 ByWrongTransporterVGAT=colnames(PAG_sceset[, filter_by_wrong_transporter_VGAT_cells]),
-                 ByWrongTransporterVGluT2=colnames(PAG_sceset[, filter_by_wrong_transporter_VGluT2_cells])
+plyr::ldply(list(ByLibSize=colnames(PAG_sceset[, PAG_sceset$filter_by_total_counts_manual]),
+                 ByExprFeatures=colnames(PAG_sceset[, PAG_sceset$filter_by_expr_features_manual]),
+                 ByERCC=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_ERCC_manual]),
+                 ByMitochondrial=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Mitochondrial_manual]),
+                 ByRibosomal=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Ribosomal_manual]),
+                 ByTSOconcatamer=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_TSO_concatamer_manual]),
+                 ByCtrlFeatures=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_counts_feature_control_manual]),
+                 ByAqueduct=colnames(PAG_sceset[, PAG_sceset$filter_AQ_cells]),
+                 ByPatchseqRecorded=colnames(PAG_sceset[, PAG_sceset$filter_patchseq_cells]),
+                 ByWrongFlurorophorEYFP=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells]),
+                 ByWrongFlurorophortdTomato=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]),
+                 ByWrongTransporterVGAT=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_transporter_VGAT_cells]),
+                 ByWrongTransporterVGluT2=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_transporter_VGluT2_cells])
                  ), 
             rbind)
 ```
@@ -590,35 +593,35 @@ Outliers are defined based on the median absolute deviation (MADs) from the medi
 * However, if the 4-MAD threshold is too restrictive or not restrictive enough, we can try to loosen it a bit by setting it to 5 or 3.
 ```{r}
 # Total counts
-filter_by_total_counts_MADs <- isOutlier(PAG_sceset$total_counts, nmads = 5, type = "lower", log = TRUE, batch = NULL)
-table(filter_by_total_counts_MADs)
+PAG_sceset$filter_by_total_counts_MADs <- isOutlier(PAG_sceset$total_counts, nmads = 5, type = "lower", log = TRUE, batch = NULL)
+table(PAG_sceset$filter_by_total_counts_MADs)
 
 # Expressed features
-filter_by_expr_features_MADs <- isOutlier(PAG_sceset$total_features_by_counts, nmads = 5, type = "lower", log = TRUE, batch = NULL)
-table(filter_by_expr_features_MADs)
+PAG_sceset$filter_by_expr_features_MADs <- isOutlier(PAG_sceset$total_features_by_counts, nmads = 5, type = "lower", log = TRUE, batch = NULL)
+table(PAG_sceset$filter_by_expr_features_MADs)
 ```
 
 We identify outliers for the proportion-based metrics in a similar manner. Here, no transformation is required as we are identifying large outliers, for which the distinction should be fairly clear on the raw scale.
 ```{r}
 # ERCCs
-filter_by_pct_ERCC_MADs <- isOutlier(PAG_sceset$pct_counts_ERCC, nmads = 5, type = "higher", batch = NULL)
-table(filter_by_pct_ERCC_MADs)
+PAG_sceset$filter_by_pct_ERCC_MADs <- isOutlier(PAG_sceset$pct_counts_ERCC, nmads = 5, type = "higher", batch = NULL)
+table(PAG_sceset$filter_by_pct_ERCC_MADs)
 
 # Mitochondrial genes
-filter_by_pct_Mitochondrial_MADs <- isOutlier(PAG_sceset$pct_counts_Mitochondrial, nmads = 5, type = "higher", batch = NULL)
-table(filter_by_pct_Mitochondrial_MADs)
+PAG_sceset$filter_by_pct_Mitochondrial_MADs <- isOutlier(PAG_sceset$pct_counts_Mitochondrial, nmads = 5, type = "higher", batch = NULL)
+table(PAG_sceset$filter_by_pct_Mitochondrial_MADs)
 
 # Ribosomal genes
-filter_by_pct_Ribosomal_MADs <- isOutlier(PAG_sceset$pct_counts_Ribosomal, nmads = 5, type = "higher", batch = NULL)
-table(filter_by_pct_Ribosomal_MADs)
+PAG_sceset$filter_by_pct_Ribosomal_MADs <- isOutlier(PAG_sceset$pct_counts_Ribosomal, nmads = 5, type = "higher", batch = NULL)
+table(PAG_sceset$filter_by_pct_Ribosomal_MADs)
 
 # TSO concatamers
-filter_by_pct_TSO_concatamer_MADs <- isOutlier(PAG_sceset$pct_counts_TSO_concatamers, nmads = 5, type = "higher", batch = NULL)
-table(filter_by_pct_TSO_concatamer_MADs)
+PAG_sceset$filter_by_pct_TSO_concatamer_MADs <- isOutlier(PAG_sceset$pct_counts_TSO_concatamers, nmads = 5, type = "higher", batch = NULL)
+table(PAG_sceset$filter_by_pct_TSO_concatamer_MADs)
 
 # Control features
-filter_by_pct_counts_feature_control_MADs <- isOutlier(PAG_sceset$pct_counts_feature_control, nmads = 5, type = "higher", batch = NULL)
-table(filter_by_pct_counts_feature_control_MADs)
+PAG_sceset$filter_by_pct_counts_feature_control_MADs <- isOutlier(PAG_sceset$pct_counts_feature_control, nmads = 5, type = "higher", batch = NULL)
+table(PAG_sceset$filter_by_pct_counts_feature_control_MADs)
 ```
 
 Subsetting by column will retain only the high-quality cells that pass each filter described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
@@ -626,28 +629,28 @@ Subsetting by column will retain only the high-quality cells that pass each filt
 # Create a subset of the PAG_sceset with the cells that pass the MADs filters:
 PAG_sceset$MADs_filters <- !(
     # Sufficient library size
-    filter_by_total_counts_MADs |
+    PAG_sceset$filter_by_total_counts_MADs |
     # Sufficient genes detected
-    filter_by_expr_features_MADs |
+    PAG_sceset$filter_by_expr_features_MADs |
     # Remove cells with unusual proportion of reads in ERCCs
-    filter_by_pct_ERCC_MADs |
+    PAG_sceset$filter_by_pct_ERCC_MADs |
     # Remove cells with unusual proportion of reads in Mitochondrial genes
-    filter_by_pct_Mitochondrial_MADs |
+    PAG_sceset$filter_by_pct_Mitochondrial_MADs |
     # Remove cells with unusual proportion of reads in Ribosomal genes
-    filter_by_pct_Ribosomal_MADs |
+    PAG_sceset$filter_by_pct_Ribosomal_MADs |
     # Remove cells with unusual proportion of reads in TSO concatamers
-    filter_by_pct_TSO_concatamer_MADs | 
+    PAG_sceset$filter_by_pct_TSO_concatamer_MADs | 
     # Remove cells with unusual proportion of reads in control features
-    filter_by_pct_counts_feature_control_MADs
+    PAG_sceset$filter_by_pct_counts_feature_control_MADs
 )
 
-data.frame(ByLibSize=sum(filter_by_total_counts_MADs), 
-           ByExprFeatures=sum(filter_by_expr_features_MADs), 
-           ByERCC=sum(filter_by_pct_ERCC_MADs), 
-           ByMitochondrial=sum(filter_by_pct_Mitochondrial_MADs), 
-           ByRibosomal=sum(filter_by_pct_Ribosomal_MADs),
-           ByTSOconcatamer=sum(filter_by_pct_TSO_concatamer_MADs),
-           ByCtrlFeatures=sum(filter_by_pct_counts_feature_control_MADs),
+data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_MADs), 
+           ByExprFeatures=sum(PAG_sceset$filter_by_expr_features_MADs), 
+           ByERCC=sum(PAG_sceset$filter_by_pct_ERCC_MADs), 
+           ByMitochondrial=sum(PAG_sceset$filter_by_pct_Mitochondrial_MADs), 
+           ByRibosomal=sum(PAG_sceset$filter_by_pct_Ribosomal_MADs),
+           ByTSOconcatamer=sum(PAG_sceset$filter_by_pct_TSO_concatamer_MADs),
+           ByCtrlFeatures=sum(PAG_sceset$filter_by_pct_counts_feature_control_MADs),
            Remaining=sum(PAG_sceset$MADs_filters)
            )
 
@@ -817,21 +820,21 @@ The safest option will be to apply these filters at each step rather than applyi
 ```{r}
 # Set the filter with the chosen parameters:
 use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow = TRUE) # `byrow=TRUE` - count the number of detected cells per feature
-genes_to_use <- use_numcells >= 1 # This will leave genes expressed in less than X number of cells as FALSE
-summary(genes_to_use)
+rowData(PAG_sceset)$genes_expressed <- use_numcells >= 1 # This will leave genes expressed in less than X number of cells as FALSE
+summary(rowData(PAG_sceset)$genes_expressed)
 
 # Find predicted genes (Gm stands for gene model)
-not_predicted_gene <- !grepl("^Gm", rownames(PAG_sceset)) # This will leave predicted genes as FALSE
-summary(not_predicted_gene)
+rowData(PAG_sceset)$not_predicted_gene <- !grepl("^Gm", rownames(PAG_sceset)) # This will leave predicted genes as FALSE
+summary(rowData(PAG_sceset)$not_predicted_gene)
 
-filter_genes <- (genes_to_use & not_predicted_gene) # We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
-summary(filter_genes)
+rowData(PAG_sceset)$filter_predictedgenes_noexpression <- (rowData(PAG_sceset)$genes_expressed & rowData(PAG_sceset)$not_predicted_gene) # We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
+summary(rowData(PAG_sceset)$filter_predictedgenes_noexpression)
 ```
 
 ```{r}
 # Assign the chosen list of filtered genes to $use slot corresponding to the rows (genes):
-rowData(PAG_sceset)$use <- filter_genes
-table(filter_genes)
+rowData(PAG_sceset)$use <- rowData(PAG_sceset)$filter_predictedgenes_noexpression
+table(rowData(PAG_sceset)$filter_predictedgenes_noexpression)
 dim(PAG_sceset) # We haven't changed anything in the SCE object yet.
 ```
 
@@ -845,8 +848,10 @@ assay(PAG_sceset, "logcounts_raw") <- log2(counts(PAG_sceset) + 1)
 
 # Remove the saved PCA results from the reducedDim slot, as we haven't used that to remove outliers and we don't need them anymore:
 reducedDim(PAG_sceset) <- NULL
-
 PAG_sceset
+
+# Save the dataset with the filters before applying them:
+saveRDS(PAG_sceset, file = "PAG_sceset_filters.rds")
 ```
 
 Once everything you have done is saved, use the `PAG_sceset$use` slot, which points to the filtered and QCed data, to set the dimensions of a new `SCE` object, which we will call `PAG_sceset_qc` and use for downstream analysis. 
