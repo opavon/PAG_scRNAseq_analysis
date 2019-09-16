@@ -453,60 +453,75 @@ A possible strategy is to set pre-defined thresholds on each QC metric. For exam
 # At least 400,000 counts
 PAG_sceset$filter_by_total_counts_manual <- (PAG_sceset$total_counts < 40.e4)
 table(PAG_sceset$filter_by_total_counts_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_total_counts_manual]$PAG.areacollection)
 
 # At least 5,000 genes detected
 PAG_sceset$filter_by_expr_features_manual <- (PAG_sceset$total_features_by_counts < 5000) 
 table(PAG_sceset$filter_by_expr_features_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_expr_features_manual]$PAG.areacollection)
 
 # Less than 0.6% of counts in ERCCs
 PAG_sceset$filter_by_pct_ERCC_manual <- (PAG_sceset$pct_counts_ERCC > 1) 
 table(PAG_sceset$filter_by_pct_ERCC_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_pct_ERCC_manual]$PAG.areacollection)
 
 # Less than 15% of counts in Mitochondrial genes
 PAG_sceset$filter_by_pct_Mitochondrial_manual <- (PAG_sceset$pct_counts_Mitochondrial > 15) 
 table(PAG_sceset$filter_by_pct_Mitochondrial_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_pct_Mitochondrial_manual]$PAG.areacollection)
 
 # Less than 30% of counts in Ribosomal genes
 PAG_sceset$filter_by_pct_Ribosomal_manual <- (PAG_sceset$pct_counts_Ribosomal > 30)
 table(PAG_sceset$filter_by_pct_Ribosomal_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_pct_Ribosomal_manual]$PAG.areacollection)
 
 # Less than 5% of counts in TSO concatamers
 PAG_sceset$filter_by_pct_TSO_concatamer_manual <- (PAG_sceset$pct_counts_TSO_concatamers > 5)
 table(PAG_sceset$filter_by_pct_TSO_concatamer_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_pct_TSO_concatamer_manual]$PAG.areacollection)
 
 # Less than 35% of counts in control features
 PAG_sceset$filter_by_pct_counts_feature_control_manual <- (PAG_sceset$pct_counts_feature_control > 40)
 table(PAG_sceset$filter_by_pct_counts_feature_control_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_pct_counts_feature_control_manual]$PAG.areacollection)
 
 # Custom filters: remove Aqueduct cell and Patch-seq cells:
 PAG_sceset$filter_AQ_cells <- (PAG_sceset$cell.id == "AQ")
 table(PAG_sceset$filter_AQ_cells)
+summary(PAG_sceset[,PAG_sceset$filter_AQ_cells]$PAG.areacollection)
 
 PAG_sceset$filter_patchseq_cells <- (PAG_sceset$patch.recorded == "yes")
 table(PAG_sceset$filter_patchseq_cells)
+summary(PAG_sceset[,PAG_sceset$filter_patchseq_cells]$PAG.areacollection)
 
 # Custom filters: identify the cells that have no expression of the expected fluorophor and express the wrong one
 PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells <- PAG_sceset$cell.fluorophor=="EYFP" & PAG_sceset$log2_total_counts_tdTomato > 0
 table(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells)
+summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells]$PAG.areacollection)
 
 PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells <- PAG_sceset$cell.fluorophor=="tdTomato" & PAG_sceset$log2_total_counts_EYFP > 0
 table(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells)
+summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]$PAG.areacollection)
 
 # Custom filters: also label the cells not expressing any fluorophor, although they are likely to be dropout events and don't really tell us much
 PAG_sceset$cells_nofluorophor <- PAG_sceset$log2_total_counts_EYFP == 0 & PAG_sceset$log2_total_counts_tdTomato == 0
 table(PAG_sceset$cells_nofluorophor)
+summary(PAG_sceset[,PAG_sceset$cells_nofluorophor]$PAG.areacollection)
 
 # Custom filters: from the VGAT cells not expressing VGAT, mark the ones expressing VGluT2
 PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- PAG_sceset$cell.type=="VGAT" & PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 > 0
 table(PAG_sceset$filter_by_wrong_transporter_VGAT_cells)
+summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGAT_cells]$PAG.areacollection)
 
 # Custom filters: from the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT
 PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- PAG_sceset$cell.type=="VGluT2" & PAG_sceset$log2_total_counts_VGAT > 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
 table(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells)
+summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGluT2_cells]$PAG.areacollection)
 
 # Custom filters: mark any cells with no expression of either VGAT nor VGluT2 (again, these are likely to be dropouts)
 PAG_sceset$cells_noVGAT_noVGluT2 <- PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
 table(PAG_sceset$cells_noVGAT_noVGluT2)
+summary(PAG_sceset[,PAG_sceset$cells_noVGAT_noVGluT2]$PAG.areacollection)
 ```
 
 Subsetting by column will retain only the high-quality cells that pass each filter described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
@@ -557,6 +572,7 @@ data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_manual),
            )
 
 table(PAG_sceset$manual_filters)
+summary(PAG_sceset[,!PAG_sceset$manual_filters]$PAG.areacollection)
 ```
 
 Inspect the cells excluded by each filter. Are there cells that consistently fail the filters?
