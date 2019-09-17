@@ -573,7 +573,9 @@ data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_manual),
 
 table(PAG_sceset$manual_filters)
 summary(PAG_sceset[,!PAG_sceset$manual_filters]$PAG.areacollection)
+summary(PAG_sceset[,PAG_sceset$manual_filters]$PAG.areacollection)
 summary(PAG_sceset[,!PAG_sceset$manual_filters]$cell.type)
+summary(PAG_sceset[,PAG_sceset$manual_filters]$cell.type)
 ```
 
 Inspect the cells excluded by each filter. Are there cells that consistently fail the filters?
