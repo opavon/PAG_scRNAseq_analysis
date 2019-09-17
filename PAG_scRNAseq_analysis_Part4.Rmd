@@ -131,7 +131,7 @@ points(var_out_spikes$mean[current_spikes], var_out_spikes$total[current_spikes]
 plot(var_out_spikes_mouseid$mean, 
      var_out_spikes_mouseid$total, 
      pch=16, cex=0.6, 
-     xlab="Mean log-expression",
+     xlab="Mean log-expression - block on mouse.id",
      ylab="Variance of log-expression")
 
 curve(var_fit_spikes_mouseid$trend(x), add=TRUE, col="dodgerblue", lwd=2)
@@ -142,7 +142,7 @@ points(var_out_spikes_mouseid$mean[current_spikes], var_out_spikes_mouseid$total
 plot(var_out_spikes_batch$mean, 
      var_out_spikes_batch$total, 
      pch=16, cex=0.6, 
-     xlab="Mean log-expression",
+     xlab="Mean log-expression - block on batch.processing",
      ylab="Variance of log-expression")
 
 curve(var_fit_spikes_batch$trend(x), add=TRUE, col="dodgerblue", lwd=2)
@@ -178,7 +178,7 @@ end_time <- Sys.time()
 end_time - start_time
 
 # Fit variance-mean trend blocking on mouse.id
-start_time <- Sys.time() # Takes around 32min
+start_time <- Sys.time() # Takes around 20min
 var_fit_no_spikes_mouseid <- trendVar(PAG_sceset_qc_norm, 
                                       method="loess", 
                                       use.spikes=FALSE,
@@ -193,7 +193,7 @@ end_time <- Sys.time()
 end_time - start_time
 
 # Fit variance-mean trend blocking on batch.processing
-start_time <- Sys.time() # Takes around 32min
+start_time <- Sys.time() # Takes around 20min
 var_fit_no_spikes_batch <- trendVar(PAG_sceset_qc_norm, 
                                     method="loess", 
                                     use.spikes=FALSE,
@@ -254,24 +254,24 @@ We define HVGs as genes with biological components that are significantly greate
 # Consider playing with the $FDR threshold and the $bio threshold, try reducing/increasing them to make them more stringent or to get more genes.
 
 # from trendVar with spikes
-hvg_out_spikes <- var_out_spikes[which(var_out_spikes$FDR <= 0.05 & var_out_spikes$bio > 0), ]
+hvg_out_spikes <- var_out_spikes[which(var_out_spikes$FDR <= 0.05 & var_out_spikes$bio > 0.5), ]
 nrow(hvg_out_spikes)
 
-hvg_out_spikes_mouseid <- var_out_spikes_mouseid[which(var_out_spikes_mouseid$FDR <= 0.05 & var_out_spikes_mouseid$bio > 0), ]
+hvg_out_spikes_mouseid <- var_out_spikes_mouseid[which(var_out_spikes_mouseid$FDR <= 0.05 & var_out_spikes_mouseid$bio > 0.5), ]
 nrow(hvg_out_spikes_mouseid)
 
-hvg_out_spikes_batch <- var_out_spikes_batch[which(var_out_spikes_batch$FDR <= 0.05 & var_out_spikes_batch$bio > 0), ]
+hvg_out_spikes_batch <- var_out_spikes_batch[which(var_out_spikes_batch$FDR <= 0.05 & var_out_spikes_batch$bio > 0.5), ]
 nrow(hvg_out_spikes_batch)
 
 
 # from trendVar without spikes
-hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio > 0), ]
+hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio > 0.5), ]
 nrow(hvg_out_no_spikes)
 
-hvg_out_no_spikes_mouseid <- var_out_no_spikes_mouseid[which(var_out_no_spikes_mouseid$FDR <= 0.05 & var_out_no_spikes_mouseid$bio > 0), ]
+hvg_out_no_spikes_mouseid <- var_out_no_spikes_mouseid[which(var_out_no_spikes_mouseid$FDR <= 0.05 & var_out_no_spikes_mouseid$bio > 0.5), ]
 nrow(hvg_out_no_spikes_mouseid)
 
-hvg_out_no_spikes_batch <- var_out_no_spikes_batch[which(var_out_no_spikes_batch$FDR <= 0.05 & var_out_no_spikes_batch$bio > 0), ]
+hvg_out_no_spikes_batch <- var_out_no_spikes_batch[which(var_out_no_spikes_batch$FDR <= 0.05 & var_out_no_spikes_batch$bio > 0.5), ]
 nrow(hvg_out_no_spikes_batch)
 ```
 
@@ -311,7 +311,7 @@ Before moving on to downstream analysis, we consider dropping any Ribosomal, Mit
 # Identify the genes we want to drop:
 is_X_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X") # Find which genes correspond to chromosome X 
 is_Y_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y") # Find which genes correspond to chromosome Y
-is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find which genes correspond to feature controls (Ribosomal, Mitochondrial, ERCC, transgenes)
+is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find genes assigned to feature controls (ERCC, Mitochondrial, Ribosomal, tdTomato, EYFP, Cre, TSO concatamers, VGAT, VGluT2)
 
 filter_genes_qc_norm <- !(is_X_qc_norm | is_Y_qc_norm | is_feature_control_qc_norm)
 
@@ -323,25 +323,31 @@ dim(PAG_sceset_qc_norm_filt)
 # Apply the filter to the HVGs:
 filt_hvg_1 <- rownames(hvg_out_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
 hvg_out_spikes_filt <- hvg_out_spikes[filt_hvg_1, ]
+nrow(hvg_out_spikes_filt)
 
 filt_hvg_2 <- rownames(hvg_out_spikes_mouseid) %in% rownames(PAG_sceset_qc_norm_filt)
 hvg_out_spikes_mouseid_filt <- hvg_out_spikes_mouseid[filt_hvg_2,]
+nrow(hvg_out_spikes_mouseid_filt)
 
 filt_hvg_3 <- rownames(hvg_out_spikes_batch) %in% rownames(PAG_sceset_qc_norm_filt)
 hvg_out_spikes_batch_filt <- hvg_out_spikes_batch[filt_hvg_3,]
+nrow(hvg_out_spikes_batch_filt)
 
 filt_hvg_4 <- rownames(hvg_out_no_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
 hvg_out_no_spikes_filt <- hvg_out_no_spikes[filt_hvg_4,]
+nrow(hvg_out_no_spikes_filt)
 
 filt_hvg_5 <- rownames(hvg_out_no_spikes_mouseid) %in% rownames(PAG_sceset_qc_norm_filt)
 hvg_out_no_spikes_mouseid_filt <- hvg_out_no_spikes_mouseid[filt_hvg_5,]
+nrow(hvg_out_no_spikes_mouseid_filt)
 
 filt_hvg_6 <- rownames(hvg_out_no_spikes_batch) %in% rownames(PAG_sceset_qc_norm_filt)
 hvg_out_no_spikes_batch_filt <- hvg_out_no_spikes_batch[filt_hvg_6,]
+nrow(hvg_out_no_spikes_batch_filt)
 ```
 
 #### 4a.2.2 | Visualize, store, and export HVGs
-Now that we have removed thegenes we are not interested in, we can use `limma` and `vennDiagram` to compare how many genes we get in each condition with or without spike-ins, and with or without blocking:
+Now that we have removed the genes we are not interested in, we can use `limma` and `vennDiagram` to compare how many genes we get in each condition with or without spike-ins, and with or without blocking:
 ```{r}
 library(limma)
 #####
@@ -491,6 +497,13 @@ One reason to use the variance of the log-expression values is the fact that the
 * the dispersion parameter in the negative binomial distribution, using the `estimateDisp()` function in _edgeR_ (McCarthy, Chen, and Smyth 2012).
 * a proportion of total variability, using methods in the _BASiCS_ package (Vallejos, Marioni, and Richardson 2015).
 
+## Step 4a.3 | Save the filtered SCE object
+```{r}
+# Save the filtered data:
+saveRDS(PAG_sceset_qc_norm_filt, file = "PAG_sceset_qc_norm_filt.rds")
+print("Part 4 - Done!")
+```
+
 # STEP 5 | Identifying confounding factors and correcting batch effects factors
 To account for technical confounders we need to identify and remove sources of variation in the expression data that are not related to the biological signal of interest. We could use spike-ins for this (in theory you add the same amount of ERCC in each cell lysate, so any variability should be technical noise), but these can turn out to be extremely variable across cells. Instead, we could use endogenous or housekeeping genes that do not vary systematically between cells. Where we have a large number of endogenous genes that, on average, do not vary systematically between cells and where we expect technical effects to affect a large number of genes (a very common and reasonable assumption), then such methods of batch correction can perform well.
 
@@ -554,7 +567,7 @@ plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
 
 We can see that the two variables standing out are `batch.processing` and `mouse.id`. This makes perfect sense, as they illustrate how the cells were acquired and processed. Due to the way we isolated cells, however, `mouse.id` is confounded with `cell.type`: each transgenic mouse labeled either VGAT or VGluT2 neurons, which means that if we regress out the variability in `mouse.id` we will also be removing much of the biology linked to the `cell.type` that came from each mouse.
 
-A better option would be to regress out the `batch.processing`, but only half of our samples were assigned to a balanced design. For the other half, all the cells obtained from the same animal were processed together, thereby confounding the `batch.processing` with the `mouse.id` (and by extension with `cell.type`) and leading to a similar scenario as above. 
+A better option would be to regress out the `batch.processing`, but only half of our samples were assigned to a balanced design. For the other half, all the cells obtained from the same animal were processed together, thereby confounding the `batch.processing` with the `mouse.id` (and by extension with `cell.type`) and leading to a similar scenario as above. However, this might be the best option we have, so we will regress out `batch.processing` and compare the results without the correction.
 
 ## Step 5.2 | Batch Correction (dealing with confounders)
 Computational correction of these effects is critical for eliminating batch-to-batch variation, allowing data across multiple batches to be combined for valid downstream analysis. One method to achieve this is `removeBatchEffect()` from the __limma__ package (Ritchie et al. 2015). `removeBatchEffect()` performs a linear regression and sets the coefficients corresponding to the blocking factors to zero. This is effective provided that the population composition within each batch is either known (and supplied as `design=`) or identical across batches. In our case we know exactly which cell type ended up in each batch. 
@@ -575,6 +588,8 @@ assayNames(PAG_sceset_qc_norm_filt)
 
 ### 5.2.2 | Effectiveness of the correction
 We can evaluate the effectiveness of the correction by inspecting the PCA plot where colour corresponds the technical replicates and shape corresponds to the individuals from which biological samples where acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed.
+
+*[IMP]*: If `feature_set=NULL`, the `ntop` features with the largest variances are used instead. This literally computes the variances from the expression values without considering any mean-variance trend. Note that the value of `ntop` is ignored if `feature_set` is specified. Given that we have fitted a mean-variance trend and obtained highly variable genes from it, we will use our HVG instead of using the `ntop` option.
 ```{r}
 for(n in assayNames(PAG_sceset_qc_norm_filt)) {
     print(
@@ -584,26 +599,39 @@ for(n in assayNames(PAG_sceset_qc_norm_filt)) {
             colour_by = "PAG.areacollection",
             shape_by = "cell.type",
             size_by = "total_features_by_counts",
-            run_args=list(exprs_values = n)
-        ) +
-        ggtitle(n)
+            run_args = list(exprs_values = n, feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt[1:1000]) # ntop = 1000
+        ) + ggtitle(n) 
+        + coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+        #+ coord_cartesian(xlim = c(-50, 50), ylim = c(-60, 60))
     )
 }
 ```
 
 ```{r}
+# How much of the variance does each variable explain? Some of these variables are calculated when we run the CalculateQC function from scater, and others are added by us in the metadata (such as batch or individual).
 for(n in assayNames(PAG_sceset_qc_norm_filt)) {
     print(
-        plotPCA(
-            PAG_sceset_qc_norm_filt,
-            rerun = TRUE, 
-            colour_by = "PAG.areacollection",
-            shape_by = "cell.type",
-            size_by = "total_features_by_counts",
-            run_args=list(exprs_values = n, feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
-        ) +
-        ggtitle(n)
-    )
+      plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
+                               nvars_to_plot = 16,
+                               exprs_values = n,
+                               variables = c("mouse.id",
+                                             "mouse.sex",
+                                             "mouse.age",
+                                             "mouse.singlehousedays",
+                                             "cell.type",
+                                             "cell.fluorophor",
+                                             "slice.number",
+                                             "slice.depth",
+                                             "PAG.areacollection",
+                                             "PAG.hemisphere",
+                                             "PAG.APaxis",
+                                             "time.sinceslicinghour",
+                                             "batch.processing",
+                                             "batch.sequencing_round",
+                                             "total_features_by_counts",
+                                             "total_counts")
+                               ) + ggtitle(n)
+      ) 
 }
 ```
 
@@ -612,7 +640,7 @@ for(n in assayNames(PAG_sceset_qc_norm_filt)) {
 ```{r}
 plotExplanatoryPCs(PAG_sceset_qc_norm_filt,
                    nvars_to_plot = 16,
-                   npcs_to_plot = 50,                 
+                   npcs_to_plot = 20,                 
                    variables = c("mouse.id",
                                  "mouse.sex",
                                  "mouse.age",
@@ -633,13 +661,6 @@ plotExplanatoryPCs(PAG_sceset_qc_norm_filt,
                    )
 ```
 
-We can also look at the proportion of variance explained by each PC and keep the components before the "elbow":
-```{r}
-principal_components <- reducedDim(PAG_sceset_qc_norm_filt, "PCA")
-proportion_var <- attr(principal_components, "percentVar")
-plot(proportion_var, xlab="PC", ylab="Proportion of variance explained")
-```
-
 ## Step 5.4 | Denoising expression values using PCA
 Once the technical noise is modelled and we have corrected our batch effects, we can use principal component analysis (PCA) to remove random technical noise. Consider that each cell represents a point in the high-dimensional expression space, where the spread of points represents the total variance. PCA identifies axes in this space that capture as much of this variance as possible. Each axis is a principal component (PC), where any early PC will explain more of the variance than a later PC.
 
@@ -652,200 +673,34 @@ We use all genes with a positive biological component in `denoisePCA` and perfor
 * No filtering is performed on abundance here, which ensures that PCs corresponding to rare subpopulations can still be detected. Discreteness is less of an issue as low-abundance genes also have lower variance, thus reducing their contribution to the PCA.
 * It is also possible to obtain a low-rank approximation of the original expression matrix, capturing the variance equivalent to the retained PCs. This is useful for denoising prior to downstream procedures that require gene-wise expression values.
 ```{r}
-PAG_sceset_qc_norm_filt <- denoisePCA(PAG_sceset_qc_norm_filt, 
-                                      technical = var_out_no_spikes, 
-                                      assay.type = "corrected") # try "logcounts" as well
+# We need to remove the genes we filtered from the var_out object, otherwise the dimensions between var_out and PAG_sceset_qc_norm_filt will be different and denoisePCA will not work
+dim(PAG_sceset_qc_norm_filt)
+dim(var_out_no_spikes)
+var_out_no_spikes$filter <- rownames(var_out_no_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
+dim(var_out_no_spikes)
+var_out_no_spikes_filt <- var_out_no_spikes[var_out_no_spikes$filter==TRUE, ]
+nrow(var_out_no_spikes_filt)
 
-dim(reducedDim(PAG_sceset_qc_norm, "PCA")) # Cells are rows, PCs are columns
+# Run denoisePCA
+PAG_sceset_qc_norm_filt_corr <- denoisePCA(PAG_sceset_qc_norm_filt,
+                                           technical = var_out_no_spikes_filt, 
+                                           assay.type = "corrected")
+
+dim(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA")) # Cells are rows, PCs are columns
 ```
 
 The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
 
+We can also look at the proportion of variance explained by each PC and keep the components before the "elbow":
+```{r}
+principal_components <- reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA")
+proportion_var <- attr(principal_components, "percentVar")
+plot(proportion_var, xlab="PC", ylab="Proportion of variance explained")
+```
+
 ## Step 5.5 | Save the filtered, corrected, and denoised SCE object
 ```{r}
 # Save the normalized data:
-saveRDS(PAG_sceset_qc_norm_filt, file = "PAG_sceset_qc_norm_filt.rds")
-print("Parts 4 and 5 - Done!")
+saveRDS(PAG_sceset_qc_norm_filt_corr, file = "PAG_sceset_qc_norm_filt_corr.rds")
+print("Part 5 - Done!")
 ```
-
-# STEP 6 | Data exploration
-## Step 6.1 | Visualizing data in low-dimensional space with PCA
-Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components (PCs). The number of principal components is less than or equal to the number of original variables. Mathematically, the PCs correspond to the eigenvectors of the covariance matrix. The eigenvectors are sorted by eigenvalue so that the first principal component accounts for as much of the variability in the data as possible, and each succeeding component in turn has the highest variance possible under the constraint that it is orthogonal to the preceding components.
-
-We can apply PCA to visualize the relationships between cells in our dataset. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Ideally, we do this using the `logcounts` of our `SingleCellExperiment` object. Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. BUT - log-transformation is not a proper normalisation step and is not enough to account for different technical factors between the cells (e.g. sequencing depth). Therefore, we should not use `logcounts_raw` for our downstream analysis, but instead use the __logcounts__ slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalised by library size. By default `scater` only uses the top 500 most variable genes to calculate the PCA, but this can be adjusted by changing the __ntop__ argument. We can also choose to only use our HVGs, or any given list of genes we may obtain by other feature selection strategies.
-
-We can use PCA to compare the effects of our normalisation and batch correction. If we plot the PCAs using the `size_by = total_features_by_counts` we can assess whether the total features correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
-```{r}
-set.seed(1991)
-
-# Without log-transformation
-pca1 <- plotPCA(PAG_sceset_qc_norm_filt,
-                rerun = TRUE,
-                run_args = list(exprs_values="counts"),
-                colour_by = "cell.type",
-                size_by = "total_features_by_counts"
-                ) + ggtitle("Raw counts")
-
-# With log-transformation
-pca2 <- plotPCA(PAG_sceset_qc_norm_filt, 
-                rerun = TRUE,
-                run_args = list(exprs_values="logcounts_raw"),
-                colour_by = "cell.type",
-                size_by = "total_features_by_counts"
-                ) + ggtitle("Logcounts Raw")
-
-# After scran normalisation
-pca3 <- plotPCA(PAG_sceset_qc_norm_filt,    
-                rerun = TRUE,
-                run_args = list(exprs_values="logcounts"), # list(ntop = 200, exprs_values = "logcounts", feature_set = chosen),
-                colour_by = "cell.type",
-                size_by = "total_features_by_counts"
-                ) + ggtitle("Scran")
-
-# After removeBatchEffect correction
-pca4 <- plotPCA(PAG_sceset_qc_norm_filt, 
-                rerun = TRUE, 
-                run_args = list(exprs_values = "corrected"),
-                colour_by = "cell.type",
-                size_by = "total_features_by_counts"
-                ) + ggtitle("Batch Corrected")
-
-
-multiplot(pca1, pca2, pca3, pca4, cols=2)
-```
-
-We can also visualize the relationships between cells by constructing pairwise PCA plots for the first components. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Additional components can be visualized by increasing the `ncomponents` argument in `plotPCA` to construct pairwise plots. The percentage of variance explained by each component can also be obtained by running `plotPCA` with `return_SCESet = TRUE`, and then calling `reducedDimension` on the returned object. This information may be useful for selecting high-variance components (possibly corresponding to interesting underlying factors) for further examination.
-```{r}
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               use_dimred = "PCA",
-               ncomponents = 4,
-               colour_by="batch.processing") + fontsize
-```
-
-Note that `plotReducedDim()` will use the PCA results that were already stored in `SCE` by `denoisePCA()` or any other instance of `runPCA()`. This allows us to rapidly generate new plots with different aesthetics, without repeating the entire PCA computation. Similarly, `plotPCA()` will use existing results if they are available in the `SingleCellExperiment`, and will recalculate them otherwise. If we want, we can set `rerun=TRUE` to forcibly recalculate the PCs in the presence of existing results. Additional cell-specific information can be incorporated into the size or shape of each point (e.g. `size_by=` and `shape_by=` arguments).
-
-We can also perform dimensionality reduction using our HVGs subset. To do this, we first calculate the PCA representation via the `runPCA()` function from the `scater` package. We will calculate 50 components on our highly variable genes. The results of these calculations will be stored in the `reducedDims` slot. This method saves the percent variance explained per component as an attribute, which can be accessed and subsequently ploted using the “elbow plot” as follows:
-```{r}
-PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt, 
-                                  ncomponents = 50,
-                                  ntop = 2743, 
-                                  exprs_values = "logcounts",
-                                  feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
-reducedDimNames(PAG_sceset_qc_norm_filt)
-plotReducedDim(PAG_sceset_qc_norm_filt, use_dimred="PCA", colour_by = "Slc32a1", shape_by = "cell.type", size_by = "total_features_by_counts")
-
-# Elbow plot
-pct_var_explained <- attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA"), "percentVar")
-plot(pct_var_explained)
-```
-
-## Step 6.2 | Visualizing data in low-dimensional space with t-SNE
-Another widely used approach for dimensionality reduction is the t-stochastic neighbour embedding (t-SNE) method (Van der Maaten and Hinton 2008). tSNE combines dimensionality reduction with random walks on the nearest-neighbour network to map high dimensional data to a 2-dimensional space while preserving local distances between cells. t-SNE tends to work better than PCA for separating cells in more diverse populations. This is because the former can directly capture non-linear relationships in high-dimensional space, whereas the latter must represent them (suboptimally) as linear components. However, this improvement comes at the cost of more computational effort and complexity. In particular, the non-linear and stochastic nature of the algorithm means that running it multiple times on the same dataset will result in different plots, making the results more difficult to intuitively interpret. Users should thus run the algorithm several times to ensure that the results are representative, and then set a `seed` to ensure that the chosen results are reproducible. It is also advisable to test different settings of the `perplexity` parameter as this will affect the distribution of points in the low-dimensional space.
-
-tSNE plots are good for visualising your data, but should *NOT* be used for clustering. Furthermore, tSNE requires you to provide a value of `perplexity` which reflects the number of neighbours used to build the nearest-neighbour network - a high value creates a dense network which clumps cells together, whereas a low value makes the network more sparse allowing groups of cells to separate from each other. `scater` uses a default `perplexity` equal to the total number of cells divided by five (rounded down). You should try different perplexities and run it several times to make sure you are not getting a weird result. If your data are very homogeneous the tSNE plots are going to be hard to interpret, whereas if they contain very well defined clusters it will visualize them very nicely.
-
-We can use the `plotTSNE()` function and set `use_dimred="PCA"` to perform the t-SNE on the low-rank approximation of the data, allowing the algorithm to take advantage of the previous denoising step.
-```{r}
-set.seed(1991)
-chosen <- rownames(PAG_sceset_qc_norm_filt) %in% metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt 
-
-# Consider playing with the ntop, n_dimred, perplexity, and theta arguments.
-tsne_p5 <- plotTSNE(PAG_sceset_qc_norm_filt, 
-                    rerun = TRUE,
-                    run_args = list(ncomponents = 2, ntop = 1000, feature_set = chosen, exprs_values = "corrected", 
-                                    use_dimred = "PCA", n_dimred = 20, perplexity = 5, theta = 0.5),
-                    colour_by = "batch.processing") + fontsize + ggtitle("Perplexity = 5")
-# theta - numeric; Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
-tsne_p10 <- plotTSNE(PAG_sceset_qc_norm_filt, 
-                     rerun = TRUE,
-                     run_args = list(ncomponents = 2, ntop = 1000, feature_set = chosen, exprs_values = "corrected", 
-                                     use_dimred = "PCA", n_dimred = 20, perplexity = 10, theta = 0.5),
-                     colour_by = "cell.type") + fontsize + ggtitle("Perplexity = 10")
-
-tsne_p20 <- plotTSNE(PAG_sceset_qc_norm_filt,
-                     rerun = TRUE,
-                     run_args = list(ncomponents = 2, ntop = 1000, feature_set = chosen, exprs_values = "corrected", 
-                                     use_dimred = "PCA", n_dimred = 20, perplexity = 20, theta = 0.5),
-                     colour_by = "PAG.areacollection") + fontsize + ggtitle("Perplexity = 20")
-
-tsne_p50 <- plotTSNE(PAG_sceset_qc_norm_filt,
-                     rerun = TRUE,
-                     run_args = list(ncomponents = 2, ntop = 1000, feature_set = chosen, exprs_values = "corrected", 
-                                     use_dimred = "PCA", n_dimred = 20, perplexity = 50, theta = 0.5),
-                     colour_by = "mouse.id") + fontsize + ggtitle("Perplexity = 50")
-
-multiplot(tsne_p5, tsne_p10, tsne_p20, tsne_p50, cols = 2)
-reducedDimNames(PAG_sceset_qc_norm_filt)
-```
-
-Once we have the right settings, we can use `runTSNE()` to store the t-SNE results inside our `SingleCellExperiment` object. This avoids repeating the calculations whenever we want to create a new plot with `plotTSNE()`, as the stored results will be used instead. Again, users can set `rerun=TRUE` to force recalculation in the presence of stored results.
-```{r}
-set.seed(1991)
-PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt, 
-                                   rerun = TRUE,
-                                   use_dimred="PCA", 
-                                   run_args = list(ncomponents = 2, ntop = 1000, feature_set = chosen, exprs_values = "corrected", 
-                                                   use_dimred = "PCA", n_dimred =20, perplexity = 5, theta = 0.5)
-                                   )
-
-plotTSNE(PAG_sceset_qc_norm_filt, colour_by="Gad1", shape_by="cell.type")
-reducedDimNames(PAG_sceset_qc_norm_filt)
-```
-
-## Step 6.3 | Visualizing data in low-dimensional space with uMAP
-An alternative to calculate a 2-dimensional representation of the data is uniform manifold approximation and projection (uMAP), from [McInnes L, Healy J (2018). UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction. arXiv](https://arxiv.org/abs/1802.03426). We can choose to use the top 20 components of our PCA result to compute the UMAP representation.
-```{r}
-PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt, 
-                                   rerun = TRUE,
-                                   use_dimred = 'PCA', 
-                                   n_dimred = 20,
-                                   run_args = list(exprs_values = "logcounts"),
-                                   colour_by = "batch.processing", # You can also choose a specific gene (e.g. "Gad1") or shape_by = "cell.type"
-                                   shape_by="cell.type")
-
-plotUMAP(PAG_sceset_qc_norm_filt, 
-         colour_by = "batch.processing") # You can also choose a specific gene (e.g. "Gad1") or shape_by = "cell.type"
-```
-
-## Step 6.4 | Other approaches to data exploration
-### 6.4.1 | Heatmaps using HVGs
-We can visualize the expression profiles of the HVGs with a heatmap. All expression values are mean-centred for each gene to highlight the relative differences in expression between cells. If any subpopulations were present, they would manifest as rectangular "blocks" in the heatmap, corresponding to sets of genes that are systematically up- or down-regulated in specific groups of cells. 
-```{r}
-chosen <- rownames(PAG_sceset_qc_norm_filt) %in% metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt 
-norm.exprs <- exprs(PAG_sceset_qc_norm_filt)[chosen,,drop=FALSE] 
-heat.vals <- norm.exprs - rowMeans(norm.exprs) 
-library(gplots) 
-heat.out <- heatmap.2(heat.vals, col=bluered, symbreak=TRUE, trace='none', cexRow=0.6)
-```
-
-### 6.4.2 | Clustering
-```{r}
-set.seed(1991)
-start_time <- Sys.time() # Takes around 5s
-
-snng <- buildSNNGraph(PAG_sceset_qc_norm_filt, k = 50, d = 20)
-snng_clusters <- igraph::cluster_louvain(snng)
-table(snng_clusters$membership)
-colData(PAG_sceset_qc_norm_filt)$clusters <- as.factor(snng_clusters$membership)
-plotUMAP(PAG_sceset_qc_norm_filt, colour_by = "clusters")
-
-end_time <- Sys.time()
-end_time - start_time
-```
-
-### 6.4.3 | Differential Expression
-```{r}
-markers <- findMarkers(PAG_sceset_qc_norm_filt, 
-                       clusters = colData(PAG_sceset_qc_norm_filt)$clusters,
-                       subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt[1:250],
-                       lfc = 1.5, 
-                       direction = 'up', 
-                       log.p = TRUE)
-markers[[1]][1:5, ]
-plotExpression(PAG_sceset_qc_norm_filt, 'Gad1', x = 'clusters')
-```
-
-### 6.4.4 | iSEE - interactive SummarizedExperiment Explorer
-`iSEE` is a package that provides functions for creating an interactive Shiny-based graphical user interface for exploring data stored in `SummarizedExperiment` objects, including row- and column-level metadata. Particular attention is given to single-cell data in a `SingleCellExperiment` object with visualization of dimensionality reduction results.
-
-Citation: Rue-Albrecht K, Marini F, Soneson C, Lun ATL (2018). "iSEE: Interactive SummarizedExperiment Explorer." F1000Research, 7, 741. doi: 10.12688/f1000research.14966.1.
