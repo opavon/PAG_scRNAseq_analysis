@@ -675,7 +675,6 @@ MAST is based on a zero-inflated negative binomial model. It tests for different
 ## STEP 6.6: BPSC [not yet implemented]
 BPSC uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we’ve already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group (“control”) and can include other factors such as batches in the model.
 
-
 # STEP X | OTHER TOOLs ANALYSIS STEPS
 ## STEP X.1 | Explore and compare dimensionality reduction approaches with Sleepwalk
 Website: https://anders-biostat.github.io/sleepwalk/
