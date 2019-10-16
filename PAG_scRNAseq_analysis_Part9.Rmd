@@ -2660,4 +2660,53 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$PAG.area
             show_colnames = FALSE,
             main = "Expression of Neuropeptides in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
             )
+
+plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$PAG.areacollection=="vlpag" & PAG_sceset_qc_norm_filt_corr$cell.type=="VGAT"], DataClub_neuropeptides,
+                 exprs_values = "logcounts", 
+                 center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, #zlim = c(0,10), 
+                 color = colorRampPalette(c("white", "#8B6A06"))(100), border_color = NA, 
+                 #colour_columns_by = "cell.type", 
+                 fontsize = 12,# cellwidth = 2, cellheight = 3, 
+                 show_colnames = FALSE,
+                 main = "Expression of Neuropeptides in vlPAG cells"#, width = 50, height = 20, filename = "PAG.pdf"
+            )
 ```
+
+```{r}
+heatcolor_VGAT <- colorRampPalette(c("white", "#ff777c"))(100)
+heatcolor_VGluT2 <- colorRampPalette(c("white", "#009CB5"))(100)
+
+for(celltype in levels(PAG_sceset_qc_norm_filt_corr$cell.type)){
+  plot <- plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cell.type==celltype], DataClub_neuropeptides,
+                      exprs_values = "logcounts", 
+                      center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10),
+                      color = eval(parse(text=paste("heatcolor_", celltype, sep = ""))), border_color = NA,              
+                      fontsize = 12,# cellwidth = 2, cellheight = 3, 
+                      show_colnames = FALSE,             
+                      main = paste("Expression of Neuropeptides in", celltype, "cells"))
+  print(plot)
+  }
+
+for(area in levels(PAG_sceset_qc_norm_filt_corr$PAG.areacollection)[2:5]){
+  plot <- plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$PAG.areacollection==area & PAG_sceset_qc_norm_filt_corr$cell.type=="VGAT"], DataClub_neuropeptides,
+                      exprs_values = "logcounts", 
+                      center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10),
+                      color = heatcolor_VGAT, border_color = NA,              
+                      fontsize = 12,# cellwidth = 2, cellheight = 3, 
+                      show_colnames = FALSE,             
+                      main = paste("Expression of Neuropeptides in", area, "VGAT cells"))
+  print(plot)
+  }
+
+for(area in levels(PAG_sceset_qc_norm_filt_corr$PAG.areacollection)[2:5]){
+  plot <- plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$PAG.areacollection==area & PAG_sceset_qc_norm_filt_corr$cell.type=="VGluT2"], DataClub_neuropeptides,
+                      exprs_values = "logcounts", 
+                      center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,10),
+                      color = heatcolor_VGluT2, border_color = NA,              
+                      fontsize = 12,# cellwidth = 2, cellheight = 3, 
+                      show_colnames = FALSE,             
+                      main = paste("Expression of Neuropeptides in", area, "VGluT2 cells"))
+  print(plot)
+  }
+```
+
