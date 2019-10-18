@@ -530,6 +530,7 @@ summary(PAG_sceset_qc_norm_filt$cell.type)
 summary(PAG_sceset_qc_norm_filt$PAG.hemisphere)
 summary(PAG_sceset_qc_norm_filt$PAG.areacollection)
 summary(PAG_sceset_qc_norm_filt$mouse.sex)
+summary(PAG_sceset_qc_norm_filt$PAG.arearegistration)
 ```
 
 ### 5.1.2 | Checking for important technical factors or explanatory variables
