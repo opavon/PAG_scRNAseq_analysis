@@ -28,20 +28,31 @@ Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA
 ***
 
 # STEP 8 | Differential Expression Analysis
-One of the most common types of analyses when working with bulk RNA-seq data is to identify differentially expressed genes. By comparing the genes that change between two conditions, e.g. mutant and wild-type or stimulated and unstimulated, it is possible to characterize the molecular mechanisms underlying the change. Several different methods, e.g. DESeq2 and edgeR, have been developed for bulk RNA-seq. 
+One of the most common types of analyses when working with bulk RNA-seq data is to identify differentially expressed genes. By comparing the genes that change between two conditions, e.g. mutant and wild-type or stimulated and unstimulated, it is possible to characterize the molecular mechanisms underlying the change. Several different methods, e.g. `DESeq2` and `edgeR`, have been developed for bulk RNA-seq. 
 
-In scRNA-seq we usually do not have a defined set of experimental conditions. Instead, we can identify the cell groups by using an unsupervised clustering approach. Once the groups have been identified one can find differentially expressed genes either by comparing the differences in variance between the groups (like the Kruskal-Wallis test implemented in SC3), or by comparing gene expression between clusters in a pairwise manner.
+In scRNA-seq we usually do not have a defined set of experimental conditions. Instead, we can identify the cell groups by using an unsupervised clustering approach. Once the groups have been identified one can find differentially expressed genes either by comparing the differences in variance between the groups (like the Kruskal-Wallis test implemented in `SC3`), or by comparing gene expression between clusters in a pairwise manner.
 
 The most common model of RNASeq data is the negative binomial model. However, a raw negative binomial model does not fit full-length transcript data as well due to the high dropout rates relative to the non-zero read counts. For this type of data a variety of zero-inflated negative binomial models have been proposed (e.g. MAST, SCDE). The model that makes more biological sense and with more experimental support (Kim and Marioni, 2013) is the Poisson-Beta distribution, based on a mechanistic model of transcriptional bursting.
+
+We continue using the `PAG_sceset_qc_norm_filt_corr` after normalization, filtering, and batch correction. We should thus have a `corrected` slot in `assays`:
 ```{r}
-# Load libraries:
+set.seed(1991)
+library(scater)
+library(SingleCellExperiment)
+library(pheatmap)
 library(DESeq2)
 library(edgeR)
 library(limma)
-set.seed(1991)
+library(monocle)
+library(MAST)
+library(ROCR)
+
+PAG_sceset_qc_norm_filt_corr <- readRDS("PAG_sceset_qc_norm_filt_corr.rds") # Contains filtered cells and genes, and normalized data
+assayNames(PAG_sceset_qc_norm_filt_corr)
+PAG_sceset_qc_norm_filt_corr
 ```
 
-## Step 10.1 | Hemberg Lab - scRNAseq Course
+## Step 8.1 | Hemberg Lab - scRNAseq Course
 The main argument against using non-parametric tests is that scaling normalization does not adjust for differences in the distributions, which results in incorrect rejection of the null hypothesis in fairly innocuous cases (see Aaron Lun's github: https://github.com/LTLA/SingleCellThoughts/blob/master/workflows/de.Rmd). Also, from Soneson et al 2018, the main drawback is that these methods don't allow for complex designs.
 
 ### Kolmogorov-Smirnov test (non-parametric)
@@ -89,7 +100,7 @@ length(significant_DE_genes_W)
 ```
 
 ### edgeR
-edgeR is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as batch to the model.
+`edgeR` is a method originally designed for bulkRNAis. It is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as `batch` to the model.
 ```{r}
 counts_PAG <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
 dge <- DGEList(
@@ -127,37 +138,35 @@ cond <- factor(colData(obj)$cond)
 zlmCond <- zlm.SingleCellAssay(~ cond + cngeneson, obj) 
 ```
 
-## Step 10.2 | EBI-EMBL Differential Expression RNAseq workflow (Charlotte Soneson)
+## Step 8.2 | EBI-EMBL Differential Expression RNAseq workflow (Charlotte Soneson)
 Count-based statistical methods such as _DESeq2_ (Love, Huber, and Anders 2014), _edgeR_ (Robinson, McCarthy, and Smyth 2009), _limma_ with the _voom_ method (Law et al. 2014), _DSS_ (Wu, Wang, and Wu 2013), _EBSeq_ (Leng et al. 2013), _BaySeq_ (Hardcastle and Kelly 2010) and _DEXSeq_ (Anders, Reyes, and Huber 2012) expect input data as obtained, e.g., from RNA-seq or another high-throughput sequencing experiment in the form of a matrix of integer values, or `counts`. The value in the i-th row and the j-th column of the matrix tells how many reads (or fragments, for paired-end RNA-seq) have been assigned to feature i in sample j. For RNA-seq, a feature is typically a gene, a transcript or an exon.
 
 The fact that the values in the matrix are counts of sequencing reads (in the case of single-end sequencing) or fragments (for paired-end sequencing) is important for the count-based statistical models, e.g. _DESeq2_ or _edgeR_, as only the counts allow assessing the measurement precision correctly. It is important to _never_ provide counts that have been normalized for sequencing depth/library size to these packages, as the statistical model is most powerful when applied to counts, and is designed to account for library size differences internally.
 
 An alternative to using actual counts of reads or fragments aligned to the genome is to use estimated counts from software that use pseudo-alignment to the transcriptome. Since these represent expected counts rather than observed counts they are not necessarily integers, and thus may need to be rounded before they are fed to the count-based pipelines. In any case, we start the DE workflow from a gene-vs-sample matrix, where raw reads have been quality controlled and gene expression quantified.
+
 ```{r}
 # Round the counts to ensure they are integers:
-PAG_DE_counts <- round(assay(PAG_sceset_qc, "counts")) # NOT the normalized counts
-head(PAG_DE_counts)
+assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded") <- round(assay(PAG_sceset_qc_norm_filt_corr, "counts")) # NOT the normalized counts
+PAG_sceset_qc_norm_filt_corr
 
 # Quickly check the millions of reads that uniquely aligned to the genes (the second argument of round tells how many decimal points to keep).
-# round( colSums(assay(PAG_DE_counts)) / 1e6, 1 )
-
+round(colSums(assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded")) / 1e6, 1 )
 ```
 
 Read the relevant metadata, converting the key annotations `factor`:
 ```{r}
-PAG_DE_metadata <- PAG_metadata # Alternatively use colData(PAG_sceset_qc)
-PAG_DE_metadata
-rownames(PAG_DE_metadata)
+# Check you have the relevant metadata as factors:
+head(colnames(colData(PAG_sceset_qc_norm_filt_corr)))
 
-# Factorize the relevant annotations for proper usage within the DE packages:
-PAG_DE_metadata$mouse.id <- factor(PAG_DE_metadata$mouse.id)
-PAG_DE_metadata$cell.type <- factor(PAG_DE_metadata$cell.type)
-PAG_DE_metadata$PAG.areacollection <- factor(PAG_DE_metadata$PAG.areacollection)
+class(PAG_sceset_qc_norm_filt_corr$mouse.id)
+class(PAG_sceset_qc_norm_filt_corr$cell.type)
+class(PAG_sceset_qc_norm_filt_corr$PAG.areacollection)
 ```
 
-Once we have a gene-level count matrix and the relevant metadata we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. DESeq2 uses a `DESeqDataSet` and edgeR uses a `DGEList`.
+Once we have a gene-level count matrix and the relevant metadata we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. `DESeq2` uses a `DESeqDataSet` and `edgeR` uses a `DGEList`.
 
-### 10.2.1 | DEseq2: the DESeqDatSet
+### 8.2.1 | DEseq2: the DESeqDatSet
 In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of the _SummarizedExperiment_ class, and it is easy to convert _SummarizedExperiment_ objects into _DESeqDataSet_ objects. 
 
 * One of the two main differences compared to a _SummarizedExperiment_ object is that the `assay` slot is instead accessed using the `counts` accessor function, and the _DESeqDataSet_ class enforces that the values in this matrix are non-negative integers.
@@ -564,7 +573,7 @@ plot(rank(PAG_DESeq_results$pvalue[match(PAG_DE_shared, rownames(PAG_DESeq_resul
      cex = 0.1, xlab = "DESeq2", ylab = "edgeR")
 ```
 
-## Step 10.3 | simpleSingleCell Workflow - Limma-voom
+## Step 8.3 | simpleSingleCell Workflow - Limma-voom
 We use the raw counts here.
 ```{r}
 library(limma)
@@ -624,7 +633,7 @@ By and large, this effect does not cause problems for marker gene detection as t
 
 To overcome this conceptual hurdle, we need to annotate our clusters based on a few marker genes. This allows us to use the annotated clusters as proxies for the true (and presumably reproducible) biological subpopulations. We might then be tempted to interpret the significant genes as being DE between subpopulations. However, this would result in loss of error control when the clusters are not stable, due to overfitting of the cluster definitions for true null genes. This effect is exacerbated as the clusters become more unstable, e.g., due to poor separation between the underlying populations.
 
-## Step 10.4 | RNAseq123 Workflow
+## Step 8.4 | RNAseq123 Workflow
 The [RNAseq123 Workflow](https://bioconductor.org/packages/release/workflows/html/RNAseq123.html) uses the _edgeR_ package (Robinson, McCarthy, and Smyth 2010) to import, organise, filter and normalise the data, and the _limma_ package (Ritchie et al. 2015) with its _voom_ method for linear modelling and empirical Bayes moderation to assess differential expression and perform gene set testing.
 ```{r}
 library(limma)
