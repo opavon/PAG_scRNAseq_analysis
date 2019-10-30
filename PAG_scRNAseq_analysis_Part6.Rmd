@@ -161,7 +161,7 @@ head(colnames(colData(PAG_sceset_qc_norm_filt_corr)))
 
 class(PAG_sceset_qc_norm_filt_corr$mouse.id)
 class(PAG_sceset_qc_norm_filt_corr$cell.type)
-class(PAG_sceset_qc_norm_filt_corr$PAG.areacollection)
+class(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 ```
 
 Once we have a gene-level count matrix and the relevant metadata we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. `DESeq2` uses a `DESeqDataSet` and `edgeR` uses a `DGEList`.
@@ -170,43 +170,58 @@ Once we have a gene-level count matrix and the relevant metadata we can branch o
 In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of the _SummarizedExperiment_ class, and it is easy to convert _SummarizedExperiment_ objects into _DESeqDataSet_ objects. 
 
 * One of the two main differences compared to a _SummarizedExperiment_ object is that the `assay` slot is instead accessed using the `counts` accessor function, and the _DESeqDataSet_ class enforces that the values in this matrix are non-negative integers.
-* A second difference is that the _DESeqDataSet_ has an associated _design_ formula. The experimental design is specified at the beginning of the analysis, as it will inform many of the _DESeq2_ functions how to treat the samples in the analysis (one exception is the size factor estimation, i.e., the adjustment for differing library sizes, which does not depend on the design formula). The design formula tells which columns in the sample information table (`colData`) specify the experimental design and how these factors should be used in the analysis.
+* A second difference is that the _DESeqDataSet_ has an associated _design formula_. The experimental design is specified at the beginning of the analysis, as it will inform many of the _DESeq2_ functions how to treat the samples in the analysis (one exception is the size factor estimation, i.e., the adjustment for differing library sizes, which does not depend on the design formula). The design formula tells which columns in the sample information table (`colData`) specify the experimental design and how these factors should be used in the analysis.
 
 We have two types of cells (VGAT and VGluT2), across four different anatomical subdivisions.
 ```{r}
-PAG_DE_metadata$mouse.id
-PAG_DE_metadata$cell.type
-PAG_DE_metadata$PAG.areacollection
+summary(PAG_sceset_qc_norm_filt_corr$mouse.id)
+summary(PAG_sceset_qc_norm_filt_corr$cell.type)
+summary(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
+table(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 ```
 
-__Note__: it could be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as "treatment vs control", without needing to specify additional arguments. However, in our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for `cell.type` or `mouse.id`.
+__Note__: it could be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as "treatment vs control", without needing to specify additional arguments. However, in our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for `cell.type` or `mouse.id`. We can, however, relevel the `PAG.areacollection` so that `dmpag` and not `dlpag` is the top level, as we did in _Part I_ of the pipeline.
 ```{r}
 # By default, R will choose a reference level for factors based on alphabetical order. We can relevel any metadata factor as follows:
-PAG_DE_metadata$cell.type <- relevel(PAG_DE_metadata$cell.type, ref = "VGAT")
-PAG_DE_metadata$cell.type
+PAG_sceset_qc_norm_filt_corr$PAG.arearegistration <- relevel(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration, ref = "dmpag")
+levels(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 
-PAG_DE_metadata$PAG.areacollection <- relevel(PAG_DE_metadata$PAG.areacollection, ref = "dmpag")
-PAG_DE_metadata$PAG.areacollection
+PAG_sceset_qc_norm_filt_corr$PAG.areacollection <- relevel(PAG_sceset_qc_norm_filt_corr$PAG.areacollection, ref = "dmpag")
+levels(PAG_sceset_qc_norm_filt_corr$PAG.areacollection)
 ```
 
-We want to find differences in expression (1) across cell-types, (2) across subdivisions within a cell-type, and (3) across subdivisions irrespective of cell-type. Importantly, each transgenic mouse (`mouse.id`) only allows us to capture one of the two cell-types, so the mouse ID will be confounded with one or the other cell.type. We want to control for this, as we are not interested in differences across mice, only across cell-types. 
+We want to find differences in expression of genes (1) across *cell-types*, (2) across *subdivisions within a cell-type*, and (3) across *subdivisions irrespective of cell-type*. Importantly, each transgenic mouse (`mouse.id`) only allows us to capture one of the two cell-types, so the _mouse ID_ will be confounded with one or the other _cell type_. We want to control for this, as we are not interested in differences across mice, only across cell-types. 
 
 * An example of a design to explore differences in gene expression associated to `cell.type` but controling for differences between `mouse.id` is obtained by writing `~ mouse.id + cell.type`. By including `mouse.id`, terms will be added to the model which account for differences across mice, and by adding `cell.type` we get a single term which explains the differences between cell types. Make sure the levels in the factors only contain letters, numbers, underscores and periods. The variable of interest should go at the end of the formula (the `results` function will by default pull the `cell.type` results unless `contrast` or `name` arguments are specified).
-* We an use R's formula notation to express any fixed-effects experimental design for _edgeR_ or _DESeq2_. If the research aim is to determine for which genes the effect of a treatment is different across groups, then interaction terms can be included and tested using a design such as `~ group + treatment + group:treatment`. See the vignettes of DESeq2 and edgeR for more examples.
+* We an use R's formula notation to express any fixed-effects experimental design for _edgeR_ or _DESeq2_. If the research aim is to determine for which genes the effect of a treatment is different across groups, then interaction terms can be included and tested using a design such as `~ group + treatment + group:treatment`. See the vignettes of `DESeq2` and `edgeR` for more examples.
 
-Generate a `DESeqDataSet` from a _SummarizedExperiment_ object:
+__Contrasts__: A contrast is a linear combination of estimated log2 fold changes, which can be used to test if differences between groups are equal to zero. The simplest use case for contrasts is an experimental design containing a factor with three levels, say A, B and C. Contrasts enable the user to generate results for all 3 possible differences: log2 fold change of B vs A, of C vs A, and of C vs B.
+
+__Interactions__: Interaction terms can be added to the design formula, in order to test, for example, if the log2 fold change attributable to a given condition is different based on another factor, for example if the condition effect differs across genotype. However, nothe the following: Many users begin to add interaction terms to the design formula, when in fact a much simpler approach would give all the results tables that are desired. If the comparisons of interest are, for example, the effect of a condition for different sets of samples, a simpler approach than adding interaction terms explicitly to the design formula is to perform the following steps:
+
+* combine the factors of interest into a single factor with all combinations of the original factors
+* change the design to include just this factor, e.g. ~ group
+
+Using this design is similar to adding an interaction term, in that it models multiple condition effects which can be easily extracted with results. Suppose we have two factors `genotype` (with values I, II, and III) and `condition` (with values A and B), and we want to extract the condition effect specifically for each genotype. To adapt this to our data, we could think of this as the following: our two factors will be `cell.type` (with values VGAT and VGlUT2) and `PAG.arearegistration` (with valuse dmpag, dlpag, lpag, vlpag). To obtain the PAG.area effect for a specific cell type we could:
 ```{r}
-library(DESeq2)
-PAG_DESeq_set <- DESeqDataSet(PAG_sceset_qc, design = ~ mouse.id + cell.type)
+PAG_sceset_qc_norm_filt_corr$group <- factor(paste0(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration))
+#design(PAG_sceset_qc_norm_filt_corr) <- ~ group
+#PAG_sceset_qc_norm_filt_corr <- DESeq(PAG_sceset_qc_norm_filt_corr)
+#resultsNames(PAG_sceset_qc_norm_filt_corr)
+#results(PAG_sceset_qc_norm_filt_corr, contrast=c("group", "VGATdmpag", "VGATdlpag", "VGATlpag", "VGATvlpag"))
 ```
 
 Generate a `DESeqDataSet` when we only have a count matrix and a table of sample information:
 ```{r}
 library(DESeq2)
-stopifnot(all(colnames(PAG_DE_counts) == rownames(PAG_DE_metadata)))
-PAG_DESeq_set <- DESeqDataSetFromMatrix(countData = PAG_DE_counts, 
-                                        colData = PAG_DE_metadata,
-                                        design = ~ mouse.id + cell.type)
+PAG_DESeq_set <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                        colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                        design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.APaxis + cell.type + PAG.arearegistration)
+
+# To check 
+PAG_DESeq_set_grouped <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                                colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                                design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.APaxis + group)
 ```
 
 There are two separate analysis paths we can follow from here: visual exploration of sample relationships (transformation, distance calculation, plotting) and statistical testing for differences attributable to our conditions.Importantly, the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
@@ -466,31 +481,29 @@ url <- finish(htmlRep)
 browseURL(url)
 ```
 
-### 10.2.2 | edgeR: the DGEList
-edgeR is designed for bulkRNA and is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as batch to the model. The _edgeR_ package uses another type of data container, namely a _DGEList_ object. We can create a _DGEList_ object using a count matrix and a table with information about samples, and additionally add information about the genes. 
-
+### 8.2.2 | edgeR: the DGEList
+`edgeR` is designed for bulkRNA and is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, that enables us to include other factors such as `batch` to the model. The _edgeR_ package uses another type of data container, namely a _DGEList_ object. We can create a _DGEList_ object using a count matrix and a table with information about samples, and additionally add information about the genes.
 ```{r}
 library(edgeR)
 
-PAG_genetable <- data.frame(gene.id = rownames(PAG_DE_counts),
+PAG_genetable <- data.frame(gene.id = rownames(PAG_sceset_qc_norm_filt_corr),
                             stringsAsFactors = FALSE)
 
-stopifnot(all(colnames(PAG_DE_counts) == rownames(PAG_DE_metadata)))
-PAG_DGE_set <- DGEList(counts = PAG_DE_counts,
-                       samples = PAG_DE_metadata, 
-                       genes = PAG_genetable)
+stopifnot(all(rownames(colData(PAG_sceset_qc_norm_filt_corr)) == colnames(PAG_sceset_qc_norm_filt_corr)))
 
-# You could also add normalization factors norm.factors = rep(1, length(counts[1,]))
+PAG_DGE_list <- DGEList(counts = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"),
+                        samples = colData(PAG_sceset_qc_norm_filt_corr), 
+                        genes = PAG_genetable)
 
-names(PAG_DGE_set)
+names(PAG_DGE_list)
 ```
 
 Just like the _SummarizedExperiment_ and the _DESeqDataSet_ the _DGEList_ contains all the information we need: the count matrix, information about the samples (the columns of the count matrix), and information about the genes (the rows of the count matrix). One difference compared to the _DESeqDataSet_ is that the experimental design is not defined when creating the _DGEList_, but later in the workflow.
 
-Once a DGEList has been created, we calculate between-sample (TMM) normalization factors, using the `calcNormFactors` function in edgeR.
+Once a `DGEList` has been created, we calculate between-sample (TMM) normalization factors, using the `calcNormFactors` function in `edgeR`.
 ```{r}
-PAG_DGE_set <- edgeR::calcNormFactors(PAG_DGE_set, method="TMM")
-PAG_DGE_set$samples
+PAG_DGE_list <- edgeR::calcNormFactors(PAG_DGE_list, method="TMM")
+PAG_DGE_list$samples
 ```
 
 #### Differential expression testing with EdgeR
@@ -558,7 +571,7 @@ In edgeR, the MA plot is obtained via the plotSmear function.
 edgeR::plotSmear(qlf, de.tags = PAG_edgeR_results_tt$table$gene.id)
 ```
 
-### 10.2.3 | Comparing DESeq2 and edgeR results:
+### 8.2.3 | Comparing DESeq2 and edgeR results:
 We can compare the sets of significantly differentially expressed genes to see how the results from the two packages overlap:
 ```{r}
 PAG_DE_shared <- intersect(rownames(PAG_DESeq_results), PAG_edgeR_results_all$table$gene.id)
