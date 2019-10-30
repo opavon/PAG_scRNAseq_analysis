@@ -180,9 +180,19 @@ PAG_metadata$date.purification <- as.factor(PAG_metadata$date.purification)
 PAG_metadata$date.nanodrop <- as.factor(PAG_metadata$date.nanodrop)
 PAG_metadata$date.qubit <- as.factor(PAG_metadata$date.qubit)
 PAG_metadata$date.bioanalyzer <- as.factor(PAG_metadata$date.bioanalyzer)
+PAG_metadata$batch.processing <- as.factor(PAG_metadata$batch.processing)
 PAG_metadata$batch.sequencing_round <- as.factor(PAG_metadata$batch.sequencing_round)
 table(PAG_metadata$mouse.sex)
 table(PAG_metadata$cell.type)
+
+# By default, R will choose a reference level for factors based on alphabetical order. We can relevel any metadata factor as follows:
+levels(PAG_metadata$PAG.areacollection)
+PAG_metadata$PAG.areacollection <- relevel(PAG_metadata$PAG.areacollection, ref = "dmpag")
+levels(PAG_metadata$PAG.areacollection)
+
+levels(PAG_metadata$PAG.arearegistration)
+PAG_metadata$PAG.arearegistration <- relevel(PAG_metadata$PAG.arearegistration, ref = "dmpag")
+levels(PAG_metadata$PAG.arearegistration)
 ```
 
 Some useful functions to examine the metadata:
