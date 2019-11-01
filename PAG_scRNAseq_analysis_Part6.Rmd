@@ -80,13 +80,13 @@ class(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 
 Once we have a gene-level count matrix and the relevant metadata we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. `DESeq2` uses a `DESeqDataSet` and `edgeR` uses a `DGEList`.
 
-### 8.1.1 | DEseq2: the DESeqDatSet
+### 8.1.1 | DEseq2 and the DESeqDatSet
 In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of the _SummarizedExperiment_ class, and it is easy to convert _SummarizedExperiment_ objects into _DESeqDataSet_ objects. 
 
 * One of the two main differences compared to a _SummarizedExperiment_ object is that the `assay` slot is instead accessed using the `counts` accessor function, and the _DESeqDataSet_ class enforces that the values in this matrix are non-negative integers.
 * A second difference is that the _DESeqDataSet_ has an associated _design formula_. The experimental design is specified at the beginning of the analysis, as it will inform many of the _DESeq2_ functions how to treat the samples in the analysis (one exception is the size factor estimation, i.e., the adjustment for differing library sizes, which does not depend on the design formula). The design formula tells which columns in the sample information table (`colData`) specify the experimental design and how these factors should be used in the analysis.
 
-We have two types of cells (VGAT and VGluT2), across four different anatomical subdivisions.
+We have two types of cells, _VGAT_ and _VGluT2_, across four different anatomical subdivisions.
 ```{r}
 summary(PAG_sceset_qc_norm_filt_corr$mouse.id)
 summary(PAG_sceset_qc_norm_filt_corr$cell.type)
@@ -94,56 +94,96 @@ summary(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 table(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 ```
 
-__Note__: it could be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as "treatment vs control", without needing to specify additional arguments. However, in our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for `cell.type` or `mouse.id`. We can, however, relevel the `PAG.areacollection` so that `dmpag` and not `dlpag` is the top level, as we did in _Part I_ of the pipeline.
+__Note__: it could be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as "treatment vs control", without needing to specify additional arguments. However, in our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for `cell.type` or `mouse.id`. We can, however, relevel the `PAG.areacollection` so that `dmpag` and not `dlpag` is the top level, as we did in _Part I_ of the pipeline. We don't need to run this again.
 ```{r}
 # By default, R will choose a reference level for factors based on alphabetical order. We can relevel any metadata factor as follows:
-PAG_sceset_qc_norm_filt_corr$PAG.arearegistration <- relevel(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration, ref = "dmpag")
+#PAG_sceset_qc_norm_filt_corr$PAG.arearegistration <- relevel(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration, ref = "dmpag")
 levels(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 
-PAG_sceset_qc_norm_filt_corr$PAG.areacollection <- relevel(PAG_sceset_qc_norm_filt_corr$PAG.areacollection, ref = "dmpag")
+#PAG_sceset_qc_norm_filt_corr$PAG.areacollection <- relevel(PAG_sceset_qc_norm_filt_corr$PAG.areacollection, ref = "dmpag")
 levels(PAG_sceset_qc_norm_filt_corr$PAG.areacollection)
 ```
 
-We want to find differences in expression of genes (1) across *cell-types*, (2) across *subdivisions within a cell-type*, and (3) across *subdivisions irrespective of cell-type*. Importantly, each transgenic mouse (`mouse.id`) only allows us to capture one of the two cell-types, so the _mouse ID_ will be confounded with one or the other _cell type_. We want to control for this, as we are not interested in differences across mice, only across cell-types. 
+We want to find differences in expression of genes (1) across *cell-types*, (2) across *subdivisions within a cell-type*, (3) across *subdivisions irrespective of cell-type*, and (4) across *AP axis position*. Importantly, each transgenic mouse (`mouse.id`) only allows us to capture one of the two cell-types, so the _mouse ID_ will be completely confounded with one or the other _cell type_. We would like to control for differences due to `mouse.sex` and `batch.processing`, as we are not interested in differences due to these. 
 
-* An example of a design to explore differences in gene expression associated to `cell.type` but controling for differences between `mouse.id` is obtained by writing `~ mouse.id + cell.type`. By including `mouse.id`, terms will be added to the model which account for differences across mice, and by adding `cell.type` we get a single term which explains the differences between cell types. Make sure the levels in the factors only contain letters, numbers, underscores and periods. The variable of interest should go at the end of the formula (the `results` function will by default pull the `cell.type` results unless `contrast` or `name` arguments are specified).
-* We an use R's formula notation to express any fixed-effects experimental design for _edgeR_ or _DESeq2_. If the research aim is to determine for which genes the effect of a treatment is different across groups, then interaction terms can be included and tested using a design such as `~ group + treatment + group:treatment`. See the vignettes of `DESeq2` and `edgeR` for more examples.
+* An example of a design to explore differences in gene expression associated to `cell.type` but controling for differences between `mouse.sex` is obtained by writing `~ mouse.sex + cell.type`. By including `mouse.sex`, terms will be added to the model which account for differences across mice, and by adding `cell.type` we get a single term which explains the differences between cell types. Make sure the levels in the factors only contain letters, numbers, underscores and periods. The variable of interest should go at the end of the formula (the `results` function will by default pull the `cell.type` results unless `contrast` or `name` arguments are specified).
+* We use R's formula notation to express any fixed-effects experimental design for _edgeR_ or _DESeq2_. If the research aim is to determine for which genes the effect of a treatment is different across groups, then interaction terms can be included and tested using a design such as `~ group + treatment + group:treatment`. See the vignettes of `DESeq2` and `edgeR` for more examples.
 
 __Contrasts__: A contrast is a linear combination of estimated log2 fold changes, which can be used to test if differences between groups are equal to zero. The simplest use case for contrasts is an experimental design containing a factor with three levels, say A, B and C. Contrasts enable the user to generate results for all 3 possible differences: log2 fold change of B vs A, of C vs A, and of C vs B.
 
 __Interactions__: Interaction terms can be added to the design formula, in order to test, for example, if the log2 fold change attributable to a given condition is different based on another factor, for example if the condition effect differs across genotype. However, nothe the following: Many users begin to add interaction terms to the design formula, when in fact a much simpler approach would give all the results tables that are desired. If the comparisons of interest are, for example, the effect of a condition for different sets of samples, a simpler approach than adding interaction terms explicitly to the design formula is to perform the following steps:
 
 * combine the factors of interest into a single factor with all combinations of the original factors
-* change the design to include just this factor, e.g. ~ group
+* change the design to include just this factor, e.g. `~ group`
 
-Using this design is similar to adding an interaction term, in that it models multiple condition effects which can be easily extracted with results. Suppose we have two factors `genotype` (with values I, II, and III) and `condition` (with values A and B), and we want to extract the condition effect specifically for each genotype. To adapt this to our data, we could think of this as the following: our two factors will be `cell.type` (with values VGAT and VGlUT2) and `PAG.arearegistration` (with valuse dmpag, dlpag, lpag, vlpag). To obtain the PAG.area effect for a specific cell type we could:
+Using this design is similar to adding an interaction term, in that it models multiple condition effects which can be easily extracted with results. Suppose we have two factors `genotype` (with values I, II, and III) and `condition` (with values A and B), and we want to extract the condition effect specifically for each genotype. To adapt this to our data, we could think of this as the following: our two factors will be `cell.type` (with values _VGAT_ and _VGlUT2_) and `PAG.arearegistration` (with values _dmpag_, _dlpag_, _lpag_, _vlpag_). To obtain the `PAG.arearegistration` effect for a specific `cell.type` we could do the following. However, we will stick with the interaction terms.
 ```{r}
-PAG_sceset_qc_norm_filt_corr$group <- factor(paste0(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration), levels = c("VGATdmpag", "VGATdlpag", "VGATlpag", "VGATvlpag", "VGluT2dmpag", "VGluT2dlpag", "VGluT2lpag", "VGluT2vlpag"))
-levels(PAG_sceset_qc_norm_filt_corr$group)
+#PAG_sceset_qc_norm_filt_corr$group <- factor(paste0(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration), levels = c("VGATdmpag", "VGATdlpag", "VGATlpag", "VGATvlpag", "VGluT2dmpag", "VGluT2dlpag", "VGluT2lpag", "VGluT2vlpag"))
+#levels(PAG_sceset_qc_norm_filt_corr$group)
 #design(PAG_sceset_qc_norm_filt_corr) <- ~ group
 #PAG_sceset_qc_norm_filt_corr <- DESeq(PAG_sceset_qc_norm_filt_corr)
 #resultsNames(PAG_sceset_qc_norm_filt_corr)
 #results(PAG_sceset_qc_norm_filt_corr, contrast=c("group", "VGATdmpag", "VGATdlpag", "VGATlpag", "VGATvlpag"))
 ```
 
-Generate a `DESeqDataSet` when we only have a count matrix and a table of sample information:
+__A note on multi-factor designs:__
+Experiments with more than one factor influencing the counts can be analyzed using design formula that include the additional variables. In fact, `DESeq2` can analyze any possible experimental design that can be expressed with fixed effects terms (multiple factors, designs with interactions, designs with continuous variables, splines, and so on are all possible).
+
+By adding variables to the design, one can control for additional variation in the counts. For example, if the condition samples are balanced across experimental batches, by including the `batch` factor to the design, one can increase the sensitivity for finding differences due to `condition`. There are multiple ways to analyze experiments when the additional variables are of interest and not just controlling factors.
+
+We will now generate a `DESeqDataSet` from a count matrix and a table of sample information (metadata) and specify different designs we want to test:
 ```{r}
 library(DESeq2)
-PAG_DESeq_set_simple <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+PAG_DESeq_set_0 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round)
+
+PAG_DESeq_set_1 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type)
+
+PAG_DESeq_set_2 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"),
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration)
+
+PAG_DESeq_set_3 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.APaxis)
+
+PAG_DESeq_set_12 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration)
+
+PAG_DESeq_set_12a <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + cell.type:PAG.arearegistration)
+
+PAG_DESeq_set_13 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis)
+
+PAG_DESeq_set_13b <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis + cell.type:PAG.APaxis)
+
+PAG_DESeq_set_23 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis)
+
+PAG_DESeq_set_23c <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis + PAG.arearegistration:PAG.APaxis)
+
+PAG_DESeq_set_123 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis)
+
+PAG_DESeq_set_123abc <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                                colData = colData(PAG_sceset_qc_norm_filt_corr),
-                                               design = ~ PAG.APaxis + cell.type + PAG.arearegistration)
-
-# To check differences across PAG subdivisions within a cell type
-PAG_DESeq_set_grouped <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                                colData = colData(PAG_sceset_qc_norm_filt_corr),
-                                                design = ~ group)
-
-PAG_DESeq_set <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                        colData = colData(PAG_sceset_qc_norm_filt_corr),
-                                        design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.APaxis + cell.type + PAG.arearegistration)
+                                               design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis + PAG.arearegistration:PAG.APaxis)
 ```
 
-There are two separate analysis paths we can follow from here: visual exploration of sample relationships (transformation, distance calculation, plotting) and statistical testing for differences attributable to our conditions.Importantly, the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
+There are two separate analysis paths we can follow from here: visual exploration of sample relationships (transformation, distance calculation, plotting) and statistical testing for differences attributable to our conditions. Importantly, the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
 
 #### Exploratory analysis and visualisation
 Many common statistical methods for exploratory analysis of multidimensional data, for example clustering and principal components analysis (PCA), work best for data that generally has the same range of variance at different ranges of the mean values. When the expected amount of variance is approximately the same across different mean values, the data is said to be _homoskedastic_. For RNA-seq raw counts, however, the variance grows with the mean. For example, if one performs PCA directly on a matrix of size-factor-normalized read counts, the result typically depends only on the few most strongly expressed genes because they show the largest absolute differences between samples. A simple and often used strategy to avoid this is to take the logarithm of the normalized count values plus a small pseudocount; however, now the genes with the very lowest counts will tend to dominate the results because, due to the strong Poisson noise inherent to small count values, and the fact that the logarithm amplifies differences for the smallest values, these low count genes will show the strongest relative differences between samples.
@@ -203,51 +243,159 @@ DESeq2::plotPCA(PAG_DESeq_vsd, intgroup = "group")
 ```
 
 #### Differential expression testing with DESeq2
-As we have already specified an experimental design when we created the _DESeqDataSet_, we can run the differential expression pipeline on the raw counts with a single call to the function `DESeq`. This function will carry out: the estimation of size factors (controlling for differences in the sequencing depth of the samples), the estimation of dispersion values for each gene, and fitting a generalized linear model. A _DESeqDataSet_ is returned that contains all the fitted parameters within it, and we can plot the estimated dispersions from it.
+As we have already specified an experimental design when we created the _DESeqDataSet_, we can run the differential expression pipeline on the raw counts with a single call to the function `DESeq`. This function will carry out: the estimation of size factors (controlling for differences in the sequencing depth of the samples), the estimation of dispersion values for each gene, and fitting a generalized linear model. A _DESeqDataSet_ is returned that contains all the fitted parameters within it, and we can plot the estimated dispersions from it. We have several designs to test, so this will take a long time. To speed things up a bit, we will paralellise the analysis and filter lowly expressed genes. We have around 50 samples per `cell.type` per `PAG.arearegistration`, so if we are a bit conservative we keep only genes with at least 5 counts in at least 5 cells (around 10% of each condition):
 ```{r}
-# Filter genes to speed things up:
-keep_simple <- rowSums(counts(PAG_DESeq_set_simple) >= 10) >= 10 # Keep genes with at least 10 copies in at least 10 cells.
-summary(keep_simple)
-PAG_DESeq_set_simple <- PAG_DESeq_set_simple[keep_simple,]
+# Design_0:
+keep_0 <- rowSums(counts(PAG_DESeq_set_0) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_0)
+PAG_DESeq_set_0 <- PAG_DESeq_set[keep_0,] # Remove lowly expressed genes.
 
-start_time <- Sys.time() # Takes around 30min
-PAG_DESeq_set <- DESeq2::DESeq(PAG_DESeq_set, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE, BPPARAM = MulticoreParam(4))
-DESeq2::plotDispEsts(PAG_DESeq_set)
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_0 <- DESeq2::DESeq(PAG_DESeq_set_0, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_0)
 end_time <- Sys.time()
 end_time - start_time
 
-# Do the same for the group design:
-keep_grouped <- rowSums(counts(PAG_DESeq_set_grouped) >= 10) >= 10 # Keep genes with at least 10 copies in at least 10 cells.
-length(keep_grouped)
-PAG_DESeq_set_grouped <- PAG_DESeq_set_grouped[keep_grouped,]
+# Design_1:
+keep_1 <- rowSums(counts(PAG_DESeq_set_1) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_1)
+PAG_DESeq_set_1 <- PAG_DESeq_set[keep_1,] # Remove lowly expressed genes.
 
-start_time <- Sys.time() # Takes around 30min
-PAG_DESeq_set_grouped <- DESeq2::DESeq(PAG_DESeq_set_grouped, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE, BPPARAM = MulticoreParam(4))
-DESeq2::plotDispEsts(PAG_DESeq_set_grouped)
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_1 <- DESeq2::DESeq(PAG_DESeq_set_1, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_1)
 end_time <- Sys.time()
 end_time - start_time
 
-# Do the same for full design:
-keep <- rowSums(counts(PAG_DESeq_set) >= 10) >= 10 # Keep genes with at least 10 copies in at least 10 cells.
-summary(keep)
-PAG_DESeq_set <- PAG_DESeq_set[keep,]
+# Design_2:
+keep_2 <- rowSums(counts(PAG_DESeq_set_2) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_2)
+PAG_DESeq_set_2 <- PAG_DESeq_set[keep_2,] # Remove lowly expressed genes.
 
-start_time <- Sys.time() # Takes around 30min
-PAG_DESeq_set <- DESeq2::DESeq(PAG_DESeq_set, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE, BPPARAM = MulticoreParam(4))
-DESeq2::plotDispEsts(PAG_DESeq_set)
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_2 <- DESeq2::DESeq(PAG_DESeq_set_2, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_2)
 end_time <- Sys.time()
 end_time - start_time
-```
-Once you have run `DESeq`, save the resulting file so you don't need to run it again:
-```{r}
-# Save the DESeq object:
-saveRDS(PAG_DESeq_set, file = "PAG_DESeq_set.rds")
-saveRDS(PAG_DESeq_set_grouped, file = "PAG_DESeq_set_grouped.rds")
+
+# Design_3:
+keep_3 <- rowSums(counts(PAG_DESeq_set_3) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_3)
+PAG_DESeq_set_3 <- PAG_DESeq_set[keep_3,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_3 <- DESeq2::DESeq(PAG_DESeq_set_3, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_3)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_12:
+keep_12 <- rowSums(counts(PAG_DESeq_set_12) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_12)
+PAG_DESeq_set_12 <- PAG_DESeq_set[keep_12,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_12 <- DESeq2::DESeq(PAG_DESeq_set_12, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_12)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_12a:
+keep_12a <- rowSums(counts(PAG_DESeq_set_12a) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_12a)
+PAG_DESeq_set_12a <- PAG_DESeq_set[keep_12a,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_12a <- DESeq2::DESeq(PAG_DESeq_set_12a, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_12a)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_13:
+keep_13 <- rowSums(counts(PAG_DESeq_set_13) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_13)
+PAG_DESeq_set_13 <- PAG_DESeq_set[keep_13,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_13 <- DESeq2::DESeq(PAG_DESeq_set_13, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_13)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_13b:
+keep_13b <- rowSums(counts(PAG_DESeq_set_13b) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_13b)
+PAG_DESeq_set_13b <- PAG_DESeq_set[keep_13b,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_13b <- DESeq2::DESeq(PAG_DESeq_set_13b, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_13b)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_23:
+keep_23 <- rowSums(counts(PAG_DESeq_set_23) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_23)
+PAG_DESeq_set_23 <- PAG_DESeq_set[keep_23,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_23 <- DESeq2::DESeq(PAG_DESeq_set_23, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_23)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_23c:
+keep_23c <- rowSums(counts(PAG_DESeq_set_23c) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_23c)
+PAG_DESeq_set_23c <- PAG_DESeq_set[keep_23c,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_23c <- DESeq2::DESeq(PAG_DESeq_set_23c, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_23c)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_123:
+keep_123 <- rowSums(counts(PAG_DESeq_set_123) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_123)
+PAG_DESeq_set_123 <- PAG_DESeq_set[keep_123,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_123 <- DESeq2::DESeq(PAG_DESeq_set_123, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_123)
+end_time <- Sys.time()
+end_time - start_time
+
+# Design_123abc:
+keep_123abc <- rowSums(counts(PAG_DESeq_set_123abc) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_123abc)
+PAG_DESeq_set_123abc <- PAG_DESeq_set[keep_123abc,] # Remove lowly expressed genes.
+
+start_time <- Sys.time() # Takes around 2.3 hours
+PAG_DESeq_set_123abc <- DESeq2::DESeq(PAG_DESeq_set_123abc, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_123abc)
+end_time <- Sys.time()
+end_time - start_time
+
+# Once you have run `DESeq`, save the resulting file so you don't need to run it again:
+saveRDS(PAG_DESeq_set_0, file = "PAG_DESeq_set.rds")
+saveRDS(PAG_DESeq_set_1, file = "PAG_DESeq_set_1.rds")
+saveRDS(PAG_DESeq_set_2, file = "PAG_DESeq_set_2.rds")
+saveRDS(PAG_DESeq_set_3, file = "PAG_DESeq_set_3.rds")
+saveRDS(PAG_DESeq_set_12, file = "PAG_DESeq_set_12.rds")
+saveRDS(PAG_DESeq_set_12a, file = "PAG_DESeq_set_12a.rds")
+saveRDS(PAG_DESeq_set_13, file = "PAG_DESeq_set_13.rds")
+saveRDS(PAG_DESeq_set_13b, file = "PAG_DESeq_set_13b.rds")
+saveRDS(PAG_DESeq_set_23, file = "PAG_DESeq_set_23.rds")
+saveRDS(PAG_DESeq_set_23c, file = "PAG_DESeq_set_23c.rds")
+saveRDS(PAG_DESeq_set_123, file = "PAG_DESeq_set_123.rds")
+saveRDS(PAG_DESeq_set_123abc, file = "PAG_DESeq_set_123abc.rds")
+
 print("Saved!")
 ```
 
 #### Examining the results
-Next, calling `results` without any arguments will extract the estimated log2-fold changes and _p values_ for the last variable in the `design` formula. If there are more than 2 levels for this variable, results will extract the results table for a comparison of the last level over the first level.
+Next, calling `results` without any arguments will extract the estimated log2-fold changes and _p values_ for the last variable in the `design` formula. If there are more than 2 levels for this variable, `results` will extract the results table for a comparison of the last level over the first level.
 ```{r}
 PAG_DESeq_results <- DESeq2::results(PAG_DESeq_set, alpha = 0.1)
 head(PAG_DESeq_results)
