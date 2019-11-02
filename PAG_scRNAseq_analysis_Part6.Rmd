@@ -132,100 +132,64 @@ We will now generate a `DESeqDataSet` from a count matrix and a table of sample 
 ```{r}
 library(DESeq2)
 #### Design 0 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_0 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 1 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_1 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 2 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_2 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"),
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 3 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_3 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.APaxis)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 1&2 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_12 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 1&2 with interaction ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_12a <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + cell.type:PAG.arearegistration)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 1&3 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_13 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 1&3 with interaction ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_13b <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis + cell.type:PAG.APaxis)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 2&3 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_23 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 2&3 with interaction ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_23c <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis + PAG.arearegistration:PAG.APaxis)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 1&2&3 ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_123 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis)
-end_time <- Sys.time()
-end_time - start_time
 
 #### Design 1&2&3 with interaction ####
-start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_123abc <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                                colData = colData(PAG_sceset_qc_norm_filt_corr),
                                                design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis + PAG.arearegistration:PAG.APaxis)
-end_time <- Sys.time()
-end_time - start_time
 ```
 
 There are two separate analysis paths we can follow from here: visual exploration of sample relationships (transformation, distance calculation, plotting) and statistical testing for differences attributable to our conditions. Importantly, the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
@@ -290,7 +254,7 @@ DESeq2::plotPCA(PAG_DESeq_vsd, intgroup = "group")
 #### Differential expression testing with DESeq2
 As we have already specified an experimental design when we created the _DESeqDataSet_, we can run the differential expression pipeline on the raw counts with a single call to the function `DESeq`. This function will carry out: the estimation of size factors (controlling for differences in the sequencing depth of the samples), the estimation of dispersion values for each gene, and fitting a generalized linear model. A _DESeqDataSet_ is returned that contains all the fitted parameters within it, and we can plot the estimated dispersions from it. We have several designs to test, so this will take a long time. To speed things up a bit, we will paralellise the analysis and filter lowly expressed genes. We have around 50 samples per `cell.type` per `PAG.arearegistration`, so if we are a bit conservative we keep only genes with at least 5 counts in at least 5 cells (around 10% of each condition):
 ```{r}
-# Design_0:
+#### Design 0 ####
 keep_0 <- rowSums(counts(PAG_DESeq_set_0) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_0)
 PAG_DESeq_set_0 <- PAG_DESeq_set[keep_0,] # Remove lowly expressed genes.
@@ -301,7 +265,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_0)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_1:
+#### Design 1 ####
 keep_1 <- rowSums(counts(PAG_DESeq_set_1) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_1)
 PAG_DESeq_set_1 <- PAG_DESeq_set[keep_1,] # Remove lowly expressed genes.
@@ -312,7 +276,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_1)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_2:
+#### Design 2 ####
 keep_2 <- rowSums(counts(PAG_DESeq_set_2) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_2)
 PAG_DESeq_set_2 <- PAG_DESeq_set[keep_2,] # Remove lowly expressed genes.
@@ -323,7 +287,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_2)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_3:
+#### Design 3 ####
 keep_3 <- rowSums(counts(PAG_DESeq_set_3) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_3)
 PAG_DESeq_set_3 <- PAG_DESeq_set[keep_3,] # Remove lowly expressed genes.
@@ -334,7 +298,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_3)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_12:
+#### Design 1&2 ####
 keep_12 <- rowSums(counts(PAG_DESeq_set_12) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_12)
 PAG_DESeq_set_12 <- PAG_DESeq_set[keep_12,] # Remove lowly expressed genes.
@@ -345,7 +309,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_12)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_12a:
+#### Design 1&2 with interaction ####
 keep_12a <- rowSums(counts(PAG_DESeq_set_12a) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_12a)
 PAG_DESeq_set_12a <- PAG_DESeq_set[keep_12a,] # Remove lowly expressed genes.
@@ -356,7 +320,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_12a)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_13:
+#### Design 1&3 ####
 keep_13 <- rowSums(counts(PAG_DESeq_set_13) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_13)
 PAG_DESeq_set_13 <- PAG_DESeq_set[keep_13,] # Remove lowly expressed genes.
@@ -367,7 +331,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_13)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_13b:
+#### Design 1&3 with interaction ####
 keep_13b <- rowSums(counts(PAG_DESeq_set_13b) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_13b)
 PAG_DESeq_set_13b <- PAG_DESeq_set[keep_13b,] # Remove lowly expressed genes.
@@ -378,7 +342,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_13b)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_23:
+#### Design 2&3 ####
 keep_23 <- rowSums(counts(PAG_DESeq_set_23) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_23)
 PAG_DESeq_set_23 <- PAG_DESeq_set[keep_23,] # Remove lowly expressed genes.
@@ -389,7 +353,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_23)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_23c:
+#### Design 2&3 with interaction ####
 keep_23c <- rowSums(counts(PAG_DESeq_set_23c) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_23c)
 PAG_DESeq_set_23c <- PAG_DESeq_set[keep_23c,] # Remove lowly expressed genes.
@@ -400,7 +364,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_23c)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_123:
+#### Design 1&2&3 ####
 keep_123 <- rowSums(counts(PAG_DESeq_set_123) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_123)
 PAG_DESeq_set_123 <- PAG_DESeq_set[keep_123,] # Remove lowly expressed genes.
@@ -411,7 +375,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_123)
 end_time <- Sys.time()
 end_time - start_time
 
-# Design_123abc:
+#### Design 1&2&3 with interaction ####
 keep_123abc <- rowSums(counts(PAG_DESeq_set_123abc) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_123abc)
 PAG_DESeq_set_123abc <- PAG_DESeq_set[keep_123abc,] # Remove lowly expressed genes.
