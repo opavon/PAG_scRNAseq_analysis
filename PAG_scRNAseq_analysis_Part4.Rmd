@@ -518,7 +518,7 @@ As we have mentioned, a big source of variability in scRNA-seq data, besides bad
 The `table` and `summary` functions allow us to quickly inspect if we have any obvious biases or confounds (i.e. all the cells come from male or female mice, or from a particular location or sequencing batch).
 ```{r}
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.hemisphere)
-table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.areacollection)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.arearegistration)
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.APaxis)
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.sex)
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.id)
