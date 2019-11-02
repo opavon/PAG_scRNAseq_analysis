@@ -440,6 +440,23 @@ points(PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$total_counts_VGAT,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
 ```
 
+### 2.3.5 | Xist expression
+A final quality check could be to look at the expression of _Xist_, which should only appear in cells obtained from female mice, as it only expresses in the inactive X chromosome:
+```{r}
+# Plot Expression values of VGAT and VGluT2 in several ways:
+plotExpression(PAG_sceset, "Xist", x="mouse.id", 
+               exprs_values = "counts",
+               log2_values = TRUE,
+               colour_by = "mouse.sex",
+               xlab = "Mouse ID")
+
+plotExpression(PAG_sceset, "Xist", x="mouse.sex", 
+               exprs_values = "counts",
+               log2_values = TRUE,
+               colour_by = "cell.type",
+               xlab = "Mouse sex")
+```
+
 ## Step 2.4 | Filtering low quality cells
 Choosing a filtering threshold for the above quality metrics is not straightforward as their absolute values depend on the experimental protocol. For example, sequencing to greater depths will lead to more reads and more expressed features, regardless of the quality of the cells, and using more spike-in RNA in the protocol will result in higher spike-in proportions. The histograms and plots from the previous section should allow us to visualise the distribution of our samples and more easily identify any obvious outliers.
 
@@ -494,7 +511,7 @@ PAG_sceset$filter_patchseq_cells <- (PAG_sceset$patch.recorded == "yes")
 table(PAG_sceset$filter_patchseq_cells)
 summary(PAG_sceset[,PAG_sceset$filter_patchseq_cells]$PAG.areacollection)
 
-# Custom filters: identify the cells that have no expression of the expected fluorophor and express the wrong one
+# Custom filters: identify the cells that have no expression of the expected fluorophor and express the wrong oneand not expressing any fluorophor
 PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells <- PAG_sceset$cell.fluorophor=="EYFP" & PAG_sceset$log2_total_counts_tdTomato > 0
 table(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells]$PAG.areacollection)
@@ -503,23 +520,23 @@ PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells <- PAG_sceset$cell.fluorop
 table(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]$PAG.areacollection)
 
-# Custom filters: also label the cells not expressing any fluorophor, although they are likely to be dropout events and don't really tell us much
+# Custom filters: also label the cells not expressing any fluorophor, although they are likely to be dropout events we can use them in combination of other filter
 PAG_sceset$cells_nofluorophor <- PAG_sceset$log2_total_counts_EYFP == 0 & PAG_sceset$log2_total_counts_tdTomato == 0
 table(PAG_sceset$cells_nofluorophor)
 summary(PAG_sceset[,PAG_sceset$cells_nofluorophor]$PAG.areacollection)
 
-# Custom filters: from the VGAT cells not expressing VGAT, mark the ones expressing VGluT2
-PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- PAG_sceset$cell.type=="VGAT" & PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 > 0
+# Custom filters: from the VGAT cells not expressing VGAT, mark the ones expressing VGluT2 and not expressing any fluorophor (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
+PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- PAG_sceset$cell.type=="VGAT" & PAG_sceset$cells_nofluorophor==TRUE & PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 > 0
 table(PAG_sceset$filter_by_wrong_transporter_VGAT_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGAT_cells]$PAG.areacollection)
 
-# Custom filters: from the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT
-PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- PAG_sceset$cell.type=="VGluT2" & PAG_sceset$log2_total_counts_VGAT > 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
+# Custom filters: from the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT and not expressing any fluorophor (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
+PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- PAG_sceset$cell.type=="VGluT2" & PAG_sceset$cells_nofluorophor==TRUE & PAG_sceset$log2_total_counts_VGAT > 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
 table(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGluT2_cells]$PAG.areacollection)
 
-# Custom filters: mark any cells with no expression of either VGAT nor VGluT2 (again, these are likely to be dropouts)
-PAG_sceset$cells_noVGAT_noVGluT2 <- PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 == 0
+# Custom filters: mark any cells with no expression of either VGAT nor VGluT2 nor fluorophor (again, these are likely to be dropouts)
+PAG_sceset$cells_noVGAT_noVGluT2 <- PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 == 0 & PAG_sceset$cells_nofluorophor==TRUE 
 table(PAG_sceset$cells_noVGAT_noVGluT2)
 summary(PAG_sceset[,PAG_sceset$cells_noVGAT_noVGluT2]$PAG.areacollection)
 ```
@@ -574,6 +591,8 @@ data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_manual),
 table(PAG_sceset$manual_filters)
 summary(PAG_sceset[,!PAG_sceset$manual_filters]$PAG.areacollection)
 summary(PAG_sceset[,PAG_sceset$manual_filters]$PAG.areacollection)
+summary(PAG_sceset[,!PAG_sceset$manual_filters]$PAG.arearegistration)
+summary(PAG_sceset[,PAG_sceset$manual_filters]$PAG.arearegistration)
 summary(PAG_sceset[,!PAG_sceset$manual_filters]$cell.type)
 summary(PAG_sceset[,PAG_sceset$manual_filters]$cell.type)
 ```
@@ -880,7 +899,7 @@ PAG_sceset_qc <- PAG_sceset[rowData(PAG_sceset)$use, colData(PAG_sceset)$use]
 dim(PAG_sceset)
 dim(PAG_sceset_qc)
 PAG_sceset_qc
-table(PAG_sceset_qc$PAG.areacollection)
+table(PAG_sceset_qc$PAG.arearegistration)
 
 # Save the filtered and QCed dataset:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")
