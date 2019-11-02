@@ -187,7 +187,7 @@ PAG_DESeq_set_123 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis)
 
 #### Design 1&2&3 with interaction ####
-PAG_DESeq_set_123abc <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+PAG_DESeq_set_123ab <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                                colData = colData(PAG_sceset_qc_norm_filt_corr),
                                                design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis)
 ```
@@ -257,7 +257,7 @@ As we have already specified an experimental design when we created the _DESeqDa
 #### Design 0 ####
 keep_0 <- rowSums(counts(PAG_DESeq_set_0) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_0)
-PAG_DESeq_set_0 <- PAG_DESeq_set[keep_0,] # Remove lowly expressed genes.
+PAG_DESeq_set_0 <- PAG_DESeq_set_0[keep_0,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_0 <- DESeq2::DESeq(PAG_DESeq_set_0, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -268,7 +268,7 @@ end_time - start_time
 #### Design 1 ####
 keep_1 <- rowSums(counts(PAG_DESeq_set_1) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_1)
-PAG_DESeq_set_1 <- PAG_DESeq_set[keep_1,] # Remove lowly expressed genes.
+PAG_DESeq_set_1 <- PAG_DESeq_set_1[keep_1,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_1 <- DESeq2::DESeq(PAG_DESeq_set_1, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -279,7 +279,7 @@ end_time - start_time
 #### Design 2 ####
 keep_2 <- rowSums(counts(PAG_DESeq_set_2) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_2)
-PAG_DESeq_set_2 <- PAG_DESeq_set[keep_2,] # Remove lowly expressed genes.
+PAG_DESeq_set_2 <- PAG_DESeq_set_2[keep_2,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_2 <- DESeq2::DESeq(PAG_DESeq_set_2, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -290,7 +290,7 @@ end_time - start_time
 #### Design 3 ####
 keep_3 <- rowSums(counts(PAG_DESeq_set_3) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_3)
-PAG_DESeq_set_3 <- PAG_DESeq_set[keep_3,] # Remove lowly expressed genes.
+PAG_DESeq_set_3 <- PAG_DESeq_set_3[keep_3,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_3 <- DESeq2::DESeq(PAG_DESeq_set_3, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -301,7 +301,7 @@ end_time - start_time
 #### Design 1&2 ####
 keep_12 <- rowSums(counts(PAG_DESeq_set_12) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_12)
-PAG_DESeq_set_12 <- PAG_DESeq_set[keep_12,] # Remove lowly expressed genes.
+PAG_DESeq_set_12 <- PAG_DESeq_set_12[keep_12,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_12 <- DESeq2::DESeq(PAG_DESeq_set_12, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -312,7 +312,7 @@ end_time - start_time
 #### Design 1&2 with interaction ####
 keep_12a <- rowSums(counts(PAG_DESeq_set_12a) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_12a)
-PAG_DESeq_set_12a <- PAG_DESeq_set[keep_12a,] # Remove lowly expressed genes.
+PAG_DESeq_set_12a <- PAG_DESeq_set_12a[keep_12a,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_12a <- DESeq2::DESeq(PAG_DESeq_set_12a, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -323,7 +323,7 @@ end_time - start_time
 #### Design 1&3 ####
 keep_13 <- rowSums(counts(PAG_DESeq_set_13) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_13)
-PAG_DESeq_set_13 <- PAG_DESeq_set[keep_13,] # Remove lowly expressed genes.
+PAG_DESeq_set_13 <- PAG_DESeq_set_13[keep_13,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_13 <- DESeq2::DESeq(PAG_DESeq_set_13, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -334,7 +334,7 @@ end_time - start_time
 #### Design 1&3 with interaction ####
 keep_13b <- rowSums(counts(PAG_DESeq_set_13b) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_13b)
-PAG_DESeq_set_13b <- PAG_DESeq_set[keep_13b,] # Remove lowly expressed genes.
+PAG_DESeq_set_13b <- PAG_DESeq_set_13b[keep_13b,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_13b <- DESeq2::DESeq(PAG_DESeq_set_13b, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -345,7 +345,7 @@ end_time - start_time
 #### Design 2&3 ####
 keep_23 <- rowSums(counts(PAG_DESeq_set_23) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_23)
-PAG_DESeq_set_23 <- PAG_DESeq_set[keep_23,] # Remove lowly expressed genes.
+PAG_DESeq_set_23 <- PAG_DESeq_set_23[keep_23,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_23 <- DESeq2::DESeq(PAG_DESeq_set_23, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -358,7 +358,7 @@ end_time - start_time
 #### Design 1&2&3 ####
 keep_123 <- rowSums(counts(PAG_DESeq_set_123) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
 summary(keep_123)
-PAG_DESeq_set_123 <- PAG_DESeq_set[keep_123,] # Remove lowly expressed genes.
+PAG_DESeq_set_123 <- PAG_DESeq_set_123[keep_123,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
 PAG_DESeq_set_123 <- DESeq2::DESeq(PAG_DESeq_set_123, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
@@ -367,18 +367,18 @@ end_time <- Sys.time()
 end_time - start_time
 
 #### Design 1&2&3 with interaction ####
-keep_123abc <- rowSums(counts(PAG_DESeq_set_123abc) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
-summary(keep_123abc)
-PAG_DESeq_set_123abc <- PAG_DESeq_set[keep_123abc,] # Remove lowly expressed genes.
+keep_123ab <- rowSums(counts(PAG_DESeq_set_123ab) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
+summary(keep_123ab)
+PAG_DESeq_set_123ab <- PAG_DESeq_set_123ab[keep_123ab,] # Remove lowly expressed genes.
 
 start_time <- Sys.time() # Takes around 2.3 hours
-PAG_DESeq_set_123abc <- DESeq2::DESeq(PAG_DESeq_set_123abc, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
-DESeq2::plotDispEsts(PAG_DESeq_set_123abc)
+PAG_DESeq_set_123ab <- DESeq2::DESeq(PAG_DESeq_set_123ab, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
+DESeq2::plotDispEsts(PAG_DESeq_set_123ab)
 end_time <- Sys.time()
 end_time - start_time
 
 # Once you have run `DESeq`, save the resulting file so you don't need to run it again:
-saveRDS(PAG_DESeq_set_0, file = "PAG_DESeq_set.rds")
+saveRDS(PAG_DESeq_set_0, file = "PAG_DESeq_set_0")
 saveRDS(PAG_DESeq_set_1, file = "PAG_DESeq_set_1.rds")
 saveRDS(PAG_DESeq_set_2, file = "PAG_DESeq_set_2.rds")
 saveRDS(PAG_DESeq_set_3, file = "PAG_DESeq_set_3.rds")
@@ -387,9 +387,8 @@ saveRDS(PAG_DESeq_set_12a, file = "PAG_DESeq_set_12a.rds")
 saveRDS(PAG_DESeq_set_13, file = "PAG_DESeq_set_13.rds")
 saveRDS(PAG_DESeq_set_13b, file = "PAG_DESeq_set_13b.rds")
 saveRDS(PAG_DESeq_set_23, file = "PAG_DESeq_set_23.rds")
-saveRDS(PAG_DESeq_set_23c, file = "PAG_DESeq_set_23c.rds")
 saveRDS(PAG_DESeq_set_123, file = "PAG_DESeq_set_123.rds")
-saveRDS(PAG_DESeq_set_123abc, file = "PAG_DESeq_set_123abc.rds")
+saveRDS(PAG_DESeq_set_123ab, file = "PAG_DESeq_set_123ab.rds")
 
 print("Saved!")
 ```
