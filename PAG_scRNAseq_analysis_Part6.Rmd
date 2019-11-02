@@ -88,9 +88,6 @@ In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of th
 
 We have two types of cells, _VGAT_ and _VGluT2_, across four different anatomical subdivisions.
 ```{r}
-summary(PAG_sceset_qc_norm_filt_corr$mouse.id)
-summary(PAG_sceset_qc_norm_filt_corr$cell.type)
-summary(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 table(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
 ```
 
@@ -116,7 +113,7 @@ __Interactions__: Interaction terms can be added to the design formula, in order
 * combine the factors of interest into a single factor with all combinations of the original factors
 * change the design to include just this factor, e.g. `~ group`
 
-Using this design is similar to adding an interaction term, in that it models multiple condition effects which can be easily extracted with results. Suppose we have two factors `genotype` (with values I, II, and III) and `condition` (with values A and B), and we want to extract the condition effect specifically for each genotype. To adapt this to our data, we could think of this as the following: our two factors will be `cell.type` (with values _VGAT_ and _VGlUT2_) and `PAG.arearegistration` (with values _dmpag_, _dlpag_, _lpag_, _vlpag_). To obtain the `PAG.arearegistration` effect for a specific `cell.type` we could do the following. However, we will stick with the interaction terms.
+Using this design is similar to adding an interaction term, in that it models multiple condition effects which can be easily extracted with results. Suppose we have two factors `genotype` (with values I, II, and III) and `condition` (with values A and B), and we want to extract the condition effect specifically for each genotype. To adapt this to our data, we could think of this as the following: our two factors will be `cell.type` (with values _VGAT_ and _VGlUT2_) and `PAG.arearegistration` (with values _dmpag_, _dlpag_, _lpag_, _vlpag_). To obtain the `PAG.arearegistration` effect for a specific `cell.type` we could do the following (however, we will stick with the interaction terms):
 ```{r}
 #PAG_sceset_qc_norm_filt_corr$group <- factor(paste0(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration), levels = c("VGATdmpag", "VGATdlpag", "VGATlpag", "VGATvlpag", "VGluT2dmpag", "VGluT2dlpag", "VGluT2lpag", "VGluT2vlpag"))
 #levels(PAG_sceset_qc_norm_filt_corr$group)
@@ -134,53 +131,101 @@ By adding variables to the design, one can control for additional variation in t
 We will now generate a `DESeqDataSet` from a count matrix and a table of sample information (metadata) and specify different designs we want to test:
 ```{r}
 library(DESeq2)
+#### Design 0 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_0 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 1 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_1 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 2 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_2 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"),
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 3 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_3 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.APaxis)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 1&2 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_12 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 1&2 with interaction ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_12a <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + cell.type:PAG.arearegistration)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 1&3 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_13 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 1&3 with interaction ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_13b <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis + cell.type:PAG.APaxis)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 2&3 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_23 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 2&3 with interaction ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_23c <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis + PAG.arearegistration:PAG.APaxis)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 1&2&3 ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_123 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                             colData = colData(PAG_sceset_qc_norm_filt_corr),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis)
+end_time <- Sys.time()
+end_time - start_time
 
+#### Design 1&2&3 with interaction ####
+start_time <- Sys.time() # Takes around 1s
 PAG_DESeq_set_123abc <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                                colData = colData(PAG_sceset_qc_norm_filt_corr),
                                                design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis + PAG.arearegistration:PAG.APaxis)
+end_time <- Sys.time()
+end_time - start_time
 ```
 
 There are two separate analysis paths we can follow from here: visual exploration of sample relationships (transformation, distance calculation, plotting) and statistical testing for differences attributable to our conditions. Importantly, the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
