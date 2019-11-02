@@ -176,10 +176,10 @@ PAG_DESeq_set_23 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_
                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis)
 
-#### Design 2&3 with interaction ####
-PAG_DESeq_set_23c <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
-                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis + PAG.arearegistration:PAG.APaxis)
+#### Design 2&3 with interaction #### --> Can't be done as PAG.APaxis:PAG.arearegistrations seems to be a linear combination of the others
+#PAG_DESeq_set_23c <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            #colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            #design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis + PAG.APaxis:PAG.arearegistration)
 
 #### Design 1&2&3 ####
 PAG_DESeq_set_123 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
@@ -189,7 +189,7 @@ PAG_DESeq_set_123 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm
 #### Design 1&2&3 with interaction ####
 PAG_DESeq_set_123abc <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
                                                colData = colData(PAG_sceset_qc_norm_filt_corr),
-                                               design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis + PAG.arearegistration:PAG.APaxis)
+                                               design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis)
 ```
 
 There are two separate analysis paths we can follow from here: visual exploration of sample relationships (transformation, distance calculation, plotting) and statistical testing for differences attributable to our conditions. Importantly, the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
@@ -353,16 +353,7 @@ DESeq2::plotDispEsts(PAG_DESeq_set_23)
 end_time <- Sys.time()
 end_time - start_time
 
-#### Design 2&3 with interaction ####
-keep_23c <- rowSums(counts(PAG_DESeq_set_23c) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
-summary(keep_23c)
-PAG_DESeq_set_23c <- PAG_DESeq_set[keep_23c,] # Remove lowly expressed genes.
-
-start_time <- Sys.time() # Takes around 2.3 hours
-PAG_DESeq_set_23c <- DESeq2::DESeq(PAG_DESeq_set_23c, minReplicatesForReplace = Inf, sfType = "poscounts", parallel = TRUE)
-DESeq2::plotDispEsts(PAG_DESeq_set_23c)
-end_time <- Sys.time()
-end_time - start_time
+#### Design 2&3 with interaction #### --> Can't be done as PAG.APaxis:PAG.arearegistrations seems to be a linear combination of the others
 
 #### Design 1&2&3 ####
 keep_123 <- rowSums(counts(PAG_DESeq_set_123) >= 5) >= 5 # Identify genes with 5 copies in at least 5 cells.
