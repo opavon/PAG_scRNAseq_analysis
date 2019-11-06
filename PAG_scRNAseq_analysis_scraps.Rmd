@@ -556,8 +556,73 @@ plotTSNE(PAG_sceset_qc, rand_seed = 1991, colour_by = "tSNE_kmeans")
 # Try colour_by = "cell.type"
 ```
 
-# STEP 8 | Differential Expression Analysis
-## Step 8.5 | SCDE [not yet implemented]
+# STEP 7 | Differential Expression Analysis
+## Step 7.1 | DESeq2
+Initial designs
+```{r}
+library(DESeq2)
+#### Design 0 ####
+PAG_DESeq_set_0 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round)
+
+#### Design 1 ####
+PAG_DESeq_set_1 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type)
+
+#### Design 2 ####
+PAG_DESeq_set_2 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"),
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration)
+
+#### Design 3 ####
+PAG_DESeq_set_3 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.APaxis)
+
+#### Design 1&2 ####
+PAG_DESeq_set_12 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration)
+
+#### Design 1&2 with interaction ####
+PAG_DESeq_set_12a <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + group)
+
+#### Design 1&3 ####
+PAG_DESeq_set_13 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis)
+
+#### Design 1&3 with interaction ####
+PAG_DESeq_set_13b <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.APaxis + cell.type:PAG.APaxis)
+
+#### Design 2&3 ####
+PAG_DESeq_set_23 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis)
+
+#### Design 2&3 with interaction #### --> Can't be done as PAG.APaxis:PAG.arearegistrations seems to be a linear combination of the others
+#PAG_DESeq_set_23c <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            #colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            #design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration + PAG.APaxis + PAG.APaxis:PAG.arearegistration)
+
+#### Design 1&2&3 ####
+PAG_DESeq_set_123 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis)
+
+#### Design 1&2&3 with interaction ####
+PAG_DESeq_set_123ab <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
+                                               colData = colData(PAG_sceset_qc_norm_filt_corr),
+                                               design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis)
+```
+
+## Step 7.5 | SCDE [not yet implemented]
 The scde package implements routines for fitting individual error models for single-cell RNA-seq measurements. Briefly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells.
 
 Website: http://hms-dbmi.github.io/scde/
@@ -588,7 +653,7 @@ Note this step takes a considerable amount of time unless multiple cores are use
 ```
 
 
-## Step 8.6 | BPSC [not yet implemented]
+## Step 7.6 | BPSC [not yet implemented]
 BPSC uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we’ve already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group (“control”) and can include other factors such as batches in the model.
 
 # STEP X | OTHER TOOLs ANALYSIS STEPS
