@@ -48,6 +48,10 @@ library(mclust) # contains adjustedRandIndex function to compare clustering resu
 PAG_sceset_qc_norm_filt_corr <- readRDS("PAG_sceset_qc_norm_filt_corr.rds") # Contains filtered cells and genes, and normalized data
 assayNames(PAG_sceset_qc_norm_filt_corr)
 PAG_sceset_qc_norm_filt_corr
+
+PAG_sceset_qc_norm_filt_corr$PAGarea_celltype <- factor(x = paste0(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration, "_", PAG_sceset_qc_norm_filt_corr$cell.type),
+                                                           levels = c("dmpag_VGAT", "dlpag_VGAT", "lpag_VGAT", "vlpag_VGAT", "dmpag_VGluT2",  "dlpag_VGluT2", "lpag_VGluT2", "vlpag_VGluT2"))
+levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
 ```
 
 ## Step 6.1 | Consensus clustering with SC3
@@ -65,7 +69,7 @@ We can next run `sc3_prepare`. This method prepares an object of `SCE` class for
 ```{r}
 PAG_sceset_qc_norm_filt_corr <- sc3_prepare(PAG_sceset_qc_norm_filt_corr,
                                             gene_filter = FALSE, # Set your own filter by changing the sc3_gene_filter slot
-                                            n_cores = 4,
+                                            n_cores = 10,
                                             rand_seed = 1991) 
 # SC3 is stochastic, if we run it different times we will get different results, so we need to make sure we have set a seed before running it.
 
@@ -81,13 +85,13 @@ names(metadata(PAG_sceset_qc_norm_filt_corr))
 #rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_out_no_spikes_filt
 
 # Use Ion Channel Genes:
-#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.ionchannels
+rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.ionchannels
 
 # Use Neuropeptides and Neuromodulators Genes:
 #rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.NeuromodulatorsPeptides
 
 # Use Neuropeptides and Neuromodulators Genes:
-rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.DulacTranscriptionfactors
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.Transcriptionfactors
 ```
 
 ### 6.1.2 | Estimate k
@@ -117,7 +121,7 @@ We use the `sce_kmeans` method to perform k-means on the transformed distance ma
 ```{r}
 start_time <- Sys.time() # Takes around 5 min
 PAG_sceset_qc_norm_filt_corr <- sc3_kmeans(PAG_sceset_qc_norm_filt_corr,
-                                           ks = 2:10)
+                                           ks = 2:12)
 names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans)
 end_time <- Sys.time()
 end_time - start_time
@@ -136,7 +140,7 @@ metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans
 `SC3` can also calculate DE genes, marker genes, and cell outliers based on the calculated consensus clusterings. Similary to the clustering solutions, the method `sc3_calc_biology` writes the results for the cell outliers (cell-related information) to the `colData` slot of the `SCE` object. In contrast, DE and marker genes results (gene-related information) are written to the `rowData` slot.
 ```{r}
 PAG_sceset_qc_norm_filt_corr <- sc3_calc_biology(PAG_sceset_qc_norm_filt_corr, 
-                                                 ks = 2:10)
+                                                 ks = 2:12)
 ```
 
 ### 6.1.7 | Running SC3 with the wrapper function [OPTIONAL ALTERNATIVE]
@@ -146,7 +150,7 @@ rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_n
 
 start_time <- Sys.time() # Takes around 35 min
 PAG_sceset_qc_norm_filt_corr <- sc3(PAG_sceset_qc_norm_filt_corr,
-                                    ks = 2:10,
+                                    ks = 2:12,
                                     gene_filter = TRUE, # Set to FALSE if you want to determine a list of genes to be used instead
                                     biology = TRUE, 
                                     n_cores = 4,
@@ -165,21 +169,21 @@ SC3 writes all its results obtained for cells to the `colData` slot of the `SCE`
 ```{r}
 # Consensus Matrix
 sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, 
-                   k = 3, 
-                   show_pdata = c("cell.type", "PAG.areacollection"))
+                   k = 4, 
+                   show_pdata = c("cell.type", "PAG.arearegistration"))
 
 # DE Genes
 sc3_plot_de_genes(PAG_sceset_qc_norm_filt_corr, 
-                  k = 3,
+                  k = 4,
                   p.val = 0.001,
-                  show_pdata = c("cell.type", "PAG.areacollection"))
+                  show_pdata = c("cell.type", "PAG.arearegistration"))
 
 # Marker Genes
 sc3_plot_markers(PAG_sceset_qc_norm_filt_corr,
-                 k = 3,
-                 auroc = 0.8,
+                 k = 4,
+                 auroc = 0.7,
                  p.val = 0.01,
-                 show_pdata = c("cell.type", "PAG.areacollection"))
+                 show_pdata = c("cell.type", "PAG.arearegistration"))
 ```
 
 We can also use the results from the clustering to highlight the clusters in any PCA/tSNE/UMAP plot:
@@ -203,7 +207,7 @@ sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr,
 A silhouette is a quantitative measure of the diagonality of the consensus matrix. An average silhouette width (shown at the bottom left of the silhouette plot) varies from 0 to 1, where 1 represents a perfectly block-diagonal consensus matrix and 0 represents a situation where there is no block-diagonal structure. The best clustering is achieved when the average silhouette width is close to 1.
 ```{r}
 sc3_plot_silhouette(PAG_sceset_qc_norm_filt_corr, 
-                    k = 3
+                    k = 5
                     )
 ```
 
