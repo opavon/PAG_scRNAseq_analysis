@@ -306,13 +306,15 @@ Results tables are generated using the function results, which extracts a result
 
 Next, calling `results` without any arguments will extract the estimated log2-fold changes and _p values_ for the last variable in the `design` formula. If there are more than 2 levels for this variable, `results` will extract the results table for a comparison of the last level over the first level.
 ```{r}
-resultsNames(PAG_DESeq_set_3)
-levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
-PAG_DESeq_results_3 <- DESeq2::results(PAG_DESeq_set_3, 
-                                       contrast = c("PAGarea_celltype", "dmpag_VGAT", "dmpag_VGluT2"), 
-                                       listValues = c(1, -1/7),  lfcThreshold = 0, alpha = 0.05, pAdjustMethod = "BH", parallel = TRUE)
-head(PAG_DESeq_results_3)
-#mcols(PAG_DESeq_results_3, use.names = TRUE)
+resultsNames(PAG_DESeq_set_1)
+levels(PAG_sceset_qc_norm_filt_corr$cell.type)
+PAG_DESeq_results_1_wald <- DESeq2::results(PAG_DESeq_set_1, 
+                                            contrast = c("cell.type", "VGluT2", "VGAT"), 
+                                            test = "Wald",
+                                            lfcThreshold = 0, alpha = 0.05, pAdjustMethod = "BH", parallel = TRUE)
+head(PAG_DESeq_results_1_wald)
+#mcols(PAG_DESeq_results_1, use.names = TRUE)
+DESeq2::plotMA(PAG_DESeq_results_1_wald, ylim = c(-5, 5))
 ```
 
 `PAG_DESeq_results_0` is a _DataFrame_ object, so it contains metadata with information:
@@ -324,14 +326,14 @@ head(PAG_DESeq_results_3)
 
 We can also summarize the results as follows:
 ```{r}
-summary(PAG_DESeq_results_3)
-hist(PAG_DESeq_results_3$pvalue)
+summary(PAG_DESeq_results_1_wald)
+hist(PAG_DESeq_results_1_wald$pvalue)
 
 ## We can also add a couple of extra columns that will be useful for the interactive visualization later
-PAG_DESeq_results_3$log10BaseMean <- log10(PAG_DESeq_results_3$baseMean)
-PAG_DESeq_results_3$mlog10PValue <- -log10(PAG_DESeq_results_3$pvalue)
-rowData(PAG_DESeq_set_3)$log10Dispersion <- log10(rowData(PAG_DESeq_set_3)$dispersion)
-rowData(PAG_DESeq_set_3)$DESeq2_dmpagVGAT_vs_dmpagVGluT2 <- PAG_DESeq_results_3 # Or any other comparison you called using results
+PAG_DESeq_results_1_wald$log10BaseMean <- log10(PAG_DESeq_results_1_wald$baseMean)
+PAG_DESeq_results_1_wald$mlog10PValue <- -log10(PAG_DESeq_results_1_wald$pvalue)
+rowData(PAG_DESeq_set_1)$log10Dispersion <- log10(rowData(PAG_DESeq_set_3)$dispersion)
+rowData(PAG_DESeq_set_1)$DESeq2_VGluT2_VGAT <- PAG_DESeq_results_1_wald # Or any other comparison you called using results
 ```
 
 There are two ways to be more strict about which set of genes are considered significant:
@@ -341,7 +343,7 @@ There are two ways to be more strict about which set of genes are considered sig
 If we lower the false discovery rate threshold, we should also tell this value to `results()` when we run it, so that the function will use an alternative threshold for the optimal independent filtering step:
 ```{r}
 PAG_DESeq_results_3_05 <- DESeq2::results(PAG_DESeq_set_3, alpha = 0.05)
-table(PAG_DESeq_results_3_05$padj < 0.05)
+table(PAG_DESeq_results_1_wald$padj < 0.05)
 ```
 
 If we want to raise the log2 fold change threshold, so that we test for genes that show more substantial changes due to our condition of interest, we simply supply a value on the log2 scale. For example, by specifying `lfcThreshold = 1`, we test for genes that show significant effects of treatment on gene counts more than doubling or less than halving, because `2^1 = 2`.
@@ -359,12 +361,12 @@ In high-throughput biology, we are careful to not use the _p values_ directly as
 
 The FDR is a useful statistic for many high-throughput experiments, as we are often interested in reporting or focusing on a set of interesting genes, and we would like to put an upper bound on the percent of false positives in this set. Hence, if we consider a fraction of 5% false positives acceptable, we can consider all genes with an adjusted p value below 5% = 0.05 as significant. 
 ```{r}
-sum(PAG_DESeq_results_3_05$padj < 0.05, na.rm = TRUE)
+sum(PAG_DESeq_results_1_wald$padj < 0.05, na.rm = TRUE)
 ```
 
 We subset the results table to these genes and then sort it by the log2 fold change estimate to get the significant genes:
 ```{r}
-resSig <- subset(PAG_DESeq_results_3_05, padj < 0.05)
+resSig <- subset(PAG_DESeq_results_1_wald, padj < 0.05)
 head(resSig[ order(resSig$log2FoldChange), ]) #  with the strongest down-regulation
 head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ]) # with the strongest up-regulation
 ```
@@ -377,7 +379,7 @@ A quick way to visualize the counts for a particular gene is to use the `plotCou
 plotCounts(PAG_DESeq_set_1, gene = "Col6a6", intgroup = "cell.type", 
            normalized = TRUE, transform = FALSE)
 
-topGene <- rownames(PAG_DESeq_results_1)[which.min(PAG_DESeq_results_1$padj)]
+topGene <- rownames(PAG_DESeq_results_1_wald)[which.min(PAG_DESeq_results_1_wald$padj)]
 plotCounts(PAG_DESeq_set_1, gene = topGene, intgroup=c("cell.type"))
 ```
 
@@ -401,20 +403,22 @@ An MA-plot (Dudoit et al. 2002) provides a useful overview for the distribution 
 Before making the MA-plot, we use the `lfcShrink` function to shrink the log2 fold changes for the comparison of choice. There are three types of shrinkage estimators in DESeq2, which are covered in the DESeq2 vignette. Here we specify the `apeglm` method for shrinking coefficients, which is good for shrinking the noisy LFC estimates while giving low bias LFC estimates for true large differences (Zhu, Ibrahim, and Love 2018). To use `apeglm` we specify a coefficient from the model to shrink, either by name or number as the coefficient appears in `resultsNames(dds)`.
 ```{r}
 library("apeglm")
-resultsNames(PAG_DESeq_set_3) # Check to see which coef to choose
+resultsNames(PAG_DESeq_set_1) # Check to see which coef to choose
 ```
 
 ```{r}
-PAG_DESeq_results_1_LFC <- lfcShrink(PAG_DESeq_set_1, coef="cell.type_VGluT2_vs_VGAT", type="apeglm")
+PAG_DESeq_results_1_LFC <- lfcShrink(PAG_DESeq_set_1, coef="cell.type_VGluT2_vs_VGAT", 
+                                     type="apeglm",
+                                     lfcThreshold = 0, parallel = TRUE)
 PAG_DESeq_results_1_LFC
-DESeq2::plotMA(PAG_DESeq_results_1_LFC, ylim = c(-5, 5))
+DESeq2::plotMA(PAG_DESeq_results_1_LFC, ylim = c(-2, 2))
 ```
 
 We can label individual points on the MA-plot as well. Here we use the `with` R function to plot a circle and text for a selected row of the results object. Within the `with` function, only the `baseMean` and `log2FoldChange` values for the selected rows of `PAG_DESeq_results_0` are used.
 ```{r}
-plotMA(PAG_DESeq_results_3, ylim = c(-5,5))
-topGene <- rownames(PAG_DESeq_results_3)[which.min(PAG_DESeq_results_3$padj)]
-with(PAG_DESeq_results_3[topGene, ], {
+plotMA(PAG_DESeq_results_1_wald, ylim = c(-5,5))
+topGene <- rownames(PAG_DESeq_results_1_wald)[which.min(PAG_DESeq_results_3$padj)]
+with(PAG_DESeq_results_1_wald[topGene, ], {
   points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
   text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
 })
@@ -422,14 +426,15 @@ with(PAG_DESeq_results_3[topGene, ], {
 
 Another useful diagnostic plot is the histogram of the p values. This plot is best formed by excluding genes with very small counts, which otherwise generate spikes in the histogram.
 ```{r}
-hist(PAG_DESeq_results_0$pvalue[PAG_DESeq_results_0$baseMean > 1], breaks = 0:20/20,
+hist(PAG_DESeq_results_1_wald$pvalue[PAG_DESeq_results_1_wald$baseMean > 1], breaks = 0:20/20,
      col = "grey50", border = "white")
 ```
 
 After calling plotMA, one can use the function identify to interactively detect the row number of individual genes by clicking on the plot. One can then recover the gene identifiers by saving the resulting indices:
 ```{r}
-idx <- identify(PAG_DESeq_results_0$baseMean, PAG_DESeq_results_0$log2FoldChange)
-rownames(PAG_DESeq_results_0)[idx]
+plotMA(PAG_DESeq_results_1_wald, ylim = c(-5, 5))
+idx <- identify(PAG_DESeq_results_1_wald$baseMean, PAG_DESeq_results_1_wald$log2FoldChange)
+rownames(PAG_DESeq_results_1_wald)[idx]
 ```
 
 ***
@@ -492,14 +497,13 @@ PAG_DESeq_results_1$entrez <- mapIds(org.Mm.eg.db,
 
 We can easily save the results table in a CSV file that we can then share or load with a spreadsheet program such as Excel (note, however, that Excel sometimes does funny things to gene identifiers (Zeeberg et al. 2004; Ziemann, Eren, and El-Osta 2016)). The call to `as.data.frame` is necessary to convert the `DataFrame` object (`IRanges` package) to a `data.frame` object that can be processed by `write.csv`.
 ```{r}
-PAG_DESeq_results_3_ordered <- PAG_DESeq_results_3[order(PAG_DESeq_results_3$padj), ]
-head(PAG_DESeq_results_3_ordered)
+PAG_DESeq_results_1_wald_ordered <- PAG_DESeq_results_1_wald[order(PAG_DESeq_results_1_wald$padj), ]
+head(PAG_DESeq_results_1_wald_ordered)
 
-PAG_DESeq_results_3_ordered_DF <- as.data.frame(PAG_DESeq_results_3_ordered)[seq_len(500), ] # Exporting top 100 genes
-#write.table(cbind(id = rownames(PAG_DESeq_results_1_ordered_DF), PAG_DESeq_results_1_ordered_DF), 
-#            file = "PAG_DE_results.txt", quote = FALSE, sep = "\t", row.names = FALSE)
-
-write.csv(PAG_DESeq_results_3_ordered_DF, file = "PAG_DESeq_results_3_ordered_DF.csv")
+PAG_DESeq_results_1_wald_ordered <- as.data.frame(PAG_DESeq_results_1_wald_ordered)[seq_len(sum(PAG_DESeq_results_1_wald$padj < 0.05, na.rm = TRUE)), ] # Exporting the genes with padg<0.05
+PAG_DESeq_results_1_wald_ordered <- PAG_DESeq_results_1_wald_ordered[order(PAG_DESeq_results_1_wald_ordered$log2FoldChange, decreasing = TRUE), ]
+write.table(cbind(id = rownames(PAG_DESeq_results_1_wald_ordered), PAG_DESeq_results_1_wald_ordered), quote = FALSE, sep = "\t", row.names = FALSE, file = "PAG_DESeq_results_1_wald_ordered.txt")
+write.csv(PAG_DESeq_results_1_wald_ordered, file = "PAG_DESeq_results_1_wald_ordered.csv")
 ```
 
 A more sophisticated way for exporting results the Bioconductor package `ReportingTools` (Huntley et al. 2013). `ReportingTools` will automatically generate dynamic HTML documents, including links to external databases using gene identifiers and boxplots summarizing the normalized counts across groups. See the `ReportingTools` vignettes for full details. The simplest version of creating a dynamic `ReportingTools` report is performed with the following code:
@@ -564,10 +568,12 @@ While _DESeq2_ performs independent filtering of lowly expressed genes internall
 
 Biological CV (BCV) is the coefficient of variation with which the (unknown) true abundance of the gene varies between replicate RNA samples. It represents the CV that would remain between biological replicates if sequencing depth could be increased indefinitely. The technical CV decreases as the size of the counts increases. BCV on the other hand does not. BCV is therefore likely to be the dominant source of uncertainty for high-count genes, so reliable estimation of BCV is crucial for realistic assessment of differential expression in RNA-Seq experiments. If the abundance of each gene varies between replicate RNA samples in such a way that the genewise standard deviations are proportional to the genewise means, a commonly occurring property of measurements on physical quantities, then it is reasonable to suppose that BCV is approximately constant across genes. We allow however for the possibility that BCV might vary between genes and might also show a systematic trend with respect to gene expression or expected count. The magnitude of BCV is more important than the exact probabilistic law followed by the true gene abundances. For mathematical convenience, we assume that the true gene abundances follow a gamma distributional law between replicate RNA samples. This implies that the read counts follow a negative binomial probability law.
 ```{r}
-start_time <- Sys.time() # Takes around 10 minutes
+start_time <- Sys.time() # Takes around 1.61 hours
 DGE_genes_keep <- edgeR::filterByExpr(PAG_DGE_list, PAG_DGE_design, min.count = 5) # Choose a specific gene filter
+table(DGE_genes_keep)
 PAG_DGE_list <- PAG_DGE_list[DGE_genes_keep, ]
 PAG_DGE_list <- edgeR::estimateDisp(PAG_DGE_list, PAG_DGE_design)
+saveRDS(PAG_DGE_list, file = "PAG_DGE_list.rds")
 end_time <- Sys.time()
 end_time - start_time
 
@@ -580,16 +586,16 @@ For general experiments, once dispersion estimates are obtained and negative bin
 
 Given raw counts, NB dispersion(s) and a design matrix, `glmQLFit()` fits the negative binomial GLM for each tag and produces an object of class `DGEGLM` with some new components. This `DGEGLM` object can then be passed to `glmQLFTest()` to carry out the QL F-test. User can select one or more coefficients to drop from the full design matrix. This gives the null model against which the full model is compared. Tags can then be ranked in order of evidence for differential expression, based on the p-value computed for each tag.
 ```{r}
-start_time <- Sys.time() # Takes around 10 minutes
+start_time <- Sys.time() # Takes around 40 minutes
 fit <- edgeR::glmQLFit(PAG_DGE_list, PAG_DGE_design)
-qlf <- edgeR::glmQLFTest(fit, coef = ncol(PAG_DGE_design))
+qlf <- edgeR::glmQLFTest(fit, coef = 30:36)
 end_time <- Sys.time()
 end_time - start_time
 
 PAG_edgeR_results_all <- edgeR::topTags(qlf, n = nrow(PAG_DGE_list), sort.by = "none") # all genes
 hist(PAG_edgeR_results_all$table$PValue)
 
-PAG_edgeR_results_tt <- edgeR::topTags(qlf, n = nrow(PAG_DGE_list), p.value = 0.1) # genes with adj.p<0.1
+PAG_edgeR_results_tt <- edgeR::topTags(qlf, n = nrow(PAG_DGE_list), p.value = 0.05) # genes with adj.p<0.05
 PAG_edgeR_results_tt10 <- edgeR::topTags(qlf) # just the top 10 by default
 PAG_edgeR_results_tt10
 
@@ -625,7 +631,6 @@ topGO(go, sort="up")
 keg <- kegga(qlf, species="Mm")
 topKEGG(keg, sort="up")
 ```
-
 
 ### 7.1.3 | Comparing DESeq2 and edgeR results:
 We can compare the sets of significantly differentially expressed genes to see how the results from the two packages overlap:
