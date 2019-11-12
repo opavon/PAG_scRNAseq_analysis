@@ -1526,7 +1526,76 @@ for(area in levels(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)){
   }
 ```
 
-## Step X.4 | Gene Lists from Literature and Labs
+## STEP X.3 | DE genes from DESeq2 analysis
+```{r}
+# Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
+PAG_DEseq2_icgenes <- rownames(PAG_DESeq_results_1_wald_ordered)[(rownames(PAG_DESeq_results_1_wald_ordered) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.ionchannels)]
+PAG_DEseq2_nmgenes <- rownames(PAG_DESeq_results_1_wald_ordered)[(rownames(PAG_DESeq_results_1_wald_ordered) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.NeuromodulatorsPeptides)]
+PAG_DEseq2_genes <- c(PAG_DEseq2_icgenes, PAG_DEseq2_nmgenes)
+length(PAG_DEseq2_genes)
+
+# Make violing plots
+plotExpression(PAG_sceset_qc_norm_filt_corr, PAG_DEseq2_genes,  
+               x = "cell.type", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 10, show_median = TRUE,
+               xlab ="Cell Type")
+
+plotExpression(PAG_sceset_qc_norm_filt_corr, PAG_DEseq2_genes,  
+               x = "PAG.arearegistration", colour_by = "cell.type",
+               exprs_values = "logcounts", ncol = 5, show_median = TRUE,
+               xlab = "PAG subdivision")
+
+# Define colors for the heatmaps:
+heatcolor_VGAT <- colorRampPalette(c("white", "#ff777c"))(100)
+heatcolor_VGluT2 <- colorRampPalette(c("white", "#009CB5"))(100)
+
+# Make Heatmaps by cell type
+for(celltype in levels(PAG_sceset_qc_norm_filt_corr$cell.type)){
+  plot <- plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cell.type==celltype], PAG_DEseq2_genes,
+                      exprs_values = "logcounts", 
+                      center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,12),
+                      color = eval(parse(text=paste("heatcolor_", celltype, sep = ""))), border_color = NA,              
+                      fontsize = 12,# cellwidth = 2, cellheight = 3, 
+                      show_colnames = TRUE, show_rownames = TRUE, angle_col = 45,            
+                      main = paste("DE Genes in", celltype, "cells"), 
+                      width = 6, height = 8,
+                      filename = paste("D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures/Heatmaps/DESeq2_genes/DESeq2_genes_", celltype, "_cells.png", sep = "")
+                      )
+  print(plot)
+  }
+
+# Make Heatmaps by PAG subdivision (VGAT cells)
+for(area in levels(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)){
+  plot <- plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration==area & PAG_sceset_qc_norm_filt_corr$cell.type=="VGAT"], PAG_DEseq2_genes,
+                      exprs_values = "logcounts", 
+                      center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,12),
+                      color = heatcolor_VGAT, border_color = NA,              
+                      fontsize = 12,# cellwidth = 2, cellheight = 3, 
+                      show_colnames = TRUE, show_rownames = TRUE, angle_col = 45,            
+                      main = paste("DE Genes in", area, "VGAT cells"), 
+                      width = 6, height = 8,
+                      filename = paste("D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures/Heatmaps/DESeq2_genes/DESeq2_genes_", area, "_VGAT_cells.png", sep = "")
+                      )
+  print(plot)
+  }
+
+# Make Heatmaps by PAG subdivision (VGluT2 cells)
+for(area in levels(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)){
+  plot <- plotHeatmap(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration==area & PAG_sceset_qc_norm_filt_corr$cell.type=="VGluT2"], PAG_DEseq2_genes,
+                      exprs_values = "logcounts", 
+                      center = FALSE, cluster_rows = FALSE, cluster_cols = FALSE, zlim = c(0,12),
+                      color = heatcolor_VGluT2, border_color = NA,              
+                      fontsize = 12,# cellwidth = 2, cellheight = 3, 
+                      show_colnames = TRUE, show_rownames = TRUE, angle_col = 45,            
+                      main = paste("DE Genes in", area, "VGluT2 cells"), 
+                      width = 6, height = 8,
+                      filename = paste("D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures/Heatmaps/DESeq2_genes/DESeq2_genes_", area, "_VGluT2_cells.png", sep = "")
+                      )
+  print(plot)
+  }
+```
+
+## Step X.5 | Gene Lists from Literature and Labs
 ### Cell type markers
 (i) oligodendrocytes (mRNAs for myelin basic protein (Mbp) and UDP glyco- syltransferase-8 (Ugt8) involved in sphingolipid metabolism); 
 (ii) astrocytes (genes Fabp7 and Ntsr2); 
@@ -2003,7 +2072,7 @@ for(area in levels(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)){
   }
 ```
 
-## Step X.5 | Data Club plots
+## Step X.6 | Data Club plots
 ### Data Club Ion Channels
 ```{r}
 # Get the ion channel gene names from the appropriate column and filter any genes not present in our dataset:
