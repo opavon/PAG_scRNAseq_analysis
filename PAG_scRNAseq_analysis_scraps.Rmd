@@ -19,11 +19,12 @@ output:
 ---
 
 ***
-This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al. Nature Protocols 2014). 
 
-This pipeline has been generated after attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis) and [attending](https://training.csx.cam.ac.uk/bioinformatics/event/2823386) and following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group). Many other resources have been used, including the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, the [rnaseqGene workflow](https://bioconductor.org/packages/release/workflows/html/rnaseqGene.html) maintained by Michael Love, the [RNAseq123 workflow](https://bioconductor.org/packages/release/workflows/html/RNAseq123.html) maintained by Matthew Ritchie, and the [EGSEA123 workflow](https://bioconductor.org/packages/release/workflows/html/EGSEA123.html) maintained by Matthew Ritchie.
+This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al., Nature Protocols 2014). 
 
-Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA-tools](https://www.scrna-tools.org/), `scater` (McCarty et al., Bioinformatics 2017), `scran` (Lun et al. F1000Res 2016), `SC3` (Kiselev et al., Nature Methods 2017), `Seurat` (Butler et al., Nature Biotechnology 2018), `clusterExperiment` (Risso et al., PLOS Computational Biology 2018), `limma` (Ritchie et al., Nucleic Acids Research 2015), `DESeq2` (Love et al., Genome Biology 2014), `iSEE` (Rue-Albrecht & Marini et al., F1000Research 2018), `t-SNE` (van der Maaten & Hinton, Journal of Machine Learning Research 2008).
+This pipeline has been generated after attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis) and [attending](https://training.csx.cam.ac.uk/bioinformatics/event/2823386) and following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group). Many other resources have been used, including the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, the [rnaseqGene workflow](https://bioconductor.org/packages/3.10/workflows/html/rnaseqGene.html) maintained by Michael Love, the [RNAseq123 workflow](https://bioconductor.org/packages/3.10/workflows/html/RNAseq123.html) maintained by Matthew Ritchie, and the [EGSEA123 workflow](https://bioconductor.org/packages/3.10/workflows/html/EGSEA123.html) maintained by Matthew Ritchie.
+
+Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber et al., Nature Methods 2015), [scRNA-tools](https://www.scrna-tools.org/), `scater` (McCarthy et al., Bioinformatics 2017), `scran` (Lun et al., F1000Res 2016), `SC3` (Kiselev et al., Nature Methods 2017), `Seurat` (Butler et al., Nature Biotechnology 2018), `clusterExperiment` (Risso et al., PLOS Computational Biology 2018), `limma` (Ritchie et al., Nucleic Acids Research 2015), `DESeq2` (Love et al., Genome Biology 2014), `edgeR` (Robinson et al., Bioinformatics 2010), `MAST` (Finak, McDavid, Yajima et al., Genome Biology 2015), `iSEE` (Rue-Albrecht & Marini et al., F1000Research 2018), `t-SNE` (van der Maaten & Hinton, Journal of Machine Learning Research 2008), `UMAP` (McInnes et al., arXiv 2018), and the [Mathematical Statistics and Machine Learning for Life Sciences](https://towardsdatascience.com/tagged/stats-ml-life-sciences) column by Nikolay Oskolkov.
 
 ***
 
@@ -320,7 +321,7 @@ Out
 
 # STEP 6 | Clustering
 ## Step 6.1 | Consensus clustering with SC3
-### 7.1.10 | SC3 Clustering using ion channels genes
+### 6.1.10 | SC3 Clustering using ion channels genes
 Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
 ```{r}
 PAG_ionchannels <- PAG_scRNAseq_gene_lists$genes.ionchannels
@@ -405,7 +406,7 @@ sc3_plot_markers(PAG_sceset_qc_ionchannels,
                  )
 ```
 
-### 7.1.11 | SC3 Clustering using Neuropeptides and Neuromodulators
+### 6.1.11 | SC3 Clustering using Neuropeptides and Neuromodulators
 Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
 ```{r}
 PAG_Neuromodulators_Peptides <- PAG_scRNAseq_gene_lists$genes.NeuromodulatorsPeptides
@@ -464,7 +465,7 @@ sc3_plot_markers(PAG_sceset_qc_Neuromodulators_Peptides,
                  )
 ```
 
-### 7.1.12 | SC3 Clustering ion channels genes instead of cells (need to transpose matrix in a new SCE object)
+### 6.1.12 | SC3 Clustering ion channels genes instead of cells (need to transpose matrix in a new SCE object)
 Run STEP 5.1.2 first, so you already have the subset of genes and the SCE object. Then transpose the SCE object with only ion channel genes you generated in the previous step:
 ```{r}
 # Keep only the rows that correspond to ion channel genes:
@@ -502,7 +503,7 @@ Explore results interactively:
 sc3_interactive(PAG_sceset_qc_ionchannels)
 ```
 
-### 7.1.13 | SC3 Clustering VGAT and VGluT2 cells separately
+### 6.1.13 | SC3 Clustering VGAT and VGluT2 cells separately
 Do this when you are ready for downstream analysis, after quality checks.  
 ```{r}
 # Is this the best way to subset the data? Probably not, there must be a way to do it without creating a new SCE object.

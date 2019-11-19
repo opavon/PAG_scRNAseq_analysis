@@ -19,11 +19,12 @@ output:
 ---
 
 ***
-This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al. Nature Protocols 2014). 
 
-This pipeline has been generated after attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis) and [attending](https://training.csx.cam.ac.uk/bioinformatics/event/2823386) and following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group). Many other resources have been used, including the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, the [rnaseqGene workflow](https://bioconductor.org/packages/release/workflows/html/rnaseqGene.html) maintained by Michael Love, the [RNAseq123 workflow](https://bioconductor.org/packages/release/workflows/html/RNAseq123.html) maintained by Matthew Ritchie, and the [EGSEA123 workflow](https://bioconductor.org/packages/release/workflows/html/EGSEA123.html) maintained by Matthew Ritchie.
+This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al., Nature Protocols 2014). 
 
-Other key resources are Bioconductor (Huber et al., Nature Methods 2015), [scRNA-tools](https://www.scrna-tools.org/), `scater` (McCarthy et al., Bioinformatics 2017), `scran` (Lun et al. F1000Res 2016), `SC3` (Kiselev et al., Nature Methods 2017), `Seurat` (Butler et al., Nature Biotechnology 2018), `clusterExperiment` (Risso et al., PLOS Computational Biology 2018), `limma` (Ritchie et al., Nucleic Acids Research 2015), `DESeq2` (Love et al., Genome Biology 2014), `edgeR` (Robinson et al., Bioinformatics 2010), `MAST` (Finak, McDavid, Yajima et al., Genome Biology 2015), `iSEE` (Rue-Albrecht & Marini et al., F1000Research 2018), `t-SNE` (van der Maaten & Hinton, Journal of Machine Learning Research 2008), `UMAP` (McInnes et al., arXiv 2018).
+This pipeline has been generated after attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis) and [attending](https://training.csx.cam.ac.uk/bioinformatics/event/2823386) and following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group). Many other resources have been used, including the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, the [rnaseqGene workflow](https://bioconductor.org/packages/3.10/workflows/html/rnaseqGene.html) maintained by Michael Love, the [RNAseq123 workflow](https://bioconductor.org/packages/3.10/workflows/html/RNAseq123.html) maintained by Matthew Ritchie, and the [EGSEA123 workflow](https://bioconductor.org/packages/3.10/workflows/html/EGSEA123.html) maintained by Matthew Ritchie.
+
+Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber et al., Nature Methods 2015), [scRNA-tools](https://www.scrna-tools.org/), `scater` (McCarthy et al., Bioinformatics 2017), `scran` (Lun et al., F1000Res 2016), `SC3` (Kiselev et al., Nature Methods 2017), `Seurat` (Butler et al., Nature Biotechnology 2018), `clusterExperiment` (Risso et al., PLOS Computational Biology 2018), `limma` (Ritchie et al., Nucleic Acids Research 2015), `DESeq2` (Love et al., Genome Biology 2014), `edgeR` (Robinson et al., Bioinformatics 2010), `MAST` (Finak, McDavid, Yajima et al., Genome Biology 2015), `iSEE` (Rue-Albrecht & Marini et al., F1000Research 2018), `t-SNE` (van der Maaten & Hinton, Journal of Machine Learning Research 2008), `UMAP` (McInnes et al., arXiv 2018), and the [Mathematical Statistics and Machine Learning for Life Sciences](https://towardsdatascience.com/tagged/stats-ml-life-sciences) column by Nikolay Oskolkov.
 
 ***
 
@@ -57,7 +58,7 @@ length(installed.packages())
 ```
 
 ## Pre-required installation and necessary packages
-To go through this pipeline, you will need to install the following: [R3.6.1](https://cran.r-project.org/) | [RTools35](https://cran.r-project.org/bin/windows/Rtools/) | [RStudio 1.1.463](https://www.rstudio.com/products/rstudio/download/) | [Git](https://git-scm.com/) | [Bioconductor 3.9](https://www.bioconductor.org/install/).
+To go through this pipeline, you will need to install the following: [R3.6.1](https://cran.r-project.org/) | [RTools35](https://cran.r-project.org/bin/windows/Rtools/) | [RStudio 1.1.463](https://www.rstudio.com/products/rstudio/download/) | [Git](https://git-scm.com/) | [Bioconductor 3.10](https://www.bioconductor.org/install/).
 
 Before installing any packages, check that TLS1.0 is unchecked and both TLS1.1 and TLS1.2 are selected in _InternetOptions>Advanced_, otherwise you will have problems accessing the CRAN mirrors. If you go to Tools/Global Options/Packages, unselect both the "Use secure download method for HTTP" and the "Use Internet Explorer library/proxy for HTTP" options.
 
@@ -67,22 +68,19 @@ Once you have this, start an RStudio session and install the following packages 
 options(stringsAsFactors = FALSE)
 
 # Install packages from CRAN:
-install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse"))
+install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "knitr", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse", "uwot"))
 install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
 
-# Install packages from github:
-devtools::install_github("jlmelville/uwot")
-devtools::install_github("iaconogi/bigSCale2")
-devtools::install_github("tallulandrews/M3Drop")
-devtools::install_github("SaskiaFreytag/schex")
-
 # Install Bioconducor:
-if (!requireNamespace("BiocManager"))
-    install.packages("BiocManager")
+install.packages("BiocManager")
 library(BiocManager)
 
 # Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "knitr", "limma", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
+BiocManager::install(c("AnnotationDbi", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "limma", "M3Drop", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "schex", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
+
+# Install packages from github:
+library(devtools)
+devtools::install_github("iaconogi/bigSCale2")
 ```
 
 <!--
