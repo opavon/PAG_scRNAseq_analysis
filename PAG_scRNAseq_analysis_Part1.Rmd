@@ -382,3 +382,7 @@ Save the `SingleCellExperiment` object so you don't have to repeat all these ste
 saveRDS(PAG_sceset, file = "PAG_sceset.rds")
 print("Part 1 - Done!")
 ```
+
+```{r}
+sessionInfo()
+```
