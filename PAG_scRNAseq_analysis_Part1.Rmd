@@ -76,7 +76,7 @@ install.packages("BiocManager")
 library(BiocManager)
 
 # Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "limma", "M3Drop", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "schex", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
+BiocManager::install(c("AnnotationDbi", "AnnotationHub", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "ensembldb", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "limma", "M3Drop", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "schex", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
 
 # Install packages from github:
 library(devtools)
@@ -158,15 +158,20 @@ PAG_metadata$date.collection <- as.factor(PAG_metadata$date.collection)
 PAG_metadata$sample.number <- as.factor(PAG_metadata$sample.number)
 PAG_metadata$mouse.id <- as.factor(PAG_metadata$mouse.id)
 PAG_metadata$mouse.sex <- as.factor(PAG_metadata$mouse.sex)
+PAG_metadata$mouse.age <- as.factor(PAG_metadata$mouse.age)
+PAG_metadata$mouse.singlehousedays <- as.factor(PAG_metadata$mouse.singlehousedays)
 PAG_metadata$cell.type <- as.factor(PAG_metadata$cell.type)
 PAG_metadata$cell.fluorophor <- as.factor(PAG_metadata$cell.fluorophor)
+PAG_metadata$patch.recorded <- as.factor(PAG_metadata$patch.recorded)
+PAG_metadata$pipette.RNAseOUT <- as.factor(PAG_metadata$pipette.RNAseOUT)
 PAG_metadata$slice.number <- as.factor(PAG_metadata$slice.number)
 PAG_metadata$PAG.areacollection <- as.factor(PAG_metadata$PAG.areacollection)
-PAG_metadata$PAG.arearegistration <- as.factor(PAG_metadata$PAG.arearegistration)
 PAG_metadata$PAG.hemisphere <- as.factor(PAG_metadata$PAG.hemisphere)
 PAG_metadata$PAG.APaxis <- as.factor(PAG_metadata$PAG.APaxis)
+PAG_metadata$PAG.arearegistration <- as.factor(PAG_metadata$PAG.arearegistration)
 PAG_metadata$time.slicing <- as.factor(PAG_metadata$time.slicing)
 PAG_metadata$time.sinceslicinghour <- as.factor(PAG_metadata$time.sinceslicinghour)
+PAG_metadata$batch.processing <- as.factor(PAG_metadata$batch.processing)
 PAG_metadata$RT.oligo <- as.factor(PAG_metadata$RT.oligo)
 PAG_metadata$RT.date <- as.factor(PAG_metadata$RT.date)
 PAG_metadata$RT.machine <- as.factor(PAG_metadata$RT.machine)
@@ -178,7 +183,6 @@ PAG_metadata$date.purification <- as.factor(PAG_metadata$date.purification)
 PAG_metadata$date.nanodrop <- as.factor(PAG_metadata$date.nanodrop)
 PAG_metadata$date.qubit <- as.factor(PAG_metadata$date.qubit)
 PAG_metadata$date.bioanalyzer <- as.factor(PAG_metadata$date.bioanalyzer)
-PAG_metadata$batch.processing <- as.factor(PAG_metadata$batch.processing)
 PAG_metadata$batch.sequencing_round <- as.factor(PAG_metadata$batch.sequencing_round)
 table(PAG_metadata$mouse.sex)
 table(PAG_metadata$cell.type)
@@ -192,7 +196,7 @@ levels(PAG_metadata$PAG.arearegistration)
 PAG_metadata$PAG.arearegistration <- relevel(PAG_metadata$PAG.arearegistration, ref = "dmpag")
 levels(PAG_metadata$PAG.arearegistration)
 
-# Create an extra metadata factor combining both cell.type and PAG.arearegistration
+# We will also create an extra metadata factor by combining both cell.type and PAG.arearegistration, which we will use during the differential expression analysis:
 PAG_metadata$PAGarea_celltype <- factor(paste0(PAG_metadata$PAG.arearegistration, "_", PAG_metadata$cell.type),
                                         levels = c("dmpag_VGAT", "dlpag_VGAT", "lpag_VGAT", "vlpag_VGAT", "dmpag_VGluT2",  "dlpag_VGluT2", "lpag_VGluT2", "vlpag_VGluT2"))
 levels(PAG_metadata$PAGarea_celltype)
@@ -206,7 +210,7 @@ class(PAG_metadata$slice.depth)
 class(PAG_metadata$sample.id)
 
 # Useful factor functions:
-table(PAG_metadata$PAG.areacollection)
+table(PAG_metadata$PAG.arearegistration)
 levels(PAG_metadata$mouse.id)
 ```
 
@@ -305,30 +309,35 @@ PAG_metadata[1:10,1:10]
 ```
 
 ## Step 1.5 | Add gene-based annotations
-We can add gene-based annotation by pulling the annotation from `org.Mm.eg.db` to relate the ENSEMBL identifiers to gene symbols. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID.
+ENSEMBL identifiers are stable but difficult to interpret compared to the gene symbols. We can obtain the symbols corresponding to each ENSEMBL ID using the relevant annotation package. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID. We can also identify which rows correspond to mitochondrial genes. To do that we need to use extra annotation describing the genomic location of each gene. Later on, we will be able to use this information to rename the rows of our `SingleCellExperiment` with the symbols, reverting to ENSEMBL identifiers for missing or duplicate symbols.
 ```{r}
-library(org.Mm.eg.db)
-gene_symbols <- mapIds(org.Mm.eg.db, keys=rownames(PAG_data), 
-                       keytype ="ENSEMBL", column="SYMBOL")
-PAG_gene_annotations <- data.frame(ENSEMBL=rownames(PAG_data), 
-                                   gene_symbols=gene_symbols, 
-                                   stringsAsFactors=FALSE)
-head(PAG_gene_annotations)
-```
+library(AnnotationHub)
+ah <- AnnotationHub()
+ens.mm.v97 <- ah[["AH73905"]]
 
-We can also identify which rows correspond to mitochondrial genes. To do that we need to use extra annotation describing the genomic location of each gene. For ENSEMBL, this involves using the `TxDb.Mmusculus.UCSC.mm10.ensGene` package.
-```{r}
-library(TxDb.Mmusculus.UCSC.mm10.ensGene)
-gene_location <- mapIds(TxDb.Mmusculus.UCSC.mm10.ensGene, keys=rownames(PAG_data), 
-                        column="CDSCHROM", keytype="GENEID")
-PAG_gene_annotations$Chromosome <- gene_location
+gene_symbols <- mapIds(ens.mm.v97, keys = rownames(PAG_data), 
+                       keytype = "GENEID", column = "SYMBOL")
+gene_location <- mapIds(ens.mm.v97, keys = rownames(PAG_data), 
+                        keytype="GENEID", column="SEQNAME")
+
+PAG_gene_annotations <- data.frame(ENSEMBL = rownames(PAG_data), 
+                                   gene_symbols = gene_symbols,
+                                   gene_location = gene_location,
+                                   stringsAsFactors = FALSE)
+head(PAG_gene_annotations)
 ```
 
 We can finally add the annotations from the `mapIds()` function to the already existing `PAG_gene_information` variable to have everything in the same place.
 ```{r}
 PAG_gene_information$gene_name_mapids <- PAG_gene_annotations$gene_symbols
-PAG_gene_information$gene_chromosome_mapids <- PAG_gene_annotations$Chromosome
-head(PAG_gene_information$gene_name_mapids)
+PAG_gene_information$gene_chromosome_mapids <- PAG_gene_annotations$gene_location
+
+head(PAG_gene_information)
+table(PAG_gene_information$Chromosome)
+table(PAG_gene_information$gene_chromosome_mapids)
+
+which(PAG_gene_information$Chromosome=="M")
+which(PAG_gene_information$gene_chromosome_mapids=="MT")
 ```
 
 In our case, however, the information provided by the Genome Centre Sequencing Facility is more complete than what we obtain with `mapIds()` and includes the transgenes we used to label cells and ERCC spike-ins, so we will stick to that one.

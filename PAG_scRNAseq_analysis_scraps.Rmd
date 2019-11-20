@@ -30,6 +30,29 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 
 Below are some code scraps that have been taken out of the pipeline in favour of other preferred alternatives. They most likely require further adaptations before being reincorporated. 
 
+# STEP 1 | Read Data and Metadata
+## Step 1.5 | Add gene-based annotations
+We can add gene-based annotation by pulling the annotation from `org.Mm.eg.db` to relate the ENSEMBL identifiers to gene symbols. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID.
+```{r}
+library(org.Mm.eg.db)
+gene_symbols <- mapIds(org.Mm.eg.db, keys = rownames(PAG_data), 
+                       keytype ="ENSEMBL", column = "SYMBOL")
+PAG_gene_annotations <- data.frame(ENSEMBL = rownames(PAG_data), 
+                                   gene_symbols = gene_symbols, 
+                                   stringsAsFactors = FALSE)
+head(PAG_gene_annotations)
+```
+
+We can also identify which rows correspond to mitochondrial genes. To do that we need to use extra annotation describing the genomic location of each gene. For ENSEMBL, this involves using the `TxDb.Mmusculus.UCSC.mm10.ensGene` package.
+```{r}
+library(TxDb.Mmusculus.UCSC.mm10.ensGene)
+gene_location <- mapIds(TxDb.Mmusculus.UCSC.mm10.ensGene, keys = rownames(PAG_data), 
+                        keytype = "GENEID", column = "CDSCHROM")
+PAG_gene_annotations$Chromosome <- gene_location
+which(gene_location=="chrM")
+table(PAG_gene_annotations$Chromosome)
+```
+
 # STEP 2 | Quality Control and pre-processing
 ## Step 2.5 | Gene QC
 ### 2.5.3 | Identities of the most highly expressed genes
