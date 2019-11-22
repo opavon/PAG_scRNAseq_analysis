@@ -144,6 +144,8 @@ PAG_sceset_qc <- logNormCounts(PAG_sceset_qc)
 assayNames(PAG_sceset_qc)
 ```
 
+The log-transformation is useful as differences in the log-values represent log-fold changes in expression. This is important in downstream procedures based on Euclidean distances, which includes many forms of clustering and dimensionality reduction. By operating on log-transformed data, we ensure that these procedures are measuring distances between cells based on log-fold changes in expression. 
+
 ## Step 3.4 | Compare the effects of different normalization strategies
 To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's plotRLE() function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE close to zero.
 
