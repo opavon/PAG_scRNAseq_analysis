@@ -53,8 +53,8 @@ library(scater)
 
 # ERCCs
 is_spike <- grepl("^ERCC-", rownames(PAG_sceset))
-#isSpike(PAG_sceset, "ERCC") <- is_spike # Add them to the Spike-in slot - Deprecated
-PAG_sceset <- splitAltExps(PAG_sceset, ifelse(is_spike, "ERCC", "gene"))
+isSpike(PAG_sceset, "ERCC") <- is_spike # Add them to the Spike-in slot - Deprecated
+#PAG_sceset <- splitAltExps(PAG_sceset, ifelse(is_spike, "ERCC", "gene")) # using new AltExps
 
 # Mitochondrial genes
 is_mitochondrial <- which(rowData(PAG_sceset)$Chromosome == "M") # Select the mitochondrial chromosome
@@ -82,10 +82,10 @@ is_SmartSeqTSO <- which(rowData(PAG_sceset)$Chromosome == "D") # TSO concatamers
 is_VGAT <- which(rowData(PAG_sceset)$gene_name == "Slc32a1")
 is_VGluT2 <- which(rowData(PAG_sceset)$gene_name == "Slc17a6") 
 
-#spikeNames(PAG_sceset) # Only ERCCs should appear as Spikes in the SCE object - Deprecated
+spikeNames(PAG_sceset) # Only ERCCs should appear as Spikes in the SCE object - Deprecated
 PAG_sceset
-altExpNames(PAG_sceset)
-altExp(PAG_sceset)
+#altExpNames(PAG_sceset)
+#altExp(PAG_sceset)
 ```
 
 ### 2.1.1 | Uniquify feature names
@@ -105,7 +105,8 @@ Once we have defined the control features, there is a function in `scater` (`per
 # Calculate the quality metrics after defining the control features:
 library(scater)
 PAG_sceset <- addPerCellQC(PAG_sceset,
-                           subsets = list(Mitochondrial = is_mitochondrial,
+                           subsets = list(ERCC = isSpike(PAG_sceset, "ERCC"),
+                                          Mitochondrial = is_mitochondrial,
                                           Ribosomal = is_ribosomal,
                                           Chromosome_X = is_X,
                                           Chromosome_Y = is_Y,
@@ -180,7 +181,7 @@ __Using ERCC for normalization vs using them for QC__: ERCCs contain 96 differen
 par(mfrow=c(2,2))
 
 # ERCCs
-hist(PAG_sceset$altexps_ERCC_percent,
+hist(PAG_sceset$subsets_ERCC_percent,
      breaks = 50,
      xlab="ERCC proportion (%)", ylab="Number of cells", main="", col="grey80"
      )
@@ -207,7 +208,7 @@ hist(PAG_sceset$subsets_TSO_concatamers_percent,
      )
 abline(v = 5, col = "blue", lwd=2, lty=2)
 
-summary(PAG_sceset$altexps_ERCC_percent)
+summary(PAG_sceset$subsets_ERCC_percent)
 summary(PAG_sceset$subsets_Mitochondrial_percent)
 summary(PAG_sceset$subsets_Ribosomal_percent)
 summary(PAG_sceset$subsets_TSO_concatamers_percent)
@@ -218,7 +219,7 @@ summary(PAG_sceset$subsets_TSO_concatamers_percent)
 
 plotColData(PAG_sceset,
             x = "detected",
-            y = "altexps_ERCC_percent",
+            y = "subsets_ERCC_percent",
             colour_by = "PAG.arearegistration",
             other_fields = "cell.type") +
   facet_wrap(~cell.type) + 
@@ -507,7 +508,7 @@ table(PAG_sceset$filter_by_percent_top_100_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_percent_top_100_manual]$PAG.areacollection)
 
 # Not more than 1% of counts in ERCCs
-PAG_sceset$filter_by_pct_ERCC_manual <- (PAG_sceset$altexps_ERCC_percent > 1)
+PAG_sceset$filter_by_pct_ERCC_manual <- (PAG_sceset$subsets_ERCC_percent > 1)
 table(PAG_sceset$filter_by_pct_ERCC_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_pct_ERCC_manual]$PAG.areacollection)
 
@@ -691,7 +692,7 @@ attr(PAG_sceset$filter_by_expr_features_MADs, "thresholds")
 We identify outliers for the proportion-based metrics in a similar manner. Here, no transformation is required as we are identifying large outliers, for which the distinction should be fairly clear on the raw scale.
 ```{r}
 # ERCCs
-PAG_sceset$filter_by_pct_ERCC_MADs <- isOutlier(PAG_sceset$altexps_ERCC_percent, nmads = 5, type = "higher", batch = NULL)
+PAG_sceset$filter_by_pct_ERCC_MADs <- isOutlier(PAG_sceset$subsets_ERCC_percent, nmads = 5, type = "higher", batch = NULL)
 table(PAG_sceset$filter_by_pct_ERCC_MADs)
 attr(PAG_sceset$filter_by_pct_ERCC_MADs, "thresholds")
 
@@ -751,7 +752,7 @@ library(scater)
 library(sgeostat)
 library(mvoutlier)
 PAG_sceset <- runColDataPCA(PAG_sceset, outliers = TRUE,
-                            variables = list("sum", "detected", "altexps_ERCC_sum", "subsets_Mitochondrial_percent", "subsets_Ribosomal_percent", "subsets_TSO_concatamers_percent"))
+                            variables = list("sum", "detected", "subsets_ERCC_percent", "subsets_Mitochondrial_percent", "subsets_Ribosomal_percent", "subsets_TSO_concatamers_percent"))
 plotReducedDim(PAG_sceset, dimred="PCA_coldata", colour_by = "outlier", shape_by = "PAG.areacollection")
 table(PAG_sceset$outlier)
 
@@ -795,7 +796,7 @@ Once we have applied our cell filter, we can quickly inspect the distribution of
 gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total", colour_by = "use") + ggtitle("Library size"),
                         plotColData(PAG_sceset, x = "cell.type", y = "detected", colour_by = "use") + ggtitle("Detected genes"),
                         plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100", colour_by = "use") + ggtitle("Percent reads consumed by 100 most expressed genes"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent", colour_by = "use") + ggtitle("Percent ERCC"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_ERCC_percent", colour_by = "use") + ggtitle("Percent ERCC"),
                         plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent", colour_by = "use") + ggtitle("Percent Mitochondrial genes"),
                         plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent", colour_by = "use") + ggtitle("Percent Ribosomal genes"),
                         plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent", colour_by = "use") + ggtitle("Percent TSO concatamers"),
@@ -878,6 +879,8 @@ smoothScatter(log10(all_ave_counts),
               xlab=expression(Log[10]~"average count"), 
               ylab="Number of expressing cells",
               xlim=c(-2,5))
+control_features_all <- isSpike(PAG_sceset)
+points(log10(all_ave_counts[control_features_all]), all_numcells[control_features_all], col="red", pch=16, cex=0.5)
 
 # After removing low-quality cells:
 smoothScatter(log10(use_ave_counts), 
@@ -885,6 +888,8 @@ smoothScatter(log10(use_ave_counts),
               xlab=expression(Log[10]~"average count"), 
               ylab="Number of expressing cells",
               xlim=c(-2,5))
+control_features_use <- isSpike(PAG_sceset[ , colData(PAG_sceset)$use])
+points(log10(use_ave_counts[control_features_use]), use_numcells[control_features_use], col="red", pch=16, cex=0.5)
 ```
 
 As we already mentioned, genes expressed in very few cells are often uninteresting as they might be driven by amplification artifacts (though they may also also arise from rare populations). We could thus remove genes that are expressed in fewer than n cells. 
