@@ -66,6 +66,9 @@ is_ribosomal <- which(rowData(PAG_sceset)$gene_biotype == "rRNA")
 is_X <- which(rowData(PAG_sceset)$Chromosome == "X")
 is_Y <- which(rowData(PAG_sceset)$Chromosome == "Y")
 
+# XIST gene
+is_XIST <- which(rowData(PAG_sceset)$gene_name == "Xist")
+
 # EYFP, tdTomato, Cre, and TSO concatamers
 is_tdTomato <- which(rowData(PAG_sceset)$Chromosome == "A") # tdTomato fluorophor
 # Alternatively, if using gene_name use <- grepl("^tdTomato", rownames(PAG_sceset))
@@ -78,9 +81,6 @@ is_SmartSeqTSO <- which(rowData(PAG_sceset)$Chromosome == "D") # TSO concatamers
 # VGAT and VGluT2
 is_VGAT <- which(rowData(PAG_sceset)$gene_name == "Slc32a1")
 is_VGluT2 <- which(rowData(PAG_sceset)$gene_name == "Slc17a6") 
-
-# XIST gene
-is_XIST <- which(rowData(PAG_sceset)$gene_name == "Xist")
 
 #spikeNames(PAG_sceset) # Only ERCCs should appear as Spikes in the SCE object - Deprecated
 PAG_sceset
@@ -100,7 +100,7 @@ tail(rownames(PAG_sceset), 50)
 ```
 
 ## Step 2.2 | Calculate QC metrics
-Once we have defined the control features, there is a function in `scater` (`perCellQCMetrics`) that allows us to automatically calculate QC metrics based on these features. For each cell, it calculates quality control metrics such as the total number of counts or the proportion of counts in mitochondrial genes or spike-in transcripts. If we use `addPerCellQC`, these are stored in the  `colData` of the `SingleCellExperiment` for future reference:
+Once we have defined the control features, there is a function in `scater` (`perCellQCMetrics()`) that allows us to automatically calculate QC metrics based on these features. For each cell, it calculates quality control metrics such as the total number of counts or the proportion of counts in mitochondrial genes or spike-in transcripts. If we use `addPerCellQC()`, these are stored in the  `colData()` of the `SingleCellExperiment` for future reference:
 ```{r}
 # Calculate the quality metrics after defining the control features:
 library(scater)
@@ -109,13 +109,13 @@ PAG_sceset <- addPerCellQC(PAG_sceset,
                                           Ribosomal = is_ribosomal,
                                           Chromosome_X = is_X,
                                           Chromosome_Y = is_Y,
+                                          XIST = is_XIST,
                                           tdTomato = is_tdTomato,
                                           EYFP = is_EYFP,
                                           Cre = is_Cre,
                                           TSO_concatamers = is_SmartSeqTSO,
                                           VGAT = is_VGAT,
-                                          VGluT2 = is_VGluT2,
-                                          XIST = is_XIST
+                                          VGluT2 = is_VGluT2
                                           )
                            )
 PAG_sceset
@@ -125,16 +125,16 @@ colnames(colData(PAG_sceset))
 ## Step 2.3 | Cell QC
 We need to remove low-quality cells to ensure that technical effects do not distort downstream analyses. Some metrics we can use to assess quality are: Library size, Number of expressed features, Proportion of spike-in reads, Proportion of mitochondrial reads, etc. Together, these metrics helps us spot failures in cDNA capture (failed reverse transcription) and cell damage during isolation.
 
-_See the the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun for more details on this and following QC steps._
+_See the the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun and the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks  for more details on this and following QC steps._
 
 ### 2.3.1 | Library size and Number of expressed features
-Two common measures of cell quality are the library size (total sum of counts across all features) and the number of expressed features in each library. 
+Two common measures of cell quality are the library size (total sum of counts across all features) and the number of detected features in each library. 
 
 Cells with relatively small library sizes are likely to have been dead prior to aspiration and their RNA has not been efficiently captured (i.e. converted into cDNA and amplified) during library preparation. These cells should be removed.
 
-Additionally, the number of expressed features in each cell is defined as the number of features with non-zero counts for that cell. Any cell with very few expressed genes is likely to be of poor quality as the diverse transcript population has not been successfully captured.
+Additionally, the number of detected features in each cell is defined as the number of features with non-zero counts for that cell. Any cell with very few detected genes is likely to be of poor quality as the diverse transcript population has not been successfully captured.
 ```{r}
-# Plot the histograms of the library sizes and number of expressed genes:
+# Plot the histograms of the library sizes and number of detected genes:
 par(mfrow=c(1,2)) # Draw figures in a 1 by 2 array.
 
 hist(PAG_sceset$total/1e6,
@@ -154,14 +154,14 @@ summary(PAG_sceset$detected)
 ```
 
 ```{r}
-# Plot the library size against the total number of expressed features:
+# Plot the library size against the total number of detected features:
 plotColData(PAG_sceset,
             x = "detected",
             y = "total",
             colour_by = "PAG.arearegistration",
             other_fields = "cell.type") +
   facet_wrap(~cell.type) +
-  theme(legend.position = "top") +
+  theme(legend.position = "right") +
   xlab("Number of detected genes") +
   ylab("Library size") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
@@ -222,7 +222,7 @@ plotColData(PAG_sceset,
             colour_by = "PAG.arearegistration",
             other_fields = "cell.type") +
   facet_wrap(~cell.type) + 
-  theme(legend.position = "top") +
+  theme(legend.position = "right") +
   xlab("Number of detected genes") +
   ylab("ERCC proportion (%)") +
   stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
@@ -497,22 +497,22 @@ table(PAG_sceset$filter_by_total_counts_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_total_counts_manual]$PAG.areacollection)
 
 # At least 5,000 genes detected and not more than 13,000 (potential doublets)
-PAG_sceset$filter_by_expr_features_manual <- (PAG_sceset$detected < 5000 | PAG_sceset$detected > 13000) 
+PAG_sceset$filter_by_expr_features_manual <- (PAG_sceset$detected < 5000 | PAG_sceset$detected > 13000)
 table(PAG_sceset$filter_by_expr_features_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_expr_features_manual]$PAG.areacollection)
 
 # Not more than 60% of counts consumed by the 100 most expressed genes
-PAG_sceset$filter_by_percent_top_100_manual <- (PAG_sceset$percent_top_100 > 60) 
+PAG_sceset$filter_by_percent_top_100_manual <- (PAG_sceset$percent_top_100 > 60)
 table(PAG_sceset$filter_by_percent_top_100_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_percent_top_100_manual]$PAG.areacollection)
 
 # Not more than 1% of counts in ERCCs
-PAG_sceset$filter_by_pct_ERCC_manual <- (PAG_sceset$altexps_ERCC_percent > 1) 
+PAG_sceset$filter_by_pct_ERCC_manual <- (PAG_sceset$altexps_ERCC_percent > 1)
 table(PAG_sceset$filter_by_pct_ERCC_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_pct_ERCC_manual]$PAG.areacollection)
 
 # Not more than 15% of counts in Mitochondrial genes
-PAG_sceset$filter_by_pct_Mitochondrial_manual <- (PAG_sceset$subsets_Mitochondrial_percent > 15) 
+PAG_sceset$filter_by_pct_Mitochondrial_manual <- (PAG_sceset$subsets_Mitochondrial_percent > 15)
 table(PAG_sceset$filter_by_pct_Mitochondrial_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_pct_Mitochondrial_manual]$PAG.areacollection)
 
@@ -639,6 +639,7 @@ data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_manual),
 table(PAG_sceset$manual_filters)
 table(PAG_sceset$manual_filters, PAG_sceset$PAG.arearegistration)
 table(PAG_sceset$manual_filters, PAG_sceset$cell.type)
+table(PAG_sceset$manual_filters, PAG_sceset$VGAT_VGluT2_expression)
 ```
 
 Inspect the cells excluded by each filter. Are there cells that consistently fail the filters?
@@ -815,10 +816,12 @@ Low-abundance genes are problematic as zero or near-zero counts do not contain e
 ```{r}
 library(scater)
 # We can define low-abundance genes as those with an average count below a filter threshold of 1, as they are likely to be dominated by drop-out events.
-all_ave_counts <- calcAverage(PAG_sceset, use_size_factors=FALSE)
+all_ave_counts <- calculateAverage(PAG_sceset)
+summary(all_ave_counts)
 
 # Do the same using the filtered cells:
-use_ave_counts <- calcAverage(PAG_sceset[ , colData(PAG_sceset)$use], use_size_factors=FALSE)
+use_ave_counts <- calculateAverage(PAG_sceset[ , colData(PAG_sceset)$use])
+summary(use_ave_counts)
 ```
 
 We can check whether a chosen threshold would be suitable by examining the distribution of log-mean counts across all genes. The peak represents the bulk of moderately expressed genes while the rectangular component corresponds to lowly expressed genes. The filter threshold should cut the distribution at some point along the rectangular component to remove the majority of low-abundance genes.
@@ -831,7 +834,7 @@ hist(log10(all_ave_counts),
      xlab=expression(Log[10]~"average count (all)"),
      xlim=c(-10,10)
      )
-abline(v=log10(1), col="blue", lwd=2, lty=2)
+abline(v=1, col="blue", lwd=2, lty=2)
 
 # After removing low-quality cells:
 hist(log10(use_ave_counts), 
@@ -841,7 +844,7 @@ hist(log10(use_ave_counts),
      xlab=expression(Log[10]~"average count (use)"),
      xlim=c(-10,10)
      )
-abline(v=log10(1), col="blue", lwd=2, lty=2)
+abline(v=1, col="blue", lwd=2, lty=2)
 ```
 
 After looking at the histograms we could apply a minimum threshold to this average to filter out genes that are lowly expressed, and see how many genes we would be left with.
@@ -859,22 +862,22 @@ __NOTE__: the `computeSumFactors()` function we will use prior to normalization 
 An alternative approach to gene filtering is to select genes that have non-zero counts in at least n cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
 ```{r}
 # Count the number of non-zero counts (or any value set by the detection_limit) in each row (per feature) or column (per cell). With byrow=TRUE we count the number of cells that express each gene more than certain number of times.
-all_numcells <- nexprs(PAG_sceset, detection_limit = 1, byrow=TRUE) 
+all_numcells <- nexprs(PAG_sceset, detection_limit = 0, byrow=TRUE) 
+summary(all_numcells)
 
 # Same after removing low-quality cells:
-use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 1, byrow=TRUE)
+use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow=TRUE)
+summary(use_numcells)
 ```
 
 The number of cells expressing each gene is usually well-correlated to the average expression of each gene, as expression in many cells will result in a higher average.
 ```{r}
-# Plot the number of expressing cells against the log-mean expression for each gene in the dataset. Control features are highlighted in red (ERCCs)
+# Plot the number of expressing cells against the log-mean expression for each gene in the dataset.
 smoothScatter(log10(all_ave_counts), 
               all_numcells, 
               xlab=expression(Log[10]~"average count"), 
               ylab="Number of expressing cells",
               xlim=c(-2,5))
-control_features_all <- isSpike(PAG_sceset)
-points(log10(all_ave_counts[control_features_all]), all_numcells[control_features_all], col="red", pch=16, cex=0.5)
 
 # After removing low-quality cells:
 smoothScatter(log10(use_ave_counts), 
@@ -882,8 +885,6 @@ smoothScatter(log10(use_ave_counts),
               xlab=expression(Log[10]~"average count"), 
               ylab="Number of expressing cells",
               xlim=c(-2,5))
-control_features_use <- isSpike(PAG_sceset[ , colData(PAG_sceset)$use])
-points(log10(use_ave_counts[control_features_use]), use_numcells[control_features_use], col="red", pch=16, cex=0.5)
 ```
 
 As we already mentioned, genes expressed in very few cells are often uninteresting as they might be driven by amplification artifacts (though they may also also arise from rare populations). We could thus remove genes that are expressed in fewer than n cells. 
@@ -899,11 +900,11 @@ summary(filter_low_abundance_genes_alternative_use)
 For now, we will only remove genes not expressed in any cell. Depending on which type of analysis we do later on, we can add a new round of gene filtering with different settings tailored to each particular step.
 
 ### 2.5.3 | Identities of the most highly expressed genes
-It is often instructive to consider the number of reads consumed by the top 50 expressed genes. This should generally be dominated by constitutively expressed transcripts, such as those for ribosomal or mitochondrial proteins. The presence of other classes of features may be cause for concern if they are not consistent with expected biology. Many spike-in transcripts in the top most expressed genes suggests that too much spike-in RNA was added during library preparation, while the absence of ribosomal proteins and/or the presence of their pseudogenes are indicative of suboptimal alignment.
+It is often instructive to consider the number of reads consumed by the top 50 expressed genes. This should generally be dominated by constitutively expressed transcripts, such as those for ribosomal or mitochondrial proteins, Malat1, or actin. The presence of other classes of features may be cause for concern if they are not consistent with expected biology. Many spike-in transcripts in the top most expressed genes suggests that too much spike-in RNA was added during library preparation, while the absence of ribosomal proteins and/or the presence of their pseudogenes are indicative of suboptimal alignment.
 ```{r}
 # Plot the total counts consumed by the top 50 expressed genes in the whole dataset and after filtering low quality cells:
-plotHighestExprs(PAG_sceset, n = 100, colour_cells_by = "cell.type")
-plotHighestExprs(PAG_sceset[ , colData(PAG_sceset)$use], n = 100, colour_cells_by = "cell.type")
+plotHighestExprs(PAG_sceset, n = 50, colour_cells_by = "cell.type", exprs_values = "counts")
+plotHighestExprs(PAG_sceset[ , colData(PAG_sceset)$use], n = 50, colour_cells_by = "cell.type", exprs_values = "counts")
 ```
 
 ### 2.5.4 | Apply chosen gene-filtering approach
@@ -915,7 +916,7 @@ The safest option will be to apply these filters at each step rather than applyi
 ```{r}
 # Set the filter with the chosen parameters:
 use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow = TRUE) # `byrow=TRUE` - count the number of detected cells per feature
-rowData(PAG_sceset)$genes_expressed <- use_numcells >= 1 # This will leave genes expressed in less than X number of cells as FALSE
+rowData(PAG_sceset)$genes_expressed <- use_numcells > 0 # This will leave genes expressed in less than X number of cells as FALSE
 summary(rowData(PAG_sceset)$genes_expressed)
 
 # Find predicted genes (Gm stands for gene model)
@@ -964,3 +965,7 @@ print("Part 2 - Done!")
 ```
 
 __IMP__: once you have filtered out low-quality cells and stored the resulting dataset into a QCed one, use the QCed for the following steps.
+
+```{r}
+sessionInfo()
+```
