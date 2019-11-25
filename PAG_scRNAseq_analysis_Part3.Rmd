@@ -31,7 +31,7 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 # STEP 3 | Normalization of cell-specific biases
 Systematic differences in sequencing coverage between libraries are often observed in single-cell RNA sequencing data (Stegle, Teichmann, and Marioni 2015). They typically arise from technical differences in cDNA capture or PCR amplification efficiency across cells, attributable to the difficulty of achieving consistent library preparation with minimal starting material. Normalization aims to remove these differences such that they do not interfere with comparisons of the expression profiles between cells. This ensures that any observed heterogeneity or differential expression within the cell population are driven by biology and not technical biases.
 
-Scaling normalization involves dividing all counts for each cell by a cell-specific scaling factor, often called a “size factor” (Anders and Huber 2010). The assumption here is that any cell-specific bias (e.g., in capture or amplification efficiency) affects all genes equally via scaling of the expected mean count for that cell. The size factor for each cell represents the estimate of the relative bias in that cell, so division of its counts by its size factor should remove that bias. The resulting “normalized expression values” can then be used for downstream analyses such as clustering and dimensionality reduction.
+Scaling normalization is the simplest and most commonly used class of normalization strategies. It involves dividing all counts for each cell by a cell-specific scaling factor, often called a “size factor” (Anders and Huber 2010). The assumption here is that any cell-specific bias (e.g., in capture or amplification efficiency) affects all genes equally via scaling of the expected mean count for that cell. The size factor for each cell represents the estimate of the relative bias in that cell, so division of its counts by its size factor should remove that bias. The resulting “normalized expression values” can then be used for downstream analyses such as clustering and dimensionality reduction.
 
 _The following theory has been summarised from the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group)._
 
@@ -50,13 +50,13 @@ Library sizes vary because scRNA-seq data is often sequenced on highly multiplex
 * __SCnorm (scRNAseq specific)__: Another method developed to normalize scRNAseq data (Bacher et al. Nature Methods 2017).
 
 ***
-__A note on scaling normalization strategies__ from the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.8/workflows/html/simpleSingleCell.html) maintained by Aaron Lun.
+__A note on scaling normalization strategies__ from the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun.
 
 Scaling normalization strategies for scRNA-seq data can be broadly divided into two classes. The first class assumes that there exists a subset of genes that are not DE between samples. The second class uses the fact that the same amount of spike-in RNA was added to each cell, and therefore differences in the coverage of the spike-in transcripts can only be due to cell-specific biases (e.g., in capture efficiency or sequencing depth). Scaling normalization is then applied to equalize spike-in coverage across cells.
 
 The choice between these two normalization strategies depends on the biology of the cells and the features of interest. If the majority of genes are expected to be DE and there is no reliable house-keeping set, spike-in normalization may be the only option for removing cell-specific biases. Spike-in normalization should also be used if differences in the total RNA content of individual cells are of interest. In any particular cell, an increase in the amount of endogenous RNA will not increase spike-in coverage (with or without library quantification). Thus, the former will not be represented as part of the bias in the latter, which means that the effects of total RNA content on expression will not be removed upon scaling. With non-DE normalization, an increase in RNA content will systematically increase the expression of all genes in the non-DE subset, such that it will be treated as bias and removed.
 
-In our case, we expect our dataset to contain a homogeneous population of neurons, with the majority of genes not differentially expressed between samples. Therefore, we will compute size factors separately for endogenous and spike-in transcripts.
+In our case, we expect our dataset to contain a homogeneous population of neurons, with the majority of genes not differentially expressed between samples. Therefore, we will compute size factors for endogenous genes. We will not use spike-in transcripts as we did not add them in sufficient concentration to be used reliably.
 
 ## Step 3.1 | Compute size factors for endogenous genes
 We will use `scran` to calculate size factors for our samples and then use them for normalization. Importantly, see Vallejos et al., Nature Methods 2017 for an explanation of why it is not a good idea to use CPM normalization on scRNAseq data.
@@ -77,14 +77,14 @@ We should __not__ include spike-ins in the normalization step, as we want to nor
 # For large datasets of highly heterogeneous data with multiple cell types we should run a preclustering step:
 # qclust <- quickCluster(PAG_sceset_qc, min.size = 30)
 # PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, sizes = 15, clusters = qclust)
-# PAG_sceset_qc <- normalize(PAG_sceset_qc)
+# PAG_sceset_qc <- logNormCounts(PAG_sceset_qc)
 
 # For small datasets like ours (< 1000 samples), the quickCluster step above can be ommited and we can run computeSumFactors straight away.
 PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, min.mean = 1, sizes = seq(21, 201, 5), assay.type = "counts")
 summary(sizeFactors(PAG_sceset_qc))
 ```
 
-`scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find scran has calculated negative size factors try increasing the cluster and pool sizes until they are all positive.
+`scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find `scran` has calculated negative size factors try increasing the cluster and pool sizes until they are all positive.
 
 Plotting the size factors against the library sizes should show some positive correlation.
 ```{r}
@@ -101,42 +101,25 @@ legend("bottomright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rg
 
 The size factors are tightly correlated with the library sizes for all cells. This suggests that the systematic differences between cells are primarily driven by differences in capture efficiency or sequencing depth. Any DE between cells would yield a non-linear trend between the total count and size factor, and/or increased scatter around the trend. This does not occur here as strong DE is unlikely to exist within a homogeneous population of cells.
 
-## Step 3.2 | Compute size factors for spike-in transcripts
-Size factors computed from the counts for endogenous genes are usually not appropriate for normalizing the counts for spike-in transcripts. The normalization we implemented in the previous step corrects for RNA content. HOwever, spike-in transcripts are not affected by RNA content, as we theoretically added the same amount to each sample. Therefore, using gene-based size factors would "over-normalize" spike-ins. To ensure spike-in normalization is performed correctly, we compute a separate set of size factors for the spike-in set. For each cell, the spike-in-specific size factor is defined as the total count across all transcripts in the spike-in set.
-
-These size factors are stored in a separate field of the `SCE` object by setting `general.use=FALSE` in `computeSpikeFactors()`. This ensures that they will only be used with the spike-in transcripts and not the endogenous genes. Although we are only using spike-ins for quality control, we could use the spike-in size factors to normalize all genes by setting `general.use=TRUE`.
+As we mentioned, we will not normalise using Spike-ins size factors, as we did not add a high enough concentration of ERCCs to achieve a sampling distribution/sequencing coverage constant across cells. If both the deconvolution size factors and the spike-in size factors captured similar technical biases in sequencing depth and capture efficiency, we should observe a positive correlation between them. However, if we plot one against the other, we can clearly see that this is not the case, and spike-in size factors are very low in most cells, reflecting the fact that for most cells the percentage of reads allocated to spike-ins was not high enough to use them for normalisation purposes.
 ```{r}
-PAG_sceset_qc <- computeSpikeFactors(PAG_sceset_qc, type = "ERCC", general.use = FALSE)
-# The warning "zero spike-in counts during spike-in normalization" appears because some size factors are 0, which below 1e-8 (see https://github.com/MarioniLab/scran/blob/master/R/computeSpikeFactors.R).
-summary(sizeFactors(PAG_sceset_qc, "ERCC"))
-length(sizeFactors(PAG_sceset_qc, "ERCC"))
-which(sizeFactors(PAG_sceset_qc, "ERCC") < 1e-8)
+PAG_sceset_qc_spikes <- PAG_sceset_qc # Make a copy of the SingleCellExperiment object
+PAG_sceset_qc_spikes <- computeSpikeFactors(PAG_sceset_qc_spikes, "ERCC", assay.type = "counts")
+to.plot <- data.frame(DeconvFactor = sizeFactors(PAG_sceset_qc),
+                      SpikeFactor = sizeFactors(PAG_sceset_qc_spikes),
+                      CellType = PAG_sceset_qc$cell.type)
 
-# To overcome this inconvenience, we add 1e-7 to each spike-in size factor. This should be okay as it is a change barely above this limit and it allows us to circumvent the warning and run normalize() later on. Otherwise normalize() requires all size factors to be positive real numbers, and unlike computeSizeFactors(), computeSpikeFactors() does not have a postive=TRUE argument as input.
-sizeFactors(PAG_sceset_qc, "ERCC") <- sizeFactors(PAG_sceset_qc, "ERCC") + 1e-8
-summary(sizeFactors(PAG_sceset_qc, "ERCC"))
-which(sizeFactors(PAG_sceset_qc, "ERCC") < 1e-8)
+ggplot(to.plot, aes(x=DeconvFactor, y=SpikeFactor, color=CellType)) +
+    geom_point() + scale_x_log10() + 
+    scale_y_log10() + geom_abline(intercept=0, slope=1, color="red")
 ```
 
-The two sets of size factors tend to agree less due to the effects of heterogeneity in total RNA content between cells - this is expected.
-```{r}
-plot(sizeFactors(PAG_sceset_qc, 'ERCC'), 
-     sizeFactors(PAG_sceset_qc),
-     log = "xy", 
-     xlab = "Size factor (ERCC)", 
-     ylab = "Size factor (genes)", 
-     col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255))[factor(PAG_sceset_qc$cell.type)],
-     type = "p", pch = 19, cex = 1.25)
-legend("bottomleft", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255)), pch = 19, cex = 1.25,  bty = "n",
-       legend = levels(factor(PAG_sceset_qc$cell.type)))
-```
+We will thus use spike-ins for QC only, and we will normalise our dataset using the deconvolution size factors.
 
-_If we were to apply the the spike-in factors to all counts, we would set `general.use=TRUE` and use the `computeSpikeFactors` method to estimate size factors for all cells. This would compute the total count over all spike-in transcripts in each cell, and calculate size factors to equalize the total spike-in count across cells. Finally, running normalize would use the spike-in-based size factors to compute normalized log-expression values, and unlike what we actually did, we would not have to define separate size factors for the spike-in transcripts, as the relevant factors would already be used for all genes and spike-in transcripts when `general.use=TRUE`._
-
-## Step 3.3 | Apply the size factors to normalize gene expression
+## Step 3.2 | Apply the size factors to normalize gene expression
 We will calculate normalized expression values using the `logNormCounts()` method from `scater` (McCarthy et al., 2017). This will use the deconvolution size factors for the endogenous genes, and the spike-in-based size factors for the spike-in transcripts. Each expression value can be interpreted as a log-transformed “normalized count”, and can be used in downstream applications like clustering or dimensionality reduction.
 
-The count data are used to compute normalized log-expression values for use in downstream analyses. Each value is defined as the log-ratio of each count to the size factor for the corresponding cell, after adding a pseudo-count of 1 to avoid undefined values at zero counts. Division of the counts for each gene by its appropriate size factor ensures that any cell-specific biases are removed. If spike-in-specific size factors are present in `SCE`, they will be automatically applied to normalize the spike-in transcripts separately from the endogenous genes.
+The count data are used to compute normalized log-expression values for use in downstream analyses. Each value is defined as the log2-ratio of each count to the size factor for the corresponding cell, after adding a pseudo-count of 1 to avoid undefined values at zero counts. Division of the counts for each gene by its appropriate size factor ensures that any cell-specific biases are removed. If spike-in-specific size factors are present in `SingleCellExperiment`, they will be automatically applied to normalize the spike-in transcripts separately from the endogenous genes.
 
 The log-transformation provides some measure of variance stabilization (Law et al., 2014), so that high-abundance genes with large variances do not dominate downstream analyses. The computed values are stored as an expression matrix in addition to the other assay elements.
 ```{r}
@@ -144,10 +127,10 @@ PAG_sceset_qc <- logNormCounts(PAG_sceset_qc)
 assayNames(PAG_sceset_qc)
 ```
 
-The log-transformation is useful as differences in the log-values represent log-fold changes in expression. This is important in downstream procedures based on Euclidean distances, which includes many forms of clustering and dimensionality reduction. By operating on log-transformed data, we ensure that these procedures are measuring distances between cells based on log-fold changes in expression. 
+The log-transformation is useful as differences in the log-values represent log-fold changes in expression. This is important in downstream procedures based on Euclidean distances, which includes many forms of clustering and dimensionality reduction. By operating on log-transformed data, we ensure that these procedures are measuring distances between cells based on log-fold changes in expression.
 
-## Step 3.4 | Compare the effects of different normalization strategies
-To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's plotRLE() function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE close to zero.
+## Step 3.3 | Compare the effects of different normalization strategies
+To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE close to zero.
 
 If we look at the RLE plot, the graph shows a box plot of the RLE values for each cell (each line is a boxplot), the circles indicate the median (nearly all should be at 0 after normalization), and the line indicates the interquartile range.
 ```{r}
@@ -188,9 +171,13 @@ p3 <- plotRLE(PAG_sceset_qc,
 #plot(p3)
 ```
 
-## Step 3.5 | Save a normalized SCE object
+## Step 3.5 | Save a normalized SingleCellExperiment object
 ```{r}
 # Save the normalized data:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc_norm.rds")
 print("Part 3 - Done!")
+```
+
+```{r}
+sessionInfo()
 ```
