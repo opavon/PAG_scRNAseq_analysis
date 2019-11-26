@@ -171,7 +171,10 @@ PAG_metadata$PAG.APaxis <- as.factor(PAG_metadata$PAG.APaxis)
 PAG_metadata$PAG.arearegistration <- as.factor(PAG_metadata$PAG.arearegistration)
 PAG_metadata$time.slicing <- as.factor(PAG_metadata$time.slicing)
 PAG_metadata$time.sinceslicinghour <- as.factor(PAG_metadata$time.sinceslicinghour)
-PAG_metadata$batch.processing <- as.factor(PAG_metadata$batch.processing)
+PAG_metadata$batch.processing <- factor(PAG_metadata$batch.processing, 
+                                        levels = c("nb1", "nb2", "nb3", "nb4", "nb5", "nb6", "nb7", "nb8", "nb9", "nb10", "nb11",
+                                                   "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12"))
+levels(PAG_metadata$batch.processing)
 PAG_metadata$RT.oligo <- as.factor(PAG_metadata$RT.oligo)
 PAG_metadata$RT.date <- as.factor(PAG_metadata$RT.date)
 PAG_metadata$RT.machine <- as.factor(PAG_metadata$RT.machine)
