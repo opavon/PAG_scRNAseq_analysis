@@ -489,6 +489,24 @@ plotExpression(PAG_sceset[, PAG_sceset$mouse.sex=="F"], "Xist", x="mouse.id",
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "batch.processing",
                xlab = "Mouse ID")
+
+plotColData(PAG_sceset,
+            x = "detected",
+            y = "subsets_Chromosome_X_sum",
+            colour_by = "mouse.id",
+            other_fields = "mouse.sex") +
+  facet_wrap(~mouse.sex) + 
+  xlab("Number of detected genes") +
+  ylab("X Chromosome counts")
+
+plotColData(PAG_sceset,
+            x = "detected",
+            y = "subsets_Chromosome_Y_sum",
+            colour_by = "mouse.id",
+            other_fields = "mouse.sex") +
+  facet_wrap(~mouse.sex) + 
+  xlab("Number of detected genes") +
+  ylab("Y Chromosome counts")
 ```
 
 ## Step 2.4 | Filtering low quality cells
