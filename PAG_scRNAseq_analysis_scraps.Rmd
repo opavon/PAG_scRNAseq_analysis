@@ -90,10 +90,496 @@ We could store the cell cycle phases for future use:
 PAG_sceset$cycle_phase <- assignments$phases
 ```
 
+# STEP 3 | Normalization of cell-specific biases
+## Step 3.1b | Compute size factors for spike-in transcripts (Bioconductor =< 3.9)
+Size factors computed from the counts for endogenous genes are usually not appropriate for normalizing the counts for spike-in transcripts. The normalization we implemented in the previous step corrects for RNA content. HOwever, spike-in transcripts are not affected by RNA content, as we theoretically added the same amount to each sample. Therefore, using gene-based size factors would "over-normalize" spike-ins. To ensure spike-in normalization is performed correctly, we compute a separate set of size factors for the spike-in set. For each cell, the spike-in-specific size factor is defined as the total count across all transcripts in the spike-in set.
+
+These size factors are stored in a separate field of the `SingleCellExperiment` object by setting `general.use=FALSE` in `computeSpikeFactors()`. This ensures that they will only be used with the spike-in transcripts and not the endogenous genes. Although we are only using spike-ins for quality control, we could use the spike-in size factors to normalize all genes by setting `general.use=TRUE`.
+```{r}
+PAG_sceset_qc <- computeSpikeFactors(PAG_sceset_qc, type = "ERCC", assay.type = "counts", general.use = FALSE)
+# The warning "zero spike-in counts during spike-in normalization" appears because some size factors are 0, which below 1e-8 (see https://github.com/MarioniLab/scran/blob/master/R/computeSpikeFactors.R).
+summary(sizeFactors(PAG_sceset_qc, "ERCC"))
+length(sizeFactors(PAG_sceset_qc, "ERCC"))
+which(sizeFactors(PAG_sceset_qc, "ERCC") < 1e-8)
+
+# To overcome this inconvenience, we add 1e-7 to each spike-in size factor. This should be okay as it is a change barely above this limit and it allows us to circumvent the warning and run normalize() later on. Otherwise normalize() requires all size factors to be positive real numbers, and unlike computeSizeFactors(), computeSpikeFactors() does not have a postive=TRUE argument as input.
+sizeFactors(PAG_sceset_qc, "ERCC") <- sizeFactors(PAG_sceset_qc, "ERCC") + 1e-8
+summary(sizeFactors(PAG_sceset_qc, "ERCC"))
+which(sizeFactors(PAG_sceset_qc, "ERCC") < 1e-8)
+```
+
+The two sets of size factors tend to agree less due to the effects of heterogeneity in total RNA content between cells - this is expected.
+```{r}
+plot(sizeFactors(PAG_sceset_qc, 'ERCC'), 
+     sizeFactors(PAG_sceset_qc),
+     log = "xy", 
+     xlab = "Size factor (ERCC)", 
+     ylab = "Size factor (genes)", 
+     col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255))[factor(PAG_sceset_qc$cell.type)],
+     type = "p", pch = 19, cex = 1.25)
+legend("bottomleft", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255)), pch = 19, cex = 1.25,  bty = "n",
+       legend = levels(factor(PAG_sceset_qc$cell.type)))
+```
+
+_If we were to apply the the spike-in factors to all counts, we would set `general.use=TRUE` and use the `computeSpikeFactors` method to estimate size factors for all cells. This would compute the total count over all spike-in transcripts in each cell, and calculate size factors to equalize the total spike-in count across cells. Finally, running normalize would use the spike-in-based size factors to compute normalized log-expression values, and unlike what we actually did, we would not have to define separate size factors for the spike-in transcripts, as the relevant factors would already be used for all genes and spike-in transcripts when `general.use=TRUE`._
+
 # STEP 4 | Modelling technical and biological variability in gene expression and identifying highly variable genes
-## PATH "A" to feature selection - trendVar
-### Step 4a.4 | Identifying correlated gene pairs with Spearman's rho
-Another useful procedure is to identify the HVGs that are highly correlated with one another. This distinguishes between HVGs caused by random noise and those involved in driving systematic differences between subpopulations. Correlations between genes can be quantified by computing Spearman's rho, which accommodates non-linear relationships in the expression values. Gene pairs with significantly large positive or negative values of rho are identified using the `correlatePairs` function. We only apply this function to the set of HVGs, because these genes have large biological components and are more likely to exhibit strong correlations driven by biology. In contrast, calculating correlations for all possible gene pairs would require too much computational time and increase the severity of the multiple testing correction. It may also prioritize uninteresting genes that have strong correlations but low variance, e.g., tightly co-regulated house-keeping genes.
+## PATH "A" to feature selection - trendVar (Bioconductor =< 3.9)
+### Step 4a.1 | Modelling the technical component of variation
+Variability in the observed expression values across genes can be driven by genuine biological heterogeneity or uninteresting technical noise. To distinguish between these two possibilties, we need to model the technical component of the variance of the expression values for each gene. 
+
+We will use the `trendVar()` function to fit a mean-variance trend to the read counts.
+
+* We can set `block=` to block on the plate/animal of origin for each cell, to ensure that technical differences between plates do not inflate the variances. This involves estimating the mean and variance of the log-expression separately in each plate, followed by fitting a single trend to the plate-specific means and variances of all spike-in transcripts. In doing so, we implicitly assume that the trend is the same between plates. The use of `block=` also assumes that the average size factor within each plate is close to unity for both endogenous genes and spike-in transcripts.
+* Some tuning of trend parameters such as `span` may be required to achieve a suitable fit (default is 0.75).
+* Setting `parametric=TRUE` is especially useful for modelling the expected wave-like shape of the mean-variance relationship. (This is not the default setting as it is not robust for arbitrary trend shapes.)
+
+In addition, the `trendVar` function automatically filters out low-abundance genes prior to trend fitting. This ensures that low-abundance genes do not interfere with the fit due to discreteness, which biases the estimate of variability of the variances around the trend; or due to the frequency of low-abundance genes, which reduces the sensitivity of span-based smoothing algorithms at higher abundances. The internal choice of filtering strategy involves a number of considerations:
+
+* Filtering uses the average of log-expression values rather than the (library size-adjusted) average count. The mean log-expression is independent of the variance estimate in a linear modelling framework (Bourgon, Gentleman, and Huber 2010), which ensures that the filter does not introduce spurious trends in the variances at the filter boundary.
+* The filter threshold is specified with the `min.mean` argument in `trendVar`. We use the default threshold of 0.1 (`min.mean`) based on the appearance of discrete patterns in the variance estimates for simulated Poisson-distributed counts. Lower thresholds of 0.001-0.01 may be more suitable for very sparse data, e.g., from droplet-based protocols.
+* The filter used in `trendVar` is not applied in `decomposeVar` by default. Retention of all genes ensures that weak biological signal from rare subpopulations is not discarded. To apply the filter in `decomposeVar`, users should set `subset.row=rowMeans(logcounts(sce)) > 0.1` in the function call.
+
+__One last comment from Aaron Lun__: On occasion, users may observe a warning from `trendVar()` about the lack of centering in the size factors. Recall that the trend is fitted to the mean and variances of the spike-in transcripts, and the technical component for each endogenous gene is estimated by interpolation. This assumes that an endogenous gene is comparable to a spike-in transcript of the same abundance. In particular, we assume that variation is primarily driven by the magnitude of the counts, based on the well-known mean-variance relationships in count models. Thus, we need to ensure that similarities in the average counts are preserved in the normalized expression values. This is achieved by centering the gene- and spike-in-based size factors in `normalize()`, such that features with similar average counts will also have similar normalized abundances. However, if the `SingleCellExperiment` object was manipulated (e.g., subsetted) after `normalize()` and before `trendVar()`, centering may not be preserved - hence the warning.
+
+#### 4a.1.1 | Using spike-ins
+One way to do so is using the set of spike-in transcripts. These were in theory added in the same quantity to each cell. Thus, the spike-in transcripts should exhibit non-biological variability, i.e., any variance in their counts should be technical in origin.
+
+We use the `trendVar()` function to fit a mean-dependent trend to the variances of the log-expression values for the spike-in transcripts. Given the mean abundance of a gene, the fitted value of the trend is then used as an estimate of the technical component for that gene. The biological component of the variance is finally calculated by subtracting the technical component from the total variance of each gene with the `decomposeVar` function.
+```{r}
+# Fit variance-mean trend without blocking
+start_time <- Sys.time() # Takes around 1s
+var_fit_spikes <- trendVar(PAG_sceset_qc_norm,
+                           #method="loess",
+                           use.spikes=TRUE, 
+                           parametric=TRUE,
+                           min.mean=0.1,
+                           loess.args=list(span=0.3)
+                           ) 
+
+var_out_spikes <- decomposeVar(PAG_sceset_qc_norm, var_fit_spikes)
+head(var_out_spikes)
+end_time <- Sys.time()
+end_time - start_time
+
+# Fit variance-mean trend blocking on mouse.id
+start_time <- Sys.time() # Takes around 2s
+var_fit_spikes_mouseid <- trendVar(PAG_sceset_qc_norm,
+                                   #method="loess",
+                                   use.spikes=TRUE, 
+                                   parametric=TRUE, 
+                                   block=PAG_sceset_qc_norm$mouse.id, # Try PAG_sceset_qc_norm$mouse.id/batch.processing
+                                   min.mean=0.1,
+                                   loess.args=list(span=0.3)
+                                   ) 
+
+var_out_spikes_mouseid <- decomposeVar(PAG_sceset_qc_norm, var_fit_spikes_mouseid)
+head(var_out_spikes_mouseid)
+end_time <- Sys.time()
+end_time - start_time
+
+# Fit variance-mean trend blocking on batch.processing
+start_time <- Sys.time() # Takes around 2s
+var_fit_spikes_batch <- trendVar(PAG_sceset_qc_norm,
+                                 #method="loess",
+                                 use.spikes=TRUE, 
+                                 parametric=TRUE, 
+                                 block=PAG_sceset_qc_norm$batch.processing, # Try PAG_sceset_qc_norm$mouse.id/batch.processing
+                                 min.mean=0.1,
+                                 loess.args=list(span=0.3)
+                                 ) 
+
+var_out_spikes_batch <- decomposeVar(PAG_sceset_qc_norm, var_fit_spikes_batch)
+head(var_out_spikes_batch)
+end_time <- Sys.time()
+end_time - start_time
+```
+
+We visually inspect the trend to confirm that it corresponds to the spike-in variances. A wave-like shape is typical of the mean-variance trend for log-expression values. A linear increase in the variance is observed as the mean increases from zero, as larger variances are possible when the counts increase. At very high abundances, the effect of sampling noise decreases due to the law of large numbers, resulting in a decrease in the variance.
+```{r}
+# Plot variance-mean trend without blocking
+plot(var_out_spikes$mean, 
+     var_out_spikes$total, 
+     pch=16, cex=0.6, 
+     xlab="Mean log-expression",
+     ylab="Variance of log-expression")
+
+curve(var_fit_spikes$trend(x), add=TRUE, col="dodgerblue", lwd=2)
+current_spikes <- isSpike(PAG_sceset_qc_norm)
+points(var_out_spikes$mean[current_spikes], var_out_spikes$total[current_spikes], col="red", pch=16)
+
+# Plot variance-mean trend blocking on mouse.id
+plot(var_out_spikes_mouseid$mean, 
+     var_out_spikes_mouseid$total, 
+     pch=16, cex=0.6, 
+     xlab="Mean log-expression - block on mouse.id",
+     ylab="Variance of log-expression")
+
+curve(var_fit_spikes_mouseid$trend(x), add=TRUE, col="dodgerblue", lwd=2)
+current_spikes <- isSpike(PAG_sceset_qc_norm)
+points(var_out_spikes_mouseid$mean[current_spikes], var_out_spikes_mouseid$total[current_spikes], col="red", pch=16)
+
+# Plot variance-mean trend blocking on batch.processing
+plot(var_out_spikes_batch$mean, 
+     var_out_spikes_batch$total, 
+     pch=16, cex=0.6, 
+     xlab="Mean log-expression - block on batch.processing",
+     ylab="Variance of log-expression")
+
+curve(var_fit_spikes_batch$trend(x), add=TRUE, col="dodgerblue", lwd=2)
+current_spikes <- isSpike(PAG_sceset_qc_norm)
+points(var_out_spikes_batch$mean[current_spikes], var_out_spikes_batch$total[current_spikes], col="red", pch=16)
+```
+
+***
+Notes from Aaron Lun's `simpleSingleCell` workflow:
+
+* In practice, trend fitting is complicated by the small number of spike-in transcripts and the uneven distribution of their abundances. In the absence of spike-ins or as an alternative approach, we can set `use.spikes=FALSE` to fit a trend to the variances of the endogenous genes (see 4.1.2). Another alternative would be to create a trend based on the assumption of Poisson technical noise.
+* Negative biological components are often obtained from `decomposeVar`. These are intuitively meaningless as it is impossible for a gene to have total variance below technical noise. Nonetheless, such values occur due to imprecise estimation of the total variance, especially for low numbers of cells.
+* `decomposeVar` also yields p-values that can be used to define highly variable genes (HVGs) at a specific threshold for the false discovery rate (FDR). We will discuss this in more detail later, as formal detection of HVGs is not necessary for feature selection during data exploration.
+
+#### 4a.1.2 | Without spike-ins
+Ideally, the technical component would be estimated by fitting a mean-variance trend to the spike-in transcripts using the `trendVar` function as we have seen before. In practice, this strategy is compromised by the small number of spike-in transcripts, the uneven distribution of their abundances, and (for low numbers of cells) the imprecision of their variance estimates. This makes it difficult to accurately fit a complex mean-dependent trend to the spike-in variances. In some datasets, spike-in RNA may not have been added in appropriate quantities (or indeed at all). It may also be inappropriate to assume Poisson technical noise with `makeTechTrend()`, especially for read count data where amplification noise is non-negligible. In such cases, an alternative approach is to fit the trend to the variance estimates of the endogenous genes, using the `use.spikes=FALSE` setting. This assumes that the majority of genes are not variably expressed, such that the technical component dominates the total variance for those genes. The fitted value of the trend is then used as an estimate of the technical component. 
+
+__NB__: fitting the trend to the variances of the genes with `use.spikes=FALSE` probably overestimates the technical component.
+```{r}
+# Fit variance-mean trend without blocking
+start_time <- Sys.time() # Takes around 5s
+var_fit_no_spikes <- trendVar(PAG_sceset_qc_norm, 
+                              method="loess", 
+                              use.spikes=FALSE,
+                              parametric=TRUE,
+                              #block=PAG_sceset_qc_norm$mouse.id, # Try PAG_sceset_qc_norm$mouse.id/batch.processing
+                              min.mean=0.1,
+                              loess.args=list(span=0.3)
+                              ) 
+var_out_no_spikes <- decomposeVar(PAG_sceset_qc_norm, var_fit_no_spikes)
+head(var_out_no_spikes)
+end_time <- Sys.time()
+end_time - start_time
+
+# Fit variance-mean trend blocking on mouse.id
+start_time <- Sys.time() # Takes around 20min
+var_fit_no_spikes_mouseid <- trendVar(PAG_sceset_qc_norm, 
+                                      method="loess", 
+                                      use.spikes=FALSE,
+                                      parametric=TRUE,
+                                      block=PAG_sceset_qc_norm$mouse.id, # Try PAG_sceset_qc_norm$mouse.id/batch.processing
+                                      min.mean=0.1,
+                                      loess.args=list(span=0.3)
+                                      ) 
+var_out_no_spikes_mouseid <- decomposeVar(PAG_sceset_qc_norm, var_fit_no_spikes_mouseid)
+head(var_out_no_spikes_mouseid)
+end_time <- Sys.time()
+end_time - start_time
+
+# Fit variance-mean trend blocking on batch.processing
+start_time <- Sys.time() # Takes around 20min
+var_fit_no_spikes_batch <- trendVar(PAG_sceset_qc_norm, 
+                                    method="loess", 
+                                    use.spikes=FALSE,
+                                    parametric=TRUE,
+                                    block=PAG_sceset_qc_norm$batch.processing, # Try PAG_sceset_qc_norm$mouse.id/batch.processing
+                                    min.mean=0.1,
+                                    loess.args=list(span=0.3)
+                                    ) 
+var_out_no_spikes_batch  <- decomposeVar(PAG_sceset_qc_norm, var_fit_no_spikes_batch)
+head(var_out_no_spikes_batch)
+end_time <- Sys.time()
+end_time - start_time
+```
+
+We assess the suitability of the trend fitted to the endogenous variances by examining whether it is consistent with the spike-in variances. If the trend passes through or close to most of the spike-in variances, this indicates that our assumption (that most genes have low levels of biological variability) is valid. This strategy exploits the large number of endogenous genes to obtain a stable trend, with the spike-in transcripts used as diagnostic features rather than in the trend fitting itself. However, if our assumption does not hold, we would instead fit the trend directly to the spike-in variances with the default use.spikes=TRUE. This sacrifices stability to reduce systematic errors in the estimate of the biological component for each gene.
+```{r}
+# Plot variance-mean trend without blocking
+plot(var_out_no_spikes$mean, 
+     var_out_no_spikes$total, 
+     pch=16, cex=0.6, 
+     xlab="Mean log-expression", 
+     ylab="Variance of log-expression")
+
+curve(var_fit_no_spikes$trend(x), add=TRUE, col="dodgerblue", lwd=2)
+current_spikes <- isSpike(PAG_sceset_qc_norm) 
+points(var_out_no_spikes$mean[current_spikes], var_out_no_spikes$total[current_spikes], col="red", pch=16)
+
+# Plot variance-mean trend blocking on mouse.id
+plot(var_out_no_spikes_mouseid$mean, 
+     var_out_no_spikes_mouseid$total, 
+     pch=16, cex=0.6, 
+     xlab="Mean log-expression - block on mouse.id", 
+     ylab="Variance of log-expression")
+
+curve(var_fit_no_spikes_mouseid$trend(x), add=TRUE, col="dodgerblue", lwd=2)
+current_spikes <- isSpike(PAG_sceset_qc_norm) 
+points(var_out_no_spikes_mouseid$mean[current_spikes], var_out_no_spikes_mouseid$total[current_spikes], col="red", pch=16)
+
+# Plot variance-mean trend blocking on batch.processing
+plot(var_out_no_spikes_batch$mean, 
+     var_out_no_spikes_batch$total, 
+     pch=16, cex=0.6, 
+     xlab="Mean log-expression - block on batch.processing", 
+     ylab="Variance of log-expression")
+
+curve(var_fit_no_spikes_batch$trend(x), add=TRUE, col="dodgerblue", lwd=2)
+current_spikes <- isSpike(PAG_sceset_qc_norm) 
+points(var_out_no_spikes_batch$mean[current_spikes], var_out_no_spikes_batch$total[current_spikes], col="red", pch=16)
+```
+
+### Step 4a.2 | Identifying highly variable genes
+HVGs are defined as genes with biological components that are significantly greater than zero. These genes are interesting as they drive differences in the expression profiles between cells, and should be prioritized for further investigation. Formal detection of HVGs allows us to avoid genes that are highly variable due to technical factors such as sampling noise during RNA capture and library preparation. This adds another level of statistical rigour to our previous analyses, in which we only modelled the technical component.
+
+Identifying HVGs requires estimation of the variance in expression for each gene, followed by decomposition of the variance into biological and technical components (done in the previous step). HVGs are then identified as those genes with the largest biological components. 
+
+We define HVGs as genes with biological components that are significantly greater than zero at a false discovery rate (FDR) of 5% or 1%. These genes are interesting as they drive differences in the expression profiles between cells, and should be prioritized for further investigation. In addition, we could consider a gene to be a HVG only if it has a biological component greater than or equal to 0.5. For transformed expression values on the log2 scale, this would mean that the average difference in true expression between any two cells will be at least 2-fold. (This reasoning assumes that the true log-expression values are Normally distributed with variance of 0.5. The root-mean-square of the difference between two values is treated as the average log2-fold change between cells and is equal to unity.) We rank the results by the biological component to focus on genes with larger biological variability.
+```{r}
+# Consider playing with the $FDR threshold and the $bio threshold, try reducing/increasing them to make them more stringent or to get more genes.
+
+# from trendVar with spikes
+hvg_out_spikes <- var_out_spikes[which(var_out_spikes$FDR <= 0.05 & var_out_spikes$bio > 0.5), ]
+nrow(hvg_out_spikes)
+
+hvg_out_spikes_mouseid <- var_out_spikes_mouseid[which(var_out_spikes_mouseid$FDR <= 0.05 & var_out_spikes_mouseid$bio > 0.5), ]
+nrow(hvg_out_spikes_mouseid)
+
+hvg_out_spikes_batch <- var_out_spikes_batch[which(var_out_spikes_batch$FDR <= 0.05 & var_out_spikes_batch$bio > 0.5), ]
+nrow(hvg_out_spikes_batch)
+
+
+# from trendVar without spikes
+hvg_out_no_spikes <- var_out_no_spikes[which(var_out_no_spikes$FDR <= 0.05 & var_out_no_spikes$bio > 0.5), ]
+nrow(hvg_out_no_spikes)
+
+hvg_out_no_spikes_mouseid <- var_out_no_spikes_mouseid[which(var_out_no_spikes_mouseid$FDR <= 0.05 & var_out_no_spikes_mouseid$bio > 0.5), ]
+nrow(hvg_out_no_spikes_mouseid)
+
+hvg_out_no_spikes_batch <- var_out_no_spikes_batch[which(var_out_no_spikes_batch$FDR <= 0.05 & var_out_no_spikes_batch$bio > 0.5), ]
+nrow(hvg_out_no_spikes_batch)
+```
+
+#### 4a.2.1 | Rank and filter the results
+We rank the results to focus on genes with larger biological components. This highlights an interesting aspect of the underlying hypothesis test, which is based on the ratio of the total variance to the expected technical variance. Ranking based on p-value tends to prioritize HVGs that are more likely to be true positives but, at the same time, less likely to be interesting. This is because the ratio can be very large for HVGs that have very low total variance and do not contribute much to the cell-cell heterogeneity.
+```{r}
+# from trendVar with spikes
+hvg_out_spikes <- hvg_out_spikes[order(hvg_out_spikes$bio, decreasing=TRUE), ]
+nrow(hvg_out_spikes)
+head(hvg_out_spikes)
+
+hvg_out_spikes_mouseid <- hvg_out_spikes_mouseid[order(hvg_out_spikes_mouseid$bio, decreasing=TRUE), ]
+nrow(hvg_out_spikes_mouseid)
+head(hvg_out_spikes_mouseid)
+
+hvg_out_spikes_batch <- hvg_out_spikes_batch[order(hvg_out_spikes_batch$bio, decreasing=TRUE), ]
+nrow(hvg_out_spikes_batch)
+head(hvg_out_spikes_batch)
+
+# from trendVar without spikes
+hvg_out_no_spikes <- hvg_out_no_spikes[order(hvg_out_no_spikes$bio, decreasing=TRUE), ]
+nrow(hvg_out_no_spikes)
+head(hvg_out_no_spikes)
+
+hvg_out_no_spikes_mouseid <- hvg_out_no_spikes_mouseid[order(hvg_out_no_spikes_mouseid$bio, decreasing=TRUE), ]
+nrow(hvg_out_no_spikes_mouseid)
+head(hvg_out_no_spikes_mouseid)
+
+hvg_out_no_spikes_batch <- hvg_out_no_spikes_batch[order(hvg_out_no_spikes_batch$bio, decreasing=TRUE), ]
+nrow(hvg_out_no_spikes_batch)
+head(hvg_out_no_spikes_batch)
+```
+
+__One important thing...__
+Before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
+```{r}
+# Identify the genes we want to drop:
+is_X_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X") # Find which genes correspond to chromosome X 
+is_Y_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y") # Find which genes correspond to chromosome Y
+is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find genes assigned to feature controls (ERCC, Mitochondrial, Ribosomal, tdTomato, EYFP, Cre, TSO concatamers, VGAT, VGluT2)
+
+filter_genes_qc_norm <- !(is_X_qc_norm | is_Y_qc_norm | is_feature_control_qc_norm)
+
+# Apply the filter to the SingleCellExperiment object:
+dim(PAG_sceset_qc_norm)
+PAG_sceset_qc_norm_filt <- PAG_sceset_qc_norm[filter_genes_qc_norm, ]
+dim(PAG_sceset_qc_norm_filt)
+
+# Apply the filter to the HVGs:
+filt_hvg_1 <- rownames(hvg_out_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
+hvg_out_spikes_filt <- hvg_out_spikes[filt_hvg_1, ]
+nrow(hvg_out_spikes_filt)
+
+filt_hvg_2 <- rownames(hvg_out_spikes_mouseid) %in% rownames(PAG_sceset_qc_norm_filt)
+hvg_out_spikes_mouseid_filt <- hvg_out_spikes_mouseid[filt_hvg_2,]
+nrow(hvg_out_spikes_mouseid_filt)
+
+filt_hvg_3 <- rownames(hvg_out_spikes_batch) %in% rownames(PAG_sceset_qc_norm_filt)
+hvg_out_spikes_batch_filt <- hvg_out_spikes_batch[filt_hvg_3,]
+nrow(hvg_out_spikes_batch_filt)
+
+filt_hvg_4 <- rownames(hvg_out_no_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
+hvg_out_no_spikes_filt <- hvg_out_no_spikes[filt_hvg_4,]
+nrow(hvg_out_no_spikes_filt)
+
+filt_hvg_5 <- rownames(hvg_out_no_spikes_mouseid) %in% rownames(PAG_sceset_qc_norm_filt)
+hvg_out_no_spikes_mouseid_filt <- hvg_out_no_spikes_mouseid[filt_hvg_5,]
+nrow(hvg_out_no_spikes_mouseid_filt)
+
+filt_hvg_6 <- rownames(hvg_out_no_spikes_batch) %in% rownames(PAG_sceset_qc_norm_filt)
+hvg_out_no_spikes_batch_filt <- hvg_out_no_spikes_batch[filt_hvg_6,]
+nrow(hvg_out_no_spikes_batch_filt)
+```
+
+#### 4a.2.2 | Visualize, store, and export HVGs
+Now that we have removed the genes we are not interested in, we can use `limma` and `vennDiagram` to compare how many genes we get in each condition with or without spike-ins, and with or without blocking:
+```{r}
+library(limma)
+#####
+# Inspect the overlap between HVGs obtained with or without using spike-ins to fit a variance trend:
+sum(rownames(hvg_out_spikes_filt) %in% rownames(hvg_out_no_spikes_filt))
+sum(rownames(hvg_out_no_spikes_mouseid_filt) %in% rownames(hvg_out_spikes_mouseid_filt))
+sum(rownames(hvg_out_no_spikes_batch_filt) %in% rownames(hvg_out_spikes_batch_filt))
+venn_diag_spikes_nospikes <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_filt),
+                                              rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_filt))
+                                        )
+
+vennDiagram(venn_diag_spikes_nospikes,
+            names = c("Spikes", "No_Spikes"),
+            circle.col = c("#E69F00", "#56B4E9")
+            )
+venn_diag_spikes_nospikes_mouseid <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_mouseid_filt),
+                                                      rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_mouseid_filt))
+                                                )
+
+vennDiagram(venn_diag_spikes_nospikes_mouseid,
+            names = c("Spikes_MouseID", "No_Spikes_MouseID"),
+            circle.col = c("#E69F00", "#56B4E9")
+            )
+
+venn_diag_spikes_nospikes_batch <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_batch_filt),
+                                                    rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_batch_filt))
+                                              )
+vennDiagram(venn_diag_spikes_nospikes_batch,
+            names = c("Spikes_Batch", "No_Spikes_Batch"),
+            circle.col = c("#E69F00", "#56B4E9")
+            )
+
+#####
+# Inspect the overlap between HVGs obtained using spike-ins to fit a variance trend, and with or without blocking:
+sum(rownames(hvg_out_spikes_filt) %in% rownames(hvg_out_spikes_mouseid_filt))
+sum(rownames(hvg_out_spikes_batch_filt) %in% rownames(hvg_out_spikes_mouseid_filt))
+sum(rownames(hvg_out_spikes_filt) %in% rownames(hvg_out_spikes_batch_filt))
+venn_diag_spikes <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_filt),
+                                     rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_mouseid_filt),
+                                     rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_spikes_batch_filt))
+                               )
+vennDiagram(venn_diag_spikes,
+            names = c("Spikes", "Spikes_MouseID", "Spikes_Batch"),
+            circle.col = c("#E69F00", "#56B4E9", "#009E73")
+            )
+
+#####
+# Inspect the overlap between HVGs obtained without using spike-ins to fit a variance trend, and with or without blocking:
+sum(rownames(hvg_out_no_spikes_mouseid_filt) %in% rownames(hvg_out_no_spikes_filt))
+sum(rownames(hvg_out_no_spikes_batch_filt) %in% rownames(hvg_out_no_spikes_filt))
+sum(rownames(hvg_out_no_spikes_batch_filt) %in% rownames(hvg_out_no_spikes_mouseid_filt))
+venn_diag_no_spikes <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_filt),
+                                        rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_mouseid_filt),
+                                        rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_out_no_spikes_batch_filt))
+                                  )
+vennDiagram(venn_diag_no_spikes,
+            names = c("No_Spikes", "No_Spikes_MouseID", "No_Spikes_Batch"),
+            circle.col = c("#E69F00", "#56B4E9", "#009E73")
+            )
+```
+
+Taking into account the above Venn Diagrams, the plots of the mean-variance trend we obtained in `Step 4a.1`, and the profiles and total numbers of HVGs selected by each approach, we will proceed by using the HVGs obtained without using spike-ins and without blocking, the trend and variance-mean plot of which achieves the best compromise between spike-ins and endogenous genes.
+
+Before we store the identified HVGs in our `SingleCellExperiment` object, we check the distribution of expression values for the genes with the largest biological components to ensure that the variance estimate is not being dominated by one or two outlier cells.
+```{r}
+fontsize <- theme(axis.text=element_text(size=12), axis.title=element_text(size=16))
+
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_spikes_filt)[1:20]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_spikes_mouseid_filt)[1:20]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_spikes_batch_filt)[1:20]) + fontsize
+
+plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_no_spikes_filt)[1:50]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_no_spikes_mouseid_filt)[1:20]) + fontsize
+#plotExpression(PAG_sceset_qc_norm_filt, features=rownames(hvg_out_no_spikes_batch_filt)[1:20]) + fontsize
+```
+
+Now that we have ordered, filtered, and inspected the identified HVGs we can add the results into the `metadata` component of the `PAG_sceset_qc_norm_filt` object. The metadata component can hold any object, as it is a list container. Any results that we’d like to keep are safe to store here, and a great way to save or share intermediate results that would otherwise be kept in separate objects. Even though we have decided to use the HVGs identified by fitting `trendVar` to the endogenous genes (i.e. without using spike-ins) without any blocking factor, we store the HVGs from the different approaches we used (even without filtering) so we can go back and find them again for any future comparisons we might want to do:
+```{r}
+# hvg_out_spikes
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes <- rownames(hvg_out_spikes)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_filt <- rownames(hvg_out_spikes_filt)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_filt)
+
+# hvg_out_spikes_mouseid
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid <- rownames(hvg_out_spikes_mouseid)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid_filt <- rownames(hvg_out_spikes_mouseid_filt)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_mouseid_filt)
+
+# hvg_out_spikes_batch
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch <- rownames(hvg_out_spikes_batch)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch_filt <- rownames(hvg_out_spikes_batch_filt)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_spikes_batch_filt)
+
+# hvg_out_no_spikes
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes <- rownames(hvg_out_no_spikes)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt <- rownames(hvg_out_no_spikes_filt)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_filt)
+
+# hvg_out_no_spikes_mouseid
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid <- rownames(hvg_out_no_spikes_mouseid)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid_filt <- rownames(hvg_out_no_spikes_mouseid_filt)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_mouseid_filt)
+
+# hvg_out_no_spikes_batch
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch <- rownames(hvg_out_no_spikes_batch)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch)
+
+metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch_filt <- rownames(hvg_out_no_spikes_batch_filt)
+length(metadata(PAG_sceset_qc_norm_filt)$hvg_out_no_spikes_batch_filt)
+```
+
+We can also export them into a `.tsv` file:
+```{r}
+# Before filtering unwanted genes:
+#write.table(file="PAG_hvg_out_spikes.tsv", hvg_out_spikes, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_mouseid.tsv", hvg_out_spikes_mouseid, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_batch.tsv", hvg_out_spikes_batch, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes.tsv", hvg_out_no_spikes, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_mouseid.tsv", hvg_out_no_spikes_mouseid, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_batch.tsv", hvg_out_no_spikes_batch, sep="\t", quote=FALSE, col.names=NA)
+
+# After filtering unwanted genes:
+#write.table(file="PAG_hvg_out_spikes_filt.tsv", hvg_out_spikes_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_mouseid_filt.tsv", hvg_out_spikes_mouseid_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_spikes_batch_filt.tsv", hvg_out_spikes_batch_filt, sep="\t", quote=FALSE, col.names=NA)
+write.table(file="PAG_hvg_out_no_spikes_filt.tsv", hvg_out_no_spikes_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_mouseid_filt.tsv", hvg_out_no_spikes_mouseid_filt, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file="PAG_hvg_out_no_spikes_batch_filt.tsv", hvg_out_no_spikes_batch_filt, sep="\t", quote=FALSE, col.names=NA)
+```
+
+***
+Notes from Aaron Lun's `simpleSingleCell` workflow:
+
+One reason to use the variance of the log-expression values is the fact that the log-transformation protects against genes with strong expression in only one or two cells. This reduces the risk that the set of top HVGs is not dominated by genes with (mostly uninteresting) outlier expression patterns. There are, however, many other strategies for defining HVGs, based on a variety of metrics:
+
+* the coefficient of variation, using the `technicalCV2()` function (Brennecke et al. 2013) or the `DM()` function (Kim et al. 2015) in _scran_.
+* the dispersion parameter in the negative binomial distribution, using the `estimateDisp()` function in _edgeR_ (McCarthy, Chen, and Smyth 2012).
+* a proportion of total variability, using methods in the _BASiCS_ package (Vallejos, Marioni, and Richardson 2015).
+
+### Step 4a.3 | Identifying correlated gene pairs with Spearman's rho
+Another useful procedure is to identify the HVGs that are highly correlated with one another. This distinguishes between HVGs caused by random noise and those involved in driving systematic differences between subpopulations. Correlations between genes can be quantified by computing Spearman's rho, which accommodates non-linear relationships in the expression values. Gene pairs with significantly large positive or negative values of rho are identified using the `correlatePairs()` function. We only apply this function to the set of HVGs, because these genes have large biological components and are more likely to exhibit strong correlations driven by biology. In contrast, calculating correlations for all possible gene pairs would require too much computational time and increase the severity of the multiple testing correction. It may also prioritize uninteresting genes that have strong correlations but low variance, e.g., tightly co-regulated house-keeping genes.
 ```{r}
 # Takes around 1 min
 set.seed(1991)
@@ -114,7 +600,7 @@ sig.cor <- var.cor$FDR <= 0.05
 summary(sig.cor)
 ```
 
-The use of `correlatePairs` is primarily intended to identify correlated gene pairs for validation studies. Obviously, non-zero correlations do not provide evidence for a direct regulatory interaction, let alone specify causality. To construct regulatory networks involving many genes, we suggest using dedicated packages such as _[WGCNA](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/)_.
+The use of `correlatePairs()` is primarily intended to identify correlated gene pairs for validation studies. Obviously, non-zero correlations do not provide evidence for a direct regulatory interaction, let alone specify causality. To construct regulatory networks involving many genes, we suggest using dedicated packages such as _[WGCNA](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/)_.
 
 #### 4a.4.1 | Larger sets of genes
 Larger sets of correlated genes are assembled by treating genes as nodes in a graph and each pair of genes with significantly large correlations as an edge. In particular, an undirected graph is constructed using methods in the `RBGL` package. Highly connected subgraphs are then identified and defined as gene sets. This provides a convenient summary of the pairwise correlations between genes.
@@ -679,72 +1165,3 @@ Note this step takes a considerable amount of time unless multiple cores are use
 
 ## Step 7.6 | BPSC [not yet implemented]
 BPSC uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we’ve already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group (“control”) and can include other factors such as batches in the model.
-
-# STEP X | OTHER TOOLs ANALYSIS STEPS
-## STEP X.1 | Explore and compare dimensionality reduction approaches with Sleepwalk
-Website: https://anders-biostat.github.io/sleepwalk/
-```{r}
-library("devtools")
-devtools::install_github("anders-biostat/JsRCom")
-devtools::install_github("anders-biostat/sleepwalk")
-```
-
-## STEP X.2 | Comparing/Combining scRNASeq datasets (scmap)
-As more and more scRNA-seq datasets become available, carrying merged seurat comparisons between them is key. There are two main approaches to comparing scRNASeq datasets. The first approach is label-centric which is focused on trying to identify equivalent cell-types/states across datasets by comparing individual cells or groups of cells. The other approach is cross-dataset normalization which attempts to computationally remove experiment-specific technical/biological effects so that data from multiple experiments can be combined and jointly analyzed.
-
-scmap is a method for projecting cells from a scRNA-seq experiment on to the cell-types or individual cells identified in a different experiment.
-
-Website: http://bioconductor.org/packages/release/bioc/html/scmap.html
- 
-```{r}
-library(scmap)
-```
-
-## STEP X.3 | Pseudotime Analysis (for development trajectories)
-In many situations, one is studying a process where cells change continuously. This includes, for example, many differentiation processes taking place during development: following a stimulus, cells will change from one cell-type to another. Ideally, we would like to monitor the expression levels of an individual cell over time. Unfortunately, such monitoring is not possible with scRNA-seq since the cell is lysed (destroyed) when the RNA is extracted.
-
-Instead, we must sample at multiple time-points and obtain snapshots of the gene expression profiles. Since some of the cells will proceed faster along the differentiation than others, each snapshot may contain cells at varying points along the developmental progression. We use statistical methods to order the cells along one or more trajectories which represent the underlying developmental trajectories, this ordering is referred to as pseudotime.
-
-In this chapter we will consider five different tools: Monocle, TSCAN, destiny, SLICER and ouija for ordering cells according to their pseudotime development. To illustrate the methods we will be using a dataset on mouse embryonic development (Deng et al. 2014). The dataset consists of 268 cells from 10 different time-points of early mouse development. In this case, there is no need for pseudotime alignment since the cell labels provide information about the development trajectory. Thus, the labels allow us to establish a ground truth so that we can evaluate and compare the different methods.
-
-A recent review by Cannoodt et al provides a detailed summary of the various computational methods for trajectory inference from single-cell transcriptomics (Cannoodt, Saelens, and Saeys 2016). They discuss several tools, but unfortunately for our purposes many of these tools do not have complete or well-maintained implementations, and/or are not implemented in R
-
-## STEP X.4 | Imputation (after QC but prior to downstream analysis)
-One of the main challenges when analyzing scRNA-seq data is the presence of zeros, or dropouts. The dropouts are assumed to have arisen for three possible reasons:
-
-1. The gene was not expressed in the cell and hence there are no transcripts to sequence
-2. The gene was expressed, but for some reason the transcripts were lost somewhere prior to sequencing
-3. The gene was expressed and transcripts were captured and turned into cDNA, but the sequencing depth was not sufficient to produce any reads.
-
-Thus, dropouts could be result of experimental shortcomings, and if this is the case then we would like to provide computational corrections. One possible solution is to impute the dropouts in the expression matrix. To be able to impute gene expression values, one must have an underlying model. However, since we do not know which dropout events are technical artefacts and which correspond to the transcript being truly absent, imputation is a difficult challenge.
-
-To the best of our knowledge, there are currently two different imputation methods available: MAGIC (Dijk et al. 2017) and scImpute (W. V. Li and Li 2017).
-
-## STEP X.5 | Search scRNA-seq data (scfind)
-scfind is a tool that allows one to search single cell RNA-Seq collections (Atlas) using lists of genes, e.g. searching for cells and cell-types where a specific set of genes are expressed. scfind is a Bioconductor package.
-```{r}
-library(scfind)
-library(SingleCellExperiment)
-set.seed(1991)
-```
-
-Create a gene index using our dataset. The gene index contains for each gene indexes of the cells where it is expressed. This is similar to sparsification of the expression matrix. In addition to this the index is also compressed in a way that it can be accessed very quickly.
-```{r}
-cellIndex <- buildCellIndex(PAG_sceset_qc, cell_type_column = "cell.type")
-```
-
-Define lists of interesting marker genes (you can use the PAG_scRNAseq_gene_lists.csv file) or manually by:
-```{r}
-VGAT_genes <- c("Gad1", "Gad2", "Slc32a1")
-VGAT_genes <- VGAT_genes[(VGAT_genes %in% rownames(PAG_sceset_qc))]
-
-VGluT2_genes <- c("Slc17A6")
-VGluT2_genes <- VGluT2_genes[(VGluT2_genes %in% rownames(PAG_sceset_qc))]
-```
-
-findCell function returns a list of p-values corresponding to all cell types in a given dataset. It also outputs a list of cells in which genes from the given gene list are co-expressed. We will run it on all lists of marker genes defined above:
-```{r}
-res <- findCell(cellIndex, VGAT_genes)
-barplot(-log10(res$p_values), ylab = "-log10(pval)", las = 2)
-head(res$common_exprs_cells)
-```
