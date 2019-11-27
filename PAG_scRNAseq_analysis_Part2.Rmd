@@ -944,24 +944,21 @@ In general, the mean-based filter tends to be less aggressive. A gene will be re
 
 In contrast, the "at least n" filter depends heavily on the choice of `n`. With `n = 10`, a gene expressed in a subset of 9 cells would be filtered out, regardless of the level of expression in those cells. This may result in the failure to detect rare subpopulations that are present at frequencies below `n`.
 
-The safest option will be to apply these filters at each step rather than applying them globally by subsetting the `SingleCellExperiment` object. This ensures that the most appropriate filter is used in each application. For now, we only remove genes that are not expressed in any cell to reduce computational work in downstream steps. Such genes provide no information and would be removed by any filtering strategy. We thus use the result from the `nexprs` function with a `detection_limit=0` and `num_cells>=1`. Note that the `detection_limit` is a numeric scalar providing the value above which observations are deemed to be expressed. We will also remove all predicted genes from the dataset, which can be identified by starting with "Gm" (Gene model). 
+The safest option will be to apply these filters at each step rather than applying them globally by subsetting the `SingleCellExperiment` object. This ensures that the most appropriate filter is used in each application. For now, we only remove genes that are expressed in less than 1% of the cells to reduce computational work in downstream steps. Genes not detected in any cell provide no information and would be removed by any filtering strategy. We thus use the result from the `nexprs` function with a `detection_limit=0` and `num_cells>=3`. Note that the `detection_limit` is a numeric scalar providing the value above which observations are deemed to be expressed. We will also remove all predicted genes from the dataset, which can be identified by starting with "Gm" (Gene model). 
 ```{r}
 # Set the filter with the chosen parameters:
 use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow = TRUE) # `byrow=TRUE` - count the number of detected cells per feature
-rowData(PAG_sceset)$genes_expressed <- use_numcells > 0 # This will leave genes expressed in less than X number of cells as FALSE
+rowData(PAG_sceset)$genes_expressed <- use_numcells >= 3 # This will leave genes expressed in less than X number of cells as FALSE
 summary(rowData(PAG_sceset)$genes_expressed)
 
 # Find predicted genes (Gm stands for gene model)
 rowData(PAG_sceset)$not_predicted_gene <- !grepl("^Gm", rownames(PAG_sceset)) # This will leave predicted genes as FALSE
 summary(rowData(PAG_sceset)$not_predicted_gene)
-
-rowData(PAG_sceset)$filter_predictedgenes_noexpression <- (rowData(PAG_sceset)$genes_expressed & rowData(PAG_sceset)$not_predicted_gene) # We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
-summary(rowData(PAG_sceset)$filter_predictedgenes_noexpression)
 ```
 
 ```{r}
 # Assign the chosen list of filtered genes to $use slot corresponding to the rows (genes):
-rowData(PAG_sceset)$use <- rowData(PAG_sceset)$filter_predictedgenes_noexpression
+rowData(PAG_sceset)$use <- (rowData(PAG_sceset)$genes_expressed & rowData(PAG_sceset)$not_predicted_gene) # We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
 table(rowData(PAG_sceset)$filter_predictedgenes_noexpression)
 dim(PAG_sceset) # We haven't changed anything in the SingleCellExperiment object yet.
 ```
