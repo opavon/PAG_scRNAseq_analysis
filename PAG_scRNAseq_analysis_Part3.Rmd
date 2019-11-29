@@ -109,9 +109,9 @@ to.plot <- data.frame(DeconvFactor = sizeFactors(PAG_sceset_qc),
                       SpikeFactor = sizeFactors(PAG_sceset_qc_spikes),
                       CellType = PAG_sceset_qc$cell.type)
 
-ggplot(to.plot, aes(x=DeconvFactor, y=SpikeFactor, color=CellType)) +
+ggplot(to.plot, aes(x = DeconvFactor, y = SpikeFactor, color = CellType)) +
     geom_point() + scale_x_log10() + 
-    scale_y_log10() + geom_abline(intercept=0, slope=1, color="red")
+    scale_y_log10() + geom_abline(intercept = 0, slope = 1, color = "red")
 ```
 
 We will thus use spike-ins for QC only, and we will normalise our dataset using the deconvolution size factors.
