@@ -47,10 +47,6 @@ assayNames(PAG_sceset)
 
 If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SingleCellExperiment` object. If you are doing this on the gene symbols, beware of the human gene family that also starts with "ERCC". We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `isSpike()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalization.
 ```{r}
-options(stringsAsFactors = FALSE)
-library(SingleCellExperiment)
-library(scater)
-
 # ERCCs
 is_spike <- grepl("^ERCC-", rownames(PAG_sceset))
 #isSpike(PAG_sceset, "ERCC") <- is_spike # Add them to the Spike-in slot - Deprecated
@@ -93,7 +89,6 @@ assay(PAG_sceset, "logcounts_raw") <- log2(counts(PAG_sceset) + 1)
 PAG_sceset
 assayNames(PAG_sceset)
 ```
-
 
 ### 2.1.1 | Uniquify feature names
 To facilitate interpretation in the upcoming steps, we can use gene symbols as `rownames`. `scater` provides the `uniquifyFeatureNames()` function to avoid non-unique gene symbols (in which case we paste the ENSEMBL ID after it) or missing gene symbols (in which case we use the ENSEMBL ID). Only do this for your own interpretation and analysis, if you release the expression matrix, make sure you use a stable ID such as ENSEMBL as the row name.
@@ -143,19 +138,19 @@ Cells with relatively small library sizes are likely to have been dead prior to 
 Additionally, the number of detected features in each cell is defined as the number of features with non-zero counts for that cell. Any cell with very few detected genes is likely to be of poor quality as the diverse transcript population has not been successfully captured.
 ```{r}
 # Plot the histograms of the library sizes and number of detected genes:
-par(mfrow=c(1,2)) # Draw figures in a 1 by 2 array.
+par(mfrow = c(1,2)) # Draw figures in a 1 by 2 array.
 
 hist(PAG_sceset$total/1e6,
      breaks = 50,
-     xlab="Read per sample (millions)", main="", col="grey80", ylab="Number of cells"
+     xlab = "Read per sample (millions)", main = "", col = "grey80", ylab = "Number of cells"
      )
-abline(v = c(0.4, 4.6), col = "blue", lwd=2, lty=2) # less than 400K reads and more than 4.6M
+abline(v = c(0.4, 4.6), col = "blue", lwd = 2, lty = 2) # less than 400K reads and more than 4.6M
 
 hist(PAG_sceset$detected, 
      breaks = 50,
-     xlab="Number of detected genes", main="", col="grey80", ylab="Number of cells"
+     xlab = "Number of detected genes", main = "", col = "grey80", ylab = "Number of cells"
      )
-abline(v = c(5000, 13000), col = "blue", lwd=2, lty=2) # exclude less than 5,000 features and more than 13K (potential doublets?)
+abline(v = c(5000, 13000), col = "blue", lwd = 2, lty = 2) # exclude less than 5,000 features and more than 13K (potential doublets?)
 
 summary(PAG_sceset$total/1e6)
 summary(PAG_sceset$detected)
@@ -172,7 +167,7 @@ plotColData(PAG_sceset,
   theme(legend.position = "right") +
   xlab("Number of detected genes") +
   ylab("Library size") +
-  stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
+  stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 ```
 
 ### 2.3.2 | ERCCs, Mitochondrial and Ribosomal RNAs, and TSO concatamers
@@ -185,35 +180,35 @@ __IMPORTANT__: cells of small dimensions will have a higher fraction of ERCC rea
 __Using ERCC for normalization vs using them for QC__: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalization, but it will still be useful for QC. If you want to use them for normalization, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only, in which case you would want about 5-10% of the reads going to the spike-ins. If this is not the case, it suggests that you need to alter the dilution.
 ```{r}
 # Plot the histograms of the percentage of feature controls in all cells:
-par(mfrow=c(2,2))
+par(mfrow = c(2,2))
 
 # ERCCs
 hist(PAG_sceset$altexps_ERCC_percent,
      breaks = 50,
-     xlab="ERCC proportion (%)", ylab="Number of cells", main="", col="grey80"
+     xlab = "ERCC proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
      )
-abline(v = 1, col = "blue", lwd=2, lty=2)
+abline(v = 1, col = "blue", lwd = 2, lty = 2)
 
 # Mitochondrial genes
 hist(PAG_sceset$subsets_Mitochondrial_percent,
      breaks = 50,
-     xlab="Mitochondrial proportion (%)", ylab="Number of cells", main="", col="grey80"
+     xlab = "Mitochondrial proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
      )
-abline(v = 15, col = "blue", lwd=2, lty=2)
+abline(v = 15, col = "blue", lwd = 2, lty = 2)
 
 # Ribosomal genes
 hist(PAG_sceset$subsets_Ribosomal_percent,
      breaks = 50,
-     xlab="Ribosomal proportion (%)", ylab="Number of cells", main="", col="grey80"
+     xlab = "Ribosomal proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
      )
-abline(v = 20, col = "blue", lwd=2, lty=2)
+abline(v = 20, col = "blue", lwd = 2, lty = 2)
 
 # TSO concatamers
 hist(PAG_sceset$subsets_TSO_concatamers_percent,
      breaks = 50,
-     xlab="TSO concatamers proportion (%)", ylab="Number of cells", main="", col="grey80"
+     xlab = "TSO concatamers proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
      )
-abline(v = 5, col = "blue", lwd=2, lty=2)
+abline(v = 5, col = "blue", lwd = 2, lty = 2)
 
 summary(PAG_sceset$altexps_ERCC_percent)
 summary(PAG_sceset$subsets_Mitochondrial_percent)
@@ -223,7 +218,6 @@ summary(PAG_sceset$subsets_TSO_concatamers_percent)
 
 ```{r}
 # Plot the same as above but with each cell represented individually
-
 plotColData(PAG_sceset,
             x = "detected",
             y = "altexps_ERCC_percent",
@@ -233,7 +227,7 @@ plotColData(PAG_sceset,
   theme(legend.position = "right") +
   xlab("Number of detected genes") +
   ylab("ERCC proportion (%)") +
-  stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
+  stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 
 plotColData(PAG_sceset,
             x = "total",
@@ -243,7 +237,7 @@ plotColData(PAG_sceset,
   facet_wrap(~cell.type) + 
   xlab("Number of detected genes") +
   ylab("Mitochondrial proportion (%)") +
-  stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
+  stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 
 plotColData(PAG_sceset,
             x = "detected",
@@ -253,7 +247,7 @@ plotColData(PAG_sceset,
   facet_wrap(~cell.type) + 
   xlab("Number of detected genes") +
   ylab("Ribosomal proportion (%)") +
-  stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
+  stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 
 plotColData(PAG_sceset,
             x = "detected",
@@ -263,59 +257,59 @@ plotColData(PAG_sceset,
   facet_wrap(~cell.type) + 
   xlab("Number of detected genes") +
   ylab("TSO concatamers proportion (%)") +
-  stat_smooth(method = "lm", se=FALSE, size=0.5, fullrange=TRUE)
+  stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 ```
 
 ### 2.3.3 | EYFP/tdTomato expression
 We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter. This means that while cells should always express Cre, they should only express either EYFP or tdTomato.
 ```{r}
 # Plot the histograms of the counts assigned to transgenes in all cells:
-par(mfrow=c(1,3))
+par(mfrow = c(1,3))
 
 # EYFP
 hist(PAG_sceset$subsets_EYFP_sum,
      breaks = 50,
-     xlab="EYFP expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     xlab = "EYFP expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
      )
 
 # tdTomato
 hist(PAG_sceset$subsets_tdTomato_sum,
      breaks = 50,
-     xlab="tdTomato expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     xlab = "tdTomato expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
      )
 
 # Cre
 hist(PAG_sceset$subsets_Cre_sum,
      breaks = 50,
-     xlab="Cre expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     xlab = "Cre expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
      )
 ```
 
 ```{r}
 # Plot Expression values of EYFP and tdTomato in several ways:
-plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"], c("EYFP", "tdTomato", "Cre"), x="mouse.id", 
+plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "batch.processing",
                ncol = 3,
                xlab = "Mouse ID")
 
-plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"], c("EYFP", "tdTomato", "Cre"), x="mouse.id", 
+plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "batch.processing", 
                ncol = 3,
                xlab = "Mouse ID")
 
-plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x="cell.fluorophor", 
+plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophor", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "mouse.id", 
                xlab = "Cell fluorophor")
 
-plotExpression(PAG_sceset, "tdTomato", x="EYFP", 
+plotExpression(PAG_sceset, "tdTomato", x = "EYFP", 
                exprs_values = "counts",
                colour_by = "cell.fluorophor", 
                xlab = "tdTomato (total counts)")
 
-plotExpression(PAG_sceset, "tdTomato", x="EYFP", 
+plotExpression(PAG_sceset, "tdTomato", x = "EYFP", 
                exprs_values = "logcounts_raw",
                colour_by = "cell.fluorophor", 
                xlab = "tdTomato (total counts)")
@@ -346,8 +340,8 @@ PAG_sceset$log2_total_counts_EYFP <- log2(PAG_sceset$subsets_EYFP_sum + 1)
 PAG_sceset$log2_total_counts_tdTomato <- log2(PAG_sceset$subsets_tdTomato_sum + 1)
 
 # In EYFP cells, plot the EYFP total counts against the tdTomato counts
-plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$subsets_EYFP_sum,
-     PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$subsets_tdTomato_sum,
+plot(PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$subsets_EYFP_sum,
+     PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$subsets_tdTomato_sum,
      xlim = c(0, max(PAG_sceset$subsets_EYFP_sum)),
      ylim = c(0, max(PAG_sceset$subsets_tdTomato_sum)),
      xlab = "EYFP (counts)", ylab = "tdTomato (counts)",
@@ -355,15 +349,15 @@ plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$subsets_EYFP_sum,
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 
 # Add the equivalent plot for tdTomato cells
-points(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$subsets_EYFP_sum,
-       PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$subsets_tdTomato_sum,
+points(PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$subsets_EYFP_sum,
+       PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$subsets_tdTomato_sum,
        type = "p", pch = 19, cex = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
 
 
 # In EYFP cells, plot the EYFP log2 total counts against the tdTomato counts
-plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_EYFP,
-     PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_tdTomato,
+plot(PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$log2_total_counts_EYFP,
+     PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$log2_total_counts_tdTomato,
      xlim = c(0, max(PAG_sceset$log2_total_counts_EYFP)),
      ylim = c(0, max(PAG_sceset$log2_total_counts_tdTomato)),
      xlab = "EYFP (log2 counts)", ylab = "tdTomato (log2 counts)",
@@ -371,8 +365,8 @@ plot(PAG_sceset[, PAG_sceset$cell.fluorophor=="EYFP"]$log2_total_counts_EYFP,
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 
 # Add the equivalent plot for tdTomato cells
-points(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EYFP,
-       PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_tdTomato,
+points(PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$log2_total_counts_EYFP,
+       PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$log2_total_counts_tdTomato,
        type = "p", pch = 19, cex = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
 ```
@@ -381,44 +375,44 @@ points(PAG_sceset[, PAG_sceset$cell.fluorophor=="tdTomato"]$log2_total_counts_EY
 We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2. Do they only express one or the other, or do some cells express both? If so, in which proportions? The coexpression of VGAT and VGluT2 has been reported previously, so it shouldnt't surprise us if this ocurs. However, if we find cells that only express the opposite transporter as they should (e.g. if a VGAT-Cre cell only expresses VGluT2) we should consider excluding it (although again, it might just be dropout events). 
 ```{r}
 # Plot the histograms of the counts assigned to VGAT and VGluT2 in all cells:
-par(mfrow=c(1,2))
+par(mfrow = c(1,2))
 
 # VGAT
 hist(PAG_sceset$subsets_VGAT_sum,
      breaks = 50,
-     xlab="VGAT expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     xlab = "VGAT expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
      )
 
 # VGluT2
 hist(PAG_sceset$subsets_VGluT2_sum,
      breaks = 50,
-     xlab="VGluT2 expression (total counts)", ylab="Number of cells", main="", col="grey80"
+     xlab = "VGluT2 expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
      )
 ```
 
 ```{r}
 # Plot Expression values of VGAT and VGluT2 in several ways:
-plotExpression(PAG_sceset[, PAG_sceset$cell.type=="VGAT"], c("Slc32a1", "Slc17a6"), x="mouse.id", 
+plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "batch.processing",
                xlab = "Mouse ID")
 
-plotExpression(PAG_sceset[, PAG_sceset$cell.type=="VGluT2"], c("Slc32a1", "Slc17a6"), x="mouse.id", 
+plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "batch.processing",
                xlab = "Mouse ID")
 
-plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x="cell.type", 
+plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x = "cell.type", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "mouse.id", 
                xlab = "Cell type")
 
-plotExpression(PAG_sceset, "Slc32a1", x="Slc17a6", 
+plotExpression(PAG_sceset, "Slc32a1", x = "Slc17a6", 
                exprs_values = "counts", 
                colour_by = "cell.type",
                xlab = "VGluT2 (total counts)")
 
-plotExpression(PAG_sceset, "Slc32a1", x="Slc17a6", 
+plotExpression(PAG_sceset, "Slc32a1", x = "Slc17a6", 
                exprs_values = "logcounts_raw", 
                colour_by = "cell.type",
                xlab = "VGluT2 (total counts)")
@@ -431,8 +425,8 @@ PAG_sceset$log2_total_counts_VGAT <- log2(PAG_sceset$subsets_VGAT_sum + 1)
 PAG_sceset$log2_total_counts_VGluT2 <- log2(PAG_sceset$subsets_VGluT2_sum + 1)
 
 # In VGAT cells, plot the VGAT total counts against the VGluT2 counts
-plot(PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$subsets_VGAT_sum,
-     PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$subsets_VGluT2_sum,
+plot(PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$subsets_VGAT_sum,
+     PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$subsets_VGluT2_sum,
      xlim = c(0, max(PAG_sceset$subsets_VGAT_sum)),
      ylim = c(0, max(PAG_sceset$subsets_VGluT2_sum)),
      xlab = "VGAT (counts)", ylab = "VGluT2 (counts)",
@@ -440,15 +434,15 @@ plot(PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$subsets_VGAT_sum,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 
 # Add the equivalent plot for VGluT2 cells
-points(PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$subsets_VGAT_sum,
-       PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$subsets_VGluT2_sum,
+points(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$subsets_VGAT_sum,
+       PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$subsets_VGluT2_sum,
        type = "p", pch = 19, cex = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
 
 
 # In VGAT cells, plot the VGAT log2 counts against the VGluT2 counts
-plot(PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$log2_total_counts_VGAT,
-     PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$log2_total_counts_VGluT2,
+plot(PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$log2_total_counts_VGAT,
+     PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$log2_total_counts_VGluT2,
      xlim = c(0, max(PAG_sceset$log2_total_counts_VGAT)),
      ylim = c(0, max(PAG_sceset$log2_total_counts_VGluT2)),
      xlab = "VGAT (log2 counts)", ylab = "VGluT2 (log2 counts)",
@@ -456,8 +450,8 @@ plot(PAG_sceset[, PAG_sceset$cell.type=="VGAT"]$log2_total_counts_VGAT,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 
 # Add the equivalent plot for VGluT2 cells
-points(PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$log2_total_counts_VGAT,
-       PAG_sceset[, PAG_sceset$cell.type=="VGluT2"]$log2_total_counts_VGluT2,
+points(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$log2_total_counts_VGAT,
+       PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$log2_total_counts_VGluT2,
        type = "p", pch = 19, cex = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
 ```
@@ -470,22 +464,22 @@ PAG_sceset$log2_total_counts_Xist <- log2(PAG_sceset$subsets_XIST_sum + 1)
 summary(PAG_sceset$log2_total_counts_Xist)
 
 # Plot Expression values of VGAT and VGluT2 in several ways:
-plotExpression(PAG_sceset, "Xist", x="mouse.id", 
+plotExpression(PAG_sceset, "Xist", x = "mouse.id", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "mouse.sex",
                xlab = "Mouse ID")
 
-plotExpression(PAG_sceset, "Xist", x="mouse.sex", 
+plotExpression(PAG_sceset, "Xist", x = "mouse.sex", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "cell.type",
                xlab = "Mouse sex")
 
-plotExpression(PAG_sceset[, PAG_sceset$mouse.sex=="M"], "Xist", x="mouse.id", 
+plotExpression(PAG_sceset[, PAG_sceset$mouse.sex == "M"], "Xist", x = "mouse.id", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "batch.processing",
                xlab = "Mouse ID")
 
-plotExpression(PAG_sceset[, PAG_sceset$mouse.sex=="F"], "Xist", x="mouse.id", 
+plotExpression(PAG_sceset[, PAG_sceset$mouse.sex == "F"], "Xist", x = "mouse.id", 
                exprs_values = "logcounts_raw", # alternatively try "counts"
                colour_by = "batch.processing",
                xlab = "Mouse ID")
@@ -545,11 +539,11 @@ table(PAG_sceset$filter_by_pct_Mitochondrial_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_pct_Mitochondrial_manual]$PAG.areacollection)
 
 # Not more than 20% of counts in Ribosomal genes for VGAT cells, and not more than 30% for VGluT2 cells
-PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual <- (PAG_sceset$cell.type=="VGAT" & PAG_sceset$subsets_Ribosomal_percent > 20)
+PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual <- (PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_Ribosomal_percent > 20)
 table(PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual]$PAG.areacollection)
 
-PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual <- (PAG_sceset$cell.type=="VGluT2" & PAG_sceset$subsets_Ribosomal_percent > 30)
+PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual <- (PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_Ribosomal_percent > 30)
 table(PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual)
 summary(PAG_sceset[,PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual]$PAG.areacollection)
 
@@ -568,44 +562,44 @@ table(PAG_sceset$filter_patchseq_cells)
 summary(PAG_sceset[,PAG_sceset$filter_patchseq_cells]$PAG.areacollection)
 
 # Custom filters: identify the cells that express the wrong fluorophor
-PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells <- (PAG_sceset$cell.fluorophor=="EYFP" & PAG_sceset$log2_total_counts_tdTomato > 0)
+PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells <- (PAG_sceset$cell.fluorophor == "EYFP" & PAG_sceset$subsets_tdTomato_sum > 0)
 table(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells]$PAG.areacollection)
 
-PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells <- (PAG_sceset$cell.fluorophor=="tdTomato" & PAG_sceset$log2_total_counts_EYFP > 0)
+PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells <- (PAG_sceset$cell.fluorophor == "tdTomato" & PAG_sceset$subsets_EYFP_sum > 0)
 table(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]$PAG.areacollection)
 
-# Custom filters: identify the cells from male mice that express the XIST
-#PAG_sceset$filter_by_wrong_Xist_in_males <- (PAG_sceset$mouse.sex=="M" & PAG_sceset$subsets_XIST_sum > 50)
+# Custom filters: identify the cells from male mice that express XIST
+#PAG_sceset$filter_by_wrong_Xist_in_males <- (PAG_sceset$mouse.sex == "M" & PAG_sceset$subsets_XIST_percent > 0.005)
 #table(PAG_sceset$filter_by_wrong_Xist_in_males)
 #summary(PAG_sceset[,PAG_sceset$filter_by_wrong_Xist_in_males]$PAG.areacollection)
 
 # Custom filters: label the cells not expressing any fluorophor to use them in combination of other filters
-PAG_sceset$cells_nofluorophor <- (PAG_sceset$log2_total_counts_EYFP == 0 & PAG_sceset$log2_total_counts_tdTomato == 0)
+PAG_sceset$cells_nofluorophor <- (PAG_sceset$subsets_EYFP_sum == 0 & PAG_sceset$subsets_tdTomato_sum == 0)
 table(PAG_sceset$cells_nofluorophor)
 summary(PAG_sceset[,PAG_sceset$cells_nofluorophor]$PAG.areacollection)
 
 # Custom filters: from the VGAT cells not expressing VGAT, mark the ones expressing VGluT2 and not expressing any fluorophor (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
-PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- (PAG_sceset$cell.type=="VGAT" & PAG_sceset$cells_nofluorophor==TRUE & PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 > 0)
+PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- (PAG_sceset$cell.type == "VGAT" & PAG_sceset$cells_nofluorophor == TRUE & PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum > 0)
 table(PAG_sceset$filter_by_wrong_transporter_VGAT_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGAT_cells]$PAG.areacollection)
 
 # Custom filters: from the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT and not expressing any fluorophor (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
-PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- (PAG_sceset$cell.type=="VGluT2" & PAG_sceset$cells_nofluorophor==TRUE & PAG_sceset$log2_total_counts_VGAT > 0 & PAG_sceset$log2_total_counts_VGluT2 == 0)
+PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- (PAG_sceset$cell.type == "VGluT2" & PAG_sceset$cells_nofluorophor == TRUE & PAG_sceset$subsets_VGAT_sum > 0 & PAG_sceset$subsets_VGluT2_sum == 0)
 table(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGluT2_cells]$PAG.areacollection)
 
 # Custom filters: mark any cells with no expression of either VGAT nor VGluT2 nor fluorophor (again, these are likely to be dropouts)
-PAG_sceset$cells_noVGAT_noVGluT2 <- (PAG_sceset$log2_total_counts_VGAT == 0 & PAG_sceset$log2_total_counts_VGluT2 == 0 & PAG_sceset$cells_nofluorophor==TRUE)
+PAG_sceset$cells_noVGAT_noVGluT2 <- (PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum == 0 & PAG_sceset$cells_nofluorophor == TRUE)
 table(PAG_sceset$cells_noVGAT_noVGluT2)
 summary(PAG_sceset[,PAG_sceset$cells_noVGAT_noVGluT2]$PAG.areacollection)
 
 # Finally, add a label to the metadata indicating whether a cell expresses only VGAT, only VGluT2, or both:
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type=="VGAT" & PAG_sceset$log2_total_counts_VGluT2 == 0))] <- "VGAT_only"
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type=="VGAT" & PAG_sceset$log2_total_counts_VGluT2 > 0))] <- "VGAT_VGluT2"
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type=="VGluT2" & PAG_sceset$log2_total_counts_VGAT == 0))] <- "VGluT2_only"
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type=="VGluT2" & PAG_sceset$log2_total_counts_VGAT > 0))] <- "VGluT2_VGAT"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGluT2_sum == 0))] <- "VGAT_only"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGluT2_sum > 0))] <- "VGAT_VGluT2"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGAT_sum == 0))] <- "VGluT2_only"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGAT_sum > 0))] <- "VGluT2_VGAT"
 PAG_sceset$VGAT_VGluT2_expression <- factor(PAG_sceset$VGAT_VGluT2_expression,
                                             levels = c("VGAT_only", "VGAT_VGluT2", "VGluT2_only", "VGluT2_VGAT"))
 levels(PAG_sceset$VGAT_VGluT2_expression)
@@ -647,22 +641,22 @@ PAG_sceset$manual_filters <- !(
     PAG_sceset$filter_by_wrong_transporter_VGluT2_cells
     )
 
-data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_manual), 
-           ByExprFeatures=sum(PAG_sceset$filter_by_expr_features_manual), 
-           ByPercentTop100=sum(PAG_sceset$filter_by_percent_top_100_manual),
-           ByERCC=sum(PAG_sceset$filter_by_pct_ERCC_manual), 
-           ByMitochondrial=sum(PAG_sceset$filter_by_pct_Mitochondrial_manual), 
-           ByRibosomalVGAT=sum(PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual),
-           ByRibosomalVGluT2=sum(PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual),
-           ByTSOconcatamer=sum(PAG_sceset$filter_by_pct_TSO_concatamer_manual),
-           ByAqueduct=sum(PAG_sceset$filter_AQ_cells),
-           ByPatchseqRecorded=sum(PAG_sceset$filter_patchseq_cells),
-           #ByXist=sum(PAG_sceset$filter_by_wrong_Xist_in_males),
-           ByWrongFlurorophorEYFP=sum(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells),
-           ByWrongFlurorophortdTomato=sum(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells),
-           ByWrongTransporterVGAT=sum(PAG_sceset$filter_by_wrong_transporter_VGAT_cells),
-           ByWrongTransporterVGluT2=sum(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells),
-           Remaining=sum(PAG_sceset$manual_filters)
+data.frame(ByLibSize = sum(PAG_sceset$filter_by_total_counts_manual), 
+           ByExprFeatures = sum(PAG_sceset$filter_by_expr_features_manual), 
+           ByPercentTop100 = sum(PAG_sceset$filter_by_percent_top_100_manual),
+           ByERCC = sum(PAG_sceset$filter_by_pct_ERCC_manual), 
+           ByMitochondrial = sum(PAG_sceset$filter_by_pct_Mitochondrial_manual), 
+           ByRibosomalVGAT = sum(PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual),
+           ByRibosomalVGluT2 = sum(PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual),
+           ByTSOconcatamer = sum(PAG_sceset$filter_by_pct_TSO_concatamer_manual),
+           ByAqueduct = sum(PAG_sceset$filter_AQ_cells),
+           ByPatchseqRecorded = sum(PAG_sceset$filter_patchseq_cells),
+           #ByXist = sum(PAG_sceset$filter_by_wrong_Xist_in_males),
+           ByWrongFlurorophorEYFP = sum(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells),
+           ByWrongFlurorophortdTomato = sum(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells),
+           ByWrongTransporterVGAT = sum(PAG_sceset$filter_by_wrong_transporter_VGAT_cells),
+           ByWrongTransporterVGluT2 = sum(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells),
+           Remaining = sum(PAG_sceset$manual_filters)
            )
 table(PAG_sceset$manual_filters)
 table(PAG_sceset$manual_filters, PAG_sceset$PAG.arearegistration)
@@ -672,21 +666,21 @@ table(PAG_sceset$manual_filters, PAG_sceset$VGAT_VGluT2_expression)
 
 Inspect the cells excluded by each filter. Are there cells that consistently fail the filters?
 ```{r}
-plyr::ldply(list(ByLibSize=colnames(PAG_sceset[, PAG_sceset$filter_by_total_counts_manual]),
-                 ByExprFeatures=colnames(PAG_sceset[, PAG_sceset$filter_by_expr_features_manual]),
-                 ByPercentTop100=colnames(PAG_sceset[, PAG_sceset$filter_by_percent_top_100_manual]),
-                 ByERCC=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_ERCC_manual]),
-                 ByMitochondrial=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Mitochondrial_manual]),
-                 ByRibosomalVGAT=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual]),
-                 ByRibosomalVGluT2=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual]),
-                 ByTSOconcatamer=colnames(PAG_sceset[, PAG_sceset$filter_by_pct_TSO_concatamer_manual]),
-                 ByAqueduct=colnames(PAG_sceset[, PAG_sceset$filter_AQ_cells]),
-                 ByPatchseqRecorded=colnames(PAG_sceset[, PAG_sceset$filter_patchseq_cells]),
-                 #ByXist=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_Xist_in_males]),
-                 ByWrongFlurorophorEYFP=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells]),
-                 ByWrongFlurorophortdTomato=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]),
-                 ByWrongTransporterVGAT=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_transporter_VGAT_cells]),
-                 ByWrongTransporterVGluT2=colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_transporter_VGluT2_cells])
+plyr::ldply(list(ByLibSize = colnames(PAG_sceset[, PAG_sceset$filter_by_total_counts_manual]),
+                 ByExprFeatures = colnames(PAG_sceset[, PAG_sceset$filter_by_expr_features_manual]),
+                 ByPercentTop100 = colnames(PAG_sceset[, PAG_sceset$filter_by_percent_top_100_manual]),
+                 ByERCC = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_ERCC_manual]),
+                 ByMitochondrial = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Mitochondrial_manual]),
+                 ByRibosomalVGAT = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual]),
+                 ByRibosomalVGluT2 = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual]),
+                 ByTSOconcatamer = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_TSO_concatamer_manual]),
+                 ByAqueduct = colnames(PAG_sceset[, PAG_sceset$filter_AQ_cells]),
+                 ByPatchseqRecorded = colnames(PAG_sceset[, PAG_sceset$filter_patchseq_cells]),
+                 #ByXist = colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_Xist_in_males]),
+                 ByWrongFlurorophorEYFP = colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells]),
+                 ByWrongFlurorophortdTomato = colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]),
+                 ByWrongTransporterVGAT = colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_transporter_VGAT_cells]),
+                 ByWrongTransporterVGluT2 = colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_transporter_VGluT2_cells])
                  ), 
             rbind)
 ```
@@ -779,8 +773,10 @@ library(scater)
 library(sgeostat)
 library(mvoutlier)
 PAG_sceset <- runColDataPCA(PAG_sceset, outliers = TRUE,
-                            variables = list("sum", "detected", "altexps_ERCC_percent", "subsets_Mitochondrial_percent", "subsets_Ribosomal_percent", "subsets_TSO_concatamers_percent"))
-plotReducedDim(PAG_sceset, dimred="PCA_coldata", colour_by = "outlier", shape_by = "PAG.areacollection")
+                            variables = list("sum", "detected", "altexps_ERCC_percent", "subsets_Mitochondrial_percent", 
+                                             "subsets_Ribosomal_percent", "subsets_TSO_concatamers_percent"),
+                            name = "PCA_coldata")
+plotReducedDim(PAG_sceset, dimred = "PCA_coldata", colour_by = "outlier", shape_by = "PAG.areacollection")
 table(PAG_sceset$outlier)
 
 PAG_sceset$PCA_filters <- !PAG_sceset$outlier
@@ -857,22 +853,22 @@ We can check whether a chosen threshold would be suitable by examining the distr
 # Using the whole dataset:
 hist(log10(all_ave_counts),
      breaks = 200,
-     main="", 
-     col="grey80", 
-     xlab=expression(Log[10]~"average count (all)"),
-     xlim=c(-10,10)
+     main = "", 
+     col = "grey80", 
+     xlab = expression(Log[10]~"average count (all)"),
+     xlim = c(-10,10)
      )
-abline(v=1, col="blue", lwd=2, lty=2)
+abline(v = 1, col = "blue", lwd = 2, lty = 2)
 
 # After removing low-quality cells:
 hist(log10(use_ave_counts), 
      breaks = 200,
-     main="", 
-     col="grey80", 
-     xlab=expression(Log[10]~"average count (use)"),
-     xlim=c(-10,10)
+     main = "", 
+     col = "grey80", 
+     xlab = expression(Log[10]~"average count (use)"),
+     xlim = c(-10,10)
      )
-abline(v=1, col="blue", lwd=2, lty=2)
+abline(v = 1, col = "blue", lwd = 2, lty = 2)
 ```
 
 After looking at the histograms we could apply a minimum threshold to this average to filter out genes that are lowly expressed, and see how many genes we would be left with.
@@ -890,11 +886,11 @@ __NOTE__: the `computeSumFactors()` function we will use prior to normalization 
 An alternative approach to gene filtering is to select genes that have non-zero counts in at least n cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
 ```{r}
 # Count the number of non-zero counts (or any value set by the detection_limit) in each row (per feature) or column (per cell). With byrow=TRUE we count the number of cells that express each gene more than certain number of times.
-all_numcells <- nexprs(PAG_sceset, detection_limit = 0, byrow=TRUE) 
+all_numcells <- nexprs(PAG_sceset, detection_limit = 0, byrow = TRUE) 
 summary(all_numcells)
 
 # Same after removing low-quality cells:
-use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow=TRUE)
+use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow = TRUE)
 summary(use_numcells)
 ```
 
@@ -903,20 +899,20 @@ The number of cells expressing each gene is usually well-correlated to the avera
 # Plot the number of expressing cells against the log-mean expression for each gene in the dataset.
 smoothScatter(log10(all_ave_counts), 
               all_numcells, 
-              xlab=expression(Log[10]~"average count"), 
-              ylab="Number of expressing cells",
-              xlim=c(-2,5))
+              xlab = expression(Log[10]~"average count"), 
+              ylab = "Number of expressing cells",
+              xlim = c(-2,5))
 #control_features_all <- isSpike(PAG_sceset[ , colData(PAG_sceset)$use]) # isSpike is deprecated
-#points(log10(use_ave_counts[control_features_all]), use_numcells[control_features_all], col="red", pch=16, cex=0.5)
+#points(log10(use_ave_counts[control_features_all]), use_numcells[control_features_all], col = "red", pch = 16, cex = 0.5)
 
 # After removing low-quality cells:
 smoothScatter(log10(use_ave_counts), 
               use_numcells, 
-              xlab=expression(Log[10]~"average count"), 
-              ylab="Number of expressing cells",
-              xlim=c(-2,5))
+              xlab = expression(Log[10]~"average count"), 
+              ylab = "Number of expressing cells",
+              xlim = c(-2,5))
 #control_features_use <- isSpike(PAG_sceset[ , colData(PAG_sceset)$use]) # isSpike is deprecated
-#points(log10(use_ave_counts[control_features_use]), use_numcells[control_features_use], col="red", pch=16, cex=0.5)
+#points(log10(use_ave_counts[control_features_use]), use_numcells[control_features_use], col = "red", pch = 16, cex = 0.5)
 ```
 
 As we already mentioned, genes expressed in very few cells are often uninteresting as they might be driven by amplification artifacts (though they may also also arise from rare populations). We could thus remove genes that are expressed in fewer than n cells. 
@@ -948,7 +944,7 @@ The safest option will be to apply these filters at each step rather than applyi
 ```{r}
 # Set the filter with the chosen parameters:
 use_numcells <- nexprs(PAG_sceset[ , colData(PAG_sceset)$use], detection_limit = 0, byrow = TRUE) # `byrow=TRUE` - count the number of detected cells per feature
-rowData(PAG_sceset)$genes_expressed <- use_numcells >= 3 # This will leave genes expressed in less than X number of cells as FALSE
+rowData(PAG_sceset)$genes_expressed <- use_numcells > 3 # This will leave genes expressed in less than X number of cells as FALSE
 summary(rowData(PAG_sceset)$genes_expressed)
 
 # Find predicted genes (Gm stands for gene model)
@@ -959,7 +955,7 @@ summary(rowData(PAG_sceset)$not_predicted_gene)
 ```{r}
 # Assign the chosen list of filtered genes to $use slot corresponding to the rows (genes):
 rowData(PAG_sceset)$use <- (rowData(PAG_sceset)$genes_expressed & rowData(PAG_sceset)$not_predicted_gene) # We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
-table(rowData(PAG_sceset)$filter_predictedgenes_noexpression)
+table(rowData(PAG_sceset)$use)
 dim(PAG_sceset) # We haven't changed anything in the SingleCellExperiment object yet.
 ```
 
@@ -968,8 +964,7 @@ Now, the `colData(PAG_sceset)$use` should point to the __samples__ that have pas
 ## Step 2.6 | Create and save a QCed SingleCellExperiment object
 We have now QCed our data. Before we proceed to normalization and downstream analyis, we save our progress.
 ```{r}
-# Remove the saved PCA results from the reducedDim slot, as we haven't used that to remove outliers and we don't need them anymore:
-reducedDim(PAG_sceset) <- NULL
+# We could remove the saved PCA results from the reducedDim slot, but we can also just keep them in the reducedDim slot:
 PAG_sceset
 
 # Save the dataset with the filters before applying them:

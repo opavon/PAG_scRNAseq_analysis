@@ -122,7 +122,7 @@ options(stringsAsFactors = FALSE)
 
 # Load data:
 PAG_data <- read.delim("PAG_scRNAseq_data_190704_Raw_Gene_counts.txt", 
-                       sep="\t", header=TRUE, row.names=NULL)
+                       sep = "\t", header = TRUE, row.names = NULL)
 
 # Inspect the data by printing the initial columns and rows:
 PAG_data[1:10, 1:12]
@@ -133,7 +133,7 @@ We next load our metadata from a .csv file we have previously created and curate
 ```{r}
 options(stringsAsFactors = FALSE)
 PAG_metadata <- data.frame(read.table("PAG_scRNAseq_metadata_190704.csv", 
-                                      sep=",", header=TRUE, row.names=NULL))
+                                      sep = ",", header = TRUE, row.names = NULL))
 PAG_metadata[1:10,1:10]
 ```
 
@@ -145,7 +145,7 @@ PAG_metadata[1:10,1:10]
 
 In addition, we can prepare another .csv file containing different lists of genes (i.e. ion channel genes, neuromodulator genes, etc.) we might later use for analysis.
 ```{r}
-PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", sep=",", header=TRUE, row.names=NULL))
+PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", sep = ",", header = TRUE, row.names = NULL))
 PAG_scRNAseq_gene_lists[1:10,1:10]
 ```
 
@@ -287,7 +287,7 @@ cell_id_QMUL <- strsplit(sequencing_id_QMUL, "\\.")
 
 # Get the third element "7836" and assign it to the sequencing batch slot in the metadata:
 sequencing_QMUL <- lapply(cell_id_QMUL, function(x){x[3]})
-batch.sequencing_QMUL <- data.frame(round=matrix(unlist(sequencing_QMUL)))
+batch.sequencing_QMUL <- data.frame(round = matrix(unlist(sequencing_QMUL)))
 
 PAG_metadata$batch.sequencing_QMUL <- batch.sequencing_QMUL$round # Add it to metadata
 PAG_metadata$batch.sequencing_QMUL <- as.factor(PAG_metadata$batch.sequencing_QMUL) # Convert to factor
@@ -321,7 +321,7 @@ ens.mm.v97 <- ah[["AH73905"]]
 gene_symbols <- mapIds(ens.mm.v97, keys = rownames(PAG_data), 
                        keytype = "GENEID", column = "SYMBOL")
 gene_location <- mapIds(ens.mm.v97, keys = rownames(PAG_data), 
-                        keytype="GENEID", column="SEQNAME")
+                        keytype = "GENEID", column = "SEQNAME")
 
 PAG_gene_annotations <- data.frame(ENSEMBL = rownames(PAG_data), 
                                    gene_symbols = gene_symbols,
@@ -339,8 +339,8 @@ head(PAG_gene_information)
 table(PAG_gene_information$Chromosome)
 table(PAG_gene_information$gene_chromosome_mapids)
 
-which(PAG_gene_information$Chromosome=="M")
-which(PAG_gene_information$gene_chromosome_mapids=="MT")
+which(PAG_gene_information$Chromosome == "M")
+which(PAG_gene_information$gene_chromosome_mapids == "MT")
 ```
 
 In our case, however, the information provided by the Genome Centre Sequencing Facility is more complete than what we obtain with `mapIds()` and includes the transgenes we used to label cells and ERCC spike-ins, so we will stick to that one.
