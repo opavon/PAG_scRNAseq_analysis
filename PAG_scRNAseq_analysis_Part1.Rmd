@@ -68,7 +68,7 @@ Once you have this, start an RStudio session and install the following packages 
 options(stringsAsFactors = FALSE)
 
 # Install packages from CRAN:
-install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "knitr", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse", "uwot"))
+install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "igraph", "knitr", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse", "uwot"))
 install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
 
 # Install Bioconducor:
