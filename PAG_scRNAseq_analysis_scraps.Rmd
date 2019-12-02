@@ -828,6 +828,36 @@ colnames(Out) <- rownames(Out) <- c("M3Drop", "HVG", "Cor", "PCA", "PCA2")
 Out
 ```
 
+# STEP 5 | Identifying confounding factors and correcting batch effects
+## Step 5.3 | Dimensionality reduction
+### 5.3.2 | Correlating PCs with experimental and QC variables of interest
+`scater` allows us to identify principal components that correlate with experimental and QC variables of interest (it ranks principle components by R^2^ from a linear model regressing PC value against any variable or annotation we have associated with each cell) to see which factor is driving a particular principal component.
+```{r}
+plotExplanatoryPCs(PAG_sceset_qc_norm_filt,
+                   dimred = "PCA_HVG_var_logcounts",
+                   n_dimred = 20,
+                   nvars_to_plot = 17,
+                   npcs_to_plot = 20,                 
+                   variables = c("mouse.id",
+                                 "mouse.sex",
+                                 "mouse.age",
+                                 "mouse.singlehousedays",
+                                 "cell.type",
+                                 "cell.fluorophor",
+                                 "slice.number",
+                                 "slice.depth",
+                                 "PAG.areacollection",
+                                 "PAG.hemisphere",
+                                 "PAG.APaxis",
+                                 "time.sinceslicinghour",
+                                 "PAGarea_celltype",
+                                 "batch.processing",
+                                 "batch.sequencing_round",
+                                 "detected",
+                                 "total"
+                                 )
+                   )
+```
 # STEP 6 | Clustering
 ## Step 6.1 | Consensus clustering with SC3
 ### 6.1.10 | SC3 Clustering using ion channels genes
