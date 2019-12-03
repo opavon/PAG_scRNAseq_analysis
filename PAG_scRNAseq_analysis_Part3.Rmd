@@ -129,6 +129,20 @@ assayNames(PAG_sceset_qc)
 
 The log-transformation is useful as differences in the log-values represent log-fold changes in expression. This is important in downstream procedures based on Euclidean distances, which includes many forms of clustering and dimensionality reduction. By operating on log-transformed data, we ensure that these procedures are measuring distances between cells based on log-fold changes in expression.
 
+### 3.2.1 | TPM Normalization
+Data from full length protocols may benefit from normalization methods that take into account gene length (Patel et al, 2014; Kowalczyk et al, 2015; Soneson & Robinson, 2018). A commonly used normalization method for full-length scRNA-seq data is TPM normalization (Li et al, 2009), which comes from bulk RNA-seq analysis.
+
+Given that we have full-length read data, we could use the gene lengths we computed at the begining to apply TPM normalization:
+```{r}
+assay(PAG_sceset_qc, "TPM") <- calculateTPM(PAG_sceset_qc,
+                                            lengths = rowData(PAG_sceset_qc_norm)$gene_length,
+                                            exprs_values = "counts",
+                                            size_factors = sizeFactors(PAG_sceset_qc))
+assayNames(PAG_sceset_qc)
+```
+
+However, according to this post by [Nikolay Oskolkov](https://towardsdatascience.com/pitfalls-of-data-normalization-bf05d65f1f4c), TPM counts for a given sample sum up to one million, which is a Simplex Space constraint. This means that TPM counts are not better than Library Size normalized counts as they also suffer from the Simplex Space bias, and one should not naively apply e.g. PCA on those counts. For a clearer explanation read the full post on the link above.
+
 ## Step 3.3 | Compare the effects of different normalization strategies
 To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE close to zero.
 
