@@ -495,10 +495,10 @@ assay(PAG_sceset_qc_norm_filt, "corrected") <- removeBatchEffect(logcounts(PAG_s
 assayNames(PAG_sceset_qc_norm_filt)
 ```
 
-If the batch effect is successfully corrected, clusters corresponding to shared cell types or states should contain cells from multiple batches.
+If the batch effect is successfully corrected, clusters corresponding to shared cell types or states should contain cells from multiple batches. The general recommendation is to use measured raw data for statistical testing (e.g. Differential Expression Analysis), corrected data for visual comparison of data, and reduced/feature selected data for other downstream analysis based on finding the underlying biological data manifold.
 
 ### 5.2.2 | Effectiveness of the correction
-We can also use PCA to compare the effects of our normalisation and batch correction. To evaluate the effectiveness of the correction we can plot the PCA output where colour corresponds the technical replicates and shape corresponds to the individuals from which biological samples where acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed.In addition, if we plot the PCAs using the `size_by = total_features_by_counts` we can assess whether the total features correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
+We can also use PCA to compare the effects of our normalisation and batch correction. To evaluate the effectiveness of the correction we can plot the PCA output where colour corresponds the technical replicates and shape corresponds to the individuals from which biological samples where acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed. In addition, if we plot the PCAs using the `size_by = total_features_by_counts` we can assess whether the total features correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
 
 *[IMP]*: If `feature_set=NULL`, the `ntop` features with the largest variances are used instead. This literally computes the variances from the expression values without considering any mean-variance trend. Note that the value of `ntop` is ignored if `feature_set` is specified. Given that we have fitted a mean-variance trend and obtained highly variable genes from it, we will use our HVG instead of using the `ntop` option.
 ```{r}
@@ -653,7 +653,7 @@ We can look at the proportion of variance explained by each PC and keep the comp
 library(PCAtools)
 set.seed(1991)
 
-for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_sceset_qc_norm_filt))]) {
+for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_sceset_qc_norm_filt))]) { # First reducedDimNames instance is the PCA with the ColData for QC
   principal_components <- reducedDim(PAG_sceset_qc_norm_filt, n)
   proportion_var <- attr(principal_components, "percentVar")
   chosen_elbow <- PCAtools::findElbowPoint(proportion_var)
@@ -675,6 +675,30 @@ Another strategy is to retain all PCs until the percentage of total variation ex
 * No filtering is performed on abundance here, which ensures that PCs corresponding to rare subpopulations can still be detected. Discreteness is less of an issue as low-abundance genes also have lower variance, thus reducing their contribution to the PCA.
 * It is also possible to obtain a low-rank approximation of the original expression matrix, capturing the variance equivalent to the retained PCs. This is useful for denoising prior to downstream procedures that require gene-wise expression values.
 ```{r}
+set.seed(1991)
+
+# Run denoisePCA for hvg_var_out_no_spikes_filt
+dim(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes)
+var_model_no_spikes$filter <- rownames(var_model_no_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes)
+var_model_no_spikes_filt <- var_model_no_spikes[var_model_no_spikes$filter==TRUE, ]
+dim(var_model_no_spikes_filt)
+
+PAG_var_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
+                               technical = var_model_no_spikes_filt, 
+                               subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_filt,
+                               assay.type = "logcounts")
+
+print(ncol(reducedDim(PAG_var_denoised, "PCA")))
+
+plotReducedDim(PAG_var_denoised,
+               dimred = "PCA",
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
+
+# Run denoisePCA for hvg_var_out_no_spikes_block_filt
 dim(PAG_sceset_qc_norm_filt)
 dim(var_model_no_spikes_block)
 var_model_no_spikes_block$filter <- rownames(var_model_no_spikes_block) %in% rownames(PAG_sceset_qc_norm_filt)
@@ -682,21 +706,18 @@ dim(var_model_no_spikes_block)
 var_model_no_spikes_block_filt <- var_model_no_spikes_block[var_model_no_spikes_block$filter==TRUE, ]
 dim(var_model_no_spikes_block_filt)
 
-# Run denoisePCA
+PAG_var_block_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
+                                     technical = var_model_no_spikes_block_filt, 
+                                     subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                     assay.type = "logcounts")
 
+print(ncol(reducedDim(PAG_var_block_denoised, "PCA")))
 
-dim(reducedDim(PAG_sceset_qc_norm_filt, "PCA_denoise")) # Cells are rows, PCs are columns
-
-
-for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_sceset_qc_norm_filt))]) {
-  PAG_sceset_qc_norm_filt <- denoisePCA(PAG_sceset_qc_norm_filt,
-                                        technical = var_model_no_spikes_block_filt, 
-                                        subset.row = blaba,
-                                        assay.type = "corrected",
-                                        name = "PCA_denoise")
-  print(ncol(reducedDim(PAG_sceset_qc_norm_filt, "PCA_denoise")))
-}
-
+plotReducedDim(PAG_var_block_denoised,
+               dimred = "PCA",
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
 ```
 
 The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
@@ -720,7 +741,9 @@ The problem here is that PCA is a linear technique, i.e., only variation along a
 reducedDimNames(PAG_sceset_qc_norm_filt)
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "PCA_HVG_var_logcounts",
-               colour_by = "PAGarea_celltype")
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
 ```
 
 One workaround is to plot several of the top PCs against each other in pairwise plots. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Additional components can be visualized by increasing the `ncomponents` argument in `plotPCA` to construct pairwise plots. The percentage of variance explained by each component can also be obtained by running `plotPCA` with `return_SCESet = TRUE`, and then calling `reducedDimension` on the returned object. However, it is difficult to interpret multiple plots simultaneously, and even this approach is not sufficient to separate some of the annotated subpopulations.
@@ -728,7 +751,9 @@ One workaround is to plot several of the top PCs against each other in pairwise 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "PCA_HVG_var_logcounts",
                ncomponents = 4,
-               colour_by = "PAGarea_celltype") # "batch.processing"
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
 ```
 
 Some advantages of using PCA for visualization are that it is predictable and will not introduce artificial structure in the visualization. It is also deterministic and robust to small changes in the input values. However, PCA is usually not satisfactory for visualization of complex populations.
@@ -740,83 +765,465 @@ tSNE plots are the _de facto_ standard for visualization of scRNA-seq data, but 
 
 One of the main disadvantages of t-SNE is that it is much more computationally intensive than other visualization methods. We mitigate this effect by setting `dimred="PCA"` in `runtTSNE()`, which instructs the function to perform the t-SNE calculations on the top PCs to exploit the data compaction and noise removal provided by the PCA. It is possible to run t-SNE on the original expression matrix but this is less efficient.
 
-Another issue with t-SNE is that it requires the user to be aware of additional parameters. It involves a random initialization so we need to (i) repeat the visualization several times to ensure that the results are representative and (ii) set the seed to ensure that the chosen results are reproducible. The `perplexity` is another important parameter that determines the granularity of the visualization. Low perplexities will favour resolution of finer structure, possibly to the point that the visualization is compromised by random noise. Thus, it is advisable to test different perplexity values to ensure that the choice of perplexity does not drive the interpretation of the plot.
+Another issue with t-SNE is that it requires the user to be aware of additional parameters. It involves a random initialization so we need to (i) repeat the visualization several times to ensure that the results are representative and (ii) set the seed to ensure that the chosen results are reproducible. The `perplexity` is another important parameter that determines the granularity of the visualization. Low perplexities will favour resolution of finer structure, possibly to the point that the visualization is compromised by random noise. Thus, it is advisable to test different perplexity values to ensure that the choice of perplexity does not drive the interpretation of the plot. As a rule of thumb, N^1/2 shouldn't be far off the right perplexity, according to [this post by Nikolay Oskolkov](https://towardsdatascience.com/how-to-tune-hyperparameters-of-tsne-7c0596a18868)
 
 Finally, it is tempting to interpret the t-SNE results as a “map” of single-cell identities. This is generally unwise as any such interpretation is easily misled by the size and positions of the visual clusters. Specifically, t-SNE will inflate dense clusters and compress sparse ones, such that we cannot use the size as a measure of subpopulation heterogeneity. Similarly, t-SNE is not obliged to preserve the relative locations of non-neighboring clusters, such that we cannot use their positions to determine relationships between distant clusters. Despite its shortcomings, t-SNE is a proven tool for general-purpose visualization of scRNA-seq data and remains a popular choice in many analysis pipelines.
 ```{r}
+# Compute tSNE with different perplexities:
 set.seed(1991)
-range_of_perplexities = list(5, 10, 20, 50, 80)
+range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
 for(n in range_of_perplexities) {
-    print(
-        plotTSNE(PAG_sceset_qc_norm_filt,
-                 rerun = TRUE, 
-                 ncomponents = 2, 
-                 colour_by = "PAG.arearegistration", # "batch.processing"
-                 shape_by = "cell.type",
-                 size_by = "detected",
-                 run_args = list(feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, exprs_values = "corrected", 
-                                 use_dimred = "PCA_HVG_var", n_dimred = 17, perplexity = n, theta = 0.5),
-                 name = paste0("tSNE_", n)
-                 ) + ggtitle(paste("Perplexity = ", n))
-        #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
-        #+ coord_cartesian(xlim = c(-50, 50), ylim = c(-60, 60))
-    )
+  PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
+                                     exprs_values = "logcounts",
+                                     subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                     dimred = "PCA_HVG_var_logcounts", 
+                                     n_dimred = 25,
+                                     perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
+                                     theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
+                                     max_iter = 5000, # Default is 1000. 
+                                     eta = 1000, # Learning rate (default: 200) - increased as per suggestion of Kobak and Berens, Nature Communications 2019
+                                     exaggeration_factor = 12, # Default: 12
+                                     name = paste0("tSNE_perplexity_", n)
+  )
 }
 
-# Consider playing with the ntop, n_dimred, perplexity, and theta arguments.
-# theta - numeric; Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
 reducedDimNames(PAG_sceset_qc_norm_filt)
+
+tSNE_HVG_var_logcounts_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                           dimred = "tSNE_perplexity_5",
+                                           colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                           shape_by = "cell.type"#, # "mouse.id"
+                                           #size_by = "detected"
+                                           ) + ggtitle("tSNE_perplexity_5") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_perplexity_10",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_perplexity_10") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_perplexity_15",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_perplexity_15") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_perplexity_20",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_perplexity_20") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_perplexity_30",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_perplexity_30") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_perplexity_40",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_perplexity_40") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_perplexity_50",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_perplexity_50") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_perplexity_75",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_perplexity_75") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_logcounts_100 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                             dimred = "tSNE_perplexity_100",
+                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                             shape_by = "cell.type"#, # "mouse.id"
+                                             #size_by = "detected"
+                                             ) + ggtitle("tSNE_perplexity_100") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+multiplot(tSNE_HVG_var_logcounts_5, tSNE_HVG_var_logcounts_10, tSNE_HVG_var_logcounts_15, tSNE_HVG_var_logcounts_20, 
+          tSNE_HVG_var_logcounts_30, tSNE_HVG_var_logcounts_40, tSNE_HVG_var_logcounts_50, tSNE_HVG_var_logcounts_75, 
+          cols = 2)
 ```
 
-Once we have the right settings, we can use `runTSNE()` to store the t-SNE results inside our `SingleCellExperiment` object. This avoids repeating the calculations whenever we want to create a new plot with `plotReducedDim()`. 
+Repeat using the PCA results obtained with `HVG_cv2_logcounts`:
 ```{r}
+# Compute tSNE with different perplexities:
 set.seed(1991)
-PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
-                                   dimred="PCA_HVG_var_corrected", n_dimred = 17,
-                                   feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, 
-                                   exprs_values = "corrected",  
-                                   perplexity = 50, theta = 0.5,
-                                   name = "tSNE"
-                                   )
+range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
+for(n in range_of_perplexities) {
+  PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
+                                     exprs_values = "logcounts",
+                                     subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                     dimred = "PCA_HVG_cv2_logcounts", 
+                                     n_dimred = 25,
+                                     perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
+                                     theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
+                                     max_iter = 5000, # Default is 1000. 
+                                     eta = 1000, # Learning rate (default: 200) - increased as per suggestion of Kobak and Berens, Nature Communications 2019
+                                     exaggeration_factor = 12, # Default: 12
+                                     name = paste0("tSNE_cv2_perplexity_", n)
+  )
+}
 
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "tSNE",
-               colour_by = "cell.type")
+reducedDimNames(PAG_sceset_qc_norm_filt)
+
+tSNE_HVG_cv2_logcounts_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                           dimred = "tSNE_cv2_perplexity_5",
+                                           colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                           shape_by = "cell.type"#, # "mouse.id"
+                                           #size_by = "detected"
+                                           ) + ggtitle("tSNE_cv2_perplexity_5") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_logcounts_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_perplexity_10",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_perplexity_10") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_logcounts_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_perplexity_15",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_perplexity_15") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_logcounts_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_perplexity_20",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_perplexity_20") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_logcounts_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_perplexity_30",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_perplexity_30") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_logcounts_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                           dimred = "tSNE_cv2_perplexity_40",
+                                           colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                           shape_by = "cell.type"#, # "mouse.id"
+                                           #size_by = "detected"
+                                           ) + ggtitle("tSNE_cv2_perplexity_40") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_logcounts_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_perplexity_50",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_perplexity_50") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_logcounts_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_perplexity_75",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_perplexity_75") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+
+multiplot(tSNE_HVG_cv2_logcounts_5, tSNE_HVG_cv2_logcounts_10, tSNE_HVG_cv2_logcounts_15, tSNE_HVG_cv2_logcounts_20,
+          tSNE_HVG_cv2_logcounts_30, tSNE_HVG_cv2_logcounts_40, tSNE_HVG_cv2_logcounts_50, tSNE_HVG_cv2_logcounts_75, cols = 2)
 ```
 
 ### 5.4.3 | UMAP (uniform manifold approximation and projection)
 The uniform manifold approximation and projection (UMAP) method (McInnes, Healy, and Melville 2018) is an alternative to t-SNE for non-linear dimensionality reduction. It is roughly similar to t-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space. However, the two methods are based on different theory, represented by differences in the various graph weighting equations, which leads to a different visualization.
 ```{r}
 set.seed(1991)
-PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt, 
-                                        dimred = "PCA_HVG_var_logcounts",
-                                        n_dimred = 17, # Choose the number of dimensions tu use from the specificed dimred
-                                        feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_filt, 
-                                        exprs_values = "logcounts",
-                                        n_neighbors = 15,
-                                        metric = "euclidean",
-                                        learning_rate = 1,
-                                        name = "UMAP_var_logcounts")
+range_of_neighbors = list(5, 10, 15, 20)
+range_of_min_dist = list(0.01, 0.05, 0.1, 0.2)
 
-plotReducedDim(PAG_sceset_qc_norm_filt, 
-               dimred = "UMAP_var_logcounts", 
-               colour_by = "PAG.arearegistration",
-               shape_by = "cell.type") # You can also choose any other metadata (e.g. "batch.processing"), a specific gene (e.g. "Gad1"), or shape_by = "cell.type"
+for(j in range_of_neighbors) {
+  for (k in range_of_min_dist) {
+    PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt,
+                                       exprs_values = "logcounts",
+                                       subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, 
+                                       dimred = "PCA_HVG_var_logcounts",
+                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
+                                       n_neighbors = j, #  Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
+                                       metric = "euclidean",
+                                       n_epochs = 500, # Number of epochs to use during the optimization of the embedded coordinates.
+                                       learning_rate = 1,
+                                       min_dist = k, # Low values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
+                                       name = paste0("UMAP_var_logcounts_", j, "_neighbors_", k, "_min_dist"))
+  }
+}
 
-PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt, 
-                                        dimred = "PCA_HVG_cv2_logcounts",
-                                        n_dimred = 17, # Choose the number of dimensions tu use from the specificed dimred
-                                        feature_set = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt, 
-                                        exprs_values = "logcounts",
-                                        n_neighbors = 15,
-                                        metric = "euclidean",
-                                        learning_rate = 1,
-                                        name = "UMAP_cv2_logcounts")
+reducedDimNames(PAG_sceset_qc_norm_filt)
 
-plotReducedDim(PAG_sceset_qc_norm_filt, 
-               dimred = "UMAP_cv2_logcounts", 
-               colour_by = "PAG.arearegistration",
-               shape_by = "cell.type") # You can also choose any other metadata (e.g. "batch.processing"), a specific gene (e.g. "Gad1"), or shape_by = "cell.type"
+#### n_neighbors = 5
+UMAP_var_logcounts_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_5_neighbors_0.01_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_5_neighbors_0.01_min_dist")
+UMAP_var_logcounts_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_5_neighbors_0.05_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_5_neighbors_0.05_min_dist")
+UMAP_var_logcounts_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                              dimred = "UMAP_var_logcounts_5_neighbors_0.1_min_dist",
+                                                              colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                              shape_by = "cell.type"#, # "mouse.id"
+                                                              #size_by = "detected"
+                                                              ) + ggtitle("UMAP_var_logcounts_5_neighbors_0.1_min_dist")
+UMAP_var_logcounts_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_5_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_5_neighbors_0.2_min_dist")
+
+#### n_neighbors = 10
+UMAP_var_logcounts_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_logcounts_10_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_logcounts_10_neighbors_0.01_min_dist")
+UMAP_var_logcounts_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+UMAP_var_logcounts_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_10_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_10_neighbors_0.1_min_dist")
+UMAP_var_logcounts_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_10_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_10_neighbors_0.2_min_dist")
+
+#### n_neighbors = 15
+UMAP_var_logcounts_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_logcounts_15_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_logcounts_15_neighbors_0.01_min_dist")
+UMAP_var_logcounts_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_logcounts_15_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_logcounts_15_neighbors_0.05_min_dist")
+UMAP_var_logcounts_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_15_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_15_neighbors_0.1_min_dist")
+UMAP_var_logcounts_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_15_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_15_neighbors_0.2_min_dist")
+
+#### n_neighbors = 20
+UMAP_var_logcounts_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_logcounts_20_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_logcounts_20_neighbors_0.01_min_dist")
+UMAP_var_logcounts_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_logcounts_20_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_logcounts_20_neighbors_0.05_min_dist")
+UMAP_var_logcounts_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_20_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_20_neighbors_0.1_min_dist")
+UMAP_var_logcounts_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_logcounts_20_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_logcounts_20_neighbors_0.2_min_dist")
+
+#### Plot them all:
+multiplot(UMAP_var_logcounts_5_neighbors_0.01_min_dist, UMAP_var_logcounts_5_neighbors_0.05_min_dist,
+          UMAP_var_logcounts_5_neighbors_0.1_min_dist, UMAP_var_logcounts_5_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_var_logcounts_10_neighbors_0.01_min_dist, UMAP_var_logcounts_10_neighbors_0.05_min_dist,
+          UMAP_var_logcounts_10_neighbors_0.1_min_dist, UMAP_var_logcounts_10_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_var_logcounts_15_neighbors_0.01_min_dist, UMAP_var_logcounts_15_neighbors_0.05_min_dist,
+          UMAP_var_logcounts_15_neighbors_0.1_min_dist, UMAP_var_logcounts_15_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_var_logcounts_20_neighbors_0.01_min_dist, UMAP_var_logcounts_20_neighbors_0.05_min_dist,
+          UMAP_var_logcounts_20_neighbors_0.1_min_dist, UMAP_var_logcounts_20_neighbors_0.2_min_dist,
+          cols = 2)
+```
+
+```{r}
+set.seed(1991)
+range_of_neighbors = list(5, 10, 15, 20)
+range_of_min_dist = list(0.01, 0.05, 0.1, 0.2)
+
+for(j in range_of_neighbors) {
+  for (k in range_of_min_dist) {
+    PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt,
+                                       exprs_values = "logcounts",
+                                       subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt, 
+                                       dimred = "PCA_HVG_cv2_logcounts",
+                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
+                                       n_neighbors = j, #  Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
+                                       metric = "euclidean",
+                                       n_epochs = 500, # Number of epochs to use during the optimization of the embedded coordinates.
+                                       learning_rate = 1,
+                                       min_dist = k, # Low values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
+                                       name = paste0("UMAP_cv2_logcounts_", j, "_neighbors_", k, "_min_dist"))
+  }
+}
+
+reducedDimNames(PAG_sceset_qc_norm_filt)
+
+#### n_neighbors = 5
+UMAP_cv2_logcounts_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_5_neighbors_0.01_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_5_neighbors_0.01_min_dist")
+UMAP_cv2_logcounts_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_5_neighbors_0.05_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_5_neighbors_0.05_min_dist")
+UMAP_cv2_logcounts_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                              dimred = "UMAP_cv2_logcounts_5_neighbors_0.1_min_dist",
+                                                              colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                              shape_by = "cell.type"#, # "mouse.id"
+                                                              #size_by = "detected"
+                                                              ) + ggtitle("UMAP_cv2_logcounts_5_neighbors_0.1_min_dist")
+UMAP_cv2_logcounts_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_5_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_5_neighbors_0.2_min_dist")
+
+#### n_neighbors = 10
+UMAP_cv2_logcounts_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_logcounts_10_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_logcounts_10_neighbors_0.01_min_dist")
+UMAP_cv2_logcounts_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_logcounts_10_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_logcounts_10_neighbors_0.05_min_dist")
+UMAP_cv2_logcounts_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_10_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_10_neighbors_0.1_min_dist")
+UMAP_cv2_logcounts_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_10_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_10_neighbors_0.2_min_dist")
+
+#### n_neighbors = 15
+UMAP_cv2_logcounts_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_logcounts_15_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_logcounts_15_neighbors_0.01_min_dist")
+UMAP_cv2_logcounts_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_logcounts_15_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_logcounts_15_neighbors_0.05_min_dist")
+UMAP_cv2_logcounts_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_15_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_15_neighbors_0.1_min_dist")
+UMAP_cv2_logcounts_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_15_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_15_neighbors_0.2_min_dist")
+
+#### n_neighbors = 20 
+UMAP_cv2_logcounts_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_logcounts_20_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_logcounts_20_neighbors_0.01_min_dist")
+UMAP_cv2_logcounts_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_logcounts_20_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_logcounts_20_neighbors_0.05_min_dist")
+UMAP_cv2_logcounts_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_20_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_20_neighbors_0.1_min_dist")
+UMAP_cv2_logcounts_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_logcounts_20_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_logcounts_20_neighbors_0.2_min_dist")
+
+#### Plot them all:
+multiplot(UMAP_cv2_logcounts_5_neighbors_0.01_min_dist, UMAP_cv2_logcounts_5_neighbors_0.05_min_dist,
+          UMAP_cv2_logcounts_5_neighbors_0.1_min_dist, UMAP_cv2_logcounts_5_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_cv2_logcounts_10_neighbors_0.01_min_dist, UMAP_cv2_logcounts_10_neighbors_0.05_min_dist,
+          UMAP_cv2_logcounts_10_neighbors_0.1_min_dist, UMAP_var_logcounts_10_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_cv2_logcounts_15_neighbors_0.01_min_dist, UMAP_cv2_logcounts_15_neighbors_0.05_min_dist,
+          UMAP_cv2_logcounts_15_neighbors_0.1_min_dist, UMAP_cv2_logcounts_10_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_cv2_logcounts_20_neighbors_0.01_min_dist, UMAP_cv2_logcounts_20_neighbors_0.05_min_dist,
+          UMAP_cv2_logcounts_20_neighbors_0.1_min_dist, UMAP_cv2_logcounts_20_neighbors_0.2_min_dist,
+          cols = 2)
 ```
 
 Compared to t-SNE, the UMAP visualization tends to have more compact visual clusters with more empty space between them. It also attempts to preserve more of the global structure than t-SNE. From a practical perspective, UMAP is much faster than t-SNE, which may be an important consideration for large datasets. UMAP also involves a series of randomization steps so setting the seed is critical. 
