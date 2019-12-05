@@ -247,7 +247,7 @@ dim(hvg_var_out_no_spikes_block)
 For `modelGeneCV2()` (and its relative, `modelGeneCV2WithSpikes()`), this would instead be the genes with the largest ratios:
 ```{r}
 hvg_cv2_no_spikes <- getTopHVGs(CV2_model_no_spikes, 
-                                var.field="ratio", var.threshold = 1,
+                                var.field = "ratio", var.threshold = 1,
                                 n = round(nrow(CV2_model_no_spikes)*0.15) # Select the top `n` number or proportion of genes
                                 #fdr.field = "FDR", fdr.threshold = 0.05 # Select those genes with an adjusted p-value below 5% FDR
                                 )
@@ -376,14 +376,14 @@ length(metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt)
 We can also export them into a `.tsv` file:
 ```{r}
 # Before filtering unwanted genes:
-#write.table(file="PAG_hvg_var_out_no_spikes.tsv", hvg_var_out_no_spikes, sep="\t", quote=FALSE, col.names=NA)
-#write.table(file="PAG_hvg_var_out_no_spikes_block.tsv", hvg_var_out_no_spikes_block, sep="\t", quote=FALSE, col.names=NA)
-#write.table(file="PAG_hvg_cv2_out_no_spikes.tsv", hvg_cv2_out_no_spikes, sep="\t", quote=FALSE, col.names=NA)
+#write.table(file = "PAG_hvg_var_out_no_spikes.tsv", hvg_var_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
+#write.table(file = "PAG_hvg_var_out_no_spikes_block.tsv", hvg_var_out_no_spikes_block, sep = "\t", quote = FALSE, col.names = NA)
+#write.table(file = "PAG_hvg_cv2_out_no_spikes.tsv", hvg_cv2_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
 
 # After filtering unwanted genes:
-write.table(file="PAG_hvg_var_out_no_spikes_filt.tsv", hvg_var_out_no_spikes_filt, sep="\t", quote=FALSE, col.names=NA)
-write.table(file="PAG_hvg_var_out_no_spikes_block_filt.tsv", hvg_var_out_no_spikes_block_filt, sep="\t", quote=FALSE, col.names=NA)
-write.table(file="PAG_hvg_cv2_out_no_spikes_filt.tsv", hvg_cv2_out_no_spikes_filt, sep="\t", quote=FALSE, col.names=NA)
+write.table(file = "PAG_hvg_var_out_no_spikes_filt.tsv", hvg_var_out_no_spikes_filt, sep = "\t", quote = FALSE, col.names = NA)
+write.table(file = "PAG_hvg_var_out_no_spikes_block_filt.tsv", hvg_var_out_no_spikes_block_filt, sep = "\t", quote = FALSE, col.names = NA)
+write.table(file = "PAG_hvg_cv2_out_no_spikes_filt.tsv", hvg_cv2_out_no_spikes_filt, sep = "\t", quote = FALSE, col.names = NA)
 ```
 
 ## Step 4.4 | Save the filtered SingleCellExperiment object
@@ -629,7 +629,9 @@ We perform the PCA on the log-normalized expression values using the `runPCA()` 
 ```{r}
 # We already performed PCA using all HVG in the previous step. 
 reducedDimNames(PAG_sceset_qc_norm_filt)
+```
 
+```{r}
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "PCA_HVG_var_corrected",
                colour_by = "cell.type", # "batch.processing", "PAG.arearegistration"
@@ -744,6 +746,12 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                colour_by = "cell.type",
                shape_by = "PAG.arearegistration",
                by_exprs_values = "logcounts")
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_var_corrected",
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "corrected")
 ```
 
 One workaround is to plot several of the top PCs against each other in pairwise plots. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Additional components can be visualized by increasing the `ncomponents` argument in `plotPCA` to construct pairwise plots. The percentage of variance explained by each component can also be obtained by running `plotPCA` with `return_SCESet = TRUE`, and then calling `reducedDimension` on the returned object. However, it is difficult to interpret multiple plots simultaneously, and even this approach is not sufficient to separate some of the annotated subpopulations.
@@ -845,13 +853,6 @@ tSNE_HVG_var_logcounts_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             #size_by = "detected"
                                             ) + ggtitle("tSNE_perplexity_75") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
 
-tSNE_HVG_var_logcounts_100 <- plotReducedDim(PAG_sceset_qc_norm_filt,
-                                             dimred = "tSNE_perplexity_100",
-                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
-                                             shape_by = "cell.type"#, # "mouse.id"
-                                             #size_by = "detected"
-                                             ) + ggtitle("tSNE_perplexity_100") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
-
 multiplot(tSNE_HVG_var_logcounts_5, tSNE_HVG_var_logcounts_10, tSNE_HVG_var_logcounts_15, tSNE_HVG_var_logcounts_20, 
           tSNE_HVG_var_logcounts_30, tSNE_HVG_var_logcounts_40, tSNE_HVG_var_logcounts_50, tSNE_HVG_var_logcounts_75, 
           cols = 2)
@@ -937,7 +938,8 @@ tSNE_HVG_cv2_logcounts_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 
 multiplot(tSNE_HVG_cv2_logcounts_5, tSNE_HVG_cv2_logcounts_10, tSNE_HVG_cv2_logcounts_15, tSNE_HVG_cv2_logcounts_20,
-          tSNE_HVG_cv2_logcounts_30, tSNE_HVG_cv2_logcounts_40, tSNE_HVG_cv2_logcounts_50, tSNE_HVG_cv2_logcounts_75, cols = 2)
+          tSNE_HVG_cv2_logcounts_30, tSNE_HVG_cv2_logcounts_40, tSNE_HVG_cv2_logcounts_50, tSNE_HVG_cv2_logcounts_75, 
+          cols = 2)
 ```
 
 ### 5.4.3 | UMAP (uniform manifold approximation and projection)

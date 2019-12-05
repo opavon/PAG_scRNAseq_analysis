@@ -134,14 +134,14 @@ Data from full length protocols may benefit from normalization methods that take
 
 Given that we have full-length read data, we could use the gene lengths we computed at the begining to apply TPM normalization:
 ```{r}
-assay(PAG_sceset_qc, "TPM") <- calculateTPM(PAG_sceset_qc,
-                                            lengths = rowData(PAG_sceset_qc_norm)$gene_length,
-                                            exprs_values = "counts",
-                                            size_factors = sizeFactors(PAG_sceset_qc))
-assayNames(PAG_sceset_qc)
+#assay(PAG_sceset_qc, "TPM") <- calculateTPM(PAG_sceset_qc,
+#                                            lengths = rowData(PAG_sceset_qc_norm)$gene_length,
+#                                            exprs_values = "counts",
+#                                            size_factors = sizeFactors(PAG_sceset_qc))
+#assayNames(PAG_sceset_qc)
 ```
 
-However, according to this post by [Nikolay Oskolkov](https://towardsdatascience.com/pitfalls-of-data-normalization-bf05d65f1f4c), TPM counts for a given sample sum up to one million, which is a Simplex Space constraint. This means that TPM counts are not better than Library Size normalized counts as they also suffer from the Simplex Space bias, and one should not naively apply e.g. PCA on those counts. For a clearer explanation read the full post on the link above.
+However, according to this post by [Nikolay Oskolkov](https://towardsdatascience.com/pitfalls-of-data-normalization-bf05d65f1f4c), TPM counts for a given sample sum up to one million, which is a Simplex Space constraint. This means that TPM counts are not better than Library Size normalized counts as they also suffer from the Simplex Space bias, and one should not naively apply e.g. PCA on those counts. For a clearer explanation read the full post on the link above. We will refrain from using TPM and will stick with the normalization using the `scran` size factors.
 
 ## Step 3.3 | Compare the effects of different normalization strategies
 To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE close to zero.
