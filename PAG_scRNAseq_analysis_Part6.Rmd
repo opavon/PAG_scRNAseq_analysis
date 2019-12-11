@@ -739,35 +739,60 @@ In practice, hierachical clustering is too slow to be used for anything but the 
 ### 6.4.1 | Implementation of hierarchical clustering
 We compute a cell-cell distance matrix using the top PCs and we apply hierarchical clustering with Ward’s method. We can then inspect the resulting tree. While both Ward’s method and complete linkage (`hclust()`’s default) yield compact clusters, we prefer the former it is less affected by differences in variance between clusters. This yields a dendrogram that groups together cells with similar expression patterns across the chosen genes.
 ```{r}
-PAG_dist <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA")) # Making a distance matrix
-PAG_tree <- hclust(PAG_dist, "ward.D2") # Building a tree
-plot(PAG_tree)
+# Using PCA from HVG_var_logcounts
+PAG_dist_var <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts")) # Making a distance matrix
+PAG_tree_var <- hclust(PAG_dist_var, "ward.D2") # Building a tree
+plot(PAG_tree_var)
 
 # Making a prettier dendrogram.
 library(dendextend)
-tree.416b$labels <- seq_along(tree.416b$labels)
-dend <- as.dendrogram(tree.416b, hang = 0.1)
+PAG_tree_var$labels <- seq_along(PAG_tree_var$labels)
+PAG_dend_var <- as.dendrogram(PAG_tree_var, hang = 0.1)
 
-combined.fac <- paste0(sce.416b$block, ".", 
-    sub(" .*", "", sce.416b$phenotype))
-labels_colors(dend) <- c(`20160113.wild` = "blue",
-                         `20160113.induced` = "red",
-                         `20160325.wild` = "dodgerblue",
-                         `20160325.induced` = "salmon"
-                         )[combined.fac][order.dendrogram(dend)]
+combined_fac_var <- paste0(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
+labels_colors(PAG_dend_var) <- c(`dmpag_VGAT` = "cornflowerblue",
+                                 `dlpag_VGAT` = "cyan3",
+                                 `lpag_VGAT` = "aquamarine3",
+                                 `vlpag_VGAT` = "cadetblue3",
+                                 `dmpag_VGluT2` = "red",
+                                 `dlpag_VGluT2` = "coral2",
+                                 `lpag_VGluT2` = "salmon",
+                                 `vlpag_VGluT2` = "darksalmon"
+                                 )[combined_fac_var][order.dendrogram(PAG_dend_var)]
 
-plot(dend)
+plot(PAG_dend_var)
+
+# Using PCA from HVG_cv2_logcounts
+PAG_dist_cv2 <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts")) # Making a distance matrix
+PAG_tree_cv2 <- hclust(PAG_dist_cv2, "ward.D2") # Building a tree
+plot(PAG_tree_cv2)
+
+# Making a prettier dendrogram.
+library(dendextend)
+PAG_tree_cv2$labels <- seq_along(PAG_tree_cv2$labels)
+PAG_dend_cv2 <- as.dendrogram(PAG_tree_cv2, hang = 0.1)
+
+combined_fac_cv2 <- paste0(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
+labels_colors(PAG_dend_cv2) <- c(`dmpag_VGAT` = "cornflowerblue",
+                                 `dlpag_VGAT` = "cyan3",
+                                 `lpag_VGAT` = "aquamarine3",
+                                 `vlpag_VGAT` = "cadetblue3",
+                                 `dmpag_VGluT2` = "red",
+                                 `dlpag_VGluT2` = "coral2",
+                                 `lpag_VGluT2` = "salmon",
+                                 `vlpag_VGluT2` = "darksalmon"
+                                 )[combined_fac_cv2][order.dendrogram(PAG_dend_cv2)]
+
+plot(PAG_dend_cv2)
 ```
 
 ### 6.4.2 | Cutting the tree
-To obtain explicit clusters, we “cut” the tree by removing internal branches such that every subtree represents a distinct cluster. This is most simply done by removing internal branches above a certain height of the tree, as performed by the `cutree()` function. We can use the `dynamicTreeCut` package, which uses the shape of the branches to obtain a more suitable partitioning for complex dendrograms.
+To obtain explicit clusters, we can “cut” the tree by removing internal branches such that every subtree represents a distinct cluster. This is most simply done by removing internal branches above a certain height of the tree, as performed by the `cutree()` function. We can instead use the `dynamicTreeCut` package, which uses the shape of the branches to obtain a more suitable partitioning for complex dendrograms.
 ```{r}
 library(dynamicTreeCut)
-
-# minClusterSize needs to be turned down for small datasets.
-# deepSplit controls the resolution of the partitioning.
-clust.416b <- cutreeDynamic(PAG_tree, distM = as.matrix(PAG_dist),
-                            minClusterSize = 10, deepSplit = 1)
+clust.416b <- cutreeDynamic(PAG_tree_var, distM = as.matrix(PAG_dist_var),
+                            minClusterSize = 10, # minClusterSize needs to be turned down for small datasets.
+                            deepSplit = 1) # deepSplit controls the resolution of the partitioning.
 table(clust.416b)
 labels_colors(dend) <- clust.416b[order.dendrogram(dend)]
 plot(dend)
