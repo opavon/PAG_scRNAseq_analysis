@@ -1051,6 +1051,35 @@ VGAT_sceset <- PAG_sceset[,grep("^[I]", colnames(PAG_sceset), value=TRUE)]
 VGluT2_sceset <- PAG_sceset[,grep("^[E]", colnames(PAG_sceset), value=TRUE)]
 ```
 
+## STEP 6.2 | Graph-based clustering
+### 6.2.2 | Assessing cluster separation
+One useful approach is to use the ratio matrix to form another graph where the nodes are clusters rather than cells. Edges between nodes are weighted according to the ratio of observed to expected edge weights between cells in those clusters. We can then repeat our graph operations on this new cluster-level graph. For example, we could obtain clusters of clusters, or we could simply create a new cluster-based layout for visualization. This is analogous to the “graph abstraction” approach described by Wolf et al. 2017.
+```{r}
+set.seed(1991)
+cluster_graph_var_rank <- igraph::graph_from_adjacency_matrix(log2(ratio_var_rank + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+# Increasing the weight to increase the visibility of the lines.
+plot(cluster_graph_var_rank, edge.width = igraph::E(cluster_graph_var_rank)$weight*5, layout = igraph::layout_with_lgl)
+
+cluster_graph_var_jaccard <- igraph::graph_from_adjacency_matrix(log2(ratio_var_jaccard + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+# Increasing the weight to increase the visibility of the lines.
+plot(cluster_graph_var_jaccard, edge.width = igraph::E(cluster_graph_var_jaccard)$weight*5, layout = igraph::layout_with_lgl)
+
+cluster_graph_cv2_rank <- igraph::graph_from_adjacency_matrix(log2(ratio_cv2_rank + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+plot(cluster_graph_cv2_rank, edge.width = igraph::E(cluster_graph_cv2_rank)$weight*5, layout = igraph::layout_with_lgl)
+
+cluster_graph_cv2_jaccard <- igraph::graph_from_adjacency_matrix(log2(ratio_cv2_jaccard + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+plot(cluster_graph_cv2_jaccard, edge.width = igraph::E(cluster_graph_cv2_jaccard)$weight*5, layout = igraph::layout_with_lgl)
+```
+
+The graph itself can be visualized using a force-directed layout. This yields a dimensionality reduction result that is closely related to t-SNE and UMAP.
+```{r}
+set.seed(1991)
+reducedDim(PAG_sceset_qc_norm_filt_corr, "force_var") <- igraph::layout_with_fr(graph_var)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_var", dimred = "force_var")
+
+reducedDim(PAG_sceset_qc_norm_filt_corr, "force_cv2") <- igraph::layout_with_fr(graph_cv2)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_cv2", dimred = "force_cv2")
+```
 ## STEP 6.5 | clusterExperiment [TO TRY]
 ## STEP 6.6 | bigSCale2
 bigSCale is an analytical framework for big-scale single-cell data, available [here](https://github.com/iaconogi/bigSCale2).
