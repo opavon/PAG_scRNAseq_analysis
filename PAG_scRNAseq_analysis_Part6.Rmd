@@ -283,7 +283,7 @@ graph_var_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
                                 k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                 #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                 type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                 assay.type = "logcounts",
                                 use.dimred = "PCA_HVG_var_logcounts")
 clusters_var_rank <- igraph::cluster_walktrap(graph_var_rank)$membership # Use `cluster_louvain` if using `type = "jaccard"`, and `cluster_walktrap` if using `type = "rank"`
@@ -295,7 +295,7 @@ graph_var_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
                                    k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                    #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                    type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                   subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                   subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                    assay.type = "logcounts",
                                    use.dimred = "PCA_HVG_var_logcounts")
 clusters_var_jaccard <- igraph::cluster_louvain(graph_var_jaccard)$membership # Use `cluster_louvain` if using `type = "jaccard"`, and `cluster_walktrap` if using `type = "rank"`
@@ -307,7 +307,7 @@ graph_cv2_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
                                 k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                 #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                 type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors.
-                                subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                 assay.type = "logcounts",
                                 use.dimred = "PCA_HVG_cv2_logcounts")
 
@@ -320,7 +320,7 @@ graph_cv2_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
                                    k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                    #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                    type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors.
-                                   subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                   subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                    assay.type = "logcounts",
                                    use.dimred = "PCA_HVG_cv2_logcounts")
 
@@ -412,7 +412,7 @@ graph_var_rank_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
                                      k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                      type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                     subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                     subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                      assay.type = "logcounts",
                                      use.dimred = "PCA_HVG_var_logcounts")
 clusters_var_rank_VGAT <- igraph::cluster_walktrap(graph_var_rank_VGAT)$membership
@@ -423,7 +423,7 @@ graph_var_rank_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
                                        k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                        #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                        type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                       subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                        assay.type = "logcounts",
                                        use.dimred = "PCA_HVG_var_logcounts")
 clusters_var_rank_VGluT2 <- igraph::cluster_walktrap(graph_var_rank_VGluT2)$membership
@@ -435,7 +435,7 @@ graph_var_jaccard_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
                                         k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                         #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                         type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                        subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                        subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                         assay.type = "logcounts",
                                         use.dimred = "PCA_HVG_var_logcounts")
 clusters_var_jaccard_VGAT <- igraph::cluster_louvain(graph_var_jaccard_VGAT)$membership
@@ -446,7 +446,7 @@ graph_var_jaccard_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
                                           k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                           #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                           type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                          subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                          subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                           assay.type = "logcounts",
                                           use.dimred = "PCA_HVG_var_logcounts")
 clusters_var_jaccard_VGluT2 <- igraph::cluster_louvain(graph_var_jaccard_VGluT2)$membership
@@ -458,7 +458,7 @@ graph_cv2_rank_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
                                      k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                      type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                     subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                     subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                      assay.type = "logcounts",
                                      use.dimred = "PCA_HVG_cv2_logcounts")
 clusters_cv2_rank_VGAT <- igraph::cluster_walktrap(graph_cv2_rank_VGAT)$membership
@@ -469,7 +469,7 @@ graph_cv2_rank_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
                                        k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                        #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                        type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                       subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                        assay.type = "logcounts",
                                        use.dimred = "PCA_HVG_cv2_logcounts")
 clusters_cv2_rank_VGluT2 <- igraph::cluster_walktrap(graph_cv2_rank_VGluT2)$membership
@@ -481,7 +481,7 @@ graph_cv2_jaccard_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
                                         k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                         #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                         type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                        subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                        subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                         assay.type = "logcounts",
                                         use.dimred = "PCA_HVG_cv2_logcounts")
 clusters_cv2_jaccard_VGAT <- igraph::cluster_louvain(graph_cv2_jaccard_VGAT)$membership
@@ -492,7 +492,7 @@ graph_cv2_jaccard_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
                                           k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                           #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                           type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                          subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                          subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                           assay.type = "logcounts",
                                           use.dimred = "PCA_HVG_cv2_logcounts")
 clusters_cv2_jaccard_VGluT2 <- igraph::cluster_louvain(graph_cv2_jaccard_VGluT2)$membership
@@ -737,7 +737,7 @@ In the context of scRNA-seq, the main advantage of hierarchical clustering lies 
 In practice, hierachical clustering is too slow to be used for anything but the smallest scRNA-seq datasets. Most variants require a cell-cell distance matrix that is prohibitively expensive to compute for many cells. Greedy agglomeration is also likely to result in a quantitatively suboptimal partitioning (as defined by the agglomeration measure) at higher levels of the dendrogram when the number of cells and merge steps is high.
 
 ### 6.4.1 | Implementation of hierarchical clustering
-We compute a cell-cell distance matrix using the top PCs and we apply hierarchical clustering with Ward’s method. We can then inspect the resulting tree. While both Ward’s method and complete linkage (`hclust()`’s default) yield compact clusters, we prefer the former it is less affected by differences in variance between clusters. This yields a dendrogram that groups together cells with similar expression patterns across the chosen genes.
+We compute a cell-cell distance matrix using the top PCs and we apply hierarchical clustering with Ward’s method. We can then inspect the resulting tree. While both Ward’s method and complete linkage (`hclust()`’s default) yield compact clusters, we prefer the former as it is less affected by differences in variance between clusters. This yields a dendrogram that groups together cells with similar expression patterns across the chosen genes.
 ```{r}
 # Using PCA from HVG_var_logcounts
 PAG_dist_var <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts")) # Making a distance matrix
@@ -787,106 +787,117 @@ plot(PAG_dend_cv2)
 ```
 
 ### 6.4.2 | Cutting the tree
-To obtain explicit clusters, we can “cut” the tree by removing internal branches such that every subtree represents a distinct cluster. This is most simply done by removing internal branches above a certain height of the tree, as performed by the `cutree()` function. We can instead use the `dynamicTreeCut` package, which uses the shape of the branches to obtain a more suitable partitioning for complex dendrograms.
+To obtain explicit clusters, we can “cut” the tree by removing internal branches such that every subtree represents a distinct cluster. This is most simply done by removing internal branches above a certain height of the tree, as performed by the `cutree()` function. We can instead use the `dynamicTreeCut` package, which uses the shape of the branches to obtain a more suitable partitioning for complex dendrograms. Greater control of the empirical clusters can be obtained by manually specifying cutHeight in `cutreeDynamic`. We can also set `minClusterSize` to a lower value than the default of 20, to avoid spurious aggregation of distant small clusters.
 ```{r}
 library(dynamicTreeCut)
-clust.416b <- cutreeDynamic(PAG_tree_var, distM = as.matrix(PAG_dist_var),
-                            minClusterSize = 10, # minClusterSize needs to be turned down for small datasets.
-                            deepSplit = 1) # deepSplit controls the resolution of the partitioning.
-table(clust.416b)
-labels_colors(dend) <- clust.416b[order.dendrogram(dend)]
-plot(dend)
+PAG_clust_var <- cutreeDynamic(PAG_tree_var, distM = as.matrix(PAG_dist_var),
+                               minClusterSize = 10, # minClusterSize needs to be turned down for small datasets.
+                               deepSplit = 1) # deepSplit controls the resolution of the partitioning.
+table(PAG_clust_var)
+labels_colors(PAG_dend_var) <- PAG_clust_var[order.dendrogram(PAG_dend_var)]
+plot(PAG_dend_var)
+
+PAG_clust_cv2 <- cutreeDynamic(PAG_tree_cv2, distM = as.matrix(PAG_dist_cv2),
+                               minClusterSize = 10, # minClusterSize needs to be turned down for small datasets.
+                               deepSplit = 1) # deepSplit controls the resolution of the partitioning.
+table(PAG_clust_cv2)
+labels_colors(PAG_dend_cv2) <- PAG_clust_cv2[order.dendrogram(PAG_dend_cv2)]
+plot(PAG_dend_cv2)
 ```
 
 We can compare this to the `cutree()` function:
 ```{r}
-PAG_clusters <- cutree(PAG_tree, k=3) 
-table(PAG_clusters, PAG_sceset_qc_norm$PAG.area)
+PAG_clust_var_cutree <- cutree(PAG_tree_var, h = 300) 
+labels_colors(PAG_dend_var) <- PAG_clust_var_cutree[order.dendrogram(PAG_dend_var)]
+plot(PAG_dend_var)
+table(PAG_clust_var_cutree, PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
+
+PAG_clust_cv2_cutree <- cutree(PAG_tree_cv2, h = 300) 
+labels_colors(PAG_dend_cv2) <- PAG_clust_cv2_cutree[order.dendrogram(PAG_dend_cv2)]
+plot(PAG_dend_cv2)
+table(PAG_clust_cv2_cutree, PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
 ```
 
-This generally corresponds well to the grouping of cells on a t-SNE plot.
+We can now visualize the cluster assignments for all cells on any of the `ReducedDim` slots we previously computed (e.g. tSNE or UMAP). Adjacent cells are generally assigned to the same cluster, and the clustering results generally corresponds well to the grouping of cells on a t-SNE or UMAP plot.
 ```{r}
-sce.416b$cluster <- factor(clust.416b)
-plotReducedDim(sce.416b, "TSNE", colour_by="cluster")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", colour_by = "PAGarea_celltype")
 
-PAG_sceset_qc_norm$Cluster <- factor(PAG_clusters)
-plotTSNE(PAG_sceset_qc_norm, colour_by='Cluster')
+PAG_sceset_qc_norm_filt_corr$clusters_var_cutree <- factor(PAG_clust_var_cutree)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", colour_by = "clusters_var_cutree")
+
+PAG_sceset_qc_norm_filt_corr$clusters_cv2_cutree <- factor(PAG_clust_cv2_cutree)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", colour_by = "clusters_cv2_cutree")
 ```
 
-We can also compare the cluster identities to batch to check the clustering is not driven by batch effects. We can also compare to other interesting metadata to see what can be driving the clusters.
+We can examine the distribution of cells in each cluster with respect to known factors. For instance, we can compare the cluster identities to batch to check the clustering is not driven by batch effects. We can also compare to any other interesting metadata to see what can be driving the clusters such as `cell.type` or `PAG.area`.
 ```{r}
-table(Cluster=sce.416b$cluster, Plate=sce.416b$block)
-table(PAG_clusters, PAG_sceset_qc_norm$PAG.area)
+table(Cluster = PAG_sceset_qc_norm_filt_corr$clusters_cv2_cutree, Batch = PAG_sceset_qc_norm_filt_corr$batch.processing)
+table(Cluster = PAG_sceset_qc_norm_filt_corr$clusters_cv2_cutree, Mouse = PAG_sceset_qc_norm_filt_corr$mouse.id)
 ```
 
 We next use a heatmap to visualize the expression profiles of the top 100 genes with the largest biological components. If there is structure, we should see "blocks" in expression that correspond nicely to known sample features. We possibly could have subclustered further, in which case we would subset and repeat the above process.
 ```{r}
 library(pheatmap)
-plotHeatmap(PAG_sceset_qc_norm, 
-            features=rownames(var_out_no_spikes)[order(var_out_no_spikes$bio, decreasing=TRUE)[1:100]],
-            cluster_cols=PAG_tree, colour_columns_by="PAG.area",
-            center=TRUE, symmetric=TRUE)
+plotHeatmap(PAG_sceset_qc_norm_filt_corr, 
+            features = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt[1:200],
+            cluster_cols = PAG_tree_var, colour_columns_by = c("clusters_var_cutree", "PAG.areacollection", "cell.type"),
+            center = TRUE, symmetric = TRUE)
+
+plotHeatmap(PAG_sceset_qc_norm_filt_corr, 
+            features = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt[1:200],
+            cluster_cols = PAG_tree_cv2, colour_columns_by = c("clusters_cv2_cutree", "PAG.areacollection", "cell.type"),
+            center = TRUE, symmetric = TRUE)
+sum(PAG_sceset_qc_norm_filt_corr$clusters_cv2_cutree==4)
 ```
 
-### 6.4.2 | Assessing cluster separation
-We check the separation of the clusters using the silhouette width. For each cell, we compute the average distance to cells in each other cluster. We then compute the minimum of these average distances across all clusters, as well as the average distance to cells in the same cluster. The silhouette width for each cell is defined as the difference between these two values divided by their maximum. Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in different clusters.
+Looking at the heatmap we can see that one of the clusters (cluster #4 from `PAG_sceset_qc_norm_filt_corr$clusters_cv2_cutree`) is very highly enriched with genes corresponding to immune cells. These might actually be a group of cells contaminated with platelets or macrophages and should be excluded. Marker genes for macrophages include Ctss, C1qa, CD14, CD16, CD64, CD68, CD71 and CCR5.
+
+### 6.4.3 | Assessing cluster separation
+We can check the separation of the clusters by using the silhouette width. For each cell, we compute the average distance to cells in each other cluster. We then compute the minimum of these average distances across all clusters, as well as the average distance to cells in the same cluster. The silhouette width for each cell is defined as the difference between these two values divided by their maximum. Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in different clusters. Conversely, cells with negative widths are closer to other clusters than to other cells in the cluster to which it was assigned.
 
 Each cluster would ideally contain large positive silhouette widths, indicating that it is well-separated from other clusters. Smaller widths can arise from the presence of internal subclusters, which inflates the within-cluster distance; or overclustering, where cells at the boundary of a partition are closer to the neighboring cluster than their own cluster.
 ```{r}
-sil <- silhouette(clust.416b, dist = dist.416b)
-plot(sil)
+library(cluster)
+cluster_colors <- scater:::.get_palette("tableau10medium") # hidden scater colours
+
+sil_var <- silhouette(PAG_clust_var_cutree, dist = PAG_dist_var)
+sil_cols_var <- cluster_colors[ifelse(sil_var[,3] > 0, sil_var[,1], sil_var[,2])]
+sil_cols_var <- sil_cols_var[order(-sil_var[,1], sil_var[,3])]
+plot(sil_var, main = paste(length(unique(PAG_clust_var_cutree)), "clusters"), border = sil_cols_var, col = sil_cols_var, do.col.sort = FALSE)
+
+sil_cv2 <- silhouette(PAG_clust_cv2_cutree, dist = PAG_dist_cv2)
+sil_cols_cv2 <- cluster_colors[ifelse(sil_cv2[,3] > 0, sil_cv2[,1], sil_cv2[,2])]
+sil_cols_cv2 <- sil_cols_cv2[order(-sil_cv2[,1], sil_cv2[,3])]
+plot(sil_cv2, main = paste(length(unique(PAG_clust_cv2_cutree)), "clusters"), border = sil_cols_cv2, col = sil_cols_cv2, do.col.sort = FALSE)
 ```
 
 For a more detailed examination, we identify the closest neighboring cluster for cells with negative widths. This provides a perspective on the relationships between clusters that is closer to the raw data than the dendrogram.
 ```{r}
-neg.widths <- sil[,3] < 0
-table(Cluster=sil[neg.widths,1], Neighbor=sil[neg.widths,2])
+neg_widths_var <- sil_var[,3] < 0
+table(Cluster = sil_var[neg_widths_var, 1], Neighbor = sil_var[neg_widths_var, 2])
+
+neg_widths_cv2 <- sil_cv2[,3] < 0
+table(Cluster = sil_cv2[neg_widths_cv2, 1], Neighbor = sil_cv2[neg_widths_cv2, 2])
 ```
 
-The average silhouette width across all cells can also be used to choose clustering parameters. The aim is to maximize the average silhouette width in order to obtain well-separated clusters. This can be helpful to automatically obtain a “reasonable” clustering, though in practice, the clustering that yields the strongest separation often does not provide the most biological insight.
+The silhouette width can be used to determine the parameter values that maximize the separation between clusters. For example, we could vary the cut height or splitting depth in `cutreeDynamic` to maximize the average silhouette width across all cells. This usually provides a satisfactory initial clustering for further examination. However, the granularity of clustering is much like the magnification on a microscope. Different views of the data can be obtained with different granularities, some of which may be suboptimal on measures of separation. Users should not fixate on the clustering with the greatest separation if it does not provide the desired granularity for a particular biological question. Small silhouette positive widths indicate that the separation between clusters is weak. This may be symptomatic of over-clustering where clusters that are clearly defined are further split into subsets that are less well separated. 
 ```{r}
 library(cluster)
-par(mfrow=c(2,2))
-for (k in 2:5) { 
-    example_clusters <- cutree(PAG_tree, k=k)
-    sil <- silhouette(example_clusters, dist=PAG_dist)
-    plot(sil, col=rainbow(k)[sort(sil[,1])])
+cluster_colors <- scater:::.get_palette("tableau10medium") # hidden scater colours
+
+for (k in 2:10) { 
+    example_clusters <- cutree(PAG_tree_var, k = k)
+    sil <- silhouette(example_clusters, dist = PAG_dist_var)
+    sil_cols_var <- cluster_colors[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
+    sil_cols_var <- sil_cols_var[order(-sil[,1], sil[,3])]
+    plot(sil, main = paste(length(unique(example_clusters)), "clusters"), border = sil_cols_var, col = sil_cols_var, do.col.sort = FALSE)
+}
+
+for (k in 2:10) { 
+    example_clusters <- cutree(PAG_tree_cv2, k = k)
+    sil <- silhouette(example_clusters, dist = PAG_dist_cv2)
+    sil_cols_cv2 <- cluster_colors[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
+    sil_cols_cv2 <- sil_cols_cv2[order(-sil[,1], sil[,3])]
+    plot(sil, main = paste(length(unique(example_clusters)), "clusters"), border = sil_cols_cv2, col = sil_cols_cv2, do.col.sort = FALSE)
 }
 ```
-
-### 6.1.2 | DynamicTreeCut
-Clusters are explicitly defined by applying a dynamic tree cut (Langfelder, Zhang, and Horvath 2008) to the dendrogram. This exploits the shape of the branches in the dendrogram to refine the cluster definitions, and is more appropriate than `cutree` for complex dendrograms. Greater control of the empirical clusters can be obtained by manually specifying cutHeight in  `cutreeDynamic`. We also set `minClusterSize` to a lower value than the default of 20, to avoid spurious aggregation of distant small clusters.
-```{r}
-library(dynamicTreeCut)
-PAG_clusters <- unname(cutreeDynamic(PAG_tree, distM=as.matrix(PAG_dist), 
-                                     minClusterSize=10, verbose=0))
-```
-
-We examine the distribution of cells in each cluster with respect to known factors. We check whether each cluster is comprised of cells from both batches, which would indicate that the clustering is not driven by a batch effect. Differences in the composition of each cluster are observed with respect to `cell.type` or `PAG.area`.
-```{r}
-table(PAG_clusters, PAG_sceset_qc_norm$cell.type)
-table(PAG_clusters, PAG_sceset_qc_norm$PAG.area)
-```
-
-We can now visualize the cluster assignments for all cells on the t-SNE we created before. Adjacent cells are generally assigned to the same cluster, indicating that the clustering procedure was applied correctly.
-```{r}
-PAG_sceset_qc_norm$Cluster <- factor(PAG_clusters)
-plotTSNE(PAG_sceset_qc_norm, colour_by="Cluster") + fontsize
-```
-
-We check the separatedness of the clusters using the silhouette width. Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in different clusters. Conversely, cells with negative widths are closer to other clusters than to other cells in the cluster to which it was assigned. Each cluster would ideally contain many cells with large positive widths, indicating that it is well-separated from other clusters.
-```{r}
-library(cluster)
-clust.col <- scater:::.get_palette("tableau10medium") # hidden scater colours
-sil <- silhouette(PAG_clusters, dist = PAG_dist)
-sil.cols <- clust.col[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
-sil.cols <- sil.cols[order(-sil[,1], sil[,3])]
-plot(sil, main = paste(length(unique(PAG_clusters)), "clusters"), 
-     border=sil.cols, col=sil.cols, do.col.sort=FALSE)
-```
-
-The silhouette width can be used to determine the parameter values that maximize the separation between clusters. For example, we could vary the cut height or splitting depth in `cutreeDynamic` to maximize the average silhouette width across all cells. This usually provides a satisfactory initial clustering for further examination. However, keep in mind that the granularity of clustering is much like the magnification on a microscope. Different views of the data can be obtained with different granularities, some of which may be suboptimal on measures of separation. Users should not fixate on the clustering with the greatest separation if it does not provide the desired granularity for a particular biological question.
-
-* Small silhouette positive widths indicates that the separation between clusters is weak. This may be symptomatic of over-clustering where clusters that are clearly defined are further split into subsets that are less well separated. 
-* An alternative clustering strategy is to use a matrix of distances derived from correlations (e.g., as in `quickCluster`). This is more robust to noise and normalization errors, but is also less sensitive to subtle changes in the expression profiles.
-* Both Ward's criterion and complete linkage yield spherical, compact clusters. In particular, complete linkage favours the formation of clusters with the same diameter. This may be desirable in some cases but is less appropriate when subpopulations differ in their variance. Thus, we typically use Ward's criterion for our initial clustering. Of course, it is simple (and recommended) to try other approaches provided that some assessment is performed, e.g., using the silhouette width.
