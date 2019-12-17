@@ -35,7 +35,7 @@ In scRNA-seq we usually do not have a defined set of experimental conditions. In
 
 The most common model of RNASeq data is the negative binomial model. However, a raw negative binomial model does not fit full-length transcript data as well due to the high dropout rates relative to the non-zero read counts. For this type of data a variety of zero-inflated negative binomial models have been proposed (e.g. MAST, SCDE). The model that makes more biological sense and with more experimental support (Kim and Marioni, 2013) is the Poisson-Beta distribution, based on a mechanistic model of transcriptional bursting.
 
-We continue using the `PAG_sceset_qc_norm_filt_corr` after normalization, filtering, and batch correction. We should thus have a `corrected` slot in `assays`:
+We continue using the `PAG_sceset_qc_norm_filt_corr_clust` after normalization, filtering, batch correction, and clustering. We should thus have a `corrected` slot in `assays`:
 ```{r}
 set.seed(1991)
 library(scater)
@@ -48,32 +48,29 @@ library(monocle)
 library(MAST)
 library(ROCR)
 
-PAG_sceset_qc_norm_filt_corr <- readRDS("PAG_sceset_qc_norm_filt_corr.rds") # Contains filtered cells and genes, and normalized data
-assayNames(PAG_sceset_qc_norm_filt_corr)
-PAG_sceset_qc_norm_filt_corr
+PAG_sceset_qc_norm_filt_corr_clust <- readRDS("PAG_sceset_qc_norm_filt_corr_clust.rds") # Contains filtered cells and genes, and normalized data
+assayNames(PAG_sceset_qc_norm_filt_corr_clust)
+PAG_sceset_qc_norm_filt_corr_clust
 ```
 
 ```{r}
 # Round the counts to ensure they are integers:
-assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded") <- round(assay(PAG_sceset_qc_norm_filt_corr, "counts")) # NOT the normalized counts
-PAG_sceset_qc_norm_filt_corr
+assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded") <- round(assay(PAG_sceset_qc_norm_filt_corr_clust, "counts")) # NOT the normalized counts
+PAG_sceset_qc_norm_filt_corr_clust
 
 # Quickly check the millions of reads that uniquely aligned to the genes (the second argument of round tells how many decimal points to keep).
-round(colSums(assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded")) / 1e6, 1 )
+round(colSums(assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded")) / 1e6, 1 )
 ```
 
 Read the relevant metadata, making sure the key annotations are `factor`:
 ```{r}
 # Check you have the relevant metadata as factors:
-head(colnames(colData(PAG_sceset_qc_norm_filt_corr)))
+head(colnames(colData(PAG_sceset_qc_norm_filt_corr_clust)))
 
-class(PAG_sceset_qc_norm_filt_corr$mouse.id)
-class(PAG_sceset_qc_norm_filt_corr$cell.type)
-class(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
-
-PAG_sceset_qc_norm_filt_corr$PAGarea_celltype <- factor(x = paste0(PAG_sceset_qc_norm_filt_corr$PAG.arearegistration, "_", PAG_sceset_qc_norm_filt_corr$cell.type),
-                                                           levels = c("dmpag_VGAT", "dlpag_VGAT", "lpag_VGAT", "vlpag_VGAT", "dmpag_VGluT2",  "dlpag_VGluT2", "lpag_VGluT2", "vlpag_VGluT2"))
-levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
+class(PAG_sceset_qc_norm_filt_corr_clust$mouse.id)
+class(PAG_sceset_qc_norm_filt_corr_clust$cell.type)
+class(PAG_sceset_qc_norm_filt_corr_clust$PAG.arearegistration)
+levels(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype)
 ```
 
 ## Step 7.1 | Differential Expression workflow with DESeq2 and edgeR (EBI-EMBL Course, Charlotte Soneson)
@@ -84,7 +81,7 @@ The fact that the values in the matrix are counts of sequencing reads (in the ca
 An alternative to using actual counts of reads or fragments aligned to the genome is to use estimated counts from software that use pseudo-alignment to the transcriptome. Since these represent expected counts rather than observed counts they are not necessarily integers, and thus may need to be rounded before they are fed to the count-based pipelines. In any case, we start the DE workflow from a gene-vs-sample matrix, where raw reads have been quality controlled and gene expression quantified.
 ```{r}
 # Check you have rounded counts in your object:
-assayNames(PAG_sceset_qc_norm_filt_corr)
+assayNames(PAG_sceset_qc_norm_filt_corr_clust)
 ```
 
 Once we have a gene-level count matrix and the relevant metadata we can branch out and use a variety of Bioconductor packages for exploration and DE analysis. Each of the packages we will use for differential expression has a specific class of object used to store the summarization of the RNA-seq experiment and the intermediate quantities that are calculated during the statistical analysis of the data. `DESeq2` uses a `DESeqDataSet` and `edgeR` uses a `DGEList`.
@@ -97,8 +94,8 @@ In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of th
 
 We have two types of cells, _VGAT_ and _VGluT2_, across four different anatomical subdivisions.
 ```{r}
-table(PAG_sceset_qc_norm_filt_corr$cell.type, PAG_sceset_qc_norm_filt_corr$PAG.arearegistration)
-table(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
+table(PAG_sceset_qc_norm_filt_corr_clust$cell.type, PAG_sceset_qc_norm_filt_corr_clust$PAG.arearegistration)
+table(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype)
 ```
 
 __Note__: it could be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as "treatment vs control", without needing to specify additional arguments. However, in our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for `cell.type` or `mouse.id`. We can, however, relevel the `PAG.areacollection` so that `dmpag` and not `dlpag` is the top level, as we did in _Part I_ of the pipeline. We don't need to run this again.
@@ -126,33 +123,33 @@ We will now generate a `DESeqDataSet` from a count matrix and a table of sample 
 ```{r}
 library(DESeq2)
 #### Design 0 ####
-PAG_DESeq_set_0 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+PAG_DESeq_set_0 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr_clust),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round)
 
 #### Design 1 ####
-PAG_DESeq_set_1 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+PAG_DESeq_set_1 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr_clust),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type)
 
 #### Design 2 ####
-PAG_DESeq_set_2 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"),
-                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+PAG_DESeq_set_2 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"),
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr_clust),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAG.arearegistration)
 
 #### Design 1&2 ####
-PAG_DESeq_set_12 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                           colData = colData(PAG_sceset_qc_norm_filt_corr),
+PAG_DESeq_set_12 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"), 
+                                           colData = colData(PAG_sceset_qc_norm_filt_corr_clust),
                                            design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration)
 
 #### Design 1&2 with interaction ####
-PAG_DESeq_set_12a <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                            colData = colData(PAG_sceset_qc_norm_filt_corr),
+PAG_DESeq_set_12a <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"), 
+                                            colData = colData(PAG_sceset_qc_norm_filt_corr_clust),
                                             design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + cell.type:PAG.arearegistration)
 
 #### Design 3 ####
-PAG_DESeq_set_3 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), 
-                                          colData = colData(PAG_sceset_qc_norm_filt_corr),
+PAG_DESeq_set_3 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"), 
+                                          colData = colData(PAG_sceset_qc_norm_filt_corr_clust),
                                           design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAGarea_celltype)
 ```
 
@@ -308,7 +305,7 @@ Results tables are generated using the function results, which extracts a result
 Next, calling `results` without any arguments will extract the estimated log2-fold changes and _p values_ for the last variable in the `design` formula. If there are more than 2 levels for this variable, `results` will extract the results table for a comparison of the last level over the first level.
 ```{r}
 resultsNames(PAG_DESeq_set_1)
-levels(PAG_sceset_qc_norm_filt_corr$cell.type)
+levels(PAG_sceset_qc_norm_filt_corr_clust$cell.type)
 PAG_DESeq_results_1_wald <- DESeq2::results(PAG_DESeq_set_1, 
                                             contrast = c("cell.type", "VGluT2", "VGAT"), 
                                             test = "Wald",
@@ -522,15 +519,15 @@ browseURL(url)
 ```{r}
 library(edgeR)
 
-PAG_genetable <- data.frame(gene.id = rownames(PAG_sceset_qc_norm_filt_corr),
+PAG_genetable <- data.frame(gene.id = rownames(PAG_sceset_qc_norm_filt_corr_clust),
                             stringsAsFactors = FALSE)
 
-stopifnot(all(rownames(colData(PAG_sceset_qc_norm_filt_corr)) == colnames(PAG_sceset_qc_norm_filt_corr)))
+stopifnot(all(rownames(colData(PAG_sceset_qc_norm_filt_corr_clust)) == colnames(PAG_sceset_qc_norm_filt_corr_clust)))
 
-PAG_DGE_list <- DGEList(counts = assay(PAG_sceset_qc_norm_filt_corr, "counts_rounded"), # raw read counts, rounded
+PAG_DGE_list <- DGEList(counts = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"), # raw read counts, rounded
                         #lib.size = colSums(counts), # numeric vector giving the total count (sequence depth) for each library.
                         #norm.factors = rep(1, length(counts[1,])), # numeric vector of normalization factors that modify the library sizes (could insert scran size factors here)
-                        samples = colData(PAG_sceset_qc_norm_filt_corr), # data frame containing information for each sample
+                        samples = colData(PAG_sceset_qc_norm_filt_corr_clust), # data frame containing information for each sample
                         group = NULL, # vector or factor giving the experimental group/condition for each sample/library
                         genes = PAG_genetable, # data frame containing annotation information for each gene
                         remove.zeros = FALSE) # logical, whether to remove rows that have 0 total count
@@ -648,21 +645,50 @@ plot(rank(PAG_DESeq_results$pvalue[match(PAG_DE_shared, rownames(PAG_DESeq_resul
      cex = 0.1, xlab = "DESeq2", ylab = "edgeR")
 ```
 
-## STEP 7.2 | Identifying marker genes between subpopulations
-Once putative subpopulations are identified by clustering, we can identify marker genes for each cluster using the `findMarkers` function. This performs Welch t-tests on the log-expression values for every gene and between every pair of clusters (Soneson and Robinson 2018). The aim is to test for DE in each cluster compared to the others while blocking on uninteresting factors such as the plate of origin. The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters.
+## Step 7.2 | Identifying marker genes between subpopulations
+To interpret the clustering results, we can identify the genes that drive separation between clusters. These marker genes allow us to assign biological meaning to each cluster based on their functional annotation. In the most obvious case, the marker genes for each cluster are a priori associated with particular cell types, allowing us to treat the clustering as a proxy for cell type identity. The same principle can be applied to discover more subtle differences between clusters (e.g., changes in activation or differentiation state) based on the behavior of genes in the affected pathways.
+
+Identification of marker genes is usually based around the retrospective detection of differential expression between clusters. Genes that are more strongly DE are more likely to have caused separate clustering of cells in the first place. Several different statistical tests are available to quantify the differences in expression profiles, and different approaches can be used to consolidate test results into a single ranking of genes for each cluster.
+
+### 7.2.1 | Using pairwise t-tests
+The Welch t-test is an obvious choice of statistical method to test for differences in expression between clusters. It is quickly computed and has good statistical properties for large numbers of cells (Soneson and Robinson 2018). We can use the `findMarkers()` function to perform pairwise comparisons between clusters for each gene (the function performs Welch t-tests on the log-expression values for every gene and between every pair of clusters), which returns a list of `DataFrames` containing ranked candidate markers for each cluster. The aim is to test for DE in each cluster compared to the others while blocking on uninteresting factors such as the plate of origin. The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters. We can also use this approach to identify genes driving differences between `PAG.arearegistration` and `cell.type`.
 ```{r}
-marker_genes <- findMarkers(PAG_sceset_qc_norm, clusters=PAG_clusters, block=PAG_sceset_qc_norm$mouse.id)
+library(scran)
+marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust, 
+                            clusters = PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters, # SC3_clusters, SNN_clusters, kmeans_clusters, Hierarchical_clusters
+                            block = PAG_sceset_qc_norm_filt_corr_clust$batch.processing)
 ```
 
-For each cluster, the DE results of the relevant comparisons are consolidated into a single output table. This allows a set of marker genes to be easily defined by taking the top DE genes from each pairwise comparison between clusters. For example, to construct a marker set for cluster 1 from the top 10 genes of each comparison, one would filter `marker.set` to retain rows with `Top` less than or equal to 10. Other statistics are also reported for each gene, including the adjusted p-values and the log-fold changes relative to every other cluster.
-```{r}
-marker_set_2 <- marker_genes[[2]] # Marker set for cluster 2
-head(marker_set_2)
+For each cluster, the DE results of the relevant comparisons are consolidated into a single output table. This allows a set of marker genes to be easily defined by taking the top DE genes from each pairwise comparison between clusters. For example, to construct a marker set for cluster X from the top 10 genes of each comparison, we could filter `marker_set` to retain rows with `Top` less than or equal to 10. Other statistics are also reported for each gene, including the adjusted p-values and the log-fold changes relative to every other cluster. 
 
+The relevant `DataFrame` contains log2-fold changes of expression in cluster X over each other cluster, along with several statistics obtained by combining p-values (Simes 1986) across the pairwise comparisons involving X.
+```{r}
+chosen_clusters <- "2"
+marker_set <- marker_genes[[chosen_clusters]] # Marker set for chosen_clusters
+head(marker_set)
+colnames(marker_set)
+```
+
+Of particular interest is the `Top` field, which contains the highest rank for each gene across all pairwise comparisons involving cluster X. The set of genes with `Top` values of 1 contains the gene with the lowest p-value from each comparison. Similarly, the set of genes with `Top` values less than or equal to 10 contains the top 10 genes from each comparison. Each `DataFrame` produced by `findMarkers()` will order genes based on the `Top` value.
+```{r}
 # Check what Top represents:
-#marker_set_2[marker_set_2$Top <= 1,]
+marker_set[marker_set$Top <= 1,]
+marker_set[1:10, 1:3]
 ```
 
+We can use the `Top` value to identify a set of genes that is guaranteed to distinguish cluster X from any other cluster. Here, we examine the top 6 genes from each pairwise comparison.
+```{r}
+best_set <- marker_set[marker_set$Top <= 6,]
+logFCs <- as.matrix(best_set[,-(1:3)])
+colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
+
+library(pheatmap)
+pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+```
+
+We intentionally use pairwise comparisons between clusters rather than comparing each cluster to the average of all other cells. The latter approach is sensitive to the population composition, potentially resulting in substantially different sets of markers when cell type abundances change in different contexts. In the worst case, the presence of a single dominant subpopulation will drive the selection of top markers for every other cluster, pushing out useful genes that can resolve the various minor subpopulations. Moreover, pairwise comparisons naturally provide more information to interpret of the utility of a marker, e.g., by providing log-fold changes to indicate which clusters are distinguished by each gene.
+
+----------
 We save the list of candidate marker genes for further examination.
 ```{r}
 write.table(marker.set, file="PAG_marker_genes_2.tsv", sep="\t", 
@@ -684,9 +710,107 @@ A valid alternative strategy is to detect marker genes that are uniquely up-regu
 
 We strongly recommend selecting some markers for use in validation studies with an independent replicate population of cells. The aim is to identify a corresponding subset of cells that express the upregulated markers and do not express the downregulated markers. Ideally, a different technique for quantifying expression would also be used during validation, e.g., fluorescent in situ hybridisation or quantitative PCR. This confirms that the subpopulation genuinely exists and is not an artifact of scRNA-seq or the computational analysis.
 
-* By setting `direction="up"`, `findMarkers` will only return genes that are upregulated in each cluster compared to the others. This is convenient in highly heterogeneous populations to focus on genes that can immediately identify each cluster. While lack of expression may also be informative, it is less useful for positive identification.
 * `findMarkers` can also be directed to find genes that are DE between the chosen cluster and all other clusters. This should be done by setting `pval.type="all"`, which defines the p-value for each gene as the maximum value across all pairwise comparisons involving the chosen cluster. Combined with `direction="up"`, this can be used to identify unique markers for each cluster. However, this is sensitive to overclustering, as unique marker genes will no longer exist if a cluster is split into two smaller subclusters.
 * It must be stressed that the (adjusted) p-values computed here cannot be properly interpreted as measures of significance. This is because the clusters have been empirically identified from the data.
+
+----------
+
+### 7.2.2 | Using the log-fold change
+Our previous `findMarkers()` call considers both up- and downregulated genes to be potential markers. However, downregulated genes are less appealing as markers as it is more difficult to interpret and experimentally validate an absence of expression. To focus on up-regulated markers, we can instead perform a one-sided t-test to identify genes that are upregulated in each cluster compared to the others. This is achieved by setting `direction = "up"` in the `findMarkers()` call. This is convenient in highly heterogeneous populations to focus on genes that can immediately identify each cluster.
+```{r}
+marker_genes_up <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust, 
+                               clusters = PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters, # SC3_clusters, SNN_clusters, kmeans_clusters, Hierarchical_clusters
+                               block = PAG_sceset_qc_norm_filt_corr_clust$batch.processing,
+                               direction = "up")
+marker_set_up <- marker_genes_up[[chosen]]
+marker_set_up[1:10,1:3]
+```
+
+The t-test also allows us to specify a non-zero log-fold change as the null hypothesis. This allows us to consider the magnitude of the log-fold change in our p-value calculations, in a manner that is more rigorous than simply filtering directly on the log-fold changes (McCarthy and Smyth 2009). (Specifically, a simple threshold does not consider the variance and can enrich for genes that have both large log-fold changes and large variances.) We perform this by setting `lfc=` in our `findMarkers()` call - when combined with `direction=`, this tests for genes with log-fold changes that are significantly greater than 1:
+```{r}
+marker_genes_up_lfc <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust, 
+                                   clusters = PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters, # SC3_clusters, SNN_clusters, kmeans_clusters, Hierarchical_clusters
+                                   block = PAG_sceset_qc_norm_filt_corr_clust$batch.processing,
+                                   direction = "up",
+                                   lfc = 1)
+marker_set_up_lfc <- marker_genes_up_lfc[[chosen]]
+marker_set_up_lfc[1:10,1:3]
+```
+
+These two settings yield a more focused set of candidate marker genes that are upregulated in cluster X.
+```{r}
+best_set_lfc <- marker_set_up_lfc[marker_set_up_lfc$Top <= 5,]
+logFCs <- as.matrix(best_set_lfc[,-(1:3)])
+colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
+
+library(pheatmap)
+pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+```
+
+This increased stringency is not without cost. If only upregulated genes are requested from `findMarkers()`, any cluster defined by downregulation of a marker gene will not contain that gene among the top set of features in its `DataFrame`. This is occasionally relevant for subtypes or other states that are distinguished by high versus low expression of particular genes. Similarly, setting an excessively high log-fold change threshold may discard otherwise useful genes. For example, a gene upregulated in a small proportion of cells of a cluster will have a small log-fold change but can still be an effective marker if the focus is on specificity rather than sensitivity.
+
+### 7.2.3 | Finding cluster-specific markers
+By default, `findMarkers()` will give a high ranking to genes that are differentially expressed in any pairwise comparison. This is because a gene only needs a very low p-value in a single pairwise comparison to achieve a low `Top` value. A more stringent approach would only consider genes that are differentially expressed in all pairwise comparisons involving the cluster of interest. To achieve this, we set `pval.type="all"` in `findMarkers()` to use an intersection-union test (Berger and Hsu 1996) where the combined p-value for each gene is the maximum of the p-values from all pairwise comparisons. A gene will only achieve a low combined p-value if it is strongly DE in all comparisons to other clusters.
+```{r}
+# We can combine this with 'direction='.
+marker_genes_up_all <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust, 
+                                   clusters = PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters, # SC3_clusters, SNN_clusters, kmeans_clusters, Hierarchical_clusters
+                                   block = PAG_sceset_qc_norm_filt_corr_clust$batch.processing,
+                                   pval.type = "all",
+                                   direction = "up")
+
+marker_set_up_all <- marker_genes_up_all[[chosen]]
+marker_set_up_all[1:10,1:2]
+```
+
+This strategy will only report genes that are highly specific to the cluster of interest. When it works, it can be highly effective as it generates a small focused set of candidate markers. However, any gene that is expressed at the same level in two or more clusters will simply not be detected. This is likely to discard many interesting genes, especially if the clusters are finely resolved with weak separation. To give a concrete example, consider a mixed population of CD4+-only, CD8+-only, double-positive and double-negative T cells. With `pval.type="all"`, neither Cd4 or Cd8 would be detected as subpopulation-specific markers because each gene is expressed in two subpopulations. In comparison, `pval.type="any"` will detect both of these genes as they will be DE between at least one pair of subpopulations.
+
+If `pval.type="all"` is too stringent yet `pval.type="any"` is too generous, a compromise is to set `pval.type="some"`. For each gene, we apply the Holm-Bonferroni correction across its p-values and take the middle-most value as the combined p-value. This effectively tests the global null hypothesis that at least 50% of the individual pairwise comparisons exhibit no DE. We then rank the genes by their combined p-values to obtain an ordered set of marker candidates. The aim is to improve the conciseness of the top markers for defining a cluster while mitigating the risk of discarding useful genes that are not DE to all other clusters. The downside is that taking this compromise position sacrifices the theoretical guarantees offered at the other two extremes.
+```{r}
+marker_genes_up_some <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust, 
+                                   clusters = PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters, # SC3_clusters, SNN_clusters, kmeans_clusters, Hierarchical_clusters
+                                   block = PAG_sceset_qc_norm_filt_corr_clust$batch.processing,
+                                   pval.type = "some",
+                                   direction = "up")
+marker_set_up_some <- marker_genes_up_some[[chosen]]
+marker_set_up_some[1:10,1:2]
+```
+
+### 7.2.4 | Using the Wilcoxon rank sum test
+The Wilcoxon rank sum test (also known as the Wilcoxon-Mann-Whitney test, or WMW test) is another widely used method for pairwise comparisons between groups of observations. Its strength lies in the fact that it directly assesses separation between the expression distributions of different clusters. The WMW test statistic is proportional to the area-under-the-curve (AUC), i.e., the concordance probability, which is the probability of a random cell from one cluster having higher expression than a random cell from another cluster. In a pairwise comparison, AUCs of 1 or 0 indicate that the two clusters have perfectly separated expression distributions. Thus, the WMW test directly addresses the most desirable property of a candidate marker gene, while the t-test only does so indirectly via the difference in the means and the intra-group variance.
+
+We perform WMW tests by again using the `findMarkers()` function, this time with `test="wilcox"`. This returns a list of `DataFrames` containing ranked candidate markers for each cluster. The `direction=`, `lfc=` and `pval.type=` arguments can be specified and have the same interpretation as described for t-tests. Again, to explore the results in more detail, we can focus on the `DataFrame` for cluster X. The interpretation of `Top` is the same as described for t-tests, and Simes’ method is again used to combine p-values across pairwise comparisons. If we want more focused sets, we can also change `pval.type=` as previously described.
+```{r}
+chosen <- "2"
+marker_genes_up_wilcox <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust, 
+                                      test.type = "wilcox", # "t", "wilcox", "binom"
+                                      clusters = PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters, # SC3_clusters, SNN_clusters, kmeans_clusters, Hierarchical_clusters
+                                      block = PAG_sceset_qc_norm_filt_corr_clust$batch.processing,
+                                      pval.type = "any", # "any", "some", "all"
+                                      direction = "up") # "any", "up", "down"
+marker_set_up_wilcox <- marker_genes_up_wilcox[[chosen]]
+marker_set_up_wilcox[1:10,1:3]
+```
+
+The `DataFrame` contains the AUCs from comparing cluster X to every other cluster. A value greater than 0.5 indicates that the gene is upregulated in the current cluster compared to the other cluster, while values less than 0.5 correspond to downregulation. We would typically expect AUCs of 0.7-0.8 for a strongly upregulated candidate marker.
+```{r}
+best_set_wilcox <- marker_set_up_wilcox[marker_set_up_wilcox$Top <= 5,]
+AUCs <- as.matrix(best_set_wilcox[,-(1:3)])
+colnames(AUCs) <- sub("AUC.", "", colnames(AUCs))
+
+library(pheatmap)
+pheatmap(AUCs, breaks = seq(0, 1, length.out = 21), color = viridis::viridis(21))
+```
+
+One practical advantage of the WMW test over the Welch t-test is that it is symmetric with respect to differences in the size of the groups being compared. This means that, all else being equal, the top-ranked genes on each side of a DE comparison will have similar expression profiles regardless of the number of cells in each group. In contrast, the t-test will favor genes where the larger group has the higher relative variance as this increases the estimated degrees of freedom and decreases the resulting p-value. This can lead to unappealing rankings when the aim is to identify genes upregulated in smaller groups. The WMW test is not completely immune the variance effects - for example, it will slightly favor detection of DEGs at low average abundance where the greater number of ties at zero deflates the approximate variance of the rank sum statistic - but this is relatively benign as the selected genes are still fairly interesting.
+
+The main disadvantage of the WMW test is that the AUCs are much slower to compute compared to t-statistics. This may be inconvenient for interactive analyses involving multiple iterations of marker detection. We can mitigate this to some extent by parallelizing these calculations using the `BPPARAM=` argument in `findMarkers()`.
+
+### 7.2.5 | Using a binomial test
+
+
+
+
 
 ## Step 7.3 | simpleSingleCell Workflow - Limma-voom
 We use the raw counts here.
@@ -907,7 +1031,7 @@ MAST is based on a zero-inflated negative binomial model. It tests for different
 We can directly convert our `SingleCellExperiment` object to the `SingleCellAssay` that `MAST` uses:
 ```{r}
 library(MAST)
-PAG_MAST_sca = SceToSingleCellAssay(PAG_sceset_qc_norm_filt_corr)
+PAG_MAST_sca = SceToSingleCellAssay(PAG_sceset_qc_norm_filt_corr_clust)
 options(mc.cores = 10) # For parallelisation. You can check how many cores you have available with detectCores()
 ```
 
