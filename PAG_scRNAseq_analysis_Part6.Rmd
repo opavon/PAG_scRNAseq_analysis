@@ -901,3 +901,13 @@ for (k in 2:10) {
     plot(sil, main = paste(length(unique(example_clusters)), "clusters"), border = sil_cols_cv2, col = sil_cols_cv2, do.col.sort = FALSE)
 }
 ```
+
+## Step 6.5 | Save the SingleCellExperiment object
+```{r}
+saveRDS(PAG_sceset_qc_norm_filt_corr, file = "PAG_sceset_qc_norm_filt_corr_clust.rds")
+print("Part 6 - Done!")
+```
+
+```{r}
+sessionInfo()
+```

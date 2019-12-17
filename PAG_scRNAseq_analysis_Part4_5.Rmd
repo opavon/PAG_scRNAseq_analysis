@@ -1243,7 +1243,6 @@ It is worth elaborating on why we should not perform downstream analyses directl
 
 ## Step 5.5 | Save the filtered, corrected, and denoised SingleCellExperiment object
 ```{r}
-# Save the normalized data:
 saveRDS(PAG_sceset_qc_norm_filt, file = "PAG_sceset_qc_norm_filt_corr.rds")
 print("Part 5 - Done!")
 ```
