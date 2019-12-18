@@ -1080,8 +1080,8 @@ plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_var", dim
 reducedDim(PAG_sceset_qc_norm_filt_corr, "force_cv2") <- igraph::layout_with_fr(graph_cv2)
 plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_cv2", dimred = "force_cv2")
 ```
-## STEP 6.5 | clusterExperiment [TO TRY]
-## STEP 6.6 | bigSCale2
+## STEP 6.6 | clusterExperiment [not yet implemented]
+## STEP 6.7 | bigSCale2
 bigSCale is an analytical framework for big-scale single-cell data, available [here](https://github.com/iaconogi/bigSCale2).
 
 ```{r}
@@ -1167,12 +1167,12 @@ Signatures = getSignatures(PAG_sceset_qc)
 DT::datatable(Signatures[[1]])
 ```
 
-## Step 6.7 | BackSPIN - biclustering hierarchical [MATLAB/Python]
+## Step 6.8 | BackSPIN - biclustering hierarchical [MATLAB/Python]
 The BackSPIN biclustering algorithm was developed by Amit Zeisel and is described in Zeisel et al. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq Science 2015 (PMID: 25700174, doi: 10.1126/science.aaa1934). Please cite this paper if you use the BackSPIN algorithm in your work.
 
 Original MATLAB implementation by Amit Zeisel. This repo contains a standalone command-line version of BackSPIN, implemented in Python by Gioele La Manno (https://github.com/linnarsson-lab/BackSPIN)
 
-## Step 6.8 | SINCERA (hierarchical clustering) [not installed]
+## Step 6.9 | SINCERA (hierarchical clustering) [not yet implemented]
 It performs a gene-level z-score transformation before doing clustering.
 It can also identify k as the minimum height of the hierarchical tree that generates no more than a specified number of singleton clusters (clusters containing only 1 cell).
 
@@ -1181,7 +1181,7 @@ SINCERA: a computational pipeline for SINgle CEll RNA-seq profiling Analysis, ca
 Website: https://research.cchmc.org/pbge/sincera.html
 Paper: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004575
 
-## Step 6.9 | pcaReduce [haven't tried, but very stochastic, does not provide a stable result] 
+## Step 6.10 | pcaReduce [not yet implemented, but very stochastic and does not provide a stable result] 
 pcaReduce combines PCA, k-means and iterative hierarchical clustering. Starting from a large number of clusters pcaReduce iteratively merges similar clusters; after each merging event it removes the principle component explaning the least variance in the data.
 
 pcaReduce operates directly on the expression matrix. It is recommended to use a gene filter and log transformation before running pcaReduce. We will use the default SC3 gene filter (note that the exprs slot of a scater object is log-transformed by default).
@@ -1265,12 +1265,58 @@ PAG_DESeq_set_123ab <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_no
                                                design = ~ mouse.sex + batch.processing + batch.sequencing_round + cell.type + PAG.arearegistration + PAG.APaxis + cell.type:PAG.arearegistration + cell.type:PAG.APaxis)
 ```
 
-## Step 7.5 | SCDE [not yet implemented]
+## Step 7.5 | Non-parametric tests
+The main argument against using non-parametric tests is that scaling normalization does not adjust for differences in the distributions, which results in incorrect rejection of the null hypothesis in fairly innocuous cases (see Aaron Lun's github: https://github.com/LTLA/SingleCellThoughts/blob/master/workflows/de.Rmd). Also, from _Soneson et al 2018_, the main drawback is that these methods don't allow for complex designs.
+
+### 7.5.1 | Kolmogorov-Smirnov test (non-parametric)
+To compare the distributions for each gene in two individuals/groups. The KS-test quantifies the distance between the empirical cummulative distributions of the expression of each gene in each of the two populations. It is sensitive to changes in mean expression and changes in variability. However it assumes data are continuous and may perform poorly when data contains a large number of identical values (eg. zeros). Another issue with the KS-test is that it can be very sensitive for large sample sizes and thus it may end up as significant even though the magnitude of the difference is very small.
+```{r}
+pValues_KS <- apply(
+    norm, 1, function(x) {
+        ks.test(
+            x[PAG_sceset_qc$cell.type == "VGluT2"], 
+            x[PAG_sceset_qc$cell.type == "VGAT"]
+        )$p.value
+    }
+)
+# multiple testing correction
+pValues_KS <- p.adjust(pValues_KS, method = "fdr")
+```
+
+```{r}
+#How many of the significant DE genes are detected
+significant_DE_genes_KS <- names(pValues_KS)[pValues_KS < 0.05]
+length(significant_DE_genes_KS)
+```
+
+Often it is informative to vary the threshold and evaluate performance across a range of values. This is then plotted as a receiver-operating-characteristic curve (ROC) and a general accuracy statistic can be calculated as the area under this curve (AUC). The ROCR package facilitates this plotting.
+
+### 7.5.2 | Wilcox/Mann-Whitney-U Test (non-parametric)
+The Wilcox-rank-sum test is another non-parametric test, but tests specifically if values in one group are greater/less than the values in the other group. Thus it is often considered a test for difference in median expression between two groups; whereas the KS-test is sensitive to any change in distribution of expression values.
+```{r}
+pValues_W <- apply(
+    norm, 1, function(x) {
+        wilcox.test(
+            x[PAG_sceset_qc$cell.type == "VGluT2"], 
+            x[PAG_sceset_qc$cell.type == "VGAT"]
+        )$p.value
+    }
+)
+# multiple testing correction
+pValues_W <- p.adjust(pValues_W, method = "fdr")
+```
+
+```{r}
+#How many of the significant DE genes are detected
+significant_DE_genes_W <- names(pValues_W)[pValues_W < 0.05]
+length(significant_DE_genes_W)
+```
+## Step 7.6 | SCDE [not yet implemented]
 The scde package implements routines for fitting individual error models for single-cell RNA-seq measurements. Briefly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells.
 
 Website: http://hms-dbmi.github.io/scde/
 
-### 8.5.1 | Preparing the data
+### 7.6.1 | Preparing the data
 The analysis starts with a matrix of read counts (the values must be integers). We first need to define the two groups we are going to compare:
 ```{r}
 library(scde)
@@ -1287,7 +1333,7 @@ table(sg)
 cd <- clean.counts(es.mef.small, min.lib.size=1000, min.reads = 1, min.detected = 1)
 ```
 
-### 8.5.2 | Fitting error models
+### 7.6.2 | Fitting error models
 As a next step we fit the error models on which all subsequent calculations will rely. The fitting process relies on a subset of robust genes that are detected in multiple cross-cell comparisons. Here we supply the groups = sg argument, so that the error models for the two cell types are fit independently (using two different sets of "robust" genes). If the groups argument is omitted, the models will be fit using a common set.
 
 Note this step takes a considerable amount of time unless multiple cores are used.
@@ -1296,5 +1342,5 @@ Note this step takes a considerable amount of time unless multiple cores are use
 ```
 
 
-## Step 7.6 | BPSC [not yet implemented]
+## Step 7.7 | BPSC [not yet implemented]
 BPSC uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we’ve already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group (“control”) and can include other factors such as batches in the model.
