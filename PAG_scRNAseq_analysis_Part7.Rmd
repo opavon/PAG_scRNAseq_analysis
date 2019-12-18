@@ -676,7 +676,7 @@ marker_set[marker_set$Top <= 1,]
 marker_set[1:10, 1:3]
 ```
 
-We can use the `Top` value to identify a set of genes that is guaranteed to distinguish cluster X from any other cluster. Here, we examine the top 6 genes from each pairwise comparison.
+We can use the `Top` value to identify a set of genes that is guaranteed to distinguish cluster X from any other cluster. Here, we examine the top 6 genes from each pairwise comparison. In other words, if we take all genes with `Top <= 6`, this is equivalent to the union of the top 6 genes from each pairwise comparison. This aims to provide a set of genes that is guaranteed to be able to distinguish the chosen cluster from all others. 
 ```{r}
 best_set <- marker_set[marker_set$Top <= 6,]
 logFCs <- as.matrix(best_set[,-(1:3)])
@@ -684,6 +684,12 @@ colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
 
 library(pheatmap)
 pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+
+## ALternative
+top.markers <- rownames(marker.set)[marker.set$Top <= 10]
+plotHeatmap(sce.416b, features=top.markers, columns=order(sce.416b$cluster), 
+    colour_columns_by=c("cluster", "block", "phenotype"),
+    cluster_cols=FALSE, center=TRUE, symmetric=TRUE, zlim=c(-5, 5)) 
 ```
 
 We intentionally use pairwise comparisons between clusters rather than comparing each cluster to the average of all other cells. The latter approach is sensitive to the population composition, potentially resulting in substantially different sets of markers when cell type abundances change in different contexts. In the worst case, the presence of a single dominant subpopulation will drive the selection of top markers for every other cluster, pushing out useful genes that can resolve the various minor subpopulations. Moreover, pairwise comparisons naturally provide more information to interpret of the utility of a marker, e.g., by providing log-fold changes to indicate which clusters are distinguished by each gene.
@@ -807,35 +813,50 @@ One practical advantage of the WMW test over the Welch t-test is that it is symm
 The main disadvantage of the WMW test is that the AUCs are much slower to compute compared to t-statistics. This may be inconvenient for interactive analyses involving multiple iterations of marker detection. We can mitigate this to some extent by parallelizing these calculations using the `BPPARAM=` argument in `findMarkers()`.
 
 ### 7.2.5 | Using a binomial test
+The binomial test identifies genes that differ in the proportion of expressing cells between clusters. This represents a much more stringent definition of marker genes compared to the other methods, as differences in expression between clusters are effectively ignored if both distributions of expression values are not near zero. The premise is that genes are more likely to contribute to important biological decisions if they were active in one cluster and silent in another, compared to more subtle “tuning” effects from changing the expression of an active gene. From a practical perspective, a binary measure of presence/absence is easier to validate.
 
-
-
-
-
-## Step 7.3 | simpleSingleCell Workflow - Limma-voom
-We use the raw counts here.
+We can perform pairwise binomial tests between clusters using the `findMarkers()` function with `test="binom"`. This returns a list of `DataFrames` containing marker statistics for each cluster such as the `Top` rank and its p-value. Here, the effect size is reported as the log-fold change in this proportion between each pair of clusters. Large positive log-fold changes indicate that the gene is more frequently expressed in one cluster compared to the other. We can focus on genes that are upregulated in each cluster compared to the others by setting `direction="up"`.
 ```{r}
-library(limma)
-design <- model.matrix(~0 + cluster + Plate, data=colData(sce.416b))
-colnames(design)
+markers.pbmc.binom <- findMarkers(sce.pbmc, test="binom",
+    sce.pbmc$cluster, direction="up")
+names(markers.pbmc.binom)
+interesting.binom <- markers.pbmc.binom[[chosen]]
+colnames(interesting.binom)
 ```
 
 ```{r}
-keep <- calcAverage(sce.416b) > 1 # filter to remove very low-abundance genes.
+library(scater)
+top.genes <- head(rownames(interesting.binom))
+plotExpression(sce.pbmc, x="cluster", features=top.genes)
+```
+
+The disadvantage of the binomial test is that its increased stringency can lead to the loss of good candidate markers. Another property of the binomial test is that it will not respond to scaling normalization. Systematic differences in library size between clusters will not be considered when computing p-values or effect sizes. This is not necessarily problematic for marker gene detection - users can treat this as retaining information about the total RNA content, analogous to spike-in normalization.
+
+### 7.2.6 | Using custom DE methods
+It is also possible to perform marker gene detection based on precomputed DE statistics, which allows us to take advantage of more sophisticated tests in dedicated DE analysis packages in the Bioconductor ecosystem. To demonstrate, consider the `voom()` approach from the limma package (Law et al. 2014). We first process our `SingleCellExperiment` to obtain a `fit` object as shown below.
+```{r}
+library(limma)
+design <- model.matrix(~0 + cluster + Plate, data=colData(sce.pbmc))
+colnames(design)
+
+# Removing very low-abundance genes.
+keep <- calculateAverage(sce.pbmc) > 0.1 
 summary(keep)
 
-y <- convertTo(sce.416b, subset.row=keep)
+y <- convertTo(sce.pbmc, subset.row=keep)
 v <- voom(y, design)
 fit <- lmFit(v, design)
 ```
 
-We perform pairwise moderated t-tests between clusters while blocking on the plate of origin. Here, we use the TREAT strategy (McCarthy and Smyth 2009) to test for log-fold changes that are significantly greater than 0.5.
+We then perform pairwise comparisons between clusters using the TREAT strategy (McCarthy and Smyth 2009) to test for log-fold changes that are significantly greater than 0.5. For each comparison, we store the corresponding data frame of statistics in `all.results`, along with the identities of the clusters involved in `all.pairs`.
 ```{r}
-clust.terms <- head(colnames(design), length(unique(sce.416b$cluster)))
+nclust <- length(unique(sce.pbmc$cluster))
 all.results <- all.pairs <- list()
 counter <- 1L
 
-for (x in seq_along(clust.terms)) {
+# Iterating across the first 'nclust' coefficients in design,
+# and comparing them to each other in a pairwise manner.
+for (x in seq_len(nclust)) {
     for (y in seq_len(x-1L)) {
         con <- integer(ncol(design))
         con[x] <- 1
@@ -845,34 +866,79 @@ for (x in seq_along(clust.terms)) {
 
         res <- topTreat(fit2, n=Inf, sort.by="none")
         all.results[[counter]] <- res
-        all.pairs[[counter]] <- c(clust.terms[x], clust.terms[y])
+        all.pairs[[counter]] <- colnames(design)[c(x, y)]
         counter <- counter+1L
 
         # Also filling the reverse comparison.
         res$logFC <- -res$logFC
         all.results[[counter]] <- res
-        all.pairs[[counter]] <- c(clust.terms[y], clust.terms[x])
+        all.pairs[[counter]] <- colnames(design)[c(y, x)]
         counter <- counter+1L
     }
 }
 ```
 
-The results of this comparison are consolidated into a single marker list for each cluster with the `combineMarkers()` function. This yields an ordering of genes that can be interpreted in the same manner as discussed previously for `findMarkers()` output.
+These custom results are consolidated into a single marker list for each cluster with the `combineMarkers()` function. This combines test statistics across all pairwise comparisons involving a single cluster, yielding a per-cluster `DataFrame` that can be interpreted in the same manner as discussed previously.
 ```{r}
 all.pairs <- do.call(rbind, all.pairs)
 combined <- combineMarkers(all.results, all.pairs, pval.field="P.Value")
-as.data.frame(head(combined[["cluster1"]][,1:3]))
+
+# Inspecting results for our cluster of interest again.
+interesting.voom <- combined[[paste0("cluster", chosen)]] 
+colnames(interesting.voom)
+
+head(interesting.voom[,1:3])
+
 ```
 
-It is worth noting that all of our DE strategies for detecting marker genes between clusters are statistically flawed to some extent. The DE analysis is performed on the same data used to obtain the clusters, which represents "data dredging" (also known as fishing or data snooping). The hypothesis of interest - that are there differences between clusters? - is formulated from the data, so we are more likely to get a positive result when we re-use the data set to test that hypothesis.
+By default, we do not use custom DE methods to perform marker detection, for several reasons. Many of these methods rely on empirical Bayes shrinkage to share information across genes in the presence of limited replication. However, this is unnecessary when there are large numbers of “replicate” cells in each group. These methods also make stronger assumptions about the data (e.g., equal variances for linear models, the distribution of variances during empirical Bayes) that are more likely to be violated in noisy scRNA-seq contexts. From a practical perspective, they require more work to set up and take more time to run. Nonetheless, some custom methods (e.g., MAST) may provide a useful point of difference from the simpler tests, in which case they can be converted into a marker detection scheme as described above.
 
-The practical effect of data dredging is best illustrated with a simple simulation. We simulate i.i.d. normal values, perform k-means clustering and test for DE between clusters of cells with  findMarkers(). The resulting distribution of p-values is heavily skewed towards low values (Figure 2). Thus, we can detect "significant" differences between clusters even in the absence of any real substructure in the data. This effect arises from the fact that clustering, by definition, yields groups of cells that differ in their coordinates in expression space. Testing for DE genes between clusters will inevitably yield some significant results as that is how the clusters were defined in the first place.
+### 7.2.7 | Handling blocking factors
+Large studies may contain factors of variation that are known and not interesting (e.g., batch effects, sex differences). If these are not modelled, they can interfere with marker gene detection - most obviously by inflating the variance within each cluster, but also by distorting the log-fold changes if the cluster composition varies across levels of the blocking factor. To avoid these issues, we set the `block=` argument in the `findMarkers()` call.
+```{r}
+m.out <- findMarkers(sce.416b, sce.416b$cluster, 
+                     block=sce.416b$block, direction="up") 
+```
 
-By and large, this effect does not cause problems for marker gene detection as the DE statistics from findMarkers() and counterparts are primarily used for ranking. It does become an issue when the p-values are used to define "significant differences" between clusters with respect to an error rate threshold. Meaningful interpretation of error rates require consideration of the long-run behaviour, i.e., the rate of incorrect rejections if the experiment were repeated many times. The concept of statistical significance for differences between clusters is not applicable if clusters are not stably reproducible across (hypothetical) replicate experiments.
+For each gene, each pairwise comparion between clusters is performed separately in each level of the blocking factor - in this case, the plate of origin. The function will then combine p-values from different plates using Stouffer’s Z method to obtain a single p-value per pairwise comparison. (These p-values are further combined across comparisons to obtain a single p-value per gene, using either Simes’ method or an intersection-union test depending on the value of` pval.type=`.) This approach favours genes that exhibit consistent DE in the same direction in each plate.
+```{r}
+demo <- m.out[["1"]] 
+demo[demo$Top <= 5,1:3]
+```
 
-To overcome this conceptual hurdle, we need to annotate our clusters based on a few marker genes. This allows us to use the annotated clusters as proxies for the true (and presumably reproducible) biological subpopulations. We might then be tempted to interpret the significant genes as being DE between subpopulations. However, this would result in loss of error control when the clusters are not stable, due to overfitting of the cluster definitions for true null genes. This effect is exacerbated as the clusters become more unstable, e.g., due to poor separation between the underlying populations.
+The `block=` argument works with all tests shown above and is robust to difference in the log-fold changes or variance between batches. Using the `block=` argument will instruct `findMarkers()` to perform pairwise t-tests between clusters using only cells on the same level of the blocking factor. It will then combine p-values from different plates using Stouffer’s Z method to obtain a single p-value per gene. However, it assumes that each pair of clusters is present in at least one batch. In scenarios where cells from two clusters never co-occur in the same batch, the comparison will be impossible and NAs will be reported in the output. 
 
-## Step 7.4 | RNAseq123 Workflow
+Another approach is to define a design matrix containing the batch of origin as the sole factor. `findMarkers()` will then fit a linear model to the log-expression values, similar to the use of `limma` for bulk RNA sequencing data (Ritchie et al. 2015). This handles situations where multiple batches contain unique clusters, as comparisons can be implicitly performed via shared cell types in each batch. There is also a slight increase in power when information is shared across clusters for variance estimation.
+```{r}
+# Setting up the design matrix (we remove intercept for full rank
+# in the final design matrix with the cluster-specific terms).
+design <- model.matrix(~sce.416b$block)
+design <- design[,-1,drop=FALSE]
+
+m.alt <- findMarkers(sce.416b, sce.416b$cluster, 
+    design=design, direction="up")
+demo <- m.alt[["1"]]
+demo[demo$Top <= 5,1:3]
+```
+
+The use of a linear model makes some strong assumptions, necessitating some caution when interpreting the results. If the batch effect is not consistent across clusters, the variance will be inflated and the log-fold change estimates will be distorted. Variances are also assumed to be equal across groups, which is not true in general. In particular, the presence of clusters in which a gene is silent will shrink the residual variance towards zero, preventing the model from penalizing genes with high variance in other clusters. Thus, we generally recommend the use of `block=` where possible.
+
+### 7.2.8 Some notes on p-values and DE analysis
+All of our DE strategies for detecting marker genes between clusters are statistically flawed to some extent. The DE analysis is performed on the same data used to obtain the clusters, which represents “data dredging” (also known as fishing or data snooping). The hypothesis of interest - are there differences between clusters? - is formulated from the data, so we are more likely to get a positive result when we re-use the data set to test that hypothesis.
+
+The practical effect of data dredging is best illustrated with a simple simulation. If we simulate i.i.d. normal values, perform k-means clustering and test for DE between clusters of cells with findMarkers(), the resulting distribution of p-values is heavily skewed towards low values. Thus, we can detect “significant” differences between clusters even in the absence of any real substructure in the data. This effect arises from the fact that clustering, by definition, yields groups of cells that are separated in expression space. Testing for DE genes between clusters will inevitably yield some significant results as that is how the clusters were defined.
+
+For marker gene detection, this effect is largely harmless as the p-values are used only for ranking. However, it becomes an issue when the p-values are used to define “significant differences” between clusters with respect to an error rate threshold. Meaningful interpretation of error rates require consideration of the long-run behaviour, i.e., the rate of incorrect rejections if the experiment were repeated many times. The concept of statistical significance for differences between clusters is not applicable if clusters and their interpretations are not stably reproducible across (hypothetical) replicate experiments.
+
+The naive application of DE analysis methods will treat counts from the same cluster of cells as replicate observations. This is not the most relevant level of replication when cells are derived from the same biological sample (i.e., cell culture, animal or patient). DE analyses that treat cells as replicates fail to properly model the sample-to-sample variability (A. T. L. Lun and Marioni 2017). The latter is arguably the more important level of replication as different samples will necessarily be generated if the experiment is to be replicated. Indeed, the use of cells as replicates only masks the fact that the sample size is actually one in an experiment involving a single biological sample. This reinforces the inappropriateness of using the marker gene p-values to perform statistical inference.
+
+We strongly recommend selecting some markers for use in validation studies with an independent replicate population of cells. A typical strategy is to identify a corresponding subset of cells that express the upregulated markers and do not express the downregulated markers. Ideally, a different technique for quantifying expression would also be used during validation, e.g., fluorescent in situ hybridisation or quantitative PCR. This confirms that the subpopulation genuinely exists and is not an artifact of the scRNA-seq protocol or the computational analysis.
+
+One consequence of the DE analysis strategy is that markers are defined relative to subpopulations in the same dataset. Biologically meaningful genes will not be detected if they are expressed uniformly throughout the population, e.g., T cell markers will not be detected if only T cells are present in the dataset. In practice, this is usually only a problem when the experimental data are provided without any biological context - certainly, we would hope to have some a priori idea about what cells have been captured. For most applications, it is actually desirable to avoid detecting such genes as we are interested in characterizing heterogeneity within the context of a known cell population. Continuing from the example above, the failure to detect T cell markers is of little consequence if we already know we are working with T cells. Nonetheless, if “absolute” identification of cell types is necessary, we discuss some strategies for doing so in Chapter 12.
+
+Alternatively, marker detection can be performed by treating gene expression as a predictor variable for cluster assignment. For a pair of clusters, we can find genes that discriminate between them by performing inference with a logistic model where the outcome for each cell is whether it was assigned to the first cluster and the lone predictor is the expression of each gene. Treating the cluster assignment as the dependent variable is more philosophically pleasing in some sense, as the clusters are indeed defined from the expression data rather than being known in advance. (Note that this does not solve the data snooping problem.) In practice, this approach effectively does the same task as a Wilcoxon rank sum test in terms of quantifying separation between clusters. Logistic models have the advantage in that they can easily be extended to block on multiple nuisance variables, though this is not typically necessary in most use cases. Even more complex strategies use machine learning methods to determine which features contribute most to successful cluster classification, but this is probably unnecessary for routine analyses.
+
+## Step 7.3 | RNAseq123 Workflow
 The [RNAseq123 Workflow](https://bioconductor.org/packages/release/workflows/html/RNAseq123.html) uses the _edgeR_ package (Robinson, McCarthy, and Smyth 2010) to import, organise, filter and normalise the data, and the _limma_ package (Ritchie et al. 2015) with its _voom_ method for linear modelling and empirical Bayes moderation to assess differential expression and perform gene set testing.
 ```{r}
 library(limma)
@@ -881,7 +947,7 @@ library(edgeR)
 library(Mus.musculus)
 ```
 
-### 7.4.1 | Loading the data
+### 7.3.1 | Loading the data
 We start the DE workflow from a gene-vs-sample matrix, where raw reads have been quality controlled and gene expression quantified.
 ```{r}
 # Round the counts to ensure they are integers:
@@ -915,7 +981,7 @@ PAG_limma_set <- DGEList(counts = PAG_DE_counts,
 names(PAG_limma_set)
 ```
 
-### 7.4.2 | Data pre-processing
+### 7.3.2 | Data pre-processing
 Probably already done before, but ideally we should exclude low-quality cells and remove genes with zero counts before proceeding. We also calculate normalization factors:
 ```{r}
 cpm <- cpm(PAG_limma_set)
@@ -925,7 +991,7 @@ PAG_limma_set <- calcNormFactors(PAG_limma_set, method = "TMM")
 PAG_limma_set$samples$norm.factors
 ```
 
-### 7.4.3 | Creating a design matrix and contrasts
+### 7.3.3 | Creating a design matrix and contrasts
 For a given experiment, there are usually several equivalent ways to set up an appropriate design matrix. For example, `~0+group+lane` removes the intercept from the first factor, `group`, but an intercept remains in the second factor lane. Alternatively, `~group+lane` could be used to keep the intercepts in both `group` and `lane`. Understanding how to interpret the coefficients estimated in a given model is key here. We choose the first model for our analysis, as setting up model contrasts is more straight forward in the absence of an intercept for `group`. Contrasts for pairwise comparisons between cell populations are set up in limma using the `makeContrasts` function.
 ```{r}
 PAG_limma_design <- model.matrix(~ mouse.id + cell.type + PAG.areacollection,
@@ -939,7 +1005,7 @@ PAG_limma_contrasts_matrix
 
 A key strength of limma's linear modelling approach, is the ability accommodate arbitrary experimental complexity. Simple designs, such as the one in this workflow, with cell type and batch, through to more complicated factorial designs and models with interaction terms can be handled relatively easily. Where experimental or technical effects can be modelled using a random effect, another possibility in limma is to estimate correlations using `duplicateCorrelation` by specifying a `block` argument for both this function and in the `lmFit` linear modelling step.
 
-### 7.4.4 | Removing heteroscedascity from count data and linear modelling
+### 7.3.4 | Removing heteroscedascity from count data and linear modelling
 RNA-seq data is homoscedastic (the variance is not independent of the mean). Methods that model counts using a Negative Binomial distribution assume a quadratic mean-variance relationship. In limma, linear modelling is carried out on the log-CPM values which are assumed to be normally distributed and the mean-variance relationship is accommodated using precision weights calculated by the voom function.
 
 When operating on a DGEList-object, `voom` converts raw counts to log-CPM values by automatically extracting library sizes and normalisation factors from `PAG_limma_set` itself. Additional normalisation to log-CPM values can be specified within `voom` using the `normalize.method `argument. Typically, the _voom-plot_ shows a decreasing trend between the means and variances resulting from a combination of technical variation in the sequencing experiment and biological variation amongst the replicate samples from different cell populations. Experiments with high biological variation usually result in flatter trends, where variance values plateau at high expression values. Experiments with low biological variation tend to result in sharp decreasing trends.
@@ -959,7 +1025,7 @@ plotSA(PAG_limma_set_voom_efit, main="Final model: Mean-variance trend")
 
 The figure should shwo the means (x-axis) and variances (y-axis) of each gene plotted to show the dependence between the two before `voom` is applied to the data (left panel) and how the trend is removed after `voom` precision weights are applied to the data (right panel). The plot on the left is created within the `voom` function which extracts residual variances from fitting linear models to log-CPM transformed data. Variances are then rescaled to quarter-root variances (or square-root of standard deviations) and plotted against the average log2 count for each gene. The plot on the right is created using `plotSA` which plots log2 residual standard deviations against mean log-CPM values. In both plots, each black dot represents a gene. On the left plot, the red curve shows the estimated mean-variance trend used to compute the `voom` weights. On the right plot, the average log2 residual standard deviation estimated by the empirical Bayes algorithm is marked by a horizontal blue line.
 
-### 7.4.5 | Examining the number of DE genes
+### 7.3.5 | Examining the number of DE genes
 For a quick look at differential expression levels, the number of significantly up- and down-regulated genes can be summarised in a table. 
 ```{r}
 summary(decideTests(PAG_limma_set_voom_efit))
@@ -992,7 +1058,7 @@ VGAT_vs_VGluT2 <- topTreat(PAG_limma_set_treat_fit, coef=1, n=Inf)
 head(VGAT_vs_VGluT2)
 ```
 
-### 7.4.6 | Useful graphical representations of differential expression results
+### 7.3.6 | Useful graphical representations of differential expression results
 To summarise results for all genes visually, mean-difference plots, which display log-FCs from the linear model fit against the average log-CPM values can be generated using the `plotMD` function, with the differentially expressed genes highlighted.
 ```{r}
 plotMD(PAG_limma_set_treat_fit, column=1, 
@@ -1023,7 +1089,8 @@ heatmap.2(lcpm[i,], scale="row",
           col=mycolors, trace="none", density.info="none", 
           margin=c(8,6), lhei=c(2,10), dendrogram="column")
 ```
-## Step 7.5 | MAST
+
+## Step 7.4 | MAST
 MAST is an R/Bioconductor package for managing and analyzing qPCR and sequencing-based single-cell gene expression data, as well as data from other types of single-cell assays. Apart from reading and storing single-cell assay data, the package also provides functionality for significance testing of differential expression using a Hurdle model, gene set enrichment, facilities for visualizing patterns in residuals indicative of differential expression, and power calculations.
 
 MAST is based on a zero-inflated negative binomial model. It tests for differential expression using a Hurdle model to combine tests of discrete (0 vs not zero) and continuous (non-zero values) aspects of gene expression. Similar to `DESeq2` and `edgeR`, it uses a linear modelling framework to enable complex models to be considered.
@@ -1085,51 +1152,6 @@ rownames(mat_to_plot) <- symbols_to_plot
 aheatmap(mat_to_plot,annCol=colData(PAG_MAST_sca)[,"condition"],main="DE genes",col=rev(colorRampPalette(colors = brewer.pal(name="PiYG",n=10))(20)))
 ```
 
-## Step 7.6 | Non-parametric tests
-The main argument against using non-parametric tests is that scaling normalization does not adjust for differences in the distributions, which results in incorrect rejection of the null hypothesis in fairly innocuous cases (see Aaron Lun's github: https://github.com/LTLA/SingleCellThoughts/blob/master/workflows/de.Rmd). Also, from _Soneson et al 2018_, the main drawback is that these methods don't allow for complex designs.
 
-### 7.6.1 | Kolmogorov-Smirnov test (non-parametric)
-To compare the distributions for each gene in two individuals/groups. The KS-test quantifies the distance between the empirical cummulative distributions of the expression of each gene in each of the two populations. It is sensitive to changes in mean expression and changes in variability. However it assumes data are continuous and may perform poorly when data contains a large number of identical values (eg. zeros). Another issue with the KS-test is that it can be very sensitive for large sample sizes and thus it may end up as significant even though the magnitude of the difference is very small.
-```{r}
-pValues_KS <- apply(
-    norm, 1, function(x) {
-        ks.test(
-            x[PAG_sceset_qc$cell.type == "VGluT2"], 
-            x[PAG_sceset_qc$cell.type == "VGAT"]
-        )$p.value
-    }
-)
-# multiple testing correction
-pValues_KS <- p.adjust(pValues_KS, method = "fdr")
-```
-
-```{r}
-#How many of the significant DE genes are detected
-significant_DE_genes_KS <- names(pValues_KS)[pValues_KS < 0.05]
-length(significant_DE_genes_KS)
-```
-
-Often it is informative to vary the threshold and evaluate performance across a range of values. This is then plotted as a receiver-operating-characteristic curve (ROC) and a general accuracy statistic can be calculated as the area under this curve (AUC). The ROCR package facilitates this plotting.
-
-### 7.6.2 | Wilcox/Mann-Whitney-U Test (non-parametric)
-The Wilcox-rank-sum test is another non-parametric test, but tests specifically if values in one group are greater/less than the values in the other group. Thus it is often considered a test for difference in median expression between two groups; whereas the KS-test is sensitive to any change in distribution of expression values.
-```{r}
-pValues_W <- apply(
-    norm, 1, function(x) {
-        wilcox.test(
-            x[PAG_sceset_qc$cell.type == "VGluT2"], 
-            x[PAG_sceset_qc$cell.type == "VGAT"]
-        )$p.value
-    }
-)
-# multiple testing correction
-pValues_W <- p.adjust(pValues_W, method = "fdr")
-```
-
-```{r}
-#How many of the significant DE genes are detected
-significant_DE_genes_W <- names(pValues_W)[pValues_W < 0.05]
-length(significant_DE_genes_W)
-```
 
 
