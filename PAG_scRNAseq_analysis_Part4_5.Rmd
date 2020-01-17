@@ -1230,7 +1230,7 @@ multiplot(UMAP_cv2_corrected_10_neighbors_0.01_min_dist, UMAP_cv2_corrected_10_n
           UMAP_cv2_corrected_10_neighbors_0.1_min_dist, UMAP_var_corrected_10_neighbors_0.2_min_dist,
           cols = 2)
 multiplot(UMAP_cv2_corrected_15_neighbors_0.01_min_dist, UMAP_cv2_corrected_15_neighbors_0.05_min_dist,
-          UMAP_cv2_corrected_15_neighbors_0.1_min_dist, UMAP_cv2_corrected_10_neighbors_0.2_min_dist,
+          UMAP_cv2_corrected_15_neighbors_0.1_min_dist, UMAP_cv2_corrected_15_neighbors_0.2_min_dist,
           cols = 2)
 multiplot(UMAP_cv2_corrected_20_neighbors_0.01_min_dist, UMAP_cv2_corrected_20_neighbors_0.05_min_dist,
           UMAP_cv2_corrected_20_neighbors_0.1_min_dist, UMAP_cv2_corrected_20_neighbors_0.2_min_dist,

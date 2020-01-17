@@ -67,7 +67,7 @@ rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_n
 We can next run `sc3_prepare`. This method prepares an object of `SCE` class for `SC3` clustering, defining all parameters needed for clustering and storing them in the `sc3` slot. The parameters have their own defaults but can be manually changed (see `?sc3_prepare` for more details). 
 ```{r}
 PAG_sceset_qc_norm_filt_corr <- sc3_prepare(PAG_sceset_qc_norm_filt_corr,
-                                            gene_filter = FALSE, # Set your own filter by changing the sc3_gene_filter slot
+                                            gene_filter = TRUE, # Choose "FALSE" to set your own filter by changing the sc3_gene_filter slot
                                             n_cores = 10,
                                             rand_seed = 1991) 
 # SC3 is stochastic, if we run it different times we will get different results, so we need to make sure we have set a seed before running it.
@@ -80,11 +80,14 @@ As we can see above, `SC3` applies a gene filter to remove genes very lowly expr
 # Check which lists of genes you have available to use from loaded metadata or calculated highly variable genes:
 names(metadata(PAG_sceset_qc_norm_filt_corr))
 
-# Use Highly Variable Genes:
-#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_out_no_spikes_filt
+# Use Highly Variable Genes from Variance:
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt
+
+# Use Highly Variable Genes from CV2:
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt
 
 # Use Ion Channel Genes:
-rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.ionchannels
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.ionchannels
 
 # Use Neuropeptides and Neuromodulators Genes:
 #rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.NeuromodulatorsPeptides
@@ -261,7 +264,7 @@ SC3 allows us to export the results into an Excel file:
 sc3_export_results_xls(PAG_sceset_qc_norm_filt_corr, filename = "PAG_sceset_qc_norm_filt_corr_clust")
 ```
 
-## STEP 6.2 | Graph-based clustering
+## Step 6.2 | Graph-based clustering
 Graph-based clustering is a flexible and scalable technique for clustering large scRNA-seq datasets. We first build a graph where each node is a cell that is connected to its nearest neighbours in the high-dimensional space. Edges are weighted based on the similarity between the cells involved, with higher weight given to cells that are more closely related. We then apply algorithms to identify “communities” of cells that are more connected to cells in the same community than they are to cells of different communities. Each community represents a cluster that we can use for downstream interpretation.
 
 The major advantage of graph-based clustering lies in its scalability. It only requires a k-nearest neighbor search that can be done in log-linear time on average, in contrast to hierachical clustering methods with runtimes that are quadratic with respect to the number of cells. Graph construction avoids making strong assumptions about the shape of the clusters or the distribution of cells within each cluster, compared to other methods like k-means (that favor spherical clusters) or Gaussian mixture models (that require normality). From a practical perspective, each cell is forcibly connected to a minimum number of neighboring cells, which reduces the risk of generating many uninformative clusters consisting of one or two outlier cells.
@@ -275,41 +278,41 @@ There are several considerations in the practical execution of a graph-based clu
 
 For example, we could use a code that uses the 10 nearest neighbors of each cell to construct a shared nearest neighbor graph. Two cells are connected by an edge if any of their nearest neighbors are shared, with the edge weight defined from the highest average rank of the shared neighbors (Xu and Su 2015). The `Walktrap` method from the `igraph` package can then be used to identify communities. An alternative can be performed by changing the edge weighting scheme during graph construction. Setting `type = "number"` will weight edges based on the number of nearest neighbors that are shared between two cells. Similarly, `type = "jaccard"` will weight edges according to the Jaccard index of the two sets of neighbors. We can also disable weighting altogether by using `buildKNNGraph()`, which is occasionally useful for downstream graph operations that do not support weights. Pipelines involving `scran` default to rank-based weights followed by Walktrap clustering. In contrast, `Seurat` uses Jaccard-based weights followed by Louvain clustering. Both of these strategies work well.
 
-One of the most important parameters is `k`, the number of nearest neighbors used to construct the graph. This controls the resolution of the clustering where higher `k` yields a more inter-connected graph and broader clusters. Users can exploit this by experimenting with different values of `k` to obtain a satisfactory resolution.
+One of the most important parameters is `k`, the number of nearest neighbors used to construct the graph. This controls the resolution of the clustering where higher `k` yields a more inter-connected graph and broader clusters. Users can exploit this by experimenting with different values of `k` to obtain a satisfactory resolution. The choice of `k` controls the connectivity of the graph and the resolution of community detection algorithms. Smaller values of `k` will generally yield smaller, finer clusters, while increasing `k` will increase the connectivity of the graph and make it more difficult to resolve different communities. The value of `k` can be roughly interpreted as the anticipated size of the smallest subpopulation.
 ```{r}
 library(scran)
 # Using HVG from Var with rank-based weights
 graph_var_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                 #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                 type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
                                 subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                 assay.type = "logcounts",
-                                use.dimred = "PCA_HVG_var_logcounts")
+                                use.dimred = "PCA_HVG_var_corrected")
 clusters_var_rank <- igraph::cluster_walktrap(graph_var_rank)$membership # Use `cluster_louvain` if using `type = "jaccard"`, and `cluster_walktrap` if using `type = "rank"`
 PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank <- factor(clusters_var_rank)
 table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank)
 
 # Using HVG from Var with jaccard-based weights
 graph_var_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                   k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                   k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                    #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                    type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
                                    subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
                                    assay.type = "logcounts",
-                                   use.dimred = "PCA_HVG_var_logcounts")
+                                   use.dimred = "PCA_HVG_var_corrected")
 clusters_var_jaccard <- igraph::cluster_louvain(graph_var_jaccard)$membership # Use `cluster_louvain` if using `type = "jaccard"`, and `cluster_walktrap` if using `type = "rank"`
 PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard <- factor(clusters_var_jaccard)
 table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard)
  
 # Using HVG from CV2 with rank-based weights
 graph_cv2_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                 #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                 type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors.
                                 subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                 assay.type = "logcounts",
-                                use.dimred = "PCA_HVG_cv2_logcounts")
+                                use.dimred = "PCA_HVG_cv2_corrected")
 
 clusters_cv2_rank <- igraph::cluster_walktrap(graph_cv2_rank)$membership
 PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank <- factor(clusters_cv2_rank)
@@ -317,12 +320,12 @@ table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank)
 
 # Using HVG from CV2 with jaccard-based weights
 graph_cv2_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                   k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                   k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                    #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                    type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors.
                                    subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                    assay.type = "logcounts",
-                                   use.dimred = "PCA_HVG_cv2_logcounts")
+                                   use.dimred = "PCA_HVG_cv2_corrected")
 
 clusters_cv2_jaccard <- igraph::cluster_louvain(graph_cv2_jaccard)$membership
 PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard <- factor(clusters_cv2_jaccard)
@@ -331,28 +334,28 @@ table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard)
 
 We can then assign the cluster assignments back into our `SingleCellExperiment` object as a factor in the column metadata. This allows us to conveniently visualize the distribution of clusters in a t-SNE or UMAP plot:
 ```{r}
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
 
 # Using HVG from Var with rank-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_var_rank", shape_by = "cell.type", text_by = "SNN_clusters_var_rank") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_var_rank", shape_by = "cell.type", text_by = "SNN_clusters_var_rank") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
 
 # Using HVG from Var with jaccard-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_var_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_var_jaccard") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_var_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_var_jaccard") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
 
 
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
 
 # Using HVG from CV2 with rank-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
 
 # Using HVG from CV2 with jaccard-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
 ```
 
 ### 6.2.2 | Assessing cluster separation
@@ -397,7 +400,7 @@ pheatmap(log2(ratio_cv2_jaccard + 1),
          #col = rev(heat.colors(100)))
 ```
 
-## STEP 6.2b | Cell-type specific Graph-based clustering
+## Step 6.2b | Cell-type specific Graph-based clustering
 We can repeat the same but subsetting the `SingleCellExperiment` object:
 ```{r}
 PAG_sceset_qc_norm_filt_corr_VGAT <- PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cell.type=="VGAT"]
