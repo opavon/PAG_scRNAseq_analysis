@@ -106,7 +106,7 @@ https://github.com/KrishnaswamyLab/MAGIC
 -->
 
 # STEP 0 | Set working directory
-If we have been working in RStudio and want to empty the current workspace we can run `rm(list=ls())`. We can also restart the R Session, and clean the current console by pressing `ctrl+l`.
+If we have been working in RStudio and want to empty the current workspace we can run `rm(list=ls())`. We can also restart the R Session, and clean the current console by pressing `ctrl+l`. We start by setting up the directory where the data is:
 ```{r}
 # Set the directory where your data and/or scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
@@ -143,14 +143,13 @@ rownames(PAG_metadata) <- PAG_metadata$sequencing.id
 PAG_metadata[1:10,1:10]
 ```
 
-In addition, we can prepare another .csv file containing different lists of genes (i.e. ion channel genes, neuromodulator genes, etc.) we might later use for analysis.
+In addition, we can prepare another .csv file containing several manually curated lists of genes (i.e. ion channel genes, neuromodulator genes, etc.) we may later use for analysis.
 ```{r}
 PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", sep = ",", header = TRUE, row.names = NULL))
 PAG_scRNAseq_gene_lists[1:10,1:10]
 ```
 
-### One more thing...
-Finally, we want to carefully consider the annotations from the metadata that we will need for our biological analysis. Are they numerical or categorical? Will we use them in downstream statistical modeling? Once we know the key ones, we can add them as a `factor`. For example, `PAG.area` or `cell.type` are clearly important and categorical, so specifically convert them to factors in the `PAG_metadata` object.
+Finally, we want to carefully consider the annotations from the metadata that we will need for our biological analysis. Are they numerical or categorical? Will we use them in downstream statistical modeling? Once we know the key ones and how we will use them, we can add them as a `factor`. For example, `PAG.area` or `cell.type` are clearly important and categorical, so we specifically convert them to factors in the `PAG_metadata` object. We can also establish the order for the factor levels and even create new metadata factors from existing ones.
 
 A longer discussion on `factors` can be found [here](https://www.stat.berkeley.edu/~s133/factors.html)
 ```{r}
@@ -220,9 +219,9 @@ levels(PAG_metadata$mouse.id)
 ## Step 1.3 | Tidy up data
 Once we have loaded the data, we have to clean it and tidy it up a bit. We want to assign gene IDs to `rownames` and move any unnecessary columns from data to a separate variable.
 
-We can see that the seventh column in the data table contains the gene ENSEMBL IDs, and that the eleventh column has the first sequenced cell, whereas the previous columns have extra information added by the sequencing facility such as the chromosome each gene belongs to and the type of gene we have.
+From the previous steps we can see that the seventh column in the data table contains the gene ENSEMBL IDs, and that the eleventh column has the first sequenced cell, whereas the previous columns have extra information added by the sequencing facility such as the chromosome each gene belongs to and the type of gene we have.
 
-We first move the gene IDs to the `rownames`:
+We will first move the gene IDs to the `rownames` so we can easily identify which gene belongs to each row. We can stick with the ENSEMBL IDs for now:
 ```{r}
 # Add gene IDs to row names:
 rownames(PAG_data) <- PAG_data$gene_id
@@ -232,7 +231,7 @@ PAG_data[1:10, 1:12]
 dim(PAG_data)
 ```
 
-We next store the initial columns (chromosome, start, stop, gene symbol, etc.) into a new variable so we can assign them to `rowRanges` and `rowData` (just in case we can use them in downstream analysis, we don't want to discard anything yet). We then remove them from the dataset so that we end up with a tidy count matrix:
+We next store the initial columns (chromosome, start, stop, gene symbol, etc.) into a new variable so we can assign them to `rowRanges` and `rowData` (just in case we can use them in downstream analysis, we don't want to discard anything yet). We then remove them from the dataset so that we end up with a tidy count matrix, where the number of columns should now match the number of samples in our dataset:
 ```{r}
 # Copy unnecessary columns:
 PAG_gene_information <- PAG_data[,c(1:10)]
@@ -246,7 +245,7 @@ PAG_gene_information[1:10, 1:10]
 dim(PAG_data)
 ```
 
-We also want to fix the current sample names stored in `colnames(PAG_data)`. Initially, each cell has the following id `GC.OP.7836.EBRAligned.sortedByCoord.out`. From this, we only care about the four-letter, four-digit number (ID of the sequencing project added by the facility, `GC.OP.7836`) and the three-letter code (ID of the cell added by us, `EBR`), which should match our `PAG_metadata$cell.id` (something we will check a few steps from now). To clean the current sample names, we can use the `stringr` package to remove the second half of the string. We also assign the cleaner sample names to a separate variable to later check against `PAG_metadata$cell.id`:
+We also want to fix the current sample names stored in `colnames(PAG_data)`. Initially, each cell has the following id `GC.OP.7836.EBRAligned.sortedByCoord.out`. From this, we only care about the four-letter, four-digit number (the ID of the sequencing project added by the facility, `GC.OP.7836`) and the three-letter code (the ID of the cell assigned by us upon collection, `EBR`), which should match our `PAG_metadata$cell.id` (something we will validate a few steps from now). To clean the current sample names, we can use the `stringr` package to remove the second half of the string. We can also assign the cleaner sample names to a separate variable to do a later sanity check against `PAG_metadata$cell.id`:
 ```{r}
 library(stringr)
 colnames(PAG_data) <- lapply(colnames(PAG_data), function(x){str_remove(x, "Aligned.sortedByCoord.out")})
@@ -256,7 +255,7 @@ sequencing_id_QMUL <- colnames(PAG_data)
 PAG_data[1:10, 1:12]
 ```
 
-We have now moved the gene names to `rownames`, removed unnecessary columns so that we are left with a clean expression matrix, and cleaned the names in `colnames(PAG_data)`. Before we move on, we can calculate the gene lengths (we could potentially use them for normalization purposes, although there are better methods to do this and we will not be using gene lengths here).
+We have now moved the gene names to `rownames`, removed unnecessary columns so that we are left with a clean expression matrix, and cleaned the names in `colnames(PAG_data)`. Before we move on, we can calculate the gene lengths (something we could potentially use for normalization purposes, although there are better methods to do this and we will not be using gene lengths here).
 ```{r}
 # Calculate gene length and store in a new column:
 PAG_gene_information$gene_length <- PAG_gene_information$Stop - PAG_gene_information$Start
@@ -264,7 +263,7 @@ head(PAG_gene_information$gene_length)
 ```
 
 ## Step 1.4 | Tidy up metadata
-One thing we want to make sure of is that the order of the metadata actually matches with the expression matrix. One way to enforce ordering is to use the `match()` command to ensure the ordering of metadata rows are the same as the ordering of count columns. `match()` will give us an integer vector with the position in table of the first match if there is a match, otherwise will give us nomatch: If x[i] is found to equal table[j] then the value returned in the i-th position of the return value is j, for the smallest possible j. If no match is found, the value is nomatch.
+An extremely important thing we want to make sure of is that the order of the metadata actually matches that of the expression matrix. One way to enforce ordering is to use the `match()` command to ensure the ordering of metadata rows are the same as the ordering of expression matrix columns. `match()` will give us an integer vector with the position in table of the first match if there is a match, otherwise will give us `nomatch`: _If x[i] is found to be equal to table[j] then the value returned in the i-th position of the return value is j, for the smallest possible j. If no match is found, the value is nomatch._
 ```{r}
 # Data column names and metadata row names should match:
 right_order <- match(colnames(PAG_data), rownames(PAG_metadata))
@@ -277,9 +276,9 @@ PAG_metadata <- PAG_metadata[right_order,]
 head(PAG_metadata)
 ```
 
-Now that we are certain our data and metadata are in the same order, we want to check whether the `sequencing_id_QMUL` we extracted from the original .txt file the sequencing facility provided matches the `cell.id` from our metadata, just to be sure that it is safe to use the `cell.id` from the metadata as `colnames` of the `PAG_data`.
+Now that we are certain our data and metadata are in the same order, we want to check whether the `sequencing_id_QMUL` we extracted from the original .txt file the sequencing facility provided us with matches the `cell.id` from our metadata, just to be sure that it is safe to use the `cell.id` from the metadata as `colnames` of `PAG_data`.
 
-Initially, each cell has the following id `GC.OP.7836.EBRAligned.sortedByCoord.out`, from which we already removed the unnecessary "Aligned.sortedByCoord.out" and assigned to `sequencing_id_QMUL`. From this, we want to extract the four-digit number (ID of the sequencing project added by the facility) and the three-letter code (ID of the cell added by us), which should match our `PAG_metadata$cell.id` and which we want to isolate and assign to `colnames(PAG_metadata)`, instead of the long code from the facility. To do this, we can use the `sequencing_id_QMUL` variable we stored at the beginning, which was extracted from the original `colnames(PAG_data)` in the expression matrix:
+Initially, each cell has the following id `GC.OP.7836.EBRAligned.sortedByCoord.out`, from which we already removed the unnecessary "Aligned.sortedByCoord.out" and assigned the rest to `sequencing_id_QMUL`. From this, we now want to extract the four-digit number (ID of the sequencing project added by the facility) and the three-letter code (ID of the cell added by us), which should match our `PAG_metadata$cell.id`. We want to isolate this three-letter code and assign it to `colnames(PAG_metadata)`, instead of the long code assigned by the sequencing facility. To do this, we can use the `sequencing_id_QMUL` variable we stored at the beginning, which was extracted from the original `colnames(PAG_data)` in the expression matrix:
 ```{r}
 library(stringr)
 # Split the string "GC.OP.7836.EBR" at each dot:
@@ -295,7 +294,7 @@ PAG_metadata$batch.sequencing_QMUL <- as.factor(PAG_metadata$batch.sequencing_QM
 # Get the fourth element "EBR" and keep the only three-letter code that forms the cell.id:
 cell_id_QMUL <- lapply(cell_id_QMUL, function(x){x[4]})
 
-# Check that the PAG_metadata$cell.id and the cell.id_QMUL match and are in the same order. If they match and are in the same order, the following should print the a number of TRUE values equal to the number of samples in the dataset:
+# Check that the PAG_metadata$cell.id and the cell.id_QMUL match and are in the same order. If they match and are in the same order, the following should print a number of TRUE values equal to the number of samples in the dataset:
 table(match(cell_id_QMUL, PAG_metadata$cell.id) == 1:length(cell_id_QMUL))
 dim(PAG_data)
 ```
@@ -312,7 +311,7 @@ PAG_metadata[1:10,1:10]
 ```
 
 ## Step 1.5 | Add gene-based annotations
-ENSEMBL identifiers are stable but difficult to interpret compared to the gene symbols. We can obtain the symbols corresponding to each ENSEMBL ID using the relevant annotation package. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID. We can also identify which rows correspond to mitochondrial genes. To do that we need to use extra annotation describing the genomic location of each gene. Later on, we will be able to use this information to rename the rows of our `SingleCellExperiment` with the symbols, reverting to ENSEMBL identifiers for missing or duplicate symbols.
+Until now, we have had ENSMBL IDs to identify the genes and rows in our expression matrix. ENSEMBL identifiers are stable but difficult to interpret compared to the gene symbols. We can obtain the symbols corresponding to each ENSEMBL ID using the relevant annotation package. The `mapIds()` function ensures that only one gene symbol is returned if two symbols map to the same ENSEMBL ID. We can also identify which rows correspond to mitochondrial genes by making use of the chromosome information associated with each gene ID. To do that we need to use extra annotation describing the genomic location of each gene. Later on, we will be able to use this information to rename the rows of our `SingleCellExperiment` with the symbols, reverting to ENSEMBL identifiers for missing or duplicate symbols.
 ```{r}
 library(AnnotationHub)
 ah <- AnnotationHub()
@@ -343,10 +342,10 @@ which(PAG_gene_information$Chromosome == "M")
 which(PAG_gene_information$gene_chromosome_mapids == "MT")
 ```
 
-In our case, however, the information provided by the Genome Centre Sequencing Facility is more complete than what we obtain with `mapIds()` and includes the transgenes we used to label cells and ERCC spike-ins, so we will stick to that one.
+As we can see from the output of the `table()` commands, in our case the information provided by the Genome Centre Sequencing Facility (`PAG_gene_information$Chromosome`) is more complete than what we obtain with `mapIds()` (`PAG_gene_information$gene_chromosome_mapids`), as it includes the transgenes we used to label cells and the identify of the ERCC spike-ins. We will thus stick to that one in our analysis.
 
 ## Step 1.6 | Build a SingleCellExperiment object
-We have now loaded both the data and the metadata. The next step is to create an object of the `SingleCellExperiment` class for downstream analysis. For an introduction to the `SingleCellExperiment` class see [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/data-infrastructure.html) by Robert Amezquita and Stephanie Hicks.
+We have now loaded both the data and the metadata, and we have it in a clean and tidy format. The next step is to create an object of the `SingleCellExperiment` class for downstream analysis. For an introduction to the `SingleCellExperiment` class see [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/data-infrastructure.html) by Robert Amezquita and Stephanie Hicks.
 
 * The `assays` slot in a `SingleCellExperiment` object contains primary data such as counts in a list, where each entry of the list is in a matrix format, where rows correspond to features (genes) and columns correspond to samples (cells). We can extend the `assays` slot: `counts` are intended to be used for raw counts, but we can also have `logcounts` and other transformed values for normalized data (we will compute them in next steps).
 
@@ -369,7 +368,7 @@ PAG_sceset
 ```
 
 ```{r}
-# Different ways to inspect the object:
+# Different ways to inspect the SingleCellExperiment object:
 #PAG_sceset
 #assays(PAG_sceset)
 #colData(PAG_sceset)
@@ -380,7 +379,7 @@ PAG_sceset
 #str(counts(PAG_sceset))
 ```
 
-Save the `SingleCellExperiment` object so you don't have to repeat all these steps again:
+Once we are done, we save our progress and the `SingleCellExperiment` object so we don't have to repeat all these steps again:
 ```{r}
 saveRDS(PAG_sceset, file = "PAG_sceset.rds")
 print("Part 1 - Done!")
