@@ -29,9 +29,9 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 ***
 
 # STEP 2 | Quality Control and pre-processing
-Once we have our `SingleCellExperiment` object with our data and annotations, we can proceed to QC the data. 
+Once we have our `SingleCellExperiment` object with our data and annotations, we can proceed to QC the data.
 ```{r}
-# If starting from stored results, load the saved dataset from previous Step:
+# If starting from stored results, load the saved dataset from previous notebook:
 set.seed(1991)
 options(stringsAsFactors = FALSE)
 library(SingleCellExperiment)
@@ -43,9 +43,9 @@ assayNames(PAG_sceset)
 ```
 
 ## Step 2.1 | Set control features
-`scater` allows us to define control features (genes) that we can use for quality checks, such as ERCC spike-ins if we have them, Mitochondrial and Ribosomal genes, and any fluorophores used to identify the cells if they came from transgenic animals. 
+The package `scater` allows us to define control features (genes) that we can use for quality checks, such as ERCC spike-ins if we have them, Mitochondrial and Ribosomal genes, and any fluorophores used to identify the cells if they came from transgenic animals.
 
-If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SingleCellExperiment` object. If you are doing this on the gene symbols, beware of the human gene family that also starts with "ERCC". We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `isSpike()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalization.
+If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SingleCellExperiment` object. If you are doing this on the gene symbols, beware of the human gene family that also starts with "ERCC". We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `splitAltExps()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalization.
 ```{r}
 # ERCCs
 is_spike <- grepl("^ERCC-", rownames(PAG_sceset))
@@ -83,6 +83,7 @@ altExpNames(PAG_sceset)
 altExp(PAG_sceset)
 ```
 
+To facilitate visualisation of gene expression values, we will very crudely create a new assay slot containing log2-transformed counts:
 ```{r}
 # Create an additional assay slot with log-transformed counts:
 assay(PAG_sceset, "logcounts_raw") <- log2(counts(PAG_sceset) + 1)
@@ -91,7 +92,7 @@ assayNames(PAG_sceset)
 ```
 
 ### 2.1.1 | Uniquify feature names
-To facilitate interpretation in the upcoming steps, we can use gene symbols as `rownames`. `scater` provides the `uniquifyFeatureNames()` function to avoid non-unique gene symbols (in which case we paste the ENSEMBL ID after it) or missing gene symbols (in which case we use the ENSEMBL ID). Only do this for your own interpretation and analysis, if you release the expression matrix, make sure you use a stable ID such as ENSEMBL as the row name.
+To facilitate interpretation in the upcoming steps, we can use gene symbols as `rownames` instead of ENSEMBL IDs. `scater` provides the `uniquifyFeatureNames()` function to avoid non-unique gene symbols (in which case it pastes the ENSEMBL ID after it) or missing gene symbols (in which case it uses the ENSEMBL ID). _Cautionary note_: only do this for your own interpretation and analysis, if you release the expression matrix, make sure you use a stable ID such as ENSEMBL as the row name.
 ```{r}
 library(scater)
 head(rownames(PAG_sceset), 50)
@@ -102,7 +103,7 @@ tail(rownames(PAG_sceset), 50)
 ```
 
 ## Step 2.2 | Calculate QC metrics
-Once we have defined the control features, there is a function in `scater` (`perCellQCMetrics()`) that allows us to automatically calculate QC metrics based on these features. For each cell, it calculates quality control metrics such as the total number of counts or the proportion of counts in mitochondrial genes or spike-in transcripts. If we use `addPerCellQC()`, these are stored in the  `colData()` of the `SingleCellExperiment` for future reference:
+Once we have defined the control features, the function `perCellQCMetrics()` allows us to automatically calculate QC metrics based on these features. For each cell, it calculates quality control metrics such as the total number of counts or the proportion of counts in mitochondrial genes or spike-in transcripts. If we use `addPerCellQC()`, these are stored in the `colData()` of the `SingleCellExperiment` for future reference:
 ```{r}
 # Calculate the quality metrics after defining the control features:
 library(scater)
@@ -126,16 +127,16 @@ colnames(colData(PAG_sceset))
 ```
 
 ## Step 2.3 | Cell QC
-We need to remove low-quality cells to ensure that technical effects do not distort downstream analyses. Some metrics we can use to assess quality are: Library size, Number of expressed features, Proportion of spike-in reads, Proportion of mitochondrial reads, etc. Together, these metrics helps us spot failures in cDNA capture (failed reverse transcription) and cell damage during isolation.
+We next need to remove low-quality cells to ensure that technical effects do not distort downstream analyses. Some of the metrics we can use to assess quality are automatically calculated in the previous step, including Library size, Number of expressed features, Proportion of spike-in reads, Proportion of mitochondrial reads, etc. Together, these metrics helps us spot failures in cDNA capture (failed reverse transcription) and cell damage during isolation.
 
 _See the the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun and the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks  for more details on this and following QC steps._
 
 ### 2.3.1 | Library size and Number of expressed features
 Two common measures of cell quality are the library size (total sum of counts across all features) and the number of detected features in each library. 
 
-Cells with relatively small library sizes are likely to have been dead prior to aspiration and their RNA has not been efficiently captured (i.e. converted into cDNA and amplified) during library preparation. These cells should be removed.
+* Cells with relatively small library sizes are likely to have been dead prior to aspiration and their RNA may not have been efficiently captured (i.e. converted into cDNA and amplified) during library preparation. These cells should be removed.
 
-Additionally, the number of detected features in each cell is defined as the number of features with non-zero counts for that cell. Any cell with very few detected genes is likely to be of poor quality as the diverse transcript population has not been successfully captured.
+* Additionally, the number of detected features in each cell is defined as the number of features with non-zero counts for that cell. Any cell with very few detected genes is likely to be of poor quality as the diverse transcript population has not been successfully captured. Similarly, any cell with way more genes detected is likely to contain mRNA molecules from two cells instead of just one. 
 ```{r}
 # Plot the histograms of the library sizes and number of detected genes:
 par(mfrow = c(1,2)) # Draw figures in a 1 by 2 array.
@@ -171,11 +172,11 @@ plotColData(PAG_sceset,
 ```
 
 ### 2.3.2 | ERCCs, Mitochondrial and Ribosomal RNAs, and TSO concatamers
-Another measure of cell quality is the ratio between ERCC spike-in RNAs and endogenous RNAs. This ratio can be used to estimate the total amount of RNA in the captured cells. Cells with a high proportion of spike-in RNAs had low starting amounts of RNA, likely due to the cell being dead or stressed which may result in the RNA being degraded.
+Another measure of cell quality is the ratio between ERCC spike-in RNAs and endogenous RNAs. This ratio can be used to estimate the total amount of RNA in the captured cells. Cells with a high proportion of spike-in RNAs had probably low starting amounts of RNA, likely due to the cell being dead or stressed which may result in the RNA being degraded.The quantity of spike-in RNA added to each cell should be constant, which means that the proportion should increase upon loss of endogenous RNA in low-quality cells.
 
-It is also worth looking at the proportion of reads mapped to genes in the Mitochondrial/Ribosomal genome. High proportions are indicative of poor-quality cells, possibly because of increased apoptosis and/or loss of cytoplasmic RNA from lysed cells. Similar reasoning applies to the proportion of reads mapped to spike-in transcripts. The quantity of spike-in RNA added to each cell should be constant, which means that the proportion should increase upon loss of endogenous RNA in low-quality cells.
+It is also worth looking at the proportion of reads mapped to genes in the Mitochondrial/Ribosomal genome amd to TSO concatamers. High proportions are indicative of poor-quality cells, possibly because of increased apoptosis and/or loss of cytoplasmic RNA from lysed cells. We will be looking at both the histograms and plots with every individual cell.
 
-__IMPORTANT__: cells of small dimensions will have a higher fraction of ERCC reads than larger cells, so take this into account if you think this might be the case.
+__IMPORTANT__: cells of small dimensions will have a higher fraction of ERCC reads than larger cells, so take this into account if you think this might be the case. In addition, cells with a high active metabolic rate may have larger proportion of mitochondrial transcripts. For these reasons the best strategy is to simultaneously take the different quality measures into considiration before deciding whether to exclude a cell or not.
 
 __Using ERCC for normalization vs using them for QC__: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalization, but it will still be useful for QC. If you want to use them for normalization, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only, in which case you would want about 5-10% of the reads going to the spike-ins. If this is not the case, it suggests that you need to alter the dilution.
 ```{r}
@@ -230,7 +231,7 @@ plotColData(PAG_sceset,
   stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 
 plotColData(PAG_sceset,
-            x = "total",
+            x = "detected",
             y = "subsets_Mitochondrial_percent",
             colour_by = "PAG.arearegistration",
             other_fields = "cell.type") +
@@ -261,7 +262,7 @@ plotColData(PAG_sceset,
 ```
 
 ### 2.3.3 | EYFP/tdTomato expression
-We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter. This means that while cells should always express Cre, they should only express either EYFP or tdTomato.
+We can also take advantage of our experimental approach to isolate the cells. Given that we isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter, while cells should always express Cre, they should only express either EYFP or tdTomato.
 ```{r}
 # Plot the histograms of the counts assigned to transgenes in all cells:
 par(mfrow = c(1,3))
@@ -333,7 +334,7 @@ plotColData(PAG_sceset,
   ylab("tdTomato counts")
 ```
 
-An easy way to check everything is as it should be is to look whether each cell expresses only the fluorophor it should according to the transgenic line it was acquired from. A simple scatterplot of log-transformed counts of EYFP and tdTomato should be enough.
+An easy way to check everything is as it should be is to look at whether each cell expresses only the fluorophor it should according to the transgenic line it was acquired from. A simple scatterplot of log-transformed counts of EYFP and tdTomato should be enough to reveal this.
 ```{r}
 # Log transform the counts for EYFP and tdTomato
 PAG_sceset$log2_total_counts_EYFP <- log2(PAG_sceset$subsets_EYFP_sum + 1)
@@ -371,8 +372,10 @@ points(PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$log2_total_counts_
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
 ```
 
+As we can see, we have a minority of cells that express both fluorophors when they should only express one. The safest is to exclude those, as there may have been contamination at one of the processing steps.
+
 ### 2.3.4 | VGAT/VGluT2 expression
-We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2. Do they only express one or the other, or do some cells express both? If so, in which proportions? The coexpression of VGAT and VGluT2 has been reported previously, so it shouldnt't surprise us if this ocurs. However, if we find cells that only express the opposite transporter as they should (e.g. if a VGAT-Cre cell only expresses VGluT2) we should consider excluding it (although again, it might just be dropout events). 
+We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2 promoters. However, we don't really know whether neurons in the midbrain area we are investigating express one or the other, or whether they express both? If the latter, in which proportions? We repeat the same approach we used for the fluorophors to inspect VGAT and VGluT2 expression.
 ```{r}
 # Plot the histograms of the counts assigned to VGAT and VGluT2 in all cells:
 par(mfrow = c(1,2))
@@ -415,7 +418,7 @@ plotExpression(PAG_sceset, "Slc32a1", x = "Slc17a6",
 plotExpression(PAG_sceset, "Slc32a1", x = "Slc17a6", 
                exprs_values = "logcounts_raw", 
                colour_by = "cell.type",
-               xlab = "VGluT2 (total counts)")
+               xlab = "VGluT2 (logcounts_raw)")
 ```
 
 We again use a scatterplot of log-transformed counts of VGAT and VGluT2 to quickly visualise their expression.
@@ -456,52 +459,7 @@ points(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$log2_total_counts_VGAT,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
 ```
 
-### 2.3.5 | Xist expression
-A final quality check could be to look at the expression of _Xist_, which should only appear in cells obtained from female mice, as it only expresses in the inactive X chromosome:
-```{r}
-# Log transform the counts for Xist
-PAG_sceset$log2_total_counts_Xist <- log2(PAG_sceset$subsets_XIST_sum + 1)
-summary(PAG_sceset$log2_total_counts_Xist)
-
-# Plot Expression values of VGAT and VGluT2 in several ways:
-plotExpression(PAG_sceset, "Xist", x = "mouse.id", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "mouse.sex",
-               xlab = "Mouse ID")
-
-plotExpression(PAG_sceset, "Xist", x = "mouse.sex", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "cell.type",
-               xlab = "Mouse sex")
-
-plotExpression(PAG_sceset[, PAG_sceset$mouse.sex == "M"], "Xist", x = "mouse.id", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "batch.processing",
-               xlab = "Mouse ID")
-
-plotExpression(PAG_sceset[, PAG_sceset$mouse.sex == "F"], "Xist", x = "mouse.id", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "batch.processing",
-               xlab = "Mouse ID")
-
-plotColData(PAG_sceset,
-            x = "detected",
-            y = "subsets_Chromosome_X_sum",
-            colour_by = "mouse.id",
-            other_fields = "mouse.sex") +
-  facet_wrap(~mouse.sex) + 
-  xlab("Number of detected genes") +
-  ylab("X Chromosome counts")
-
-plotColData(PAG_sceset,
-            x = "detected",
-            y = "subsets_Chromosome_Y_sum",
-            colour_by = "mouse.id",
-            other_fields = "mouse.sex") +
-  facet_wrap(~mouse.sex) + 
-  xlab("Number of detected genes") +
-  ylab("Y Chromosome counts")
-```
+As we can see, a large proportion of cells express both VGAT and VGlUT2. The coexpression of VGAT and VGluT2 has been reported previously in midbrain, so it shouldnt't be surprising. However, if we find cells that only express the opposite transporter as they should (e.g. if a VGAT-Cre cell only expresses VGluT2) we should consider excluding them (although again, these might just be dropout events, so we can use combinatorial QC metrics to err on the safe side).
 
 ## Step 2.4 | Filtering low quality cells
 Choosing a filtering threshold for the above quality metrics is not straightforward as their absolute values depend on the experimental protocol. For example, sequencing to greater depths will lead to more reads and more expressed features, regardless of the quality of the cells, and using more spike-in RNA in the protocol will result in higher spike-in proportions. The histograms and plots from the previous section should allow us to visualise the distribution of our samples and more easily identify any obvious outliers.
@@ -509,7 +467,7 @@ Choosing a filtering threshold for the above quality metrics is not straightforw
 After visual inspection, we can follow several paths to exclude low quality cells. One way is to manually establish a cutoff to exclude any low quality cells. Although it is hard to set a threshold automatically, as it will depend on the dataset and sequencing depth, another thing we can try is to remove cells with log-library sizes that are more than 4 median absolute deviations (MADs) below the median log-library size by using the `isOutlier()` function. Finally, we can use `scater` to detect outliers based on PCA on quality metrics for each cell. We will use all these approaches in parallel and compare them to each other before deciding which one to apply.
 
 ### 2.4.1 | Using Manual filters
-A possible strategy is to set pre-defined thresholds on each QC metric. For example, we might remove all cells with library sizes below 100,000 counts and numbers of expressed genes below 4000. This avoids any assumptions associated with the use of outliers to identify low-quality cells, but it requires considerable experience to determine appropriate thresholds for each experimental protocol and biological system (e.g. thresholds for read count-based data are simply not applicable for UMI-based data, and vice versa, and even with the same protocol and system, the appropriate threshold can vary from run to run due to the vagaries of RNA capture and sequencing). What we can do instead is to fix the threshold based on the observed distribution of each metric in our dataset:
+A possible strategy is to set pre-defined thresholds on each QC metric. For example, we might remove all cells with library sizes below 400,000 counts and numbers of expressed genes below 5000. This avoids any assumptions associated with the use of outliers to identify low-quality cells, but it requires considerable experience to determine appropriate thresholds for each experimental protocol and biological system (e.g. thresholds for read count-based data are simply not applicable for UMI-based data, and vice versa, and even with the same protocol and system, the appropriate threshold can vary from run to run due to the vagaries of RNA capture and sequencing). What we can do instead is to fix the threshold based on the observed distribution of each metric in our dataset:
 ```{r}
 # Set the filters and check how many cells you would exclude with each one after visual inspection of data:
 
@@ -594,20 +552,32 @@ summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGluT2_cells]$PAG.are
 PAG_sceset$cells_noVGAT_noVGluT2 <- (PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum == 0 & PAG_sceset$cells_nofluorophor == TRUE)
 table(PAG_sceset$cells_noVGAT_noVGluT2)
 summary(PAG_sceset[,PAG_sceset$cells_noVGAT_noVGluT2]$PAG.areacollection)
+```
 
-# Finally, add a label to the metadata indicating whether a cell expresses only VGAT, only VGluT2, or both:
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGluT2_sum == 0))] <- "VGAT_only"
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGluT2_sum > 0))] <- "VGAT_VGluT2"
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGAT_sum == 0))] <- "VGluT2_only"
-PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGAT_sum > 0))] <- "VGluT2_VGAT"
+Just in case we might use this in any of the steps of downstream analysis, we can add a slot in the metadata to label cells that express only VGAT, only VGluT2, or a mixture or both. Similarly, we can also add the ratio of both transporters in each cell.
+```{r}
+# Add a label to the metadata indicating whether a cell expresses only VGAT, only VGluT2, or both:
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGAT_sum > 0 & PAG_sceset$subsets_VGluT2_sum == 0))] <- "VGAT_Cre_VGAT_only"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum > 0))] <- "VGAT_Cre_VGluT2_only"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGAT_sum > 0 & PAG_sceset$subsets_VGluT2_sum > 0))] <- "VGAT_Cre_both"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGAT" & PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum == 0))] <- "VGAT_Cre_neither"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGluT2_sum > 0 & PAG_sceset$subsets_VGAT_sum == 0))] <- "VGluT2_Cre_VGluT2_only"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGluT2_sum == 0 & PAG_sceset$subsets_VGAT_sum > 0))] <- "VGluT2_Cre_VGAT_only"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGluT2_sum > 0 & PAG_sceset$subsets_VGAT_sum > 0))] <- "VGluT2_Cre_both"
+PAG_sceset$VGAT_VGluT2_expression[(which(PAG_sceset$cell.type == "VGluT2" & PAG_sceset$subsets_VGluT2_sum == 0 & PAG_sceset$subsets_VGAT_sum == 0))] <- "VGluT2_Cre_neither"
 PAG_sceset$VGAT_VGluT2_expression <- factor(PAG_sceset$VGAT_VGluT2_expression,
-                                            levels = c("VGAT_only", "VGAT_VGluT2", "VGluT2_only", "VGluT2_VGAT"))
+                                            levels = c("VGAT_Cre_VGAT_only", "VGAT_Cre_VGluT2_only", "VGAT_Cre_both", "VGAT_Cre_neither",
+                                                       "VGluT2_Cre_VGluT2_only", "VGluT2_Cre_VGAT_only", "VGluT2_Cre_both", "VGluT2_Cre_neither"))
 levels(PAG_sceset$VGAT_VGluT2_expression)
 table(PAG_sceset$VGAT_VGluT2_expression)
 table(PAG_sceset$VGAT_VGluT2_expression, PAG_sceset$PAG.areacollection)
+
+# Add the ratio of VGluT2 over VGAT in VGAT cells, and VGAT over VGluT2 in VGluT2 cells:
+PAG_sceset$VGAT_VGluT2_ratio <- (PAG_sceset$log2_total_counts_VGAT / PAG_sceset$log2_total_counts_VGluT2)
+PAG_sceset$VGluT2_VGAT_ratio <- (PAG_sceset$log2_total_counts_VGluT2 / PAG_sceset$log2_total_counts_VGAT)
 ```
 
-Subsetting by column will retain only the high-quality cells that pass each filter described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
+Subsetting the `SingleCellExperiment` object by column will retain only the high-quality cells that pass each of the filters described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
 ```{r}
 PAG_sceset$manual_filters <- !(
     # Sufficient library size
@@ -661,7 +631,6 @@ data.frame(ByLibSize = sum(PAG_sceset$filter_by_total_counts_manual),
 table(PAG_sceset$manual_filters)
 table(PAG_sceset$manual_filters, PAG_sceset$PAG.arearegistration)
 table(PAG_sceset$manual_filters, PAG_sceset$cell.type)
-table(PAG_sceset$manual_filters, PAG_sceset$VGAT_VGluT2_expression)
 ```
 
 Inspect the cells excluded by each filter. Are there cells that consistently fail the filters?
@@ -686,16 +655,16 @@ plyr::ldply(list(ByLibSize = colnames(PAG_sceset[, PAG_sceset$filter_by_total_co
 ```
 
 ### 2.4.2 | Using MADs filters
-An outlier-based definition for low-quality cells assumes that most cells are of high quality and that the QC metrics are independent on the biological state of each cell. This ensures that any outlier values for these metrics are driven by technical factors rather than biological processes. Thus, removing cells based on the metrics will not misrepresent the biology in downstream analyses.
+An outlier-based definition for low-quality cells assumes that most cells are of high quality and that the QC metrics are independent of the biological state of each cell. This ensures that any outlier values for these metrics are driven by technical factors rather than biological processes. Thus, removing cells based on the metrics will not misrepresent the biology in downstream analyses.
 
 The second assumption is most likely to be violated in highly heterogeneous cell populations. For example, some cell types may naturally have less RNA or express fewer genes than other cell types. Such cell types are more likely to be considered outliers and removed, even if they are of high quality. The use of the MAD mitigates this problem by accounting for biological variability in the QC metrics. A heterogeneous population should have higher variability in the metrics among high-quality cells, increasing the MAD and reducing the chance of incorrectly removing particular cell types (at the cost of reducing power to remove low-quality cells). Nonetheless, filtering based on outliers may not be appropriate in extreme cases where one cell type is very different from the others.
 
-Systematic differences in the QC metrics can be handled to some extent using the `batch=` argument in the `isOutlier()` function. For example, setting `batch` to the plate of origin will identify outliers within each level of batch, using plate-specific median and MAD estimates. This is obviously useful for accommodating known differences in experimental processing, e.g., sequencing at different depth or different amounts of added spike-in RNA. We can also include biological factors in `batch`, if those factors could result in systematically fewer expressed genes or lower RNA content. However, this is not applicable in experiments where the factors are not known in advance.
+Systematic differences in the QC metrics can be handled to some extent using the `batch =` argument in the `isOutlier()` function. For example, setting `batch` to the plate of origin will identify outliers within each level of batch, using plate-specific median and MAD estimates. This is obviously useful for accommodating known differences in experimental processing, e.g., sequencing at different depth or different amounts of added spike-in RNA. We can also include biological factors in `batch`, if those factors could result in systematically fewer expressed genes or lower RNA content. However, this is not applicable in experiments where the factors are not known in advance.
 
-* In our case, we could add either the `mouse.id` or the `cell.type` (e.g. `batch=PAG_sceset$mouse.id`) as an argument that specifies the batch to which each sample belongs. A median/MAD is calculated for each batch, and outliers are then identified within each batch.
+* In our case, we could add either the `mouse.id` or the `cell.type` (e.g. `batch = PAG_sceset$mouse.id`) as an argument that specifies the batch to which each sample belongs. A median/MAD is calculated for each batch, and outliers are then identified within each batch.
 
 Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. A 3-MAD threshold has a fairly simple interpretation for normal distributions, enabling the removal of points with lower than 1% likelihood. 
-* The default MAD threshold in the `isOutlier()` function is set to `nmads=3`. 
+* The default MAD threshold in the `isOutlier()` function is set to `nmads = 3`. 
 * We begin by removing cells with log-library sizes that are more than 4 MADs below the median log-library size. A log-transformation improves resolution at small values, especially when the MAD of the raw values is comparable to or greater than the median. We also remove cells where the log-transformed number of expressed genes is 4 MADs below the median value.
 * However, if the 4-MAD threshold is too restrictive or not restrictive enough, we can try to loosen it a bit by setting it to 5 or 3.
 ```{r}
@@ -765,7 +734,7 @@ table(PAG_sceset$MADs_filters, PAG_sceset$cell.type)
 ```
 
 ### 2.4.3 | Using Automatic cell filtering in scater
-Another option available in `scater` is to filter cells using the `runColDataPCA()` function with `outliers=TRUE`. This performs PCA based on a set of QC metrics for each and then uses automatic outlier detection to identify potentially problematic cells. Outliers on a PCA plot may be indicative of low-quality cells that have aberrant technical properties compared to the (presumed) majority of high-quality cells.
+Another option available in `scater` is to filter cells using the `runColDataPCA()` function with `outliers = TRUE`. This performs PCA based on a set of QC metrics and then uses automatic outlier detection to identify potentially problematic cells. Outliers on a PCA plot may be indicative of low-quality cells that have aberrant technical properties compared to the (presumed) majority of high-quality cells.
 
 `scater` first creates a matrix where the rows represent cells and the columns represent the different QC metrics. Here, the PCA plot provides a 2D representation of cells ordered by their quality metrics. The outliers are then detected using methods from the `mvoutlier` package. This will identify cells that have substantially different QC metrics from the others, possibly corresponding to low-quality cells.
 ```{r}
@@ -786,7 +755,7 @@ table(PAG_sceset$PCA_filters, PAG_sceset$PAG.arearegistration)
 Methods like PCA-based outlier detection and support vector machines can provide more power to distinguish low-quality cells from high-quality counterparts (Ilicic et al. 2016). This is because they are able to detect subtle patterns across many quality metrics simultaneously. However, this comes at some cost to interpretability, as the reason for removing a given cell may not always be obvious.
 
 ### 2.4.4 | Compare filtering strategies
-We can use the `limma` package to plot a Venn diagram of the outlier cells from the different filtering approaches we have used.
+Before deciding on a filtering strategy, we can use the `limma` package to plot a Venn diagram of the outlier cells from the different filtering approaches we have used.
 ```{r}
 library(limma)
 Manual <- colnames(PAG_sceset)[!PAG_sceset$manual_filters]
@@ -805,7 +774,7 @@ vennDiagram(venn.diag,
 ```
 
 ### 2.4.5 | Apply chosen cell filtering approach
-After comparing the different filtering strategies, we can see that the Manual filter is the most flexible and allows us to add custom filters based on our experimental design. We will prime knowing why we remove each cell and will thus apply the manual filter over the MADs and the PCA based filters.
+After comparing the different filtering strategies, we can see that the Manual filter is the most flexible and allows us to add custom filters based on our experimental design (including the identity of the cells and the fluorophors they should express). We will prime knowing why we remove each cell and will thus apply the manual filter over the MADs and the PCA based filters.
 ```{r}
 # Set the chosen filter as the "use" slot:
 PAG_sceset$use <- PAG_sceset$manual_filters
@@ -818,15 +787,15 @@ Once we have applied our cell filter, we can quickly inspect the distribution of
 ```{r}
 gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total", colour_by = "use") + ggtitle("Library size"),
                         plotColData(PAG_sceset, x = "cell.type", y = "detected", colour_by = "use") + ggtitle("Detected genes"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100", colour_by = "use") + ggtitle("Percent reads consumed by 100 most expressed genes"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100", colour_by = "use") + ggtitle("Percent reads by top 100 genes"),
                         plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent", colour_by = "use") + ggtitle("Percent ERCC"),
                         plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent", colour_by = "use") + ggtitle("Percent Mitochondrial genes"),
                         plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent", colour_by = "use") + ggtitle("Percent Ribosomal genes"),
                         plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent", colour_by = "use") + ggtitle("Percent TSO concatamers"),
-                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "subsets_EYFP_sum", colour_by = "use") + ggtitle("EYFP expression"),
-                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "subsets_tdTomato_sum", colour_by = "use") + ggtitle("tdTomato expression"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_VGAT_sum", colour_by = "use") + ggtitle("VGAT expression"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_VGluT2_sum", colour_by = "use") + ggtitle("VGluT2 expression")
+                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_EYFP", colour_by = "use") + ggtitle("EYFP expression"),
+                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_tdTomato", colour_by = "use") + ggtitle("tdTomato expression"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGAT", colour_by = "use") + ggtitle("VGAT expression"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGluT2", colour_by = "use") + ggtitle("VGluT2 expression")
                         )
 ```
 
@@ -880,8 +849,6 @@ filter_low_abundance_genes_use <- use_ave_counts >= 1
 summary(filter_low_abundance_genes_use)
 ```
 
-__NOTE__: the `computeSumFactors()` function we will use prior to normalization will already implement this filter by default with the `min.mean=1` argument, so this is another reason to only remove non-expressed genes.
-
 ### 2.5.2 | Filtering uninteresting genes
 An alternative approach to gene filtering is to select genes that have non-zero counts in at least n cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
 ```{r}
@@ -925,10 +892,8 @@ filter_low_abundance_genes_alternative_use <- use_numcells >= 5
 summary(filter_low_abundance_genes_alternative_use)
 ```
 
-For now, we will only remove genes not expressed in any cell. Depending on which type of analysis we do later on, we can add a new round of gene filtering with different settings tailored to each particular step.
-
 ### 2.5.3 | Identities of the most highly expressed genes
-It is often instructive to consider the number of reads consumed by the top 50 expressed genes. This should generally be dominated by constitutively expressed transcripts, such as those for ribosomal or mitochondrial proteins, Malat1, or actin. The presence of other classes of features may be cause for concern if they are not consistent with expected biology. Many spike-in transcripts in the top most expressed genes suggests that too much spike-in RNA was added during library preparation, while the absence of ribosomal proteins and/or the presence of their pseudogenes are indicative of suboptimal alignment.
+It is often instructive to consider the number of reads consumed by the top 50 expressed genes. This should generally be dominated by constitutively expressed transcripts, such as those for ribosomal or mitochondrial proteins, Malat1, or actin. The presence of other classes of features may be cause for concern if they are not consistent with expected biology. Many spike-in transcripts in the top most expressed genes suggests that too much spike-in RNA was added during library preparation, while the absence of ribosomal proteins and/or the presence of pseudogenes are indicative of suboptimal alignment.
 ```{r}
 # Plot the total counts consumed by the top 50 expressed genes in the whole dataset and after filtering low quality cells:
 plotHighestExprs(PAG_sceset, n = 50, colour_cells_by = "cell.type", exprs_values = "counts")
@@ -952,6 +917,7 @@ rowData(PAG_sceset)$not_predicted_gene <- !grepl("^Gm", rownames(PAG_sceset)) # 
 summary(rowData(PAG_sceset)$not_predicted_gene)
 ```
 
+We next add the list of genes to use to a slow in our `rowData` so that we can subset the current `SingleCellExperiment` object to generate the QCed one:
 ```{r}
 # Assign the chosen list of filtered genes to $use slot corresponding to the rows (genes):
 rowData(PAG_sceset)$use <- (rowData(PAG_sceset)$genes_expressed & rowData(PAG_sceset)$not_predicted_gene) # We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
@@ -959,25 +925,25 @@ table(rowData(PAG_sceset)$use)
 dim(PAG_sceset) # We haven't changed anything in the SingleCellExperiment object yet.
 ```
 
-Now, the `colData(PAG_sceset)$use` should point to the __samples__ that have passed our QC, whereas the `rowData(PAG_sceset)$use` should point to the __genes__ that have passed our QC (i.e. that are expressed in at least one cell).
+Now, the `colData(PAG_sceset)$use` should point to the _samples_ that have passed our QC, whereas the `rowData(PAG_sceset)$use` should point to the _genes_ that have passed our QC.
 
 ## Step 2.6 | Create and save a QCed SingleCellExperiment object
-We have now QCed our data. Before we proceed to normalization and downstream analyis, we save our progress.
+We have now QCed our dataset. Before we proceed to normalization and downstream analyis, we save our progress.
 ```{r}
 # We could remove the saved PCA results from the reducedDim slot, but we can also just keep them in the reducedDim slot:
-PAG_sceset
+PAG_sceset # Full dataset containing all the filters
 
 # Save the dataset with the filters before applying them:
 saveRDS(PAG_sceset, file = "PAG_sceset_filters.rds")
 ```
 
-Once everything you have done is saved, use the `PAG_sceset$use` slot, which points to the filtered and QCed data, to set the dimensions of a new `SingleCellExperiment` object, which we will call `PAG_sceset_qc` and use for downstream analysis. 
+Once everything we have done is saved, we use the `PAG_sceset$use` slot, which points to the filtered and QCed data, to set the dimensions of a new `SingleCellExperiment` object, which we will call `PAG_sceset_qc` and use for downstream analysis. 
 ```{r}
 # Use the filtered dataset to set the dimensions of a QCed dataset:
 PAG_sceset_qc <- PAG_sceset[rowData(PAG_sceset)$use, colData(PAG_sceset)$use]
 dim(PAG_sceset)
 dim(PAG_sceset_qc)
-PAG_sceset_qc
+PAG_sceset_qc # QCed dataset
 table(PAG_sceset_qc$PAG.arearegistration)
 
 # Save the filtered and QCed dataset:
@@ -985,7 +951,7 @@ saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")
 print("Part 2 - Done!")
 ```
 
-__IMP__: once you have filtered out low-quality cells and stored the resulting dataset into a QCed one, use the QCed for the following steps.
+__IMP__: once we have filtered out low-quality cells and stored the resulting dataset into a QCed one, we continue to use the QCed for the following steps.
 
 ```{r}
 sessionInfo()
