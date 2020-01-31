@@ -54,6 +54,53 @@ table(PAG_gene_annotations$Chromosome)
 ```
 
 # STEP 2 | Quality Control and pre-processing
+## Step 2.3 | Cell QC
+### 2.3.5 | Xist expression
+A final quality check could be to look at the expression of _Xist_, which should only appear in cells obtained from female mice, as it only expresses in the inactive X chromosome:
+```{r}
+# Log transform the counts for Xist
+PAG_sceset$log2_total_counts_Xist <- log2(PAG_sceset$subsets_XIST_sum + 1)
+summary(PAG_sceset$log2_total_counts_Xist)
+
+# Plot Expression values of VGAT and VGluT2 in several ways:
+plotExpression(PAG_sceset, "Xist", x = "mouse.id", 
+               exprs_values = "logcounts_raw", # alternatively try "counts"
+               colour_by = "mouse.sex",
+               xlab = "Mouse ID")
+
+plotExpression(PAG_sceset, "Xist", x = "mouse.sex", 
+               exprs_values = "logcounts_raw", # alternatively try "counts"
+               colour_by = "cell.type",
+               xlab = "Mouse sex")
+
+plotExpression(PAG_sceset[, PAG_sceset$mouse.sex == "M"], "Xist", x = "mouse.id", 
+               exprs_values = "logcounts_raw", # alternatively try "counts"
+               colour_by = "batch.processing",
+               xlab = "Mouse ID")
+
+plotExpression(PAG_sceset[, PAG_sceset$mouse.sex == "F"], "Xist", x = "mouse.id", 
+               exprs_values = "logcounts_raw", # alternatively try "counts"
+               colour_by = "batch.processing",
+               xlab = "Mouse ID")
+
+plotColData(PAG_sceset,
+            x = "detected",
+            y = "subsets_Chromosome_X_sum",
+            colour_by = "mouse.id",
+            other_fields = "mouse.sex") +
+  facet_wrap(~mouse.sex) + 
+  xlab("Number of detected genes") +
+  ylab("X Chromosome counts")
+
+plotColData(PAG_sceset,
+            x = "detected",
+            y = "subsets_Chromosome_Y_sum",
+            colour_by = "mouse.id",
+            other_fields = "mouse.sex") +
+  facet_wrap(~mouse.sex) + 
+  xlab("Number of detected genes") +
+  ylab("Y Chromosome counts")
+```
 ## Step 2.5 | Gene QC
 ### 2.5.3 | Identities of the most highly expressed genes
 It can also be useful to plot gene expression frequency versus mean expression level to assess the effects of technical dropout in the dataset. The `plotExprsFreqVsMean()` function fits a non-linear least squares curve for the relationship between expression frequency and mean expression and uses this to define the number of genes above high technical dropout and the numbers of genes that are expressed (here defined as at least 4 counts) in at least 50% and at least 25% of cells. A subset of genes to be treated as feature controls can be specified, otherwise any feature controls previously defined are used. 
