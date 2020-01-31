@@ -37,17 +37,17 @@ _The following theory has been summarised from the online course on [Analysis of
 
 Library sizes vary because scRNA-seq data is often sequenced on highly multiplexed platforms and the total reads which are derived from each cell may differ substantially. Library size must be corrected for by multiplying or dividing each column of the expression matrix by a normalization factor which is an estimate of the library size relative to the other cells. Many methods to correct for library size have been developped for bulk RNA-seq (e.g. UQ, SF, CPM, RPKM, FPKM, TPM).
 
-* __Upperquartile (UQ)__: In the upperquartile method (Bullard et al. 2010), each column is divided by the 75% quantile of the counts for each library. Often the calculated quantile is scaled by the median across cells to keep the absolute level of expression relatively consistent. A drawback to this method is that for low-depth scRNASeq experiments the large number of undetected genes may result in the 75% quantile being zero (or close to it). This limitation can be overcome by generalizing the idea and using a higher quantile (eg. the 99% quantile is the default in scater) or by excluding zeros prior to calculating the 75% quantile.
+* __Upperquartile (UQ)__: In the upperquartile method (Bullard et al. 2010), each column is divided by the 75% quantile of the counts for each library. Often the calculated quantile is scaled by the median across cells to keep the absolute level of expression relatively consistent. A drawback to this method is that for low-depth scRNA-seq experiments the large number of undetected genes may result in the 75% quantile being zero (or close to it). This limitation can be overcome by generalizing the idea and using a higher quantile (eg. the 99% quantile is the default in scater) or by excluding zeros prior to calculating the 75% quantile.
 
-* __Relative log expression (RLE) size factor (SF)__: The size factor (SF) was proposed and popularized by DESeq (Anders and Huber 2010). First the geometric mean of each gene across all cells is calculated. The size factor for each cell is the median across genes of the ratio of the expression to the gene geometric mean. A drawback to this method is that since it uses the geometric mean only genes with non-zero expression values across all cells can be used in its calculation, making it unadvisable for large low-depth scRNASeq experiments.
+* __Relative log expression (RLE) size factor (SF)__: The size factor (SF) was proposed and popularized by DESeq (Anders and Huber 2010). First the geometric mean of each gene across all cells is calculated. The size factor for each cell is the median across genes of the ratio of the expression to the gene geometric mean. A drawback to this method is that since it uses the geometric mean only genes with non-zero expression values across all cells can be used in its calculation, making it unadvisable for large low-depth scRNA-seq experiments.
 
 * __CPM (counts per million)__: The simplest way to normalize RNAseq data is to convert it to counts per million (CPM) by dividing each column by its total then multiplying by 1,000,000. __RPKM__ (read per kilobase per milion), __FPKM__ (fragment per kilobase per million) and __TPM__ (transcripts per million) are variants on CPM which further adjust counts by the length of the respective gene/transcript. 
     + Spike-ins should be excluded from the calculation of total expression in order to correct for total cell RNA content (we should only use endogenous genes).
-    + One potential drawback of CPM is if your sample contains genes that are both very highly expressed and differentially expressed across the cells. In this case, the total molecules in the cell may depend of whether such genes are on/off in the cell and normalizing by total molecules may hide the differential expression of those genes and/or falsely create differential expression for the remaining genes.  
+    + One potential drawback of CPM is relevant to situations where a dataset contains genes that are both very highly expressed and differentially expressed across the cells. In this case, the total molecules in the cell may depend of whether such genes are on/off in the cell and normalizing by total molecules may hide the differential expression of those genes and/or falsely create differential expression for the remaining genes.  
 
-* __scran (scRNAseq specific)__: The `scran` package implements a variant on CPM specialized for single-cell data (Lun et al. Genome Biology 2016). Briefly, this method deals with the problem of vary large numbers of zero values per cell by pooling cells together calculating a normalization factor (similar to CPM) for the sum of each pool. Since each cell is found in many different pools, cell-specific factors can be deconvoluted from the collection of pool-specific factors using linear algebra.
+* __scran (scRNA-seq specific)__: The `scran` package implements a variant on CPM specialized for single-cell data (Lun et al. Genome Biology 2016). Briefly, this method deals with the problem of vary large numbers of zero values per cell by pooling cells together calculating a normalization factor (similar to CPM) for the sum of each pool. Since each cell is found in many different pools, cell-specific factors can be deconvoluted from the collection of pool-specific factors using linear algebra.
 
-* __SCnorm (scRNAseq specific)__: Another method developed to normalize scRNAseq data (Bacher et al. Nature Methods 2017).
+* __SCnorm (scRNA-seq specific)__: Another method developed to normalize scRNA-seq data (Bacher et al. Nature Methods 2017).
 
 ***
 __A note on scaling normalization strategies__ from the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun.
@@ -59,7 +59,7 @@ The choice between these two normalization strategies depends on the biology of 
 In our case, we expect our dataset to contain a homogeneous population of neurons, with the majority of genes not differentially expressed between samples. Therefore, we will compute size factors for endogenous genes. We will not use spike-in transcripts as we did not add them in sufficient concentration to be used reliably.
 
 ## Step 3.1 | Compute size factors for endogenous genes
-We will use `scran` to calculate size factors for our samples and then use them for normalization. Importantly, see Vallejos et al., Nature Methods 2017 for an explanation of why it is not a good idea to use CPM normalization on scRNAseq data.
+We will use `scran` to calculate size factors for our samples and then use them for normalization. Importantly, see Vallejos et al., Nature Methods 2017 for an explanation of why it is not a good idea to use CPM normalization on scRNA-seq data.
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
 set.seed(1991)
@@ -72,7 +72,7 @@ PAG_sceset_qc <- readRDS("PAG_sceset_qc.rds") # Contains filtered cells and gene
 assayNames(PAG_sceset_qc)
 ```
 
-We should __not__ include spike-ins in the normalization step, as we want to normalize by the genes each cell endogenously expressed. We can later calculate separate size factors for the spike-in transcripts.
+We should _not_ include spike-ins in the normalization step, as we want to normalize by the genes each cell endogenously expressed. We can later calculate separate size factors for the spike-in transcripts.
 ```{r}
 # For large datasets of highly heterogeneous data with multiple cell types we should run a preclustering step:
 # qclust <- quickCluster(PAG_sceset_qc, min.size = 30)
@@ -84,9 +84,9 @@ PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, min.mean = 1, sizes = seq(21, 
 summary(sizeFactors(PAG_sceset_qc))
 ```
 
-`scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find `scran` has calculated negative size factors try increasing the cluster and pool sizes until they are all positive.
+`scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find `scran` has calculated negative size factors (you can see this at the Min. column of the above summary) try increasing the cluster and pool sizes until they are all positive.
 
-Plotting the size factors against the library sizes should show some positive correlation.
+Plotting the size factors against the library sizes should show a positive correlation.
 ```{r}
 plot(PAG_sceset_qc$total/1e6, 
      sizeFactors(PAG_sceset_qc),
@@ -99,11 +99,11 @@ legend("bottomright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rg
        legend = levels(factor(PAG_sceset_qc$cell.type)))
 ```
 
-The size factors are tightly correlated with the library sizes for all cells. This suggests that the systematic differences between cells are primarily driven by differences in capture efficiency or sequencing depth. Any DE between cells would yield a non-linear trend between the total count and size factor, and/or increased scatter around the trend. This does not occur here as strong DE is unlikely to exist within a homogeneous population of cells.
+Indeed, our size factors are tightly correlated with the library sizes for all cells. This suggests that the systematic differences between cells are primarily driven by differences in capture efficiency or sequencing depth. Any DE between cells would yield a non-linear trend between the total count and size factor, and/or increased scatter around the trend. This does not occur here as strong DE is unlikely to exist within a homogeneous population of cells.
 
-As we mentioned, we will not normalise using Spike-ins size factors, as we did not add a high enough concentration of ERCCs to achieve a sampling distribution/sequencing coverage constant across cells. If both the deconvolution size factors and the spike-in size factors captured similar technical biases in sequencing depth and capture efficiency, we should observe a positive correlation between them. However, if we plot one against the other, we can clearly see that this is not the case, and spike-in size factors are very low in most cells, reflecting the fact that for most cells the percentage of reads allocated to spike-ins was not high enough to use them for normalisation purposes.
+As we mentioned, we will not normalize using Spike-ins size factors, as we did not add a high enough concentration of ERCCs to achieve a sampling distribution/sequencing coverage constant across cells. If both the deconvolution size factors and the spike-in size factors captured similar technical biases in sequencing depth and capture efficiency, we should observe a positive correlation between them. However, if we plot one against the other, we can clearly see that this is not the case, and spike-in size factors are very low in most cells, reflecting the fact that for most cells the percentage of reads allocated to spike-ins was not high enough to use them for normalization purposes.
 ```{r}
-PAG_sceset_qc_spikes <- PAG_sceset_qc # Make a copy of the SingleCellExperiment object
+PAG_sceset_qc_spikes <- PAG_sceset_qc # Make a copy of the SingleCellExperiment object to avoid altering the current one
 PAG_sceset_qc_spikes <- computeSpikeFactors(PAG_sceset_qc_spikes, "ERCC", assay.type = "counts")
 to.plot <- data.frame(DeconvFactor = sizeFactors(PAG_sceset_qc),
                       SpikeFactor = sizeFactors(PAG_sceset_qc_spikes),
@@ -114,10 +114,10 @@ ggplot(to.plot, aes(x = DeconvFactor, y = SpikeFactor, color = CellType)) +
     scale_y_log10() + geom_abline(intercept = 0, slope = 1, color = "red")
 ```
 
-We will thus use spike-ins for QC only, and we will normalise our dataset using the deconvolution size factors.
+We will thus use spike-ins for QC only, and we will normalize our dataset using the deconvolution size factors.
 
 ## Step 3.2 | Apply the size factors to normalize gene expression
-We will calculate normalized expression values using the `logNormCounts()` method from `scater` (McCarthy et al., 2017). This will use the deconvolution size factors for the endogenous genes, and the spike-in-based size factors for the spike-in transcripts. Each expression value can be interpreted as a log-transformed “normalized count”, and can be used in downstream applications like clustering or dimensionality reduction.
+We will now calculate normalized expression values using the `logNormCounts()` method from `scater` (McCarthy et al., 2017). This uses the deconvolution size factors for the endogenous genes, and the spike-in-based size factors for the spike-in transcripts. Each expression value can be interpreted as a log-transformed “normalized count”, and can be used in downstream applications like clustering or dimensionality reduction.
 
 The count data are used to compute normalized log-expression values for use in downstream analyses. Each value is defined as the log2-ratio of each count to the size factor for the corresponding cell, after adding a pseudo-count of 1 to avoid undefined values at zero counts. Division of the counts for each gene by its appropriate size factor ensures that any cell-specific biases are removed. If spike-in-specific size factors are present in `SingleCellExperiment`, they will be automatically applied to normalize the spike-in transcripts separately from the endogenous genes.
 
@@ -186,6 +186,7 @@ p3 <- plotRLE(PAG_sceset_qc,
 ```
 
 ## Step 3.5 | Save a normalized SingleCellExperiment object
+We now have normalized our gene expression values for our dataset, so we can store our `SingleCellExperiment` object and proceed to identifying highly variable genes.
 ```{r}
 # Save the normalized data:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc_norm.rds")
