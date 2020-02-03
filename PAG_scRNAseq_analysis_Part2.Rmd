@@ -577,7 +577,7 @@ PAG_sceset$VGAT_VGluT2_ratio <- (PAG_sceset$log2_total_counts_VGAT / PAG_sceset$
 PAG_sceset$VGluT2_VGAT_ratio <- (PAG_sceset$log2_total_counts_VGluT2 / PAG_sceset$log2_total_counts_VGAT)
 ```
 
-Subsetting the `SingleCellExperiment` object by column will retain only the high-quality cells that pass each of the filters described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
+Subsetting the `SingleCellExperiment` object by column will retain only the high-quality cells that pass each of the filters described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Current practices focus on three main QC metrics (library size, gene detection, and percentage of reads in Mitochondrial genes). According to this strategy, removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality. We are however being extra stringent, as a cell needs to fail in any of our 11 filters to be excluded. Despite our filtering strategy, we only end up excluding 13% of our cells, suggesting we overall have a high quality dataset:
 ```{r}
 PAG_sceset$manual_filters <- !(
     # Sufficient library size
@@ -785,17 +785,28 @@ PAG_sceset
 
 Once we have applied our cell filter, we can quickly inspect the distribution of our QC metrics:
 ```{r}
-gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total", colour_by = "use") + ggtitle("Library size"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "detected", colour_by = "use") + ggtitle("Detected genes"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100", colour_by = "use") + ggtitle("Percent reads by top 100 genes"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent", colour_by = "use") + ggtitle("Percent ERCC"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent", colour_by = "use") + ggtitle("Percent Mitochondrial genes"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent", colour_by = "use") + ggtitle("Percent Ribosomal genes"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent", colour_by = "use") + ggtitle("Percent TSO concatamers"),
-                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_EYFP", colour_by = "use") + ggtitle("EYFP expression"),
-                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_tdTomato", colour_by = "use") + ggtitle("tdTomato expression"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGAT", colour_by = "use") + ggtitle("VGAT expression"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGluT2", colour_by = "use") + ggtitle("VGluT2 expression")
+gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total", colour_by = "use") + 
+                          labs(title = "Library size", x = NULL, y = "total counts"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "detected", colour_by = "use") + 
+                          ggtitle("Detected genes") + xlab(NULL) + ylab("number of genes detected"), # Alternative way of adding plot labels
+                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent", colour_by = "use") + 
+                          labs(title = "Percent reads in Mitochondrial genes", x = NULL, y = "% reads in mitochondrial genes"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent", colour_by = "use") + 
+                          labs(title = "Percent reads in Ribosomal genes", x = NULL, y = "% reads in ribosomal genes"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent", colour_by = "use") + 
+                          labs(title = "Percent reads in ERCC spike-ins", x = NULL, y = "% reads in ERCC spike-ins"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent", colour_by = "use") + 
+                          labs(title = "Percent reads in TSO concatamers", x = NULL, y = "% reads in TSO concatamers"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100", colour_by = "use") + 
+                          labs(title = "Percent reads in top 100 genes", x = NULL, y = "% reads in top 100 genes"),
+                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_EYFP", colour_by = "use") + 
+                          labs(title = "EYFP expression", x = NULL, y = "log2 raw expression"),
+                        plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_tdTomato", colour_by = "use") + 
+                          labs(title = "tdTomato expression", x = NULL, y = "log2 raw expression"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGAT", colour_by = "use") + 
+                          labs(title = "VGAT expression", x = NULL, y = "log2 raw expression"),
+                        plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGluT2", colour_by = "use") + 
+                          labs(title = "VGluT2 expression", x = NULL, y = "log2 raw expression")
                         )
 ```
 
