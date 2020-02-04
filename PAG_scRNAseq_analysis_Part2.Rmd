@@ -176,9 +176,9 @@ Another measure of cell quality is the ratio between ERCC spike-in RNAs and endo
 
 It is also worth looking at the proportion of reads mapped to genes in the Mitochondrial/Ribosomal genome amd to TSO concatamers. High proportions are indicative of poor-quality cells, possibly because of increased apoptosis and/or loss of cytoplasmic RNA from lysed cells. We will be looking at both the histograms and plots with every individual cell.
 
-__IMPORTANT__: cells of small dimensions will have a higher fraction of ERCC reads than larger cells, so take this into account if you think this might be the case. In addition, cells with a high active metabolic rate may have larger proportion of mitochondrial transcripts. For these reasons the best strategy is to simultaneously take the different quality measures into considiration before deciding whether to exclude a cell or not.
+_IMPORTANT_: cells of small dimensions will have a higher fraction of ERCC reads than larger cells, so take this into account if you think this might be the case. In addition, cells with a high active metabolic rate may have larger proportion of mitochondrial transcripts. For these reasons the best strategy is to simultaneously take the different quality measures into considiration before deciding whether to exclude a cell or not.
 
-__Using ERCC for normalization vs using them for QC__: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalization, but it will still be useful for QC. If you want to use them for normalization, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only, in which case you would want about 5-10% of the reads going to the spike-ins. If this is not the case, it suggests that you need to alter the dilution.
+_Using ERCC for normalization vs using them for QC_: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalization, but it will still be useful for QC. If you want to use them for normalization, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only, in which case you would want about 5-10% of the reads going to the spike-ins. If this is not the case, it suggests that you need to alter the dilution.
 ```{r}
 # Plot the histograms of the percentage of feature controls in all cells:
 par(mfrow = c(2,2))
@@ -813,7 +813,7 @@ gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total", co
 ## Step 2.5 | Gene QC
 In addition to removing cells with poor quality, it is usually a good idea to exclude genes where we suspect that technical artefacts may have skewed the results, or genes that are not informative (have a lot of 0 in many cells). The optimal choice of filtering strategy depends on the downstream application, and the best practice is to filter at each step as needed, rather than applying a single filter for the entire analysis. We will see different filtering options, but in the end we will only remove the genes that are not expressed in any cell, as they don't provide any information and would be removed by any filtering strategy. This will ensure that the most appropriate filter is used in each type of analysis and we don't remove now genes that we might need later if we do DE analysis, for example.
 
-__NB__: keep in mind that genes must be filtered after cell filtering since some genes may only be detected in poor quality cells. Use `PAG_sceset[ , colData(PAG_sceset)$use]` to select only the filtered cells. Here we will apply the filters both in the whole dataset and after filtering low quality cells to assess its impact.
+_NB_: keep in mind that genes must be filtered after cell filtering since some genes may only be detected in poor quality cells. Use `PAG_sceset[ , colData(PAG_sceset)$use]` to select only the filtered cells. Here we will apply the filters both in the whole dataset and after filtering low quality cells to assess its impact.
 
 ### 2.5.1 | Filtering low-abundance genes
 Low-abundance genes are problematic as zero or near-zero counts do not contain enough information for reliable statistical inference (Bourgon et al. 2010) and are likely to be dominated by drop-out events (Brennecke et al. 2013), which limits their usefulness in later analyses. Several metrics can be used to define low-abundance genes, one being the average count for each gene computed across all cells in the dataset. We can calculate this using the `calcAverage()` function, which can also perform some adjustment for library size differences between cells.
@@ -962,7 +962,7 @@ saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")
 print("Part 2 - Done!")
 ```
 
-__IMP__: once we have filtered out low-quality cells and stored the resulting dataset into a QCed one, we continue to use the QCed for the following steps.
+_IMP_: once we have filtered out low-quality cells and stored the resulting dataset into a QCed one, we continue to use the QCed for the following steps.
 
 ```{r}
 sessionInfo()

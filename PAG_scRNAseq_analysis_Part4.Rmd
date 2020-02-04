@@ -29,7 +29,7 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 ***
 
 # STEP 4 | Modelling technical and biological variability in gene expression to identify highly variable genes
-__Based on the [OSCA book](https://osca.bioconductor.org/feature-selection.html), the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html), and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun.__
+_Based on the [OSCA book](https://osca.bioconductor.org/feature-selection.html), the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html), and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun._
 
 We often use scRNA-seq data in exploratory analyses to characterise heterogeneity across cells. Procedures like clustering and dimensionality reduction compare cells based on their gene expression profiles, which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells. The choice of genes to use in this calculation has a major impact on the behavior of the metric and the performance of downstream methods. We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise. This aims to preserve interesting biological structure without the variance that obscures that structure, and to reduce the size of the data to improve computational efficiency of later steps.
 
@@ -359,7 +359,7 @@ dim(hvg_cv2_out_no_spikes_block)
 ```
 
 ### 4.3.1 | Filter uninteresting genes from the dataset
-__One important thing...__
+_One important thing..._
 Now that we have modelled the gene expression variance and CV2, and before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
 ```{r}
 ##### 
