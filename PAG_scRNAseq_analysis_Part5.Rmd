@@ -259,7 +259,7 @@ Here we can see how after applying `removeBatchEffect()`, `batch.processing` is 
 ## Step 5.3 | Dimensionality reduction
 Many scRNA-seq analysis procedures involve comparing cells based on their expression values across multiple genes. For example, clustering aims to identify cells with similar transcriptomic profiles by computing Euclidean distances across genes. In these applications, each individual gene represents a dimension of the data. More intuitively, if we had a scRNA-seq data set with two genes, we could make a two-dimensional plot where each axis represents the expression of one gene and each point in the plot represents a cell. This concept can be extended to data sets with thousands of genes where each cell’s expression profile defines its location in the high-dimensional expression space.
 
-As the name suggests, dimensionality reduction aims to reduce the number of separate dimensions in the data. This is possible because different genes are correlated if they are affected by the same biological process. Thus, we do not need to store separate information for individual genes, but can instead compress multiple features into a single dimension, e.g., an “eigengene” (Langfelder and Horvath 2007). This reduces computational work in downstream analyses, as calculations only need to be performed for a few dimensions rather than thousands of genes; reduces noise by averaging across multiple genes to obtain a more precise representation of the patterns in the data; and enables effective plotting of the data, for those of us who are not capable of visualizing more than 3 dimensions
+Dimensionality reduction aims to reduce the number of separate dimensions in the data. This is possible because different genes are correlated if they are affected by the same biological process. Thus, we do not need to store separate information for individual genes, but can instead compress multiple features into a single dimension, e.g., an “eigengene” (Langfelder and Horvath 2007). This reduces computational work in downstream analyses, as calculations only need to be performed for a few dimensions rather than thousands of genes; reduces noise by averaging across multiple genes to obtain a more precise representation of the patterns in the data; and enables effective plotting of the data.
 
 ### 5.3.1 | Principal component analysis
 Principal components analysis (PCA) discovers axes in high-dimensional space that capture the largest amount of variation. This is best understood by imagining each axis as a line. Say we draw a line anywhere, and we move all cells in our data set onto this line by the shortest path. The variance captured by this axis is defined as the variance across cells along that line. In PCA, the first axis (or “principal component”, PC) is chosen such that it captures the greatest variance across cells. The next PC is chosen such that it is orthogonal to the first and captures the greatest remaining amount of variation, and so on.
@@ -268,9 +268,9 @@ By definition, the top PCs capture the dominant factors of heterogeneity in the 
 
 When applying PCA to scRNA-seq data, our assumption is that biological processes affect multiple genes in a coordinated manner. This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behaviour of many genes. By comparison, random technical or biological noise is expected to affect each gene independently. There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs. This motivates the use of the earlier PCs in our downstream analyses, which concentrates the biological signal to simultaneously reduce computational work and remove noise.
 
-We perform the PCA on the log-normalized expression values using the `runPCA()` function from _scater_. By default, `runPCA()` will compute the first 50 PCs and store them in the `reducedDims()` of the output SingleCellExperiment object. We can use only the top 2000 genes with the largest biological components to reduce computational work and noise. Specifically, PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure. This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs.
+We perform the PCA on the log-normalized expression values using the `runPCA()` function from _scater_. By default, `runPCA()` will compute the first 50 PCs and store them in the `reducedDims()` of the output SingleCellExperiment object. We can use only the top 2000 genes with the largest biological components to reduce computational work and noise, or any HVGs we have previously extracted from our data. Specifically, PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure. This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs.
 ```{r}
-# We already performed PCA using all HVG in the previous step. 
+# We already performed PCA using all HVG in the previous step. We can check as follows:
 reducedDimNames(PAG_sceset_qc_norm_filt)
 ```
 
@@ -290,10 +290,10 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                ) + ggtitle("PCA_HVG_cv2_corrected") 
 ```
 
-### 5.3.2 | Choosing the number of PCs
-How many of the top PCs should we retain for downstream analyses? The choice of the number of PCs d is a decision that is analogous to the choice of the number of HVGs to use. Using more PCs will avoid discarding biological signal in later PCs, at the cost of retaining more noise. Most practitioners will simply set d to a “reasonable” but arbitrary value, typically ranging from 10 to 50. This is often satisfactory provided it is coupled with sufficient testing of alternative values to explore other perspectives of the data at a different bias-variance trade-off. Nonetheless, we will describe some more data-driven strategies to guide a suitable choice of d.
+### 5.3.2 | Choosing the number of PCs based on the scree plot
+How many of the top PCs should we retain for downstream analyses? The choice of the number of PCs `d` is a decision that is analogous to the choice of the number of HVGs to use. Using more PCs will avoid discarding biological signal in later PCs, at the cost of retaining more noise. Most practitioners will simply set `d` to a “reasonable” but arbitrary value, typically ranging from 10 to 50. This is often satisfactory provided it is coupled with sufficient testing of alternative values to explore other perspectives of the data at a different bias-variance trade-off. Nonetheless, we will describe some more data-driven strategies to guide a suitable choice of `d`.
 
-We can look at the proportion of variance explained by each PC and keep the components before the "elbow" in the curve of a scree plot:
+One strategy is to look at the proportion of variance explained by each PC and keep the components before the "elbow" in the curve of a scree plot:
 ```{r}
 library(PCAtools)
 set.seed(1991)
@@ -308,70 +308,51 @@ for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_s
 }
 ```
 
-Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for d.
+Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for `d`. As we see in the scree plots using the `counts` assay, the first component explains most of the variability. After log-normalization with `scran`, that correlate is gone and we can properly assess a more appropriate elbow for our data.
 
-From a practical perspective, the use of the elbow point tends to retain fewer PCs compared to other methods. The definition of “much more variance” is relative so, in order to be retained, later PCs must explain an amount of variance that is comparable to that explained by the first few PCs. Strong biological variation in the early PCs will shift the elbow to the left, potentially excluding weaker (but still interesting) variation in the next PCs immediately following the elbow.
+From a practical perspective, the use of the elbow point tends to retain fewer PCs compared to other methods. The definition of “much more variance” is relative so, in order to be retained, later PCs must explain an amount of variance that is comparable to that explained by the first few PCs. Strong biological variation in the early PCs will shift the elbow to the left (as it happens for our PCA plots using HVGs from Variance modelling), potentially excluding weaker (but still interesting) variation in the next PCs immediately following the elbow. We would keep the top 50 PCs just to be on the safe side.
 
 ### 5.3.3 | Denoising expression values using PCA
-Another strategy is to retain all PCs until the percentage of total variation explained reaches some threshold. For example, we might retain the top set of PCs that explains 80% of the total variation in the data. Of course, it would be pointless to swap one arbitrary parameter d for another T. Instead, we derive a suitable value for T by calculating the proportion of variance in the data that is attributed to the biological component. This is done using the `denoisePCA()` function with the variance modelling results from `modelGeneVar()` or related functions, where T is defined as the ratio of the sum of the biological components to the sum of total variances. Here, explicit feature selection is not strictly necessary, as `denoisePCA()` will automatically restrict the PCA to genes with positive biological components to ensure that T is always a positive value.
+Another strategy is to retain all PCs until the percentage of total variation explained reaches some threshold. For example, we might retain the top set of PCs that explains 80% of the total variation in the data. Of course, it would be pointless to swap one arbitrary parameter `d` for another `T`. Instead, we derive a suitable value for `T` by calculating the proportion of variance in the data that is attributed to the biological component. This is done using the `denoisePCA()` function with the variance modelling results from `modelGeneVar()` or related functions, where `T` is defined as the ratio of the sum of the biological components to the sum of total variances. Here, explicit feature selection is not strictly necessary, as `denoisePCA()` will automatically restrict the PCA to genes with positive biological components to ensure that `T` is always a positive value. The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
 
 * `denoisePCA()` will only use genes that have positive biological components, i.e., variances greater than the fitted trend. This guarantees that the total technical variance to be discarded will not be greater than the total variance in the data.
-* For the `technical = ` argument, the function will accept the trend function directly or a vector of technical components per gene. We can supply the DataFrame from `modelGeneVar()` to allow the function to adjust for the loss of residual degrees of freedom after batch correction. Specifically, the variance in the batch-corrected matrix is slightly understated, requiring some rescaling of the technical components to compensate.
+* For the `technical = ` argument, the function will accept the trend function directly or a vector of technical components per gene. We can supply the `DataFrame` from `modelGeneVar()` to allow the function to adjust for the loss of residual degrees of freedom after batch correction. Specifically, the variance in the batch-corrected matrix is slightly understated, requiring some rescaling of the technical components to compensate.
 * No filtering is performed on abundance here, which ensures that PCs corresponding to rare subpopulations can still be detected. Discreteness is less of an issue as low-abundance genes also have lower variance, thus reducing their contribution to the PCA.
 * It is also possible to obtain a low-rank approximation of the original expression matrix, capturing the variance equivalent to the retained PCs. This is useful for denoising prior to downstream procedures that require gene-wise expression values.
-```{r}
-set.seed(1991)
 
-# Run denoisePCA for hvg_var_out_no_spikes_filt
-dim(PAG_sceset_qc_norm_filt)
-dim(var_model_no_spikes)
-var_model_no_spikes$filter <- rownames(var_model_no_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
-dim(var_model_no_spikes)
-var_model_no_spikes_filt <- var_model_no_spikes[var_model_no_spikes$filter==TRUE, ]
-dim(var_model_no_spikes_filt)
-
-PAG_var_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
-                               technical = var_model_no_spikes_filt, 
-                               subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_filt,
-                               assay.type = "logcounts")
-
-print(ncol(reducedDim(PAG_var_denoised, "PCA")))
-
-plotReducedDim(PAG_var_denoised,
-               dimred = "PCA",
-               colour_by = "cell.type",
-               shape_by = "PAG.arearegistration",
-               by_exprs_values = "logcounts")
-
-# Run denoisePCA for hvg_var_out_no_spikes_block_filt
-dim(PAG_sceset_qc_norm_filt)
-dim(var_model_no_spikes_block)
-var_model_no_spikes_block$filter <- rownames(var_model_no_spikes_block) %in% rownames(PAG_sceset_qc_norm_filt)
-dim(var_model_no_spikes_block)
-var_model_no_spikes_block_filt <- var_model_no_spikes_block[var_model_no_spikes_block$filter==TRUE, ]
-dim(var_model_no_spikes_block_filt)
-
-PAG_var_block_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
-                                     technical = var_model_no_spikes_block_filt, 
-                                     subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
-                                     assay.type = "logcounts")
-
-print(ncol(reducedDim(PAG_var_block_denoised, "PCA")))
-
-plotReducedDim(PAG_var_block_denoised,
-               dimred = "PCA",
-               colour_by = "cell.type",
-               shape_by = "PAG.arearegistration",
-               by_exprs_values = "logcounts")
-```
-
-The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
-
-The dimensionality of the output represents the lower bound on the number of PCs required to retain all biological variation. Any fewer PCs will definitely discard some aspect of biological signal. Note that the converse is not true, i.e., there is no guarantee that the retained PCs capture all of the signal, which is only generally possible if no dimensionality reduction is performed at all. The returned value of _d_ provides a reasonable choice of rank when we want to retain as much signal as possible while still removing some noise.
+The dimensionality of the output represents the lower bound on the number of PCs required to retain all biological variation. Any fewer PCs will definitely discard some aspect of biological signal. Note that the converse is not true, i.e., there is no guarantee that the retained PCs capture all of the signal, which is only generally possible if no dimensionality reduction is performed at all. The returned value of `d` provides a reasonable choice of rank when we want to retain as much signal as possible while still removing some noise.
 
 From a practical perspective, the `denoisePCA()` approach usually retains more PCs than the elbow point method. This is because the former does not compare PCs to each other and thus does not discard PCs corresponding to secondary factors of variation. The downside is that many minor aspects of variation may not be interesting (e.g., transcriptional bursting) and their retention would only add irrelevant noise. Thus, whether this is a “better” approach depends on the analyst’s willingness to increase noise in order to preserve weaker biological signals.
 
-Incidentally, `denoisePCA()` imposes internal caps on the number of PCs that can be chosen in this manner. By default, the number is bounded within the “reasonable” limits of 5 and 50 to avoid selection of too few PCs (when technical noise is high relative to biological variation) or too many PCs (when technical noise is very low).
+Incidentally, `denoisePCA()` imposes internal caps on the number of PCs that can be chosen in this manner. By default, the number is bounded within the “reasonable” limits of 5 and 50 to avoid selection of too few PCs (when technical noise is high relative to biological variation) or too many PCs (when technical noise is very low). Importantly, this method tends to perform best when the mean-variance trend reflects the actual technical noise, i.e., when it is estimated by `modelGeneVarByPoisson()` or `modelGeneVarWithSpikes()` instead of `modelGeneVar()`. Variance modelling results from `modelGeneVar()` tend to understate the actual biological variation, especially in highly heterogeneous datasets where secondary factors of variation inflate the fitted values of the trend. Fewer PCs are subsequently retained because `T` is artificially lowered. We will thus not be using this method, as we couldn't use spike-ins for our variance modelling.
+
+### 5.3.4 | Choosing the number of PCs based on population structure
+Another method to choose `d` uses information about the number of subpopulations in the data. Consider a situation where each subpopulation differs from the others along a different axis in the high-dimensional space (e.g., because it is defined by a unique set of marker genes). This suggests that we should set `d` to the number of unique subpopulations minus 1, which guarantees separation of all subpopulations while retaining as few dimensions (and noise) as possible. We can use this reasoning to loosely motivate an a priori choice for `d` for example, if we expect around 10 different cell types in our population, we would set `d ≈ 10`.
+
+In practice, the number of subpopulations is usually not known in advance. Rather, we use a heuristic approach that uses the number of clusters as a proxy for the number of subpopulations. We perform clustering (graph-based by default) on the first `d∗` PCs and only consider the values of `d∗` that yield no more than `d∗ + 1` clusters. If we detect more clusters with fewer dimensions, we consider this to represent overclustering rather than distinct subpopulations, assuming that multiple subpopulations should not be distinguishable on the same axes. We test a range of `d∗` and set `d` to the value that maximizes the number of clusters while satisfying the above condition. This attempts to capture as many distinct (putative) subpopulations as possible by retaining biological signal in later PCs, up until the point that the additional noise reduces resolution.
+
+We repeat the same approach we used for the scree plots:
+```{r}
+set.seed(1991)
+
+for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_sceset_qc_norm_filt))]) { # First reducedDimNames instance is the PCA with the ColData for QC
+  principal_components <- reducedDim(PAG_sceset_qc_norm_filt, n)
+  choices <- getClusteredPCs(principal_components)
+  print(metadata(choices)$chosen)
+  plot(choices$n.pcs, choices$n.clusters, main = n, xlab = "Number of PCs", ylab = "Number of clusters")
+  abline(a = 1, b = 1, col = "red")
+  abline(v = metadata(choices)$chosen, col = "grey80", lty = 2)
+}
+```
+
+The plots above depict the number of clusters detected in our dataset as a function of the number of PCs. The red unbroken line represents the theoretical upper constraint on the number of clusters, while the grey dashed line is the number of PCs suggested by `getClusteredPCs()`.
+
+This strategy is the most pragmatic as it directly addresses the role of the bias-variance trade-off in downstream analyses, specifically clustering. There is no need to preserve biological signal beyond what is distinguishable in later steps. However, it involves strong assumptions about the nature of the biological differences between subpopulations - and indeed, discrete subpopulations may not even exist in studies of continuous processes like differentiation.
+
+### 5.3.5 | Choosing the number of PCs
+After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would perhaps say that 30 and 40 PCs are values after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the plot becomes almost flat). If we look at the population structure approach, the suggested values are 13 and 16, respectively. We will thus try to settle for a middle point in an attempt to achieve a balance between the extremes, and therefore we will choose to use the first 25 PCs.
+
+Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new reducedDim slots with the subsetted PCs. We will keep all of them for now and specify the number of PCs to use on the following steps.
 
 ## Step 5.4 | Visualization of the data after dimensionality reduction
 Dimensionality reduction allows us to compress the data into 2 or 3 dimensions for plotting. 
