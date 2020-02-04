@@ -53,7 +53,7 @@ which(gene_location=="chrM")
 table(PAG_gene_annotations$Chromosome)
 ```
 
-# STEP 2 | Quality Control and pre-processing
+# STEP 2 | Pre-processing and data Quality Control
 ## Step 2.3 | Cell QC
 ### 2.3.5 | Xist expression
 A final quality check could be to look at the expression of _Xist_, which should only appear in cells obtained from female mice, as it only expresses in the inactive X chromosome:
@@ -170,7 +170,7 @@ legend("bottomleft", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb
 
 _If we were to apply the the spike-in factors to all counts, we would set `general.use=TRUE` and use the `computeSpikeFactors` method to estimate size factors for all cells. This would compute the total count over all spike-in transcripts in each cell, and calculate size factors to equalize the total spike-in count across cells. Finally, running normalize would use the spike-in-based size factors to compute normalized log-expression values, and unlike what we actually did, we would not have to define separate size factors for the spike-in transcripts, as the relevant factors would already be used for all genes and spike-in transcripts when `general.use=TRUE`._
 
-# STEP 4 | Modelling technical and biological variability in gene expression and identifying highly variable genes
+# STEP 4 | Modelling technical and biological variability in gene expression to identify highly variable genes
 ## PATH "A" to feature selection - trendVar (Bioconductor =< 3.9)
 ### Step 4a.1 | Modelling the technical component of variation
 Variability in the observed expression values across genes can be driven by genuine biological heterogeneity or uninteresting technical noise. To distinguish between these two possibilties, we need to model the technical component of the variance of the expression values for each gene. 
@@ -875,7 +875,7 @@ colnames(Out) <- rownames(Out) <- c("M3Drop", "HVG", "Cor", "PCA", "PCA2")
 Out
 ```
 
-# STEP 5 | Identifying confounding factors and correcting batch effects
+# STEP 5 | Identifying confounding factors, correcting batch effects, and dimensionality reduction
 ## Step 5.3 | Dimensionality reduction
 ### 5.3.2 | Correlating PCs with experimental and QC variables of interest
 `scater` allows us to identify principal components that correlate with experimental and QC variables of interest (it ranks principle components by R^2^ from a linear model regressing PC value against any variable or annotation we have associated with each cell) to see which factor is driving a particular principal component.
@@ -905,6 +905,57 @@ plotExplanatoryPCs(PAG_sceset_qc_norm_filt,
                                  )
                    )
 ```
+
+### 5.3.3 | Denoising expression values using PCA
+Another strategy is to retain all PCs until the percentage of total variation explained reaches some threshold. For example, we might retain the top set of PCs that explains 80% of the total variation in the data. Of course, it would be pointless to swap one arbitrary parameter `d` for another `T`. Instead, we derive a suitable value for `T` by calculating the proportion of variance in the data that is attributed to the biological component. This is done using the `denoisePCA()` function with the variance modelling results from `modelGeneVar()` or related functions, where `T` is defined as the ratio of the sum of the biological components to the sum of total variances. Here, explicit feature selection is not strictly necessary, as `denoisePCA()` will automatically restrict the PCA to genes with positive biological components to ensure that `T` is always a positive value. The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
+
+Importantly, this method tends to perform best when the mean-variance trend reflects the actual technical noise, i.e., when it is estimated by `modelGeneVarByPoisson()` or `modelGeneVarWithSpikes()` instead of `modelGeneVar()`. Variance modelling results from `modelGeneVar()` tend to understate the actual biological variation, especially in highly heterogeneous datasets where secondary factors of variation inflate the fitted values of the trend. Fewer PCs are subsequently retained because `T` is artificially lowered. We will thus not be using this method, as we couldn't use spike-ins for our variance modelling.
+```{r}
+set.seed(1991)
+
+# Run denoisePCA for hvg_var_out_no_spikes_filt
+dim(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes)
+var_model_no_spikes$filter <- rownames(var_model_no_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes)
+var_model_no_spikes_filt <- var_model_no_spikes[var_model_no_spikes$filter==TRUE, ]
+dim(var_model_no_spikes_filt)
+
+PAG_var_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
+                               technical = var_model_no_spikes_filt, 
+                               subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_filt,
+                               assay.type = "logcounts")
+
+print(ncol(reducedDim(PAG_var_denoised, "PCA")))
+
+plotReducedDim(PAG_var_denoised,
+               dimred = "PCA",
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
+
+# Run denoisePCA for hvg_var_out_no_spikes_block_filt
+dim(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes_block)
+var_model_no_spikes_block$filter <- rownames(var_model_no_spikes_block) %in% rownames(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes_block)
+var_model_no_spikes_block_filt <- var_model_no_spikes_block[var_model_no_spikes_block$filter==TRUE, ]
+dim(var_model_no_spikes_block_filt)
+
+PAG_var_block_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
+                                     technical = var_model_no_spikes_block_filt, 
+                                     subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                     assay.type = "logcounts")
+
+print(ncol(reducedDim(PAG_var_block_denoised, "PCA")))
+
+plotReducedDim(PAG_var_block_denoised,
+               dimred = "PCA",
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
+```
+
 # STEP 6 | Clustering
 ## Step 6.1 | Consensus clustering with SC3
 ### 6.1.10 | SC3 Clustering using ion channels genes
