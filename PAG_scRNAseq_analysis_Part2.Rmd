@@ -28,7 +28,7 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 
 ***
 
-# STEP 2 | Quality Control and pre-processing
+# STEP 2 | Pre-processing and data Quality Control
 Once we have our `SingleCellExperiment` object with our data and annotations, we can proceed to QC the data.
 ```{r}
 # If starting from stored results, load the saved dataset from previous notebook:
