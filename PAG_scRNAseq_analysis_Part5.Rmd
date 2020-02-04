@@ -1,0 +1,1022 @@
+---
+title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
+subtitle: "Parts V: batch effects and dimensionality reduction"
+author:
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
+    affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
+    email: "oriol.pavon.16@ucl.ac.uk"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_notebook:
+    highlight: pygments
+    number_sections: FALSE
+    theme: lumen
+    toc: TRUE
+    toc_float: TRUE
+
+#output: rmdformats::readthedown:
+  #highlight: pygments
+---
+
+***
+
+This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al., Nature Protocols 2014). 
+
+This pipeline has been generated after attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis) and [attending](https://training.csx.cam.ac.uk/bioinformatics/event/2823386) and following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group). Many other resources have been used, including the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, the [rnaseqGene workflow](https://bioconductor.org/packages/3.10/workflows/html/rnaseqGene.html) maintained by Michael Love, the [RNAseq123 workflow](https://bioconductor.org/packages/3.10/workflows/html/RNAseq123.html) maintained by Matthew Ritchie, and the [EGSEA123 workflow](https://bioconductor.org/packages/3.10/workflows/html/EGSEA123.html) maintained by Matthew Ritchie.
+
+Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber et al., Nature Methods 2015), [scRNA-tools](https://www.scrna-tools.org/), `scater` (McCarthy et al., Bioinformatics 2017), `scran` (Lun et al., F1000Res 2016), `SC3` (Kiselev et al., Nature Methods 2017), `Seurat` (Butler et al., Nature Biotechnology 2018), `clusterExperiment` (Risso et al., PLOS Computational Biology 2018), `limma` (Ritchie et al., Nucleic Acids Research 2015), `DESeq2` (Love et al., Genome Biology 2014), `edgeR` (Robinson et al., Bioinformatics 2010), `MAST` (Finak, McDavid, Yajima et al., Genome Biology 2015), `iSEE` (Rue-Albrecht & Marini et al., F1000Research 2018), `t-SNE` (van der Maaten & Hinton, Journal of Machine Learning Research 2008), `UMAP` (McInnes et al., arXiv 2018), and the [Mathematical Statistics and Machine Learning for Life Sciences](https://towardsdatascience.com/tagged/stats-ml-life-sciences) column by Nikolay Oskolkov.
+
+***
+
+# STEP 5 | Identifying confounding factors, correcting batch effects, and dimensionality reduction
+Our data have been collected from samples originated from several animals and processed on different days. The processing of different batches is often subject to uncontrollable differences, e.g., changes in operator, differences in reagent quality, etc. This results in systematic differences in the observed gene expression in cells from different batches, which we refer to as “batch effects”. Batch effects are problematic as they can be major drivers of heterogeneity in the data, masking the relevant biological differences and complicating interpretation of the results.
+
+Computational correction of these effects is critical for eliminating batch-to-batch variation, allowing data across multiple batches to be combined for common downstream analysis. However, existing methods based on linear models (Ritchie et al. 2015; Leek et al. 2012) assume that the composition of cell populations are either known or the same across batches. To overcome these limitations, bespoke methods have been developed for batch correction of single-cell data (Haghverdi et al. 2018; Butler et al. 2018; Lin et al. 2019) that do not require a priori knowledge about the composition of the population. This allows them to be used in workflows for exploratory analyses of scRNA-seq data where such knowledge is usually unavailable.
+
+To account for technical confounders we need to identify and remove sources of variation in the expression data that are not related to the biological signal of interest. We could use spike-ins for this (in theory you add the same amount of ERCC in each cell lysate, so any variability should be technical noise), but these can turn out to be extremely variable across cells. Instead, we could use endogenous or housekeeping genes that do not vary systematically between cells. Where we have a large number of endogenous genes that, on average, do not vary systematically between cells and where we expect technical effects to affect a large number of genes (a very common and reasonable assumption), then such methods of batch correction can perform well.
+
+The most prominent technical covariates in single-cell data are _count depth (library size)_ and _processing batch_ (Luecken & Theis, Mol Syst Biol. 2019). Correcting for batch effects between samples or cells in the same experiment is the classical scenario known as _batch correction_ from bulk RNA-seq. This is different from _data integration_ from multiple experiments or collaborative projects. Irrespective of computational methods, the best method of batch correction is pre-empting the effect and avoiding it altogether by clever experimental design (Hicks et al, 2017). Batch effects can be avoided by pooling cells across experimental conditions and samples, as we did for our balanced batches.
+
+## Step 5.1 | Identifying confounding and technical factors
+As we have mentioned, a big source of variability in scRNA-seq data, besides bad cells, are batch effects. We want to try to identify such effects and remove them, so our analysis picks up mainly biological effects.
+
+We continue using the `PAG_sceset_qc_norm_filt` after normalization. We should thus have a `logcounts` slot in `assays`:
+```{r}
+# If starting from stored results, load saved filtered dataset from previous Step:
+set.seed(1991)
+options(stringsAsFactors = FALSE)
+library(SingleCellExperiment)
+library(scater)
+library(scran)
+
+PAG_sceset_qc_norm_filt <- readRDS("PAG_sceset_qc_norm_filt.rds") # Contains filtered cells and genes, and log-normalized data
+assayNames(PAG_sceset_qc_norm_filt)
+```
+
+### 5.1.1 | Screening for obvious biases with the table function
+The `table` and `summary` functions allow us to quickly inspect if we have any obvious biases or confounds (i.e. all the cells come from male or female mice, or from a particular location or sequencing batch).
+```{r}
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.hemisphere)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.arearegistration)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.APaxis)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.sex)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.id)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$batch.processing)
+```
+
+We can quickly observe that we have two clear confounds: (1) from any given animal we can only obtain one cell type (a limitation inherent to the use of mouse transgenic lines), and (2) half of our batches contain only one cell type (unbalanced), whereas the other half contain approximately half excitatiory and halfi inhibitory cells (balanced). We have made used of the balanced batches in previous steps (i.e. when modelling the technical variability to perform feature selection). Everything else seems pretty similar.
+```{r}
+summary(PAG_sceset_qc_norm_filt$cell.type)
+summary(PAG_sceset_qc_norm_filt$PAG.hemisphere)
+summary(PAG_sceset_qc_norm_filt$PAG.areacollection)
+summary(PAG_sceset_qc_norm_filt$mouse.sex)
+summary(PAG_sceset_qc_norm_filt$PAG.arearegistration)
+```
+
+### 5.1.2 | Checking for important technical factors or explanatory variables
+We check whether there are technical factors that contribute substantially to the heterogeneity of gene expression. If so, the specific factor may need to be regressed out to ensure that it does not inflate the variances or introduce spurious correlations. `scater` can compute the marginal R^2^ for each variable when fitting a linear model regressing expression values for each gene against just that variable, and display a density plot of the gene-wise marginal R^2^ values for the variables.
+
+For each gene, it calculates the percentage of the variance of the expression values that is explained by the variable. Small percentages (1-3%) indicate that the expression profiles of most genes are not strongly associated with this factor. If, on the other hand, we get density curves that are shifted to the right (i.e. with a peak towards the 100% end of the x-axis), this tells us that for a large proportion of the genes in our dataset this particular variable explains a large proportion of the variation.
+```{r}
+# How much of the variance does each variable explain?
+plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
+                         nvars_to_plot = 17,
+                         exprs_values = "logcounts",
+                         variables = c("mouse.id",
+                                       "mouse.sex",
+                                       "mouse.age",
+                                       "mouse.singlehousedays",
+                                       "cell.type",
+                                       "cell.fluorophor",
+                                       "slice.number",
+                                       "slice.depth",
+                                       "PAG.areacollection",
+                                       "PAG.hemisphere",
+                                       "PAG.APaxis",
+                                       "time.sinceslicinghour",
+                                       "PAGarea_celltype",
+                                       "batch.processing",
+                                       "batch.sequencing_round",
+                                       "detected",
+                                       "total"
+                                       )
+                         ) + ggtitle("Normalized logcounts with scran")
+```
+
+We can see that the two variables standing out are `batch.processing` and `mouse.id`, the same we have identified by exploring the data using the `table()` function. This makes perfect sense, as these two variables illustrate how the cells were acquired and processed. As we mentioned, due to the way we isolated cells `mouse.id` is confounded with `cell.type`: each transgenic mouse labeled either VGAT or VGluT2 neurons, which means that if we regress out the variability in `mouse.id` we will also be removing much of the biology linked to the `cell.type` that came from each mouse.
+
+A better option would be to regress out the `batch.processing`, but only half of our samples were assigned to a balanced design. For the other half, all the cells obtained from the same animal were processed together, thereby confounding the `batch.processing` with the `mouse.id` (and by extension with `cell.type`) and leading to a similar scenario as above. When modelling the technical variability we could simply ignore the unbalanced batches to select HVGs. Although we can't really follow the same approach now (it would be even worse to remove the batch effect from the balanced batches and leave the unbalanced batches uncorrected), regressing out the batch effect in the metadata slot `batch.processing` and comparing the results without the correction might be the best option we have.
+
+## Step 5.2 | Batch Correction
+Small uncontrollable differences in processing between plates can result in a batch effect, i.e., systematic differences in expression between cells on different plates. Computational correction of these effects is critical for eliminating batch-to-batch variation, allowing data across multiple batches to be combined for valid downstream analysis. Batch effects in bulk RNA sequencing studies are commonly removed with linear regression. This involves fitting a linear model to each gene’s expression profile, setting the undesirable batch term to zero and recomputing the observations sans the batch effect, yielding a set of corrected expression values for downstream analyses. Linear modelling is the basis of the `removeBatchEffect()` function from the _limma_ package (Ritchie et al. 2015) as well the `comBat()` function from the _sva_ package (Leek et al. 2012).
+
+To use this approach in a scRNA-seq context, we assume that the composition of cell subpopulations is the same across batches. We also assume that the batch effect is additive, i.e., any batch-induced fold-change in expression is the same across different cell subpopulations for any given gene. These are strong assumptions as batches derived from different individuals will naturally exhibit variation in cell type abundances and expression. Nonetheless, they may be acceptable when dealing with batches that are technical replicates generated from the same population of cells. (In fact, when its assumptions hold, linear regression is the most statistically efficient as it uses information from all cells to compute the common batch vector.) Linear modelling can also accommodate situations where the composition is known a priori by including the cell type as a factor in the linear model. `removeBatchEffect()` performs a linear regression and sets the coefficients corresponding to the blocking factors to zero. This is effective provided that the population composition within each batch is either known (and supplied as `design=`) or identical across batches. This is actually the closest to our situation, as we know exactly which cell type we are collecting and processing in each batch, so we can make use of that. Unfortunately, only half of our batches followed a balanced design, whereas for the other half each batch of cells comes from the same animal (and therefore cell type).
+
+In most scRNA-seq applications, however, the factors of variation are not identical across batches and not known in advance. This motivates the use of more sophisticated batch correction methods such as `mnnCorrect()`, based on the detection of mutual nearest neighbours (MNNs) (Haghverdi et al. 2018). The MNN approach does not rely on pre-defined or equal population compositions across batches, only requiring that a subset of the population be shared between batches. In our case, each animal could be treated as a separate batch in their own right, reflecting (presumably uninteresting) biological differences due to genotype, age, sex or other factors that are inherent to our experimental design. `mnnCorrect()` was developed to merge different datasets obtained from the same biological system. It assumes that each batch shares at least one biological condition with each other batch, thus it works well for a variety of balanced experimental designs. However, in a confounded/replicate design biological effects will not be fit/preserved and we will only be able to remove batch effects from each individual separately in order to preserve biological (and technical) variance between individuals.
+
+Batch correction is necessary for downstream procedures that are not model-based, e.g., clustering and most forms of dimensionality reduction. However, if an analysis method can accept a design matrix (such as differential expression analysis), blocking on nuisance factors in the design matrix is preferable to using `removeBatchEffect()`. This is because the latter does not account for the loss of residual degrees of freedom, nor the uncertainty of estimation of the blocking factor terms. For our experimental design, `removeBatchEffect()` seems more appropriate than `mnnCorrect()`. Whereas we know the exact composition of each batch and can provide in the `batch` argument of `removeBatchEffect()`, the main requirement for `mnnCorrect()` is unfortunately not fulfilled, as each batch contains only one of two possible cell types. We will thus apply `removeBatchEffect()` in our dataset and store the results in a new slot so that we can compare them in our clustering analysis. 
+
+*Important:* The OSCA book suggests limiting the use of per-gene corrected values to visualization, e.g., when coloring points on a t-SNE plot by per-cell expression. This can be more aesthetically pleasing than uncorrected expression values that may contain large shifts on the colour scale between cells in different batches. Use of the corrected values in any quantitative procedure should be treated with caution, and should be backed up by similar results from an analysis on the uncorrected values. For gene-based procedures like differential expression (DE) analyses or gene network construction, it is desirable to use the original log-expression values or counts with batch effects being handled explicitly using blocking terms or via a meta-analysis across batches. In the dimensionality reduction steps, we will check whether our batches actually segregate and whether batch correction improves the obtained results. If it doesn't, we will follow the guidelines from the OSCA book and proceed using the `logcounts` assay.
+
+### 5.2.1 | Applying removeBatchEffect()
+As we have already mentioned, `removeBatchEffect()` performs a linear regression and sets the coefficients corresponding to the blocking factors to zero. This function is useful for removing batch effects associated with technical variables prior to clustering or unsupervised analysis such as PCA, MDS or plotting heatmaps. The design matrix is used to describe comparisons between the samples, for example treatment effects, which should not be removed. The function fits a linear model to the data, including both batches and regular treatments, then removes the component due to the batch effects.
+
+This method is effective provided that the population composition within each batch is known or identical across batches. In our case, the composition of our cell population is _not_ identical across batches, as each batch comes from one transgenic mouse and thus has only one out of two possible cell types. However, individually aspirating cells based on expression of a transgene has the advantage that it allows us to know exactly the composition of each batch, so we can set the `design` and `batch` arguments as follows:
+```{r}
+library(limma)
+assay(PAG_sceset_qc_norm_filt, "corrected") <- removeBatchEffect(logcounts(PAG_sceset_qc_norm_filt),
+                                                                 batch = PAG_sceset_qc_norm_filt$batch.processing,
+                                                                 design = model.matrix(~PAG_sceset_qc_norm_filt$PAGarea_celltype) # Take into account both cell type and subdivision
+                                                                 )
+assayNames(PAG_sceset_qc_norm_filt)
+```
+
+If the batch effect is successfully corrected, clusters corresponding to shared cell types or states should contain cells from multiple batches. The general recommendation is to use measured raw data for statistical testing (e.g. Differential Expression Analysis), corrected data for visual comparison of data, and reduced/feature selected data for other downstream analysis based on finding the underlying biological data manifold.
+
+### 5.2.2 | Effectiveness of the correction
+We can use PCA to compare the effects of our normalization and batch correction. To evaluate the effectiveness of the correction we can plot the PCA output where colour corresponds to the technical replicates and shape corresponds to the individuals from which biological samples were acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed. In addition, if we plot the PCA results using the `size_by = total_features_by_counts` we can assess whether the count depth correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
+
+*[IMP]*: If `feature_set = NULL`, the `ntop` features with the largest variances are used instead. This literally computes the variances from the expression values without considering any mean-variance trend. Note that the value of `ntop` is ignored if `feature_set` is specified. Given that we have fitted a mean-variance trend and obtained highly variable genes from it, we will use our HVG instead of using the `ntop` option.
+```{r}
+# Compute PCA for each of the assay slots with the HVGs obtained with variance modelling:
+for(n in assayNames(PAG_sceset_qc_norm_filt)) {
+  PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                    exprs_values = n,
+                                    subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                    name = paste0("PCA_HVG_var_", n)
+  )
+}
+
+PCA_HVG_var_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                     dimred = "PCA_HVG_var_counts",
+                                     colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                     shape_by = "cell.type", # "mouse.id"
+                                     size_by = "detected"
+                                     ) + ggtitle("PCA_HVG_var_counts") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+PCA_HVG_var_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "PCA_HVG_var_logcounts_raw",
+                                            colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type", # "mouse.id"
+                                            size_by = "detected"
+                                            ) + ggtitle("PCA_HVG_var_logcounts_raw") 
+
+PCA_HVG_var_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                        dimred = "PCA_HVG_var_logcounts",
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                        shape_by = "cell.type", # "mouse.id"
+                                        size_by = "detected"
+                                        ) + ggtitle("PCA_HVG_var_logcounts") 
+
+PCA_HVG_var_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                        dimred = "PCA_HVG_var_corrected",
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                        shape_by = "cell.type", # "mouse.id"
+                                        size_by = "detected"
+                                        ) + ggtitle("PCA_HVG_var_corrected") 
+
+multiplot(PCA_HVG_var_counts, PCA_HVG_var_logcounts_raw, PCA_HVG_var_logcounts, PCA_HVG_var_corrected, cols = 2)
+```
+
+We repeat the same operation using the genes obtained from modelling the CV2-mean trend instead:
+```{r}
+# Compute PCA for each of the assay slots with the HVGs obtained with CV2 modelling:
+for(n in assayNames(PAG_sceset_qc_norm_filt)) {
+  PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                    exprs_values = n,
+                                    subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                    name = paste0("PCA_HVG_cv2_", n)
+  )
+}
+
+PCA_HVG_cv2_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                     dimred = "PCA_HVG_cv2_counts",
+                                     colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                     shape_by = "cell.type", # "mouse.id"
+                                     size_by = "detected"
+                                     ) + ggtitle("PCA_HVG_cv2_counts") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+PCA_HVG_cv2_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "PCA_HVG_cv2_logcounts_raw",
+                                            colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type", # "mouse.id"
+                                            size_by = "detected"
+                                            ) + ggtitle("PCA_HVG_cv2_logcounts_raw") 
+
+PCA_HVG_cv2_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                        dimred = "PCA_HVG_cv2_logcounts",
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                        shape_by = "cell.type", # "mouse.id"
+                                        size_by = "detected"
+                                        ) + ggtitle("PCA_HVG_cv2_logcounts") 
+
+PCA_HVG_cv2_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                        dimred = "PCA_HVG_cv2_corrected",
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration"
+                                        shape_by = "cell.type", # "mouse.id"
+                                        size_by = "detected"
+                                        ) + ggtitle("PCA_HVG_cv2_corrected") 
+
+multiplot(PCA_HVG_cv2_counts, PCA_HVG_cv2_logcounts_raw, PCA_HVG_cv2_logcounts, PCA_HVG_cv2_corrected, cols = 2)
+```
+
+Hint: try "Ctss", "Cd14", or "Cd68" as `colour_by = `. This will show how the more separated cells in the t-SNE plots are actually macrophages, with high expression levels for macrophage marker genes.
+
+Overall, we can clearly see that the first PC in the raw data is dominated by the library size / total detected genes in each sample (which explains >90% of the variance). Once we normalize and log-transform the raw counts using scran, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalization show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalization and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this). 
+
+We can also look at the change in the `plotExplanatoryVariables()` output after normalization and batch correction:
+```{r}
+for(n in assayNames(PAG_sceset_qc_norm_filt)) {
+    print(
+      plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
+                               nvars_to_plot = 17,
+                               exprs_values = n,
+                               variables = c("mouse.id",
+                                             "mouse.sex",
+                                             "mouse.age",
+                                             "mouse.singlehousedays",
+                                             "cell.type",
+                                             "cell.fluorophor",
+                                             "slice.number",
+                                             "slice.depth",
+                                             "PAG.areacollection",
+                                             "PAG.hemisphere",
+                                             "PAG.APaxis",
+                                             "time.sinceslicinghour",
+                                             "PAGarea_celltype",
+                                             "batch.processing",
+                                             "batch.sequencing_round",
+                                             "detected",
+                                             "total"
+                                             )
+                               ) + ggtitle(n)
+      ) 
+}
+```
+
+Here we can see how after applying `removeBatchEffect()`, `batch.processing` is no longer in the top of explanatory variables.`mouse.id` (and its correlate `mouse.age`) is still the highest explanatory variable, which reflects how cells were obtained. We also see some interesting variables that reflect the biology we are interested in, namely `PAGarea_celltype`, which is a combination of `PAG.areacollection` and `cell.type`, and `PAG.APaxis`. Although `batch.processing` is an important variable (and we certainly have batch effects, inherent to this type of experiments), the fact that we don't have properly balanced batches (only half of our batches are balanced) makes it hard to remove the batch effect alone leaving the biology intact, as by removing it we will also be removing some of its confounds linked to biology (such as `mouse.id` and `cell.type`). Given that in the PCA plots using HVGs from Var and CV2 modelling we don't see a massive batch effect, but rather we see interspread batches, we will continue to use the `corrected` assay for plotting and we will stick to the `logcounts` assay for clustering and downstream analysis. 
+
+## Step 5.3 | Dimensionality reduction
+Many scRNA-seq analysis procedures involve comparing cells based on their expression values across multiple genes. For example, clustering aims to identify cells with similar transcriptomic profiles by computing Euclidean distances across genes. In these applications, each individual gene represents a dimension of the data. More intuitively, if we had a scRNA-seq data set with two genes, we could make a two-dimensional plot where each axis represents the expression of one gene and each point in the plot represents a cell. This concept can be extended to data sets with thousands of genes where each cell’s expression profile defines its location in the high-dimensional expression space.
+
+As the name suggests, dimensionality reduction aims to reduce the number of separate dimensions in the data. This is possible because different genes are correlated if they are affected by the same biological process. Thus, we do not need to store separate information for individual genes, but can instead compress multiple features into a single dimension, e.g., an “eigengene” (Langfelder and Horvath 2007). This reduces computational work in downstream analyses, as calculations only need to be performed for a few dimensions rather than thousands of genes; reduces noise by averaging across multiple genes to obtain a more precise representation of the patterns in the data; and enables effective plotting of the data, for those of us who are not capable of visualizing more than 3 dimensions
+
+### 5.3.1 | Principal component analysis
+Principal components analysis (PCA) discovers axes in high-dimensional space that capture the largest amount of variation. This is best understood by imagining each axis as a line. Say we draw a line anywhere, and we move all cells in our data set onto this line by the shortest path. The variance captured by this axis is defined as the variance across cells along that line. In PCA, the first axis (or “principal component”, PC) is chosen such that it captures the greatest variance across cells. The next PC is chosen such that it is orthogonal to the first and captures the greatest remaining amount of variation, and so on.
+
+By definition, the top PCs capture the dominant factors of heterogeneity in the data set. Thus, we can perform dimensionality reduction by restricting downstream analyses to the top PCs. This strategy is simple, highly effective and widely used throughout the data sciences. It takes advantage of the well-studied theoretical properties of the PCA - namely, that a low-rank approximation formed from the top PCs is the optimal approximation of the original data for a given matrix rank. It also allows us to use a wide range of fast PCA implementations for scalable and efficient data analysis.
+
+When applying PCA to scRNA-seq data, our assumption is that biological processes affect multiple genes in a coordinated manner. This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behaviour of many genes. By comparison, random technical or biological noise is expected to affect each gene independently. There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs. This motivates the use of the earlier PCs in our downstream analyses, which concentrates the biological signal to simultaneously reduce computational work and remove noise.
+
+We perform the PCA on the log-normalized expression values using the `runPCA()` function from _scater_. By default, `runPCA()` will compute the first 50 PCs and store them in the `reducedDims()` of the output SingleCellExperiment object. We can use only the top 2000 genes with the largest biological components to reduce computational work and noise. Specifically, PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure. This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs.
+```{r}
+# We already performed PCA using all HVG in the previous step. 
+reducedDimNames(PAG_sceset_qc_norm_filt)
+```
+
+```{r}
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_var_corrected",
+               colour_by = "cell.type", # "batch.processing", "PAG.arearegistration"
+               shape_by = "PAG.arearegistration"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_var_corrected") 
+               
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_cv2_corrected",
+               colour_by = "cell.type", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "PAG.arearegistration"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_cv2_corrected") 
+```
+
+### 5.3.2 | Choosing the number of PCs
+How many of the top PCs should we retain for downstream analyses? The choice of the number of PCs d is a decision that is analogous to the choice of the number of HVGs to use. Using more PCs will avoid discarding biological signal in later PCs, at the cost of retaining more noise. Most practitioners will simply set d to a “reasonable” but arbitrary value, typically ranging from 10 to 50. This is often satisfactory provided it is coupled with sufficient testing of alternative values to explore other perspectives of the data at a different bias-variance trade-off. Nonetheless, we will describe some more data-driven strategies to guide a suitable choice of d.
+
+We can look at the proportion of variance explained by each PC and keep the components before the "elbow" in the curve of a scree plot:
+```{r}
+library(PCAtools)
+set.seed(1991)
+
+for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_sceset_qc_norm_filt))]) { # First reducedDimNames instance is the PCA with the ColData for QC
+  principal_components <- reducedDim(PAG_sceset_qc_norm_filt, n)
+  proportion_var <- attr(principal_components, "percentVar")
+  chosen_elbow <- PCAtools::findElbowPoint(proportion_var)
+  print(chosen_elbow)
+  plot(proportion_var, xlab = "PC", ylab = "Proportion of variance explained (%)", main = n)
+  abline(v = chosen_elbow, col = "red")
+}
+```
+
+Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for d.
+
+From a practical perspective, the use of the elbow point tends to retain fewer PCs compared to other methods. The definition of “much more variance” is relative so, in order to be retained, later PCs must explain an amount of variance that is comparable to that explained by the first few PCs. Strong biological variation in the early PCs will shift the elbow to the left, potentially excluding weaker (but still interesting) variation in the next PCs immediately following the elbow.
+
+### 5.3.3 | Denoising expression values using PCA
+Another strategy is to retain all PCs until the percentage of total variation explained reaches some threshold. For example, we might retain the top set of PCs that explains 80% of the total variation in the data. Of course, it would be pointless to swap one arbitrary parameter d for another T. Instead, we derive a suitable value for T by calculating the proportion of variance in the data that is attributed to the biological component. This is done using the `denoisePCA()` function with the variance modelling results from `modelGeneVar()` or related functions, where T is defined as the ratio of the sum of the biological components to the sum of total variances. Here, explicit feature selection is not strictly necessary, as `denoisePCA()` will automatically restrict the PCA to genes with positive biological components to ensure that T is always a positive value.
+
+* `denoisePCA()` will only use genes that have positive biological components, i.e., variances greater than the fitted trend. This guarantees that the total technical variance to be discarded will not be greater than the total variance in the data.
+* For the `technical = ` argument, the function will accept the trend function directly or a vector of technical components per gene. We can supply the DataFrame from `modelGeneVar()` to allow the function to adjust for the loss of residual degrees of freedom after batch correction. Specifically, the variance in the batch-corrected matrix is slightly understated, requiring some rescaling of the technical components to compensate.
+* No filtering is performed on abundance here, which ensures that PCs corresponding to rare subpopulations can still be detected. Discreteness is less of an issue as low-abundance genes also have lower variance, thus reducing their contribution to the PCA.
+* It is also possible to obtain a low-rank approximation of the original expression matrix, capturing the variance equivalent to the retained PCs. This is useful for denoising prior to downstream procedures that require gene-wise expression values.
+```{r}
+set.seed(1991)
+
+# Run denoisePCA for hvg_var_out_no_spikes_filt
+dim(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes)
+var_model_no_spikes$filter <- rownames(var_model_no_spikes) %in% rownames(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes)
+var_model_no_spikes_filt <- var_model_no_spikes[var_model_no_spikes$filter==TRUE, ]
+dim(var_model_no_spikes_filt)
+
+PAG_var_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
+                               technical = var_model_no_spikes_filt, 
+                               subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_filt,
+                               assay.type = "logcounts")
+
+print(ncol(reducedDim(PAG_var_denoised, "PCA")))
+
+plotReducedDim(PAG_var_denoised,
+               dimred = "PCA",
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
+
+# Run denoisePCA for hvg_var_out_no_spikes_block_filt
+dim(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes_block)
+var_model_no_spikes_block$filter <- rownames(var_model_no_spikes_block) %in% rownames(PAG_sceset_qc_norm_filt)
+dim(var_model_no_spikes_block)
+var_model_no_spikes_block_filt <- var_model_no_spikes_block[var_model_no_spikes_block$filter==TRUE, ]
+dim(var_model_no_spikes_block_filt)
+
+PAG_var_block_denoised <- denoisePCA(PAG_sceset_qc_norm_filt,
+                                     technical = var_model_no_spikes_block_filt, 
+                                     subset.row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                     assay.type = "logcounts")
+
+print(ncol(reducedDim(PAG_var_block_denoised, "PCA")))
+
+plotReducedDim(PAG_var_block_denoised,
+               dimred = "PCA",
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "logcounts")
+```
+
+The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
+
+The dimensionality of the output represents the lower bound on the number of PCs required to retain all biological variation. Any fewer PCs will definitely discard some aspect of biological signal. Note that the converse is not true, i.e., there is no guarantee that the retained PCs capture all of the signal, which is only generally possible if no dimensionality reduction is performed at all. The returned value of _d_ provides a reasonable choice of rank when we want to retain as much signal as possible while still removing some noise.
+
+From a practical perspective, the `denoisePCA()` approach usually retains more PCs than the elbow point method. This is because the former does not compare PCs to each other and thus does not discard PCs corresponding to secondary factors of variation. The downside is that many minor aspects of variation may not be interesting (e.g., transcriptional bursting) and their retention would only add irrelevant noise. Thus, whether this is a “better” approach depends on the analyst’s willingness to increase noise in order to preserve weaker biological signals.
+
+Incidentally, `denoisePCA()` imposes internal caps on the number of PCs that can be chosen in this manner. By default, the number is bounded within the “reasonable” limits of 5 and 50 to avoid selection of too few PCs (when technical noise is high relative to biological variation) or too many PCs (when technical noise is very low).
+
+## Step 5.4 | Visualization of the data after dimensionality reduction
+Dimensionality reduction allows us to compress the data into 2 or 3 dimensions for plotting. 
+
+### 5.4.1 | Visualization with PCA
+Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components (PCs). The number of principal components is less than or equal to the number of original variables. Mathematically, the PCs correspond to the eigenvectors of the covariance matrix. The eigenvectors are sorted by eigenvalue so that the first principal component accounts for as much of the variability in the data as possible, and each succeeding component in turn has the highest variance possible under the constraint that it is orthogonal to the preceding components.
+
+We can apply PCA to visualize the relationships between cells in our dataset. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Ideally, we do this using the `logcounts` or the `corrected` slot of our `SingleCellExperiment` object. Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. BUT - log-transformation is not a proper normalization step and is not enough to account for different technical factors between the cells (e.g. sequencing depth). Therefore, we should not use `logcounts_raw` for our downstream analysis, but instead use the __logcounts__ slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalized by library size. By default `scater` only uses the top 500 most variable genes to calculate the PCA, but this can be adjusted by changing the __ntop__ argument. We can also choose to only use our HVGs, or any given list of genes we may obtain by other feature selection strategies.
+
+The problem here is that PCA is a linear technique, i.e., only variation along a line in high-dimensional space is captured by each PC. As such, it cannot efficiently pack differences in d dimensions into the first 2 PCs.
+```{r}
+reducedDimNames(PAG_sceset_qc_norm_filt)
+```
+
+```{r}
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_var_corrected",
+               colour_by = "cell.type", # "batch.processing", "PAG.arearegistration"
+               shape_by = "PAG.arearegistration"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_var_corrected") 
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_var_corrected",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_var_corrected") 
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_var_corrected",
+               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_var_corrected")
+               
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_cv2_corrected",
+               colour_by = "cell.type", # "batch.processing", "PAG.arearegistration"
+               shape_by = "PAG.arearegistration"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_cv2_corrected")
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_cv2_corrected",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_cv2_corrected")
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_cv2_corrected",
+               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("PCA_HVG_cv2_corrected") 
+```
+
+One workaround is to plot several of the top PCs against each other in pairwise plots. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Additional components can be visualized by increasing the `ncomponents` argument in `plotPCA` to construct pairwise plots. The percentage of variance explained by each component can also be obtained by running `plotPCA` with `return_SCESet = TRUE`, and then calling `reducedDimension` on the returned object. However, it is difficult to interpret multiple plots simultaneously, and even this approach is not sufficient to separate some of the annotated subpopulations.
+```{r}
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "PCA_HVG_var_corrected",
+               ncomponents = 4,
+               colour_by = "cell.type",
+               shape_by = "PAG.arearegistration",
+               by_exprs_values = "corrected")
+```
+
+Some advantages of using PCA for visualization are that it is predictable and will not introduce artificial structure in the visualization. It is also deterministic and robust to small changes in the input values. However, PCA is usually not satisfactory for visualization of complex populations.
+
+### 5.4.2 | t-SNE (t-stochastic neighbor embedding)
+Another widely used approach for dimensionality reduction is the t-stochastic neighbour embedding (t-SNE) method (Van der Maaten and Hinton 2008). tSNE combines dimensionality reduction with random walks on the nearest-neighbour network to map high dimensional data to a 2-dimensional space while preserving local distances between cells. t-SNE tends to work better than PCA for separating cells in more diverse populations. This is because the former can directly capture non-linear relationships in high-dimensional space, whereas the latter must represent them (suboptimally) as linear components. However, this improvement comes at the cost of more computational effort and complexity. In particular, the non-linear and stochastic nature of the algorithm means that running it multiple times on the same dataset will result in different plots, making the results more difficult to intuitively interpret. Users should thus run the algorithm several times to ensure that the results are representative, and then set a `seed` to ensure that the chosen results are reproducible. It is also advisable to test different settings of the `perplexity` parameter as this will affect the distribution of points in the low-dimensional space.
+
+tSNE plots are the _de facto_ standard for visualization of scRNA-seq data, but should *NOT* be used for clustering. Furthermore, tSNE requires you to provide a value of `perplexity` which reflects the number of neighbours used to build the nearest-neighbour network - a high value creates a dense network which clumps cells together, whereas a low value makes the network more sparse allowing groups of cells to separate from each other. `scater` uses a default `perplexity` equal to the total number of cells divided by five (rounded down). You should try different perplexities and run it several times to make sure you are not getting a weird result. If your data are very homogeneous the tSNE plots are going to be hard to interpret, whereas if they contain very well defined clusters it will visualize them very nicely.
+
+One of the main disadvantages of t-SNE is that it is much more computationally intensive than other visualization methods. We mitigate this effect by setting `dimred="PCA"` in `runtTSNE()`, which instructs the function to perform the t-SNE calculations on the top PCs to exploit the data compaction and noise removal provided by the PCA. It is possible to run t-SNE on the original expression matrix but this is less efficient.
+
+Another issue with t-SNE is that it requires the user to be aware of additional parameters. It involves a random initialization so we need to (i) repeat the visualization several times to ensure that the results are representative and (ii) set the seed to ensure that the chosen results are reproducible. The `perplexity` is another important parameter that determines the granularity of the visualization. Low perplexities will favour resolution of finer structure, possibly to the point that the visualization is compromised by random noise. Thus, it is advisable to test different perplexity values to ensure that the choice of perplexity does not drive the interpretation of the plot. As a rule of thumb, N^1/2 shouldn't be far off the right perplexity, according to [this post by Nikolay Oskolkov](https://towardsdatascience.com/how-to-tune-hyperparameters-of-tsne-7c0596a18868)
+
+Finally, it is tempting to interpret the t-SNE results as a “map” of single-cell identities. This is generally unwise as any such interpretation is easily misled by the size and positions of the visual clusters. Specifically, t-SNE will inflate dense clusters and compress sparse ones, such that we cannot use the size as a measure of subpopulation heterogeneity. Similarly, t-SNE is not obliged to preserve the relative locations of non-neighboring clusters, such that we cannot use their positions to determine relationships between distant clusters. Despite its shortcomings, t-SNE is a proven tool for general-purpose visualization of scRNA-seq data and remains a popular choice in many analysis pipelines.
+```{r}
+# Compute tSNE with different perplexities:
+set.seed(1991)
+range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
+for(n in range_of_perplexities) {
+  PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
+                                     exprs_values = "corrected",
+                                     subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                     dimred = "PCA_HVG_var_corrected", 
+                                     n_dimred = 25,
+                                     perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
+                                     theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
+                                     max_iter = 5000, # Default is 1000. 
+                                     eta = 1000, # Learning rate (default: 200) - increased as per suggestion of Kobak and Berens, Nature Communications 2019
+                                     exaggeration_factor = 12, # Default: 12
+                                     name = paste0("tSNE_var_corrected_perplexity_", n)
+  )
+}
+
+reducedDimNames(PAG_sceset_qc_norm_filt)
+
+tSNE_HVG_var_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                           dimred = "tSNE_var_corrected_perplexity_5",
+                                           colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                           shape_by = "cell.type"#, # "mouse.id"
+                                           #size_by = "detected"
+                                           ) + ggtitle("tSNE_var_corrected_perplexity_5") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_var_corrected_perplexity_10",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_10") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_var_corrected_perplexity_15",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_15") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_var_corrected_perplexity_20",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_20") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_var_corrected_perplexity_30",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_30") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_var_corrected_perplexity_40",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_40") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_var_corrected_perplexity_50",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_50") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_var_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_var_corrected_perplexity_75",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_75") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+multiplot(tSNE_HVG_var_corrected_5, tSNE_HVG_var_corrected_10, tSNE_HVG_var_corrected_15, tSNE_HVG_var_corrected_20, 
+          cols = 2)
+multiplot(tSNE_HVG_var_corrected_30, tSNE_HVG_var_corrected_40, tSNE_HVG_var_corrected_50, tSNE_HVG_var_corrected_75, 
+          cols = 2)
+```
+
+Repeat using the PCA results obtained with `HVG_cv2_corrected`:
+```{r}
+# Compute tSNE with different perplexities:
+set.seed(1991)
+range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
+for(n in range_of_perplexities) {
+  PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
+                                     exprs_values = "corrected",
+                                     subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                     dimred = "PCA_HVG_cv2_corrected", 
+                                     n_dimred = 25,
+                                     perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
+                                     theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
+                                     max_iter = 5000, # Default is 1000. 
+                                     eta = 1000, # Learning rate (default: 200) - increased as per suggestion of Kobak and Berens, Nature Communications 2019
+                                     exaggeration_factor = 12, # Default: 12
+                                     name = paste0("tSNE_cv2_corrected_perplexity_", n)
+  )
+}
+
+reducedDimNames(PAG_sceset_qc_norm_filt)
+
+tSNE_HVG_cv2_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                           dimred = "tSNE_cv2_corrected_perplexity_5",
+                                           colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                           shape_by = "cell.type"#, # "mouse.id"
+                                           #size_by = "detected"
+                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_5") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_corrected_perplexity_10",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_10") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_corrected_perplexity_15",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_15") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_corrected_perplexity_20",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_20") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_corrected_perplexity_30",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_30") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                           dimred = "tSNE_cv2_corrected_perplexity_40",
+                                           colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                           shape_by = "cell.type"#, # "mouse.id"
+                                           #size_by = "detected"
+                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_40") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_corrected_perplexity_50",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_50") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+tSNE_HVG_cv2_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                            dimred = "tSNE_cv2_corrected_perplexity_75",
+                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            shape_by = "cell.type"#, # "mouse.id"
+                                            #size_by = "detected"
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_75") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+
+
+multiplot(tSNE_HVG_cv2_corrected_5, tSNE_HVG_cv2_corrected_10, tSNE_HVG_cv2_corrected_15, tSNE_HVG_cv2_corrected_20,
+          cols = 2)
+multiplot(tSNE_HVG_cv2_corrected_30, tSNE_HVG_cv2_corrected_40, tSNE_HVG_cv2_corrected_50, tSNE_HVG_cv2_corrected_75, 
+          cols = 2)
+```
+
+### 5.4.3 | UMAP (uniform manifold approximation and projection)
+The uniform manifold approximation and projection (UMAP) method (McInnes, Healy, and Melville 2018) is an alternative to t-SNE for non-linear dimensionality reduction. It is roughly similar to t-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space. However, the two methods are based on different theory, represented by differences in the various graph weighting equations, which leads to a different visualization.
+```{r}
+set.seed(1991)
+range_of_neighbors = list(5, 10, 15, 20)
+range_of_min_dist = list(0.01, 0.05, 0.1, 0.2)
+
+for(j in range_of_neighbors) {
+  for (k in range_of_min_dist) {
+    PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt,
+                                       exprs_values = "corrected",
+                                       subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, 
+                                       dimred = "PCA_HVG_var_corrected",
+                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
+                                       n_neighbors = j, #  Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
+                                       metric = "euclidean",
+                                       n_epochs = 500, # Number of epochs to use during the optimization of the embedded coordinates.
+                                       learning_rate = 1,
+                                       min_dist = k, # Low values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
+                                       name = paste0("UMAP_var_corrected_", j, "_neighbors_", k, "_min_dist"))
+  }
+}
+
+reducedDimNames(PAG_sceset_qc_norm_filt)
+
+#### n_neighbors = 5
+UMAP_var_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_5_neighbors_0.01_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_5_neighbors_0.01_min_dist")
+UMAP_var_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_5_neighbors_0.05_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_5_neighbors_0.05_min_dist")
+UMAP_var_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                              dimred = "UMAP_var_corrected_5_neighbors_0.1_min_dist",
+                                                              colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                              shape_by = "cell.type"#, # "mouse.id"
+                                                              #size_by = "detected"
+                                                              ) + ggtitle("UMAP_var_corrected_5_neighbors_0.1_min_dist")
+UMAP_var_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_5_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_5_neighbors_0.2_min_dist")
+
+#### n_neighbors = 10
+UMAP_var_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_corrected_10_neighbors_0.01_min_dist")
+UMAP_var_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+UMAP_var_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_10_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_10_neighbors_0.1_min_dist")
+UMAP_var_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_10_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_10_neighbors_0.2_min_dist")
+
+#### n_neighbors = 15
+UMAP_var_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_corrected_15_neighbors_0.01_min_dist")
+UMAP_var_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")
+UMAP_var_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_15_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.1_min_dist")
+UMAP_var_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_15_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.2_min_dist")
+
+#### n_neighbors = 20
+UMAP_var_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_corrected_20_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_corrected_20_neighbors_0.01_min_dist")
+UMAP_var_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_var_corrected_20_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_var_corrected_20_neighbors_0.05_min_dist")
+UMAP_var_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_20_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_20_neighbors_0.1_min_dist")
+UMAP_var_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_var_corrected_20_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_var_corrected_20_neighbors_0.2_min_dist")
+
+#### Plot them all:
+multiplot(UMAP_var_corrected_5_neighbors_0.01_min_dist, UMAP_var_corrected_5_neighbors_0.05_min_dist,
+          UMAP_var_corrected_5_neighbors_0.1_min_dist, UMAP_var_corrected_5_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_var_corrected_10_neighbors_0.01_min_dist, UMAP_var_corrected_10_neighbors_0.05_min_dist,
+          UMAP_var_corrected_10_neighbors_0.1_min_dist, UMAP_var_corrected_10_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_var_corrected_15_neighbors_0.01_min_dist, UMAP_var_corrected_15_neighbors_0.05_min_dist,
+          UMAP_var_corrected_15_neighbors_0.1_min_dist, UMAP_var_corrected_15_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_var_corrected_20_neighbors_0.01_min_dist, UMAP_var_corrected_20_neighbors_0.05_min_dist,
+          UMAP_var_corrected_20_neighbors_0.1_min_dist, UMAP_var_corrected_20_neighbors_0.2_min_dist,
+          cols = 2)
+```
+
+```{r}
+set.seed(1991)
+range_of_neighbors = list(5, 10, 15, 20) # 15 by default
+range_of_min_dist = list(0.01, 0.05, 0.1, 0.2) # 0.01 by default
+
+for(j in range_of_neighbors) {
+  for (k in range_of_min_dist) {
+    PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt,
+                                       exprs_values = "corrected",
+                                       subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt, 
+                                       dimred = "PCA_HVG_cv2_corrected",
+                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
+                                       n_neighbors = j, #  Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
+                                       metric = "euclidean",
+                                       n_epochs = 500, # Number of epochs to use during the optimization of the embedded coordinates.
+                                       learning_rate = 1,
+                                       min_dist = k, # Low values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
+                                       name = paste0("UMAP_cv2_corrected_", j, "_neighbors_", k, "_min_dist"))
+  }
+}
+
+reducedDimNames(PAG_sceset_qc_norm_filt)
+
+#### n_neighbors = 5
+UMAP_cv2_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_5_neighbors_0.01_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.01_min_dist")
+UMAP_cv2_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_5_neighbors_0.05_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.05_min_dist")
+UMAP_cv2_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                              dimred = "UMAP_cv2_corrected_5_neighbors_0.1_min_dist",
+                                                              colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                              shape_by = "cell.type"#, # "mouse.id"
+                                                              #size_by = "detected"
+                                                              ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.1_min_dist")
+UMAP_cv2_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_5_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.2_min_dist")
+
+#### n_neighbors = 10
+UMAP_cv2_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.01_min_dist")
+UMAP_cv2_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.05_min_dist")
+UMAP_cv2_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_10_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.1_min_dist")
+UMAP_cv2_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_10_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.2_min_dist")
+
+#### n_neighbors = 15
+UMAP_cv2_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")
+UMAP_cv2_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_corrected_15_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.05_min_dist")
+UMAP_cv2_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.1_min_dist")
+UMAP_cv2_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_15_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.2_min_dist")
+
+#### n_neighbors = 20 
+UMAP_cv2_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.01_min_dist")
+UMAP_cv2_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                                dimred = "UMAP_cv2_corrected_20_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                                shape_by = "cell.type"#, # "mouse.id"
+                                                                #size_by = "detected"
+                                                                ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.05_min_dist")
+UMAP_cv2_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_20_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.1_min_dist")
+UMAP_cv2_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                               dimred = "UMAP_cv2_corrected_20_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                                               shape_by = "cell.type"#, # "mouse.id"
+                                                               #size_by = "detected"
+                                                               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.2_min_dist")
+
+#### Plot them all:
+multiplot(UMAP_cv2_corrected_5_neighbors_0.01_min_dist, UMAP_cv2_corrected_5_neighbors_0.05_min_dist,
+          UMAP_cv2_corrected_5_neighbors_0.1_min_dist, UMAP_cv2_corrected_5_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_cv2_corrected_10_neighbors_0.01_min_dist, UMAP_cv2_corrected_10_neighbors_0.05_min_dist,
+          UMAP_cv2_corrected_10_neighbors_0.1_min_dist, UMAP_cv2_corrected_10_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_cv2_corrected_15_neighbors_0.01_min_dist, UMAP_cv2_corrected_15_neighbors_0.05_min_dist,
+          UMAP_cv2_corrected_15_neighbors_0.1_min_dist, UMAP_cv2_corrected_15_neighbors_0.2_min_dist,
+          cols = 2)
+multiplot(UMAP_cv2_corrected_20_neighbors_0.01_min_dist, UMAP_cv2_corrected_20_neighbors_0.05_min_dist,
+          UMAP_cv2_corrected_20_neighbors_0.1_min_dist, UMAP_cv2_corrected_20_neighbors_0.2_min_dist,
+          cols = 2)
+```
+
+Compared to t-SNE, the UMAP visualization tends to have more compact visual clusters with more empty space between them. It also attempts to preserve more of the global structure than t-SNE. From a practical perspective, UMAP is much faster than t-SNE, which may be an important consideration for large datasets. UMAP also involves a series of randomization steps so setting the seed is critical. 
+
+Like t-SNE, UMAP has its own suite of hyperparameters that affect the visualization. Of these, the number of neighbours (`n_neighbors`) and the minimum distance between embedded points (`min_dist`) have the greatest effect on the granularity of the output. If these values are too low, random noise will be incorrectly treated as high-resolution structure, while values that are too high will discard fine structure altogether in favour of obtaining an accurate overview of the entire dataset. Again, it is a good idea to test a range of values for these parameters to ensure that they do not compromise any conclusions drawn from a UMAP plot.
+
+It is arguable whether the UMAP or t-SNE visualizations are more useful or aesthetically pleasing. UMAP aims to preserve more global structure but this necessarily reduces resolution within each visual cluster. However, UMAP is unarguably much faster, and for that reason alone, it is increasingly displacing t-SNE as the method of choice for visualizing large scRNA-seq data sets.
+
+### 5.4.4 | Choosing the most representative plots
+As we have seen, tSNE and UMAP offer different solutions to represent the data in low dimensions. We have explored the data using both approaches and can see that the HVGs identified using the CV2 method have actually more power in separating subsets of neurons than the HVGs obtained using the Variance. It also seems that UMAP does a better job in representing our data in low-dimensional space, and we can observe both in tSNE and UMAP plots how excitatory and inhibitory cells separate quite clearly, and also somewhat distribute according to their anatomical origin. We also very clearly observe a minor subset of neurons that separate from the two main groups, and they have high expression of macrophage markers, indicating that some of the cells might've been contaminated by immune cells. 
+```{r}
+# Plot the selected t-SNE
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "tSNE_var_corrected_perplexity_20",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id" 
+               #size_by = "detected"
+               ) + ggtitle("tSNE_var_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "tSNE_cv2_corrected_perplexity_20",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("tSNE_cv2_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+
+# Plot the selected t-SNE coloring for Cd68 expression (marker for cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "tSNE_var_corrected_perplexity_20",
+               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("tSNE_var_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "tSNE_cv2_corrected_perplexity_20",
+               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("tSNE_cv2_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+
+# Plot the selected UMAP
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.1_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.01_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+
+# Plot the selected UMAP coloring for Cd68 expression (marker for cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
+               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+
+# Potential code to store plots when final:
+#saveRDS(UMAP_var_corrected_15_neighbors_0.05_min_dist, file = "filepath/filename.rds")
+#ggarrange(plotlist = list(plot1, plot2), ncol = 2, nrow = 1)
+#ggsave(filename = str_c("results/plots/", date, "_tsne_smart-seq2.pdf"),
+#       plot = tsne_smart,
+#       height = 7, width = 8)
+```
+
+### 5.4.5 | Final notes on interpeting dimensionality reduction plots
+Dimensionality reduction for visualization necessarily involves discarding information and distorting the distances between cells in order to fit high-dimensional data into a 2-dimensional space. One might wonder whether the results of such extreme data compression can be trusted. Some of our more quantitative colleagues consider such visualizations to be more artistic than scientific, fit for little but impressing collaborators and reviewers. Perhaps this perspective is not entirely invalid, but we suggest that there is some value to be extracted from them provided that they are accompanied by an analysis of a higher-rank representation.
+
+To illustrate, consider the interaction between clustering and t-SNE. As a general rule, we would not perform clustering on the t-SNE coordinates. Rather, we would cluster on the first 10-50 PCs and then visualize the cluster identities on the t-SNE plot. This ensures that clustering makes use of the information that was lost during compression into two dimensions. The t-SNE plot can then be used for a diagnostic inspection of the clustering output. In particular, the plot is most useful for checking whether two clusters are actually neighboring subclusters or whether a cluster can be split into further subclusters, which are generally safe interpretations of t-SNE coordinates.
+
+It is worth elaborating on why we should not perform downstream analyses directly on the t-SNE or UMAP coordinates. Let us put aside the fact that operating on the high-dimensional representations preserves more information; from a naive perspective, using the t-SNE coordinates is very tempting as it ensures that any results are immediately consistent with the visualizations (regardless of whether they are right). However, this can actually be considered a disservice as it masks the uncertainty of the results, leading us to place more confidence in them than is warranted. Rather than being errors, major discrepancies can instead be useful for motivating further investigation into the more ambiguous parts of the dataset; conversely, the lack of discrepancies increases trust in the results.
+
+## Step 5.5 | Save the filtered, corrected, and denoised SingleCellExperiment object
+```{r}
+saveRDS(PAG_sceset_qc_norm_filt, file = "PAG_sceset_qc_norm_filt_corr.rds")
+print("Part 5 - Done!")
+```
+
+```{r}
+sessionInfo()
+```
