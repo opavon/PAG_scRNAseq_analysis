@@ -38,7 +38,6 @@ The simplest approach to feature selection is to select the most variable genes 
 We continue using the `PAG_sceset_qc_norm` after normalization. We should thus have a `logcounts` slot in `assays`:
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
-set.seed(1991)
 options(stringsAsFactors = FALSE)
 library(SingleCellExperiment)
 library(scater)
@@ -535,9 +534,13 @@ write.table(file = "PAG_hvg_cv2_out_no_spikes_filt.tsv", hvg_cv2_out_no_spikes_f
 write.table(file = "PAG_hvg_cv2_out_no_spikes_block_filt.tsv", hvg_cv2_out_no_spikes_block_filt, sep = "\t", quote = FALSE, col.names = NA)
 ```
 
-## Step 4.4 | Save the filtered SingleCellExperiment object
+## Step 4.4 | Save the filtered SingleCellExperiment object containing HVGs
 ```{r}
 # Save the filtered data:
 saveRDS(PAG_sceset_qc_norm_filt, file = "PAG_sceset_qc_norm_filt.rds")
 print("Part 4 - Done!")
+```
+
+```{r}
+sessionInfo()
 ```

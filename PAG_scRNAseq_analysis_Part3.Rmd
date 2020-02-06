@@ -62,7 +62,6 @@ In our case, we expect our dataset to contain a homogeneous population of neuron
 We will use `scran` to calculate size factors for our samples and then use them for normalization. Importantly, see Vallejos et al., Nature Methods 2017 for an explanation of why it is not a good idea to use CPM normalization on scRNA-seq data.
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
-set.seed(1991)
 options(stringsAsFactors = FALSE)
 library(SingleCellExperiment)
 library(scater)
@@ -75,6 +74,7 @@ assayNames(PAG_sceset_qc)
 We should _not_ include spike-ins in the normalization step, as we want to normalize by the genes each cell endogenously expressed. We can later calculate separate size factors for the spike-in transcripts.
 ```{r}
 # For large datasets of highly heterogeneous data with multiple cell types we should run a preclustering step:
+# set.seed(1991)
 # qclust <- quickCluster(PAG_sceset_qc, min.size = 30)
 # PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, sizes = 15, clusters = qclust)
 # PAG_sceset_qc <- logNormCounts(PAG_sceset_qc)
@@ -185,7 +185,7 @@ p3 <- plotRLE(PAG_sceset_qc,
 #plot(p3)
 ```
 
-## Step 3.5 | Save a normalized SingleCellExperiment object
+## Step 3.5 | Save the SingleCellExperiment object containing the log-normalized counts
 We now have normalized our gene expression values for our dataset, so we can store our `SingleCellExperiment` object and proceed to identifying highly variable genes.
 ```{r}
 # Save the normalized data:

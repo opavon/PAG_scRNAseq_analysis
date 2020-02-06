@@ -28,33 +28,33 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 
 ***
 
-# Before we get Started
+# Before we get Started (uncomment if you need to run)
 ## Clean start - Delete user installed packages [optional]
 If for whatever reason you need to start over because your packages stopped working, try running the following to delete all user installed packages and then proceed to reinstall everything from scratch (source: [How to remove all user installed packages in R](https://www.r-bloggers.com/how-to-remove-all-user-installed-packages-in-r/)):
 ```{r, echo=FALSE}
-length(installed.packages())
-
-# Create a list of all installed packages:
-ip <- as.data.frame(installed.packages())
-head(ip)
-
-# If you use MRO, make sure that no packages in this library will be removed:
-ip <- subset(ip, !grepl("MRO", ip$LibPath))
-
-# We don't want to remove base or recommended packages either:
-ip <- ip[!(ip[,"Priority"] %in% c("base", "recommended")),]
-
-# Determine the library where the packages are installed:
-path.lib <- unique(ip$LibPath)
-
-# Create a vector with all the names of the packages you want to remove:
-pkgs.to.remove <- ip[,1]
-head(pkgs.to.remove)
-
-# Remove the packages:
-sapply(pkgs.to.remove, remove.packages, lib = path.lib)
-
-length(installed.packages())
+# length(installed.packages())
+# 
+# # Create a list of all installed packages:
+# ip <- as.data.frame(installed.packages())
+# head(ip)
+# 
+# # If you use MRO, make sure that no packages in this library will be removed:
+# ip <- subset(ip, !grepl("MRO", ip$LibPath))
+# 
+# # We don't want to remove base or recommended packages either:
+# ip <- ip[!(ip[,"Priority"] %in% c("base", "recommended")),]
+# 
+# # Determine the library where the packages are installed:
+# path.lib <- unique(ip$LibPath)
+# 
+# # Create a vector with all the names of the packages you want to remove:
+# pkgs.to.remove <- ip[,1]
+# head(pkgs.to.remove)
+# 
+# # Remove the packages:
+# sapply(pkgs.to.remove, remove.packages, lib = path.lib)
+# 
+# length(installed.packages())
 ```
 
 ## Pre-required installation and necessary packages
@@ -64,23 +64,23 @@ Before installing any packages, check that TLS1.0 is unchecked and both TLS1.1 a
 
 Once you have this, start an RStudio session and install the following packages by running the code in the console (not from the notebook chunk). You only need to install a package once, then you can load it using `library()`.
 ```{r}
-# Consider setting stringsAsFactors=FALSE to make R read text as character data instead of factors. This must be done at the start of each R session:
-options(stringsAsFactors = FALSE)
-
-# Install packages from CRAN:
-install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "igraph", "knitr", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse", "uwot"))
-install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
-
-# Install Bioconducor:
-install.packages("BiocManager")
-library(BiocManager)
-
-# Install packages from Bioconductor:
-BiocManager::install(c("AnnotationDbi", "AnnotationHub", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "dendextend", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "ensembldb", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "limma", "M3Drop", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "PCAtools", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "schex", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
-
-# Install packages from github:
-library(devtools)
-devtools::install_github("iaconogi/bigSCale2")
+# # Consider setting stringsAsFactors=FALSE to make R read text as character data instead of factors. This must be done at the start of each R session:
+# options(stringsAsFactors = FALSE)
+# 
+# # Install packages from CRAN:
+# install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "igraph", "knitr", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse", "uwot"))
+# install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
+# 
+# # Install Bioconducor:
+# install.packages("BiocManager")
+# library(BiocManager)
+# 
+# # Install packages from Bioconductor:
+# BiocManager::install(c("AnnotationDbi", "AnnotationHub", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "dendextend", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "ensembldb", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "limma", "M3Drop", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "PCAtools", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "schex", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA"))
+# 
+# # Install packages from github:
+# library(devtools)
+# devtools::install_github("iaconogi/bigSCale2")
 ```
 
 <!--

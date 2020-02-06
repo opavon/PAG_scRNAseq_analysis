@@ -32,7 +32,6 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 Once we have our `SingleCellExperiment` object with our data and annotations, we can proceed to QC the data.
 ```{r}
 # If starting from stored results, load the saved dataset from previous notebook:
-set.seed(1991)
 options(stringsAsFactors = FALSE)
 library(SingleCellExperiment)
 library(scater)
@@ -741,6 +740,7 @@ Another option available in `scater` is to filter cells using the `runColDataPCA
 library(scater)
 library(sgeostat)
 library(mvoutlier)
+set.seed(1991)
 PAG_sceset <- runColDataPCA(PAG_sceset, outliers = TRUE,
                             variables = list("sum", "detected", "altexps_ERCC_percent", "subsets_Mitochondrial_percent", 
                                              "subsets_Ribosomal_percent", "subsets_TSO_concatamers_percent"),
