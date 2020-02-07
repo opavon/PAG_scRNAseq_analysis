@@ -438,7 +438,7 @@ Finally, it is tempting to interpret the t-SNE results as a “map” of single-
 # Compute tSNE with different perplexities:
 range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
 for(n in range_of_perplexities) {
-  set.seed(1991)
+  set.seed(1992)
   PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
                                      exprs_values = "corrected",
                                      subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
@@ -460,56 +460,56 @@ tSNE_HVG_var_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                            shape_by = "cell.type"#, # "mouse.id"
                                            #size_by = "detected"
-                                           ) + ggtitle("tSNE_var_corrected_perplexity_5") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                           ) + ggtitle("tSNE_var_corrected_perplexity_5")
 
 tSNE_HVG_var_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_10",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_10") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_10")
 
 tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_15",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_15") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_15")
 
 tSNE_HVG_var_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_20",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_20") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_20")
 
 tSNE_HVG_var_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_30",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_30") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_30")
 
 tSNE_HVG_var_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_40",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_40") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_40")
 
 tSNE_HVG_var_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_50",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_50") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
-
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_50")
+  
 tSNE_HVG_var_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_75",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_75") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_var_corrected_perplexity_75")
 
 multiplot(tSNE_HVG_var_corrected_5, tSNE_HVG_var_corrected_10, tSNE_HVG_var_corrected_15, tSNE_HVG_var_corrected_20, 
           cols = 2)
@@ -522,7 +522,7 @@ We repeat the previous step using the PCA results obtained with the HVGs from CV
 # Compute tSNE with different perplexities:
 range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
 for(n in range_of_perplexities) {
-  set.seed(1991)
+  set.seed(1987)
   PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
                                      exprs_values = "corrected",
                                      subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
@@ -544,63 +544,64 @@ tSNE_HVG_cv2_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                            shape_by = "cell.type"#, # "mouse.id"
                                            #size_by = "detected"
-                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_5") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_5")
 
 tSNE_HVG_cv2_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_10",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_10") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_10")
 
 tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_15",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_15") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_15")
 
 tSNE_HVG_cv2_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_20",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_20") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_20")
 
 tSNE_HVG_cv2_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_30",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_30") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_30")
 
 tSNE_HVG_cv2_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                            dimred = "tSNE_cv2_corrected_perplexity_40",
                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                            shape_by = "cell.type"#, # "mouse.id"
                                            #size_by = "detected"
-                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_40") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_40")
 
 tSNE_HVG_cv2_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_50",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_50") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_50")
 
 tSNE_HVG_cv2_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_75",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_75") #+ coord_cartesian(xlim = c(-35, 35), ylim = c(-35, 35))
-
+                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_75")
 
 multiplot(tSNE_HVG_cv2_corrected_5, tSNE_HVG_cv2_corrected_10, tSNE_HVG_cv2_corrected_15, tSNE_HVG_cv2_corrected_20,
           cols = 2)
 multiplot(tSNE_HVG_cv2_corrected_30, tSNE_HVG_cv2_corrected_40, tSNE_HVG_cv2_corrected_50, tSNE_HVG_cv2_corrected_75, 
           cols = 2)
 ```
+
+From the different configurations, it seems that `tSNE_var_corrected_perplexity_15` and `tSNE_cv2_corrected_perplexity_15` achieve a representation that is not too clumped (such that you can't really distinguish anything) nor too fragmented (so that you end up with a large number of very small groups). 
 
 ### 5.4.3 | UMAP (uniform manifold approximation and projection)
 The uniform manifold approximation and projection (UMAP) method (McInnes, Healy, and Melville 2018) is an alternative to t-SNE for non-linear dimensionality reduction. It is roughly similar to t-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space. However, the two methods are based on different theory, represented by differences in the various graph weighting equations, which leads to a different visualization. We will repeat the approach we followed for t-SNE, and calculate different UMAP plots while trying different choices of the key arguments:
@@ -900,47 +901,33 @@ As we have seen, tSNE and UMAP offer different solutions to represent the data i
 ```{r}
 # Plot the selected t-SNE
 plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "tSNE_var_corrected_perplexity_20",
+               dimred = "tSNE_var_corrected_perplexity_15",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id" 
                #size_by = "detected"
-               ) + ggtitle("tSNE_var_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+               ) + ggtitle("tSNE_var_corrected_perplexity_15")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "tSNE_cv2_corrected_perplexity_15",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
-
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "tSNE_cv2_corrected_perplexity_20",
-               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
-               #size_by = "detected"
-               ) + ggtitle("tSNE_cv2_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")
 
 # Plot the selected t-SNE coloring for Cd68 expression (marker for cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
 plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "tSNE_var_corrected_perplexity_20",
+               dimred = "tSNE_var_corrected_perplexity_15",
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("tSNE_var_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+               ) + ggtitle("tSNE_var_corrected_perplexity_15")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "tSNE_cv2_corrected_perplexity_15",
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
-
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "tSNE_cv2_corrected_perplexity_20",
-               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
-               #size_by = "detected"
-               ) + ggtitle("tSNE_cv2_corrected_perplexity_20")# + coord_cartesian(xlim = c(-40, 40), ylim = c(-50, 50))
+               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")
 
 # Plot the selected UMAP
 plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -948,28 +935,28 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.1_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.1_min_dist")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.01_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.01_min_dist")
 
 # Plot the selected UMAP coloring for Cd68 expression (marker for cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
 plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -977,7 +964,7 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")# + coord_cartesian(xlim = c(-10, 10), ylim = c(-5, 5))
+               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")
 
 # Potential code to store plots when final:
 #saveRDS(UMAP_var_corrected_15_neighbors_0.05_min_dist, file = "filepath/filename.rds")
