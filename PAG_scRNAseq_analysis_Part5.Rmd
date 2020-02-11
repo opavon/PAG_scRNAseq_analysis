@@ -903,62 +903,78 @@ As we have seen, tSNE and UMAP offer different solutions to represent the data i
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "tSNE_var_corrected_perplexity_15",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id" 
                #size_by = "detected"
-               ) + ggtitle("tSNE_var_corrected_perplexity_15")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "tSNE_var_corrected_perplexity_15", x = "tSNE 1", y = "tSNE 2")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "tSNE_cv2_corrected_perplexity_15",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "tSNE 1", y = "tSNE 2")
 
 # Plot the selected t-SNE coloring for Cd68 expression (marker for cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "tSNE_var_corrected_perplexity_15",
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("tSNE_var_corrected_perplexity_15")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "tSNE_var_corrected_perplexity_15", x = "tSNE 1", y = "tSNE 2")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "tSNE_cv2_corrected_perplexity_15",
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("tSNE_cv2_corrected_perplexity_15")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "tSNE 1", y = "tSNE 2")
 
 
 # Plot the selected UMAP
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.05_min_dist")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 # Plot the selected UMAP coloring for Cd68 expression (marker for cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.05_min_dist")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 # Potential code to store plots when final:
 #saveRDS(UMAP_var_corrected_15_neighbors_0.05_min_dist, file = "filepath/filename.rds")
