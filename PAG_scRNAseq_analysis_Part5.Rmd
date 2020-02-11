@@ -611,7 +611,7 @@ range_of_min_dist = list(0.01, 0.05, 0.1, 0.2)
 
 for(j in range_of_neighbors) {
   for (k in range_of_min_dist) {
-    set.seed(1991)
+    set.seed(42)
     PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt,
                                        exprs_values = "corrected",
                                        subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, 
@@ -929,13 +929,14 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                #size_by = "detected"
                ) + ggtitle("tSNE_cv2_corrected_perplexity_15")
 
+
 # Plot the selected UMAP
 plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
+               dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")
+               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.05_min_dist")
 
 plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
@@ -944,27 +945,20 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                #size_by = "detected"
                ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")
 
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
-               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
-               #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.1_min_dist")
-
-plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist",
-               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
-               shape_by = "cell.type"#, # "mouse.id"
-               #size_by = "detected"
-               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.01_min_dist")
-
 # Plot the selected UMAP coloring for Cd68 expression (marker for cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
 plotReducedDim(PAG_sceset_qc_norm_filt,
-               dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
+               dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
                colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
                shape_by = "cell.type"#, # "mouse.id"
                #size_by = "detected"
-               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")
+               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.05_min_dist")
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", # "batch.processing", "PAG.arearegistration", "Cd68"
+               shape_by = "cell.type"#, # "mouse.id"
+               #size_by = "detected"
+               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")
 
 # Potential code to store plots when final:
 #saveRDS(UMAP_var_corrected_15_neighbors_0.05_min_dist, file = "filepath/filename.rds")
