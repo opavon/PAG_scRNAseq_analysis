@@ -173,7 +173,7 @@ PCA_HVG_var_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected"
-                                        ) + ggtitle("PCA_HVG_var_corrected") 
+                                        ) + ggtitle("PCA_HVG_var_corrected")
 
 multiplot(PCA_HVG_var_counts, PCA_HVG_var_logcounts_raw, PCA_HVG_var_logcounts, PCA_HVG_var_corrected, cols = 2)
 ```
@@ -460,56 +460,56 @@ tSNE_HVG_var_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                            shape_by = "cell.type"#, # "mouse.id"
                                            #size_by = "detected"
-                                           ) + ggtitle("tSNE_var_corrected_perplexity_5")
+                                           ) + labs(title = "tSNE_var_corrected_perplexity_5", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_10",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_10")
+                                            ) + labs(title = "tSNE_var_corrected_perplexity_10", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_15",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_15")
+                                            ) + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_20",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_20")
+                                            ) + labs(title = "tSNE_var_corrected_perplexity_20", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_30",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_30")
+                                            ) + labs(title = "tSNE_var_corrected_perplexity_30", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_40",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_40")
+                                            ) + labs(title = "tSNE_var_corrected_perplexity_40", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_50",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_50")
+                                            ) + labs(title = "tSNE_var_corrected_perplexity_50", x = "t-SNE 1", y = "t-SNE 2")
   
 tSNE_HVG_var_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_var_corrected_perplexity_75",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_var_corrected_perplexity_75")
+                                            ) + labs(title = "tSNE_var_corrected_perplexity_75", x = "t-SNE 1", y = "t-SNE 2")
 
 multiplot(tSNE_HVG_var_corrected_5, tSNE_HVG_var_corrected_10, tSNE_HVG_var_corrected_15, tSNE_HVG_var_corrected_20, 
           cols = 2)
@@ -544,56 +544,56 @@ tSNE_HVG_cv2_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                            shape_by = "cell.type"#, # "mouse.id"
                                            #size_by = "detected"
-                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_5")
+                                           ) + labs(title = "tSNE_cv2_corrected_perplexity_5", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_10",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_10")
+                                            ) + labs(title = "tSNE_cv2_corrected_perplexity_10", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_15",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_15")
+                                            ) + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_20",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_20")
+                                            ) + labs(title = "tSNE_cv2_corrected_perplexity_20", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_30",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_30")
+                                            ) + labs(title = "tSNE_cv2_corrected_perplexity_30", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                            dimred = "tSNE_cv2_corrected_perplexity_40",
                                            colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                            shape_by = "cell.type"#, # "mouse.id"
                                            #size_by = "detected"
-                                           ) + ggtitle("tSNE_cv2_corrected_perplexity_40")
+                                           ) + labs(title = "tSNE_cv2_corrected_perplexity_40", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_50",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_50")
+                                            ) + labs(title = "tSNE_cv2_corrected_perplexity_50", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "tSNE_cv2_corrected_perplexity_75",
                                             colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                             shape_by = "cell.type"#, # "mouse.id"
                                             #size_by = "detected"
-                                            ) + ggtitle("tSNE_cv2_corrected_perplexity_75")
+                                            ) + labs(title = "tSNE_cv2_corrected_perplexity_75", x = "t-SNE 1", y = "t-SNE 2")
 
 multiplot(tSNE_HVG_cv2_corrected_5, tSNE_HVG_cv2_corrected_10, tSNE_HVG_cv2_corrected_15, tSNE_HVG_cv2_corrected_20,
           cols = 2)
@@ -634,25 +634,25 @@ UMAP_var_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_nor
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_5_neighbors_0.01_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_5_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_5_neighbors_0.05_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_5_neighbors_0.05_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_5_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                               dimred = "UMAP_var_corrected_5_neighbors_0.1_min_dist",
                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                               shape_by = "cell.type"#, # "mouse.id"
                                                               #size_by = "detected"
-                                                              ) + ggtitle("UMAP_var_corrected_5_neighbors_0.1_min_dist")
+                                                              ) + labs(title = "UMAP_var_corrected_5_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_5_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_5_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_5_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 10
 UMAP_var_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -660,25 +660,25 @@ UMAP_var_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_no
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_var_corrected_10_neighbors_0.01_min_dist")
+                                                                ) + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                 dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+                                                                ) + labs(title = "UMAP_var_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_10_neighbors_0.1_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_10_neighbors_0.1_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_10_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_10_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_10_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_10_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 15
 UMAP_var_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -686,25 +686,25 @@ UMAP_var_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_no
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_var_corrected_15_neighbors_0.01_min_dist")
+                                                                ) + labs(title = "UMAP_var_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                 dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_var_corrected_15_neighbors_0.05_min_dist")
+                                                                ) + labs(title = "UMAP_var_corrected_15_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_15_neighbors_0.1_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.1_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_15_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_15_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_15_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_15_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 20
 UMAP_var_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -712,25 +712,25 @@ UMAP_var_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_no
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_var_corrected_20_neighbors_0.01_min_dist")
+                                                                ) + labs(title = "UMAP_var_corrected_20_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                 dimred = "UMAP_var_corrected_20_neighbors_0.05_min_dist",
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_var_corrected_20_neighbors_0.05_min_dist")
+                                                                ) + labs(title = "UMAP_var_corrected_20_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_20_neighbors_0.1_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_20_neighbors_0.1_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_20_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_var_corrected_20_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_var_corrected_20_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_var_corrected_20_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### Plot them all:
 multiplot(UMAP_var_corrected_5_neighbors_0.01_min_dist, UMAP_var_corrected_5_neighbors_0.05_min_dist,
@@ -777,25 +777,25 @@ UMAP_cv2_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_nor
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.01_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_5_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_5_neighbors_0.05_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.05_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_5_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                               dimred = "UMAP_cv2_corrected_5_neighbors_0.1_min_dist",
                                                               colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                               shape_by = "cell.type"#, # "mouse.id"
                                                               #size_by = "detected"
-                                                              ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.1_min_dist")
+                                                              ) + labs(title = "UMAP_cv2_corrected_5_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_5_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_5_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_5_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 10
 UMAP_cv2_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -803,25 +803,25 @@ UMAP_cv2_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_no
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.01_min_dist")
+                                                                ) + labs(title = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                 dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.05_min_dist")
+                                                                ) + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_10_neighbors_0.1_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.1_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_10_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_10_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_10_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_10_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 15
 UMAP_cv2_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -829,25 +829,25 @@ UMAP_cv2_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_no
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.01_min_dist")
+                                                                ) + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                 dimred = "UMAP_cv2_corrected_15_neighbors_0.05_min_dist",
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.05_min_dist")
+                                                                ) + labs(title = "UMAP_cv2_corrected_15_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.1_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_15_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_15_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_15_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 20 
 UMAP_cv2_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -855,25 +855,27 @@ UMAP_cv2_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_no
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.01_min_dist")
+                                                                ) + labs(title = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                 dimred = "UMAP_cv2_corrected_20_neighbors_0.05_min_dist",
                                                                 colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                 shape_by = "cell.type"#, # "mouse.id"
                                                                 #size_by = "detected"
-                                                                ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.05_min_dist")
+                                                                ) + labs(title = "UMAP_cv2_corrected_20_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_20_neighbors_0.1_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.1_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_20_neighbors_0.1_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+
 UMAP_cv2_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                                dimred = "UMAP_cv2_corrected_20_neighbors_0.2_min_dist",
                                                                colour_by = "PAG.arearegistration", # "batch.processing", "PAG.arearegistration", "Cd68"
                                                                shape_by = "cell.type"#, # "mouse.id"
                                                                #size_by = "detected"
-                                                               ) + ggtitle("UMAP_cv2_corrected_20_neighbors_0.2_min_dist")
+                                                               ) + labs(title = "UMAP_cv2_corrected_20_neighbors_0.2_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 #### Plot them all:
 multiplot(UMAP_cv2_corrected_5_neighbors_0.01_min_dist, UMAP_cv2_corrected_5_neighbors_0.05_min_dist,
