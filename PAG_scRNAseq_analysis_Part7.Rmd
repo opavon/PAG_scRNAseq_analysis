@@ -37,7 +37,6 @@ The most common model of RNASeq data is the negative binomial model. However, a 
 
 We continue using the `PAG_sceset_qc_norm_filt_corr_clust` after normalization, filtering, batch correction, and clustering. We should thus have a `corrected` slot in `assays`:
 ```{r}
-set.seed(1991)
 library(scater)
 library(SingleCellExperiment)
 library(pheatmap)
