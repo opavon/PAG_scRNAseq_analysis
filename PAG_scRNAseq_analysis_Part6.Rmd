@@ -29,17 +29,16 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 ***
 
 # STEP 6 | Clustering
-Once we have normalized the data, identified highly variable genes, and corrected confounding factors we can carry out analyses that are relevant to the biological questions at hand.
+We have now normalized the data, identified highly variable genes, corrected confounding factors, and applied dimentionality reduction techniques to better visualize and summarize our data. We can now proceed to carry out analyses that are relevant to the biological questions at hand.
 
 scRNA-seq data allow de novo discovery and annotation of cell-types based on transcription profiles. Computationally, we need to identify groups of cells based on the similarities of the transcriptomes without any prior knowledge of the labels, nor the number of clusters we will end up with. This is very challenging due to the high level of noise (both technical and biological) and the large number of dimensions (i.e. genes).
 
-Clustering is an unsupervised learning procedure that is used in scRNA-seq data analysis to empirically define groups of cells with similar expression profiles. This allows us to describe population heterogeneity in terms of discrete labels that are easily understood, rather than attempting to comprehend the high-dimensional manifold on which the cells truly reside. After annotation based on marker genes, the clusters can be treated as proxies for more abstract biological concepts such as cell types or states. Clustering is thus a critical step for extracting biological insights from scRNA-seq data. Some of the most popular approaches are __hierarchical clustering__, __k-means clustering__ and __graph-based clustering__.
+Clustering is an unsupervised learning procedure that is used in scRNA-seq data analysis to empirically define groups of cells with similar expression profiles. This allows us to describe population heterogeneity in terms of discrete labels that are easily understood, rather than attempting to comprehend the high-dimensional manifold on which the cells truly reside. After annotation based on marker genes, the clusters can be treated as proxies for more abstract biological concepts such as cell types or states. Clustering is thus a critical step for extracting biological insights from scRNA-seq data. Some of the most popular approaches are _hierarchical clustering_, _k-means clustering_ and _graph-based clustering_.
 
 At this point, it is worth stressing the distinction between clusters and cell types. The former is an empirical construct while the latter is a biological truth (albeit a vaguely defined one). For this reason, questions like “what is the true number of clusters?” are usually meaningless. We can define as many clusters as we like, with whatever algorithm we like - each clustering will represent its own partitioning of the high-dimensional expression space, and is as “real” as any other clustering. A more relevant question is “how well do the clusters approximate the cell types?”. Unfortunately, this is difficult to answer given the context-dependent interpretation of biological truth. Some analysts will be satisfied with resolution of the major cell types; other analysts may want resolution of subtypes; and others still may require resolution of different states (e.g., metabolic activity, stress) within those subtypes. Moreover, two clusterings can be highly inconsistent yet both valid, simply partitioning the cells based on different aspects of biology.
 
 We continue using the `PAG_sceset_qc_norm_filt_corr` after normalization, filtering, and batch correction. We should thus have a `corrected` slot in `assays`:
 ```{r}
-set.seed(1991)
 library(SC3)
 library(scater)
 library(scran)
@@ -100,7 +99,8 @@ names(metadata(PAG_sceset_qc_norm_filt_corr))
 Once the `SCE` object is prepared for clustering, `Sc3` has a method to estimate the optimal number of cluster `k` for a scRNA-seq expression matrix, which uses Tracy-Widom theory on random matrices to estimate the optimal number of clusters k.
 ```{r}
 PAG_sceset_qc_norm_filt_corr <- sc3_estimate_k(PAG_sceset_qc_norm_filt_corr)
-metadata(PAG_sceset_qc_norm_filt_corr)$sc3$k_estimation
+metadata(PAG_sceset_qc_norm_filt_corr)$sc3$k_estimation 
+# k=9 for default SC3 filtering, k=8 for hvg_var_out_no_spikes_block_filt, k=10 for hvg_cv2_out_no_spikes_filt, k=3 for genes.ionchannels, k=4 for genes.NeuromodulatorsPeptides, k=3 for genes.Transcriptionfactors
 str(metadata(PAG_sceset_qc_norm_filt_corr)$sc3)
 ```
 
@@ -148,17 +148,17 @@ PAG_sceset_qc_norm_filt_corr <- sc3_calc_biology(PAG_sceset_qc_norm_filt_corr,
 ### 6.1.7 | Running SC3 with the wrapper function [OPTIONAL ALTERNATIVE]
 Alternatively, we can run SC3 with the wrapper function and ask it to calculate biological properties of the clusters as well. This should do the same steps as we just did in the same order. However, make sure you have at least prepared the `SCE` object and have estimated ks beforehand.
 ```{r}
-rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt_corr)
-
-start_time <- Sys.time() # Takes around 35 min
-PAG_sceset_qc_norm_filt_corr <- sc3(PAG_sceset_qc_norm_filt_corr,
-                                    ks = 2:12,
-                                    gene_filter = TRUE, # Set to FALSE if you want to determine a list of genes to be used instead
-                                    biology = TRUE, 
-                                    n_cores = 4,
-                                    rand_seed = 1991)
-end_time <- Sys.time()
-end_time - start_time
+# rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt_corr)
+# 
+# start_time <- Sys.time() # Takes around 35 min
+# PAG_sceset_qc_norm_filt_corr <- sc3(PAG_sceset_qc_norm_filt_corr,
+#                                     ks = 2:12,
+#                                     gene_filter = TRUE, # Set to FALSE if you want to determine a list of genes to be used instead
+#                                     biology = TRUE, 
+#                                     n_cores = 4,
+#                                     rand_seed = 1991)
+# end_time <- Sys.time()
+# end_time - start_time
 ```
 
 ### 6.1.8 | Explore the results
@@ -278,12 +278,11 @@ There are several considerations in the practical execution of a graph-based clu
 
 For example, we could use a code that uses the 10 nearest neighbors of each cell to construct a shared nearest neighbor graph. Two cells are connected by an edge if any of their nearest neighbors are shared, with the edge weight defined from the highest average rank of the shared neighbors (Xu and Su 2015). The `Walktrap` method from the `igraph` package can then be used to identify communities. An alternative can be performed by changing the edge weighting scheme during graph construction. Setting `type = "number"` will weight edges based on the number of nearest neighbors that are shared between two cells. Similarly, `type = "jaccard"` will weight edges according to the Jaccard index of the two sets of neighbors. We can also disable weighting altogether by using `buildKNNGraph()`, which is occasionally useful for downstream graph operations that do not support weights. Pipelines involving `scran` default to rank-based weights followed by Walktrap clustering. In contrast, `Seurat` uses Jaccard-based weights followed by Louvain clustering. Both of these strategies work well.
 
-One of the most important parameters is `k`, the number of nearest neighbors used to construct the graph. This controls the resolution of the clustering where higher `k` yields a more inter-connected graph and broader clusters. Users can exploit this by experimenting with different values of `k` to obtain a satisfactory resolution. The choice of `k` controls the connectivity of the graph and the resolution of community detection algorithms. Smaller values of `k` will generally yield smaller, finer clusters, while increasing `k` will increase the connectivity of the graph and make it more difficult to resolve different communities. The value of `k` can be roughly interpreted as the anticipated size of the smallest subpopulation.
 ```{r}
 library(scran)
 # Using HVG from Var with rank-based weights
 graph_var_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                k = 9, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                 #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                 type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
                                 subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
@@ -295,7 +294,7 @@ table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank)
 
 # Using HVG from Var with jaccard-based weights
 graph_var_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                   k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                   k = 9, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                    #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                    type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
                                    subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
@@ -307,7 +306,7 @@ table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard)
  
 # Using HVG from CV2 with rank-based weights
 graph_cv2_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                k = 9, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                 #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                 type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors.
                                 subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
@@ -320,7 +319,7 @@ table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank)
 
 # Using HVG from CV2 with jaccard-based weights
 graph_cv2_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                   k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                   k = 9, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                    #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                    type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors.
                                    subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
@@ -334,29 +333,66 @@ table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard)
 
 We can then assign the cluster assignments back into our `SingleCellExperiment` object as a factor in the column metadata. This allows us to conveniently visualize the distribution of clusters in a t-SNE or UMAP plot:
 ```{r}
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+## Using t-SNE (var)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
 
 # Using HVG from Var with rank-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_var_rank", shape_by = "cell.type", text_by = "SNN_clusters_var_rank") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
+               colour_by = "SNN_clusters_var_rank", shape_by = "cell.type", 
+               text_by = "SNN_clusters_var_rank") + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
 
 # Using HVG from Var with jaccard-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_var_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_var_jaccard") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
+               colour_by = "SNN_clusters_var_jaccard", shape_by = "cell.type", 
+               text_by = "SNN_clusters_var_jaccard") + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
 
-
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+## Using t-SNE (cv2)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
 
 # Using HVG from CV2 with rank-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", 
+               text_by = "SNN_clusters_cv2_rank") + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
 
 # Using HVG from CV2 with jaccard-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-               colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard") + ggtitle("UMAP_var_corrected_10_neighbors_0.05_min_dist")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", 
+               text_by = "SNN_clusters_cv2_jaccard") + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+
+## Using UMAP (var)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist", 
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+# Using HVG from Var with rank-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
+               colour_by = "SNN_clusters_var_rank", shape_by = "cell.type", 
+               text_by = "SNN_clusters_var_rank") + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+# Using HVG from Var with jaccard-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
+               colour_by = "SNN_clusters_var_jaccard", shape_by = "cell.type", 
+               text_by = "SNN_clusters_var_jaccard") + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+## Using UMAP (cv2)
+# Use "UMAP_cv2_corrected_10_neighbors_0.05_min_dist" or "UMAP_cv2_corrected_15_neighbors_0.01_min_dist"
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+# Using HVG from CV2 with rank-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", 
+               text_by = "SNN_clusters_cv2_rank") + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+# Using HVG from CV2 with jaccard-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", 
+               text_by = "SNN_clusters_cv2_jaccard") + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 ```
+
+`k` = 9 or 10 achieves the best results and corresponds pretty well with the tSNE and UMAP plots. It seems that jaccard based weights work better in our dataset, and that again using the PCA loadings from CV2 modelling achieves the best result.
 
 ### 6.2.2 | Assessing cluster separation
 When dealing with graphs, the modularity is a natural metric for evaluating the separation between communities/clusters. This is defined as the (scaled) difference between the observed total weight of edges between nodes in the same cluster and the expected total weight if edge weights were randomly distributed across all pairs of nodes. Larger modularity values indicate that there most edges occur within clusters, suggesting that the clusters are sufficiently well separated to avoid edges forming between neighboring cells in different clusters.
