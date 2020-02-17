@@ -52,219 +52,7 @@ reducedDimNames(PAG_sceset_qc_norm_filt_corr)
 PAG_sceset_qc_norm_filt_corr
 ```
 
-## Step 6.1 | Consensus clustering with SC3
-Single-Cell Consensus Clustering (SC3) is a tool for unsupervised clustering of scRNA-seq data. SC3 achieves high accuracy and robustness by consistently integrating different clustering solutions through a consensus approach. An interactive graphical implementation makes SC3 accessible to a wide audience of users. In addition, SC3 also aids biological interpretation by identifying marker genes, differentially expressed genes and outlier cells. A manuscript describing  SC3 in details is published in Nature Methods.
-
-The advantage of the SC3 is that it can directly ingest a `SingleCellExperiment` object, and it has a function that can estimate a number of clusters for us. SC3 is a purely clustering tool and it does not provide functions for the sequencing quality control (QC) or normalisation. On the contrary, it is expected that these preprocessing steps are performed by a user in advance. SC3 requires both `counts` and `logcounts` slots to exist in the input `SingleCellExperiment` object. The `counts` slot is used for gene filtering, which is based on gene dropout rates. The `logcounts` slot, which is supposed to contain both normalised and log-transformed expression matrix, is used in the main clustering algorithm.  Additionally, if spike-ins are defined via `isSpike function`, SC3 will automatically remove them before doing clustering.
-
-### 6.1.1 | Prepare SingleCellExperiment object for SC3
-SC3 requires a `feature_symbol` column of the `rowData` slot of the input `SingleCellExperiment` object to contain preferable feature names (genes/transcript) which will be used in the future visualisations. 
-```{r}
-rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt_corr)
-```
-
-We can next run `sc3_prepare`. This method prepares an object of `SCE` class for `SC3` clustering, defining all parameters needed for clustering and storing them in the `sc3` slot. The parameters have their own defaults but can be manually changed (see `?sc3_prepare` for more details). 
-```{r}
-PAG_sceset_qc_norm_filt_corr <- sc3_prepare(PAG_sceset_qc_norm_filt_corr,
-                                            gene_filter = TRUE, # Choose "FALSE" to set your own filter by changing the sc3_gene_filter slot
-                                            n_cores = 10,
-                                            rand_seed = 1991) 
-# SC3 is stochastic, if we run it different times we will get different results, so we need to make sure we have set a seed before running it.
-
-str(metadata(PAG_sceset_qc_norm_filt_corr)$sc3)
-```
-
-As we can see above, `SC3` applies a gene filter to remove genes very lowly expressed in all samples and also the ones that are expressed everywhere, so that these genes do not contribute to the clustering (see `$sc3_gene_filter`). However, we have already filtered genes in previous steps and selected highly variable genes, which we could use for it. We can manually define a list of genes that we want to use for clustering by setting the `sc3_gene_filter` column of the `rowData` slot:
-```{r}
-# Check which lists of genes you have available to use from loaded metadata or calculated highly variable genes:
-names(metadata(PAG_sceset_qc_norm_filt_corr))
-
-# Use Highly Variable Genes from Variance:
-#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt
-
-# Use Highly Variable Genes from CV2:
-#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt
-
-# Use Ion Channel Genes:
-#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.ionchannels
-
-# Use Neuropeptides and Neuromodulators Genes:
-#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.NeuromodulatorsPeptides
-
-# Use Neuropeptides and Neuromodulators Genes:
-#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.Transcriptionfactors
-```
-
-### 6.1.2 | Estimate k
-Once the `SCE` object is prepared for clustering, `Sc3` has a method to estimate the optimal number of cluster `k` for a scRNA-seq expression matrix, which uses Tracy-Widom theory on random matrices to estimate the optimal number of clusters k.
-```{r}
-PAG_sceset_qc_norm_filt_corr <- sc3_estimate_k(PAG_sceset_qc_norm_filt_corr)
-metadata(PAG_sceset_qc_norm_filt_corr)$sc3$k_estimation 
-# k=9 for default SC3 filtering, k=8 for hvg_var_out_no_spikes_block_filt, k=10 for hvg_cv2_out_no_spikes_filt, k=3 for genes.ionchannels, k=4 for genes.NeuromodulatorsPeptides, k=3 for genes.Transcriptionfactors
-str(metadata(PAG_sceset_qc_norm_filt_corr)$sc3)
-```
-
-### 6.1.3 | Calculate distances and transformations
-We are now ready to perform the clustering itself. The method `sc3_calc_dists` calculates distances between the cells and creates and populates the `distances` slot, which contains a list of distance matrices corresponding to Euclidean, Pearson and Spearman distances.
-```{r}
-PAG_sceset_qc_norm_filt_corr <- sc3_calc_dists(PAG_sceset_qc_norm_filt_corr)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances)
-```
-
-Next, the method `sc3_calc_transfs` calculates the transformations of the distance matrices contained in the distances item of the `sc3` slot, and creates and populates the `transformations` slot, which contains a list of transformations of the distance matrices corresponding to PCA and graph Laplacian transformations. It also removes the previously calculated `distances` item from the `sc3` slot:
-```{r}
-PAG_sceset_qc_norm_filt_corr <- sc3_calc_transfs(PAG_sceset_qc_norm_filt_corr)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$transformations)
-metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances
-```
-
-### 6.1.4 | K-means
-We use the `sce_kmeans` method to perform k-means on the transformed distance matrices contained in the `transformations` item of the `sc3` slot. The method `sc3_kmeans` also creates and populates the `kmeans` item, which contains a list of kmeans clusterings. Given that we need to define the ks at the beginning, it is best to set a range of ks around the estimated value obtained from `sc3_estimate` to try and compare different solutions.
-```{r}
-start_time <- Sys.time() # Takes around 5 min
-PAG_sceset_qc_norm_filt_corr <- sc3_kmeans(PAG_sceset_qc_norm_filt_corr,
-                                           ks = 2:12)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans)
-end_time <- Sys.time()
-end_time - start_time
-```
-
-### 6.1.5 | Calculate consensus
-In this step `SC3` provides a clustering solution. When calculating consensus for each value of `k`, `SC3` averages the clustering results of `kmeans` using a consensus approach. The method `sc3_calc_consens` calculates consensus matrices based on the clustering solutions contained in the `kmeans` item of the `sc3` slot, and it then creates and populates the `consensus` item, which for each value of k it contains a consensus matrix, an `hclust` object corresponding to hierarchical clustering of the consensus matrix, and the Silhouette indices of the clusters. It also removes the previously calculated `kmeans` item from the `sc3` slot.
-```{r}
-PAG_sceset_qc_norm_filt_corr <- sc3_calc_consens(PAG_sceset_qc_norm_filt_corr)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus$`1`)
-metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans
-```
-
-### 6.1.6 | Calculate biology
-`SC3` can also calculate DE genes, marker genes, and cell outliers based on the calculated consensus clusterings. Similary to the clustering solutions, the method `sc3_calc_biology` writes the results for the cell outliers (cell-related information) to the `colData` slot of the `SCE` object. In contrast, DE and marker genes results (gene-related information) are written to the `rowData` slot.
-```{r}
-PAG_sceset_qc_norm_filt_corr <- sc3_calc_biology(PAG_sceset_qc_norm_filt_corr, 
-                                                 ks = 2:12)
-```
-
-### 6.1.7 | Running SC3 with the wrapper function [OPTIONAL ALTERNATIVE]
-Alternatively, we can run SC3 with the wrapper function and ask it to calculate biological properties of the clusters as well. This should do the same steps as we just did in the same order. However, make sure you have at least prepared the `SCE` object and have estimated ks beforehand.
-```{r}
-# rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt_corr)
-# 
-# start_time <- Sys.time() # Takes around 35 min
-# PAG_sceset_qc_norm_filt_corr <- sc3(PAG_sceset_qc_norm_filt_corr,
-#                                     ks = 2:12,
-#                                     gene_filter = TRUE, # Set to FALSE if you want to determine a list of genes to be used instead
-#                                     biology = TRUE, 
-#                                     n_cores = 4,
-#                                     rand_seed = 1991)
-# end_time <- Sys.time()
-# end_time - start_time
-```
-
-### 6.1.8 | Explore the results
-To run the interactive `Shiny` session, we can do the following: 
-```{r}
-sc3_interactive(PAG_sceset_qc_norm_filt_corr)
-```
-
-SC3 writes all its results obtained for cells to the `colData` slot of the `SCE` object by adding additional columns to it, and all its results obtained for features (genes/transcripts) to the `rowData` slot. This slot also contains all other cell features calculated by the scater package either automatically during the `SCE` object creation or during the `calculateQCMetrics` call. One can identify the SC3 results using the "sc3_" prefix. We can use these results as highlights when plotting.
-```{r}
-# Consensus Matrix
-sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, 
-                   k = 4, 
-                   show_pdata = c("cell.type", "PAG.arearegistration"))
-
-# DE Genes
-sc3_plot_de_genes(PAG_sceset_qc_norm_filt_corr, 
-                  k = 4,
-                  p.val = 0.001,
-                  show_pdata = c("cell.type", "PAG.arearegistration"))
-
-# Marker Genes
-sc3_plot_markers(PAG_sceset_qc_norm_filt_corr,
-                 k = 4,
-                 auroc = 0.7,
-                 p.val = 0.01,
-                 show_pdata = c("cell.type", "PAG.arearegistration"))
-```
-
-We can also use the results from the clustering to highlight the clusters in any PCA/tSNE/UMAP plot:
-```{r}
-plotPCA(PAG_sceset_qc_norm_filt_corr, colour_by = "sc3_8_clusters")
-```
-
-#### Consensus matrix
-The consensus matrix is a NxN matrix, where N is the number of cells. It represents similarity between the cells based on the averaging of clustering results from all combinations of clustering parameters. Similarity 0 (blue) means that the two cells are always assigned to different clusters. In contrast, similarity 1 (red) means that the two cells are always assigned to the same cluster. The consensus matrix is clustered by hierarchical clustering and has a diagonal-block structure. Intuitively, the perfect clustering is achieved when all diagonal blocks are completely red and all off-diagonal elements are completely blue. 
-```{r}
-sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, 
-                   k = 3, 
-                   show_pdata = c("cell.type",
-                                  "PAG.areacollection",
-                                  "sc3_3_clusters"
-                                  )
-                   )
-```
-
-#### Silhouette plot and stability index
-A silhouette is a quantitative measure of the diagonality of the consensus matrix. An average silhouette width (shown at the bottom left of the silhouette plot) varies from 0 to 1, where 1 represents a perfectly block-diagonal consensus matrix and 0 represents a situation where there is no block-diagonal structure. The best clustering is achieved when the average silhouette width is close to 1.
-```{r}
-sc3_plot_silhouette(PAG_sceset_qc_norm_filt_corr, 
-                    k = 5
-                    )
-```
-
-The Stability Index shows how stable each cluster is accross the selected range of ks. The stability index varies between 0 and 1, where 1 means that the same cluster appears in every solution for different k.
-```{r}
-sc3_plot_cluster_stability(PAG_sceset_qc_norm_filt_corr, 
-                           k = 3
-                           )
-```
-
-#### Heatmap of the expression matrix
-The expression panel represents the original input expression matrix (cells in columns and genes in rows) after cell and gene filters. Genes are clustered by k-means with k = 100 (dendrogram on the left) and the heatmap represents the expression levels of the gene cluster centers after log2-scaling. It is also possible to annotate cells (columns of the expression matrix) with any column of the `colData` slot of the `SCE` object.
-```{r}
-sc3_plot_expression(PAG_sceset_qc_norm_filt_corr, 
-                    k = 3, 
-                    show_pdata = c("cell.type",
-                                   "PAG.areacollection",
-                                   "sc3_3_clusters"
-                                   )
-                    )
-```
-
-#### Differentially expressed and Marker genes
-Differential expression is calculated using the non-parametric Kruskal-Wallis test. A significant p-value indicates that gene expression in at least one cluster stochastically dominates one other cluster. SC3 provides a list of all differentially expressed genes with adjusted p-values < 0.01 and plots gene expression profiles of the 50 genes with the lowest p-values. Note that the calculation of differential expression after clustering can introduce a bias in the distribution of p-values, and thus we advise to use the p-values for ranking the genes only.
-```{r}
-sc3_plot_de_genes(PAG_sceset_qc_norm_filt_corr, 
-                  k = 3,
-                  p.val = 0.001,
-                  show_pdata = c("cell.type",
-                                 "PAG.areacollection",
-                                 "sc3_3_clusters"
-                                 )
-                  )
-```
-
-To find marker genes, for each gene a binary classifier is constructed based on the mean cluster expression values. The classifier prediction is then calculated using the gene expression ranks. The area under the receiver operating characteristic (ROC) curve is used to quantify the accuracy of the prediction. A p-value is assigned to each gene by using the Wilcoxon signed rank test. The genes with the area under the ROC curve (AUROC) > 0.85 and with the p-value < 0.01 are defined as marker genes and the top 10 marker genes of each cluster are visualized in this panel. The AUROC and the p-value thresholds can be changed using the slider and radio buttons below.
-```{r}
-sc3_plot_markers(PAG_sceset_qc_norm_filt_corr, 
-                 k = 3,
-                 auroc = 0.65,
-                 p.val = 0.01,
-                 show_pdata = c("cell.type",
-                                "PAG.areacollection",
-                                "sc3_3_clusters"
-                                )
-                 )
-```
-
-### 6.1.9 | Export the results
-SC3 allows us to export the results into an Excel file:
-```{r}
-sc3_export_results_xls(PAG_sceset_qc_norm_filt_corr, filename = "PAG_sceset_qc_norm_filt_corr_clust")
-```
-
-## Step 6.2 | Graph-based clustering
+## Step 6.1 | Graph-based clustering
 Graph-based clustering is a flexible and scalable technique for clustering large scRNA-seq datasets. We first build a graph where each node is a cell that is connected to its nearest neighbours in the high-dimensional space. Edges are weighted based on the similarity between the cells involved, with higher weight given to cells that are more closely related. We then apply algorithms to identify “communities” of cells that are more connected to cells in the same community than they are to cells of different communities. Each community represents a cluster that we can use for downstream interpretation.
 
 The major advantage of graph-based clustering lies in its scalability. It only requires a k-nearest neighbor search that can be done in log-linear time on average, in contrast to hierachical clustering methods with runtimes that are quadratic with respect to the number of cells. Graph construction avoids making strong assumptions about the shape of the clusters or the distribution of cells within each cluster, compared to other methods like k-means (that favor spherical clusters) or Gaussian mixture models (that require normality). From a practical perspective, each cell is forcibly connected to a minimum number of neighboring cells, which reduces the risk of generating many uninformative clusters consisting of one or two outlier cells.
@@ -273,7 +61,7 @@ The main drawback of graph-based methods is that, after graph construction, no i
 
 `scran` provides several graph construction methods based on shared nearest neighbors (Xu and Su 2015) through the `buildSNNGraph()` function. This is most commonly generated from the selected PCs, after which methods from the `igraph` package can be used to identify clusters.
 
-### 6.2.1 | Implementation of graph-based clustering
+### 6.1.1 | Implementation of graph-based clustering
 There are several considerations in the practical execution of a graph-based clustering method: (1) How many neighbors are considered when constructing the graph, (2) What scheme is used to weight the edges, and (3) Which community detection algorithm is used to define the clusters. 
 
 For example, we could use a code that uses the 10 nearest neighbors of each cell to construct a shared nearest neighbor graph. Two cells are connected by an edge if any of their nearest neighbors are shared, with the edge weight defined from the highest average rank of the shared neighbors (Xu and Su 2015). The `Walktrap` method from the `igraph` package can then be used to identify communities. An alternative can be performed by changing the edge weighting scheme during graph construction. Setting `type = "number"` will weight edges based on the number of nearest neighbors that are shared between two cells. Similarly, `type = "jaccard"` will weight edges according to the Jaccard index of the two sets of neighbors. We can also disable weighting altogether by using `buildKNNGraph()`, which is occasionally useful for downstream graph operations that do not support weights. Pipelines involving `scran` default to rank-based weights followed by Walktrap clustering. In contrast, `Seurat` uses Jaccard-based weights followed by Louvain clustering. Both of these strategies work well.
@@ -319,7 +107,7 @@ table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank)
 
 # Using HVG from CV2 with jaccard-based weights
 graph_cv2_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                   k = 9, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                   k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
                                    #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
                                    type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors.
                                    subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
@@ -378,23 +166,23 @@ plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_nei
 
 ## Using UMAP (cv2)
 # Use "UMAP_cv2_corrected_10_neighbors_0.05_min_dist" or "UMAP_cv2_corrected_15_neighbors_0.01_min_dist"
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 # Using HVG from CV2 with rank-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", 
-               text_by = "SNN_clusters_cv2_rank") + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
+               text_by = "SNN_clusters_cv2_rank") + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 # Using HVG from CV2 with jaccard-based weights
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", 
-               text_by = "SNN_clusters_cv2_jaccard") + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
+               text_by = "SNN_clusters_cv2_jaccard") + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 ```
 
 `k` = 9 or 10 achieves the best results and corresponds pretty well with the tSNE and UMAP plots. It seems that jaccard based weights work better in our dataset, and that again using the PCA loadings from CV2 modelling achieves the best result.
 
-### 6.2.2 | Assessing cluster separation
+### 6.1.2 | Assessing cluster separation
 When dealing with graphs, the modularity is a natural metric for evaluating the separation between communities/clusters. This is defined as the (scaled) difference between the observed total weight of edges between nodes in the same cluster and the expected total weight if edge weights were randomly distributed across all pairs of nodes. Larger modularity values indicate that there most edges occur within clusters, suggesting that the clusters are sufficiently well separated to avoid edges forming between neighboring cells in different clusters.
 
 The standard approach is to report a single modularity value for a clustering on a given graph. This is useful for comparing different clusterings on the same graph - and indeed, some community detection algorithms are designed with the aim of maximizing the modularity - but it is less helpful for interpreting a given we use the ratio instead of the difference as the former is less dependent on the number of cells in each cluster. We would usually expect to see high observed weights between cells in the same cluster with minimal weights between clusters, indicating that the clusters are well-separated. Off-diagonal entries indicate that some clusters are closely related, which is useful to know for checking that they are annotated consistently.
@@ -412,7 +200,7 @@ ratio_cv2_jaccard <- clusterModularity(graph_cv2_jaccard, clusters_cv2_jaccard, 
 ratio_cv2_jaccard
 ```
 
-In each matrix, each row/column corresponds to a cluster, and each entry of the matrix contains the ratio of the observed to total weight of edges between cells in the respective clusters. A dataset containing well-separated clusters should contain most of the observed total weight on the diagonal entries, i.e., most edges occur between cells in the same cluster. Concentration of the weight on the diagonal of indicates that most of the clusters are well-separated, while some modest off-diagonal entries represent closely related clusters with more inter-connecting edges.
+In each matrix, each row/column corresponds to a cluster, and each entry of the matrix contains the ratio of the observed to total weight of edges between cells in the respective clusters. A dataset containing well-separated clusters should contain most of the observed total weight on the diagonal entries, i.e., most edges occur between cells in the same cluster. Concentration of the weight on the diagonal indicates that most of the clusters are well-separated, while some modest off-diagonal entries represent closely related clusters with more inter-connecting edges.
 ```{r}
 library(pheatmap)
 pheatmap(log2(ratio_var_rank + 1), 
@@ -436,14 +224,44 @@ pheatmap(log2(ratio_cv2_jaccard + 1),
          #col = rev(heat.colors(100)))
 ```
 
-## Step 6.2b | Cell-type specific Graph-based clustering
+### 6.1.3 | Evaluating cluster stability
+A desirable property of a given clustering is that it is stable to perturbations to the input data (Von Luxburg 2010). Stable clusters are logistically convenient as small changes to upstream processing will not change the conclusions; greater stability also increases the likelihood that those conclusions can be reproduced in an independent replicate study. `scran` uses bootstrapping to evaluate the stability of a clustering algorithm on a given dataset - that is, cells are sampled with replacement to create a “bootstrap replicate” dataset, and clustering is repeated on this replicate to see if the same clusters can be reproduced.
+```{r}
+myClusterFUN <- function(x) {
+    g <- buildSNNGraph(x, 
+                       k = 9,
+                       type = "jaccard",
+                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                       assay.type = "logcounts",
+                       use.dimred = "PCA_HVG_cv2_corrected")
+    igraph::cluster_louvain(g)$membership
+}
+
+originals <- myClusterFUN(PAG_sceset_qc_norm_filt_corr)
+
+set.seed(1714)
+coassign <- bootstrapCluster(PAG_sceset_qc_norm_filt_corr, 
+                             FUN = myClusterFUN, 
+                             clusters = originals)
+dim(coassign)
+```
+
+The function returns a matrix of coassignment probabilities between every pair of original clusters in `originals`. Each coassignment probability between clusters X and Y represents the probability that a randomly chosen cell from X and a randomly chosen from Y are assigned to the same cluster in the bootstrap replicate. High co-assignment probabilities indicate that X is not stable with respect to its separation from Y, given that their cells are liable to cluster together in the replicates. Ideally, we would hope for high coassignment probabilites on the diagonal (i.e., X cells cluster with themselves) and low probabilites off the diagonal.
+```{r}
+pheatmap(coassign, cluster_row = FALSE, cluster_col = FALSE,
+         color = rev(viridis::magma(100)))
+```
+
+Bootstrapping is a general approach for evaluating cluster stability that is compatible with any clustering algorithm. The coassignment probability is also more informative than a single per-cluster stability measure as the former considers the relationships between clusters, e.g., unstable separation between X and Y does not penalize the stability of separation between X and another cluster Z. Of course, one should take these probabilities with a grain of salt, as bootstrapping only considers the effect of sampling noise and ignores other factors that affect reproducibility in an independent study (e.g., batch effects, donor variation). In addition, it is possible for a poor separation to be highly stable, so highly stable cluster may not necessarily represent some distinct subpopulation.
+
+## Step 6.1b | Cell-type specific Graph-based clustering
 We can repeat the same but subsetting the `SingleCellExperiment` object:
 ```{r}
 PAG_sceset_qc_norm_filt_corr_VGAT <- PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cell.type=="VGAT"]
 PAG_sceset_qc_norm_filt_corr_VGluT2 <- PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cell.type=="VGluT2"]
 ```
 
-### 6.2b.1 | Implementation of graph-based clustering
+### 6.1b.1 | Implementation of graph-based clustering
 ```{r}
 library(scran)
 # Using HVG from Var with rank-based weights
@@ -573,7 +391,7 @@ plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGluT2, dimred = "UMAP_var_logcounts
                colour_by = "SNN_clusters_cv2_jaccard_VGluT2", text_by = "SNN_clusters_cv2_jaccard_VGluT2") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
 ```
 
-### 6.2b.2 | Assessing cluster separation
+### 6.1b.2 | Assessing cluster separation
 ```{r}
 # VGAT
 ratio_var_rank_VGAT <- clusterModularity(graph_var_rank_VGAT, clusters_var_rank_VGAT, as.ratio = TRUE)
@@ -647,6 +465,218 @@ pheatmap(log2(ratio_cv2_jaccard_VGluT2 + 1),
          #col = rev(heat.colors(100)))
 ```
 
+## Step 6.2 | Consensus clustering with SC3
+Single-Cell Consensus Clustering (SC3) is a tool for unsupervised clustering of scRNA-seq data. SC3 achieves high accuracy and robustness by consistently integrating different clustering solutions through a consensus approach. An interactive graphical implementation makes SC3 accessible to a wide audience of users. In addition, SC3 also aids biological interpretation by identifying marker genes, differentially expressed genes and outlier cells. A manuscript describing  SC3 in details is published in Nature Methods.
+
+The advantage of the SC3 is that it can directly ingest a `SingleCellExperiment` object, and it has a function that can estimate a number of clusters for us. SC3 is a purely clustering tool and it does not provide functions for the sequencing quality control (QC) or normalisation. On the contrary, it is expected that these preprocessing steps are performed by a user in advance. SC3 requires both `counts` and `logcounts` slots to exist in the input `SingleCellExperiment` object. The `counts` slot is used for gene filtering, which is based on gene dropout rates. The `logcounts` slot, which is supposed to contain both normalised and log-transformed expression matrix, is used in the main clustering algorithm.  Additionally, if spike-ins are defined via `isSpike function`, SC3 will automatically remove them before doing clustering.
+
+### 6.2.1 | Prepare SingleCellExperiment object for SC3
+SC3 requires a `feature_symbol` column of the `rowData` slot of the input `SingleCellExperiment` object to contain preferable feature names (genes/transcript) which will be used in the future visualisations. 
+```{r}
+rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt_corr)
+```
+
+We can next run `sc3_prepare`. This method prepares an object of `SCE` class for `SC3` clustering, defining all parameters needed for clustering and storing them in the `sc3` slot. The parameters have their own defaults but can be manually changed (see `?sc3_prepare` for more details). 
+```{r}
+PAG_sceset_qc_norm_filt_corr <- sc3_prepare(PAG_sceset_qc_norm_filt_corr,
+                                            gene_filter = TRUE, # Choose "FALSE" to set your own filter by changing the sc3_gene_filter slot
+                                            n_cores = 10,
+                                            rand_seed = 1991) 
+# SC3 is stochastic, if we run it different times we will get different results, so we need to make sure we have set a seed before running it.
+
+str(metadata(PAG_sceset_qc_norm_filt_corr)$sc3)
+```
+
+As we can see above, `SC3` applies a gene filter to remove genes very lowly expressed in all samples and also the ones that are expressed everywhere, so that these genes do not contribute to the clustering (see `$sc3_gene_filter`). However, we have already filtered genes in previous steps and selected highly variable genes, which we could use for it. We can manually define a list of genes that we want to use for clustering by setting the `sc3_gene_filter` column of the `rowData` slot:
+```{r}
+# Check which lists of genes you have available to use from loaded metadata or calculated highly variable genes:
+names(metadata(PAG_sceset_qc_norm_filt_corr))
+
+# Use Highly Variable Genes from Variance:
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt
+
+# Use Highly Variable Genes from CV2:
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt
+
+# Use Ion Channel Genes:
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.ionchannels
+
+# Use Neuropeptides and Neuromodulators Genes:
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.NeuromodulatorsPeptides
+
+# Use Neuropeptides and Neuromodulators Genes:
+#rowData(PAG_sceset_qc_norm_filt_corr)$sc3_gene_filter <- rownames(PAG_sceset_qc_norm_filt_corr) %in% metadata(PAG_sceset_qc_norm_filt_corr)$genes.Transcriptionfactors
+```
+
+### 6.2.2 | Estimate k
+Once the `SCE` object is prepared for clustering, `Sc3` has a method to estimate the optimal number of cluster `k` for a scRNA-seq expression matrix, which uses Tracy-Widom theory on random matrices to estimate the optimal number of clusters k.
+```{r}
+PAG_sceset_qc_norm_filt_corr <- sc3_estimate_k(PAG_sceset_qc_norm_filt_corr)
+metadata(PAG_sceset_qc_norm_filt_corr)$sc3$k_estimation 
+# k=9 for default SC3 filtering, k=8 for hvg_var_out_no_spikes_block_filt, k=10 for hvg_cv2_out_no_spikes_filt, k=3 for genes.ionchannels, k=4 for genes.NeuromodulatorsPeptides, k=3 for genes.Transcriptionfactors
+str(metadata(PAG_sceset_qc_norm_filt_corr)$sc3)
+```
+
+### 6.2.3 | Calculate distances and transformations
+We are now ready to perform the clustering itself. The method `sc3_calc_dists` calculates distances between the cells and creates and populates the `distances` slot, which contains a list of distance matrices corresponding to Euclidean, Pearson and Spearman distances.
+```{r}
+PAG_sceset_qc_norm_filt_corr <- sc3_calc_dists(PAG_sceset_qc_norm_filt_corr)
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances)
+```
+
+Next, the method `sc3_calc_transfs` calculates the transformations of the distance matrices contained in the distances item of the `sc3` slot, and creates and populates the `transformations` slot, which contains a list of transformations of the distance matrices corresponding to PCA and graph Laplacian transformations. It also removes the previously calculated `distances` item from the `sc3` slot:
+```{r}
+PAG_sceset_qc_norm_filt_corr <- sc3_calc_transfs(PAG_sceset_qc_norm_filt_corr)
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$transformations)
+metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances
+```
+
+### 6.2.4 | K-means
+We use the `sce_kmeans` method to perform k-means on the transformed distance matrices contained in the `transformations` item of the `sc3` slot. The method `sc3_kmeans` also creates and populates the `kmeans` item, which contains a list of kmeans clusterings. Given that we need to define the ks at the beginning, it is best to set a range of ks around the estimated value obtained from `sc3_estimate` to try and compare different solutions.
+```{r}
+start_time <- Sys.time() # Takes around 5 min
+PAG_sceset_qc_norm_filt_corr <- sc3_kmeans(PAG_sceset_qc_norm_filt_corr,
+                                           ks = 2:12)
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans)
+end_time <- Sys.time()
+end_time - start_time
+```
+
+### 6.2.5 | Calculate consensus
+In this step `SC3` provides a clustering solution. When calculating consensus for each value of `k`, `SC3` averages the clustering results of `kmeans` using a consensus approach. The method `sc3_calc_consens` calculates consensus matrices based on the clustering solutions contained in the `kmeans` item of the `sc3` slot, and it then creates and populates the `consensus` item, which for each value of k it contains a consensus matrix, an `hclust` object corresponding to hierarchical clustering of the consensus matrix, and the Silhouette indices of the clusters. It also removes the previously calculated `kmeans` item from the `sc3` slot.
+```{r}
+PAG_sceset_qc_norm_filt_corr <- sc3_calc_consens(PAG_sceset_qc_norm_filt_corr)
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus)
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus$`1`)
+metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans
+```
+
+### 6.2.6 | Calculate biology
+`SC3` can also calculate DE genes, marker genes, and cell outliers based on the calculated consensus clusterings. Similary to the clustering solutions, the method `sc3_calc_biology` writes the results for the cell outliers (cell-related information) to the `colData` slot of the `SCE` object. In contrast, DE and marker genes results (gene-related information) are written to the `rowData` slot.
+```{r}
+PAG_sceset_qc_norm_filt_corr <- sc3_calc_biology(PAG_sceset_qc_norm_filt_corr, 
+                                                 ks = 2:12)
+```
+
+### 6.2.7 | Running SC3 with the wrapper function [OPTIONAL ALTERNATIVE]
+Alternatively, we can run SC3 with the wrapper function and ask it to calculate biological properties of the clusters as well. This should do the same steps as we just did in the same order. However, make sure you have at least prepared the `SCE` object and have estimated ks beforehand.
+```{r}
+# rowData(PAG_sceset_qc_norm_filt_corr)$feature_symbol <- rownames(PAG_sceset_qc_norm_filt_corr)
+# 
+# start_time <- Sys.time() # Takes around 35 min
+# PAG_sceset_qc_norm_filt_corr <- sc3(PAG_sceset_qc_norm_filt_corr,
+#                                     ks = 2:12,
+#                                     gene_filter = TRUE, # Set to FALSE if you want to determine a list of genes to be used instead
+#                                     biology = TRUE, 
+#                                     n_cores = 4,
+#                                     rand_seed = 1991)
+# end_time <- Sys.time()
+# end_time - start_time
+```
+
+### 6.2.8 | Explore the results
+To run the interactive `Shiny` session, we can do the following: 
+```{r}
+sc3_interactive(PAG_sceset_qc_norm_filt_corr)
+```
+
+SC3 writes all its results obtained for cells to the `colData` slot of the `SCE` object by adding additional columns to it, and all its results obtained for features (genes/transcripts) to the `rowData` slot. This slot also contains all other cell features calculated by the scater package either automatically during the `SCE` object creation or during the `calculateQCMetrics` call. One can identify the SC3 results using the "sc3_" prefix. We can use these results as highlights when plotting.
+```{r}
+# Consensus Matrix
+sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, 
+                   k = 4, 
+                   show_pdata = c("cell.type", "PAG.arearegistration"))
+
+# DE Genes
+sc3_plot_de_genes(PAG_sceset_qc_norm_filt_corr, 
+                  k = 4,
+                  p.val = 0.001,
+                  show_pdata = c("cell.type", "PAG.arearegistration"))
+
+# Marker Genes
+sc3_plot_markers(PAG_sceset_qc_norm_filt_corr,
+                 k = 4,
+                 auroc = 0.7,
+                 p.val = 0.01,
+                 show_pdata = c("cell.type", "PAG.arearegistration"))
+```
+
+We can also use the results from the clustering to highlight the clusters in any PCA/tSNE/UMAP plot:
+```{r}
+plotPCA(PAG_sceset_qc_norm_filt_corr, colour_by = "sc3_8_clusters")
+```
+
+#### Consensus matrix
+The consensus matrix is a NxN matrix, where N is the number of cells. It represents similarity between the cells based on the averaging of clustering results from all combinations of clustering parameters. Similarity 0 (blue) means that the two cells are always assigned to different clusters. In contrast, similarity 1 (red) means that the two cells are always assigned to the same cluster. The consensus matrix is clustered by hierarchical clustering and has a diagonal-block structure. Intuitively, the perfect clustering is achieved when all diagonal blocks are completely red and all off-diagonal elements are completely blue. 
+```{r}
+sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, 
+                   k = 3, 
+                   show_pdata = c("cell.type",
+                                  "PAG.areacollection",
+                                  "sc3_3_clusters"
+                                  )
+                   )
+```
+
+#### Silhouette plot and stability index
+A silhouette is a quantitative measure of the diagonality of the consensus matrix. An average silhouette width (shown at the bottom left of the silhouette plot) varies from 0 to 1, where 1 represents a perfectly block-diagonal consensus matrix and 0 represents a situation where there is no block-diagonal structure. The best clustering is achieved when the average silhouette width is close to 1.
+```{r}
+sc3_plot_silhouette(PAG_sceset_qc_norm_filt_corr, 
+                    k = 5
+                    )
+```
+
+The Stability Index shows how stable each cluster is accross the selected range of ks. The stability index varies between 0 and 1, where 1 means that the same cluster appears in every solution for different k.
+```{r}
+sc3_plot_cluster_stability(PAG_sceset_qc_norm_filt_corr, 
+                           k = 3
+                           )
+```
+
+#### Heatmap of the expression matrix
+The expression panel represents the original input expression matrix (cells in columns and genes in rows) after cell and gene filters. Genes are clustered by k-means with k = 100 (dendrogram on the left) and the heatmap represents the expression levels of the gene cluster centers after log2-scaling. It is also possible to annotate cells (columns of the expression matrix) with any column of the `colData` slot of the `SCE` object.
+```{r}
+sc3_plot_expression(PAG_sceset_qc_norm_filt_corr, 
+                    k = 3, 
+                    show_pdata = c("cell.type",
+                                   "PAG.areacollection",
+                                   "sc3_3_clusters"
+                                   )
+                    )
+```
+
+#### Differentially expressed and Marker genes
+Differential expression is calculated using the non-parametric Kruskal-Wallis test. A significant p-value indicates that gene expression in at least one cluster stochastically dominates one other cluster. SC3 provides a list of all differentially expressed genes with adjusted p-values < 0.01 and plots gene expression profiles of the 50 genes with the lowest p-values. Note that the calculation of differential expression after clustering can introduce a bias in the distribution of p-values, and thus we advise to use the p-values for ranking the genes only.
+```{r}
+sc3_plot_de_genes(PAG_sceset_qc_norm_filt_corr, 
+                  k = 3,
+                  p.val = 0.001,
+                  show_pdata = c("cell.type",
+                                 "PAG.areacollection",
+                                 "sc3_3_clusters"
+                                 )
+                  )
+```
+
+To find marker genes, for each gene a binary classifier is constructed based on the mean cluster expression values. The classifier prediction is then calculated using the gene expression ranks. The area under the receiver operating characteristic (ROC) curve is used to quantify the accuracy of the prediction. A p-value is assigned to each gene by using the Wilcoxon signed rank test. The genes with the area under the ROC curve (AUROC) > 0.85 and with the p-value < 0.01 are defined as marker genes and the top 10 marker genes of each cluster are visualized in this panel. The AUROC and the p-value thresholds can be changed using the slider and radio buttons below.
+```{r}
+sc3_plot_markers(PAG_sceset_qc_norm_filt_corr, 
+                 k = 3,
+                 auroc = 0.65,
+                 p.val = 0.01,
+                 show_pdata = c("cell.type",
+                                "PAG.areacollection",
+                                "sc3_3_clusters"
+                                )
+                 )
+```
+
+### 6.2.9 | Export the results
+SC3 allows us to export the results into an Excel file:
+```{r}
+sc3_export_results_xls(PAG_sceset_qc_norm_filt_corr, filename = "PAG_sceset_qc_norm_filt_corr_clust")
+```
+
 ## Step 6.3 | k-means clustering
 k-means clustering is a classic technique that aims to partition cells into k clusters. Each cell is assigned to the cluster with the closest centroid, which is done by minimizing the within-cluster sum of squares using a *random* starting configuration for the k centroids. The main advantage of this approach lies in its speed, given the simplicity and ease of implementation of the algorithm. However, it suffers from a number of serious shortcomings that reduce its appeal for obtaining interpretable clusters:
 
@@ -656,37 +686,13 @@ k-means clustering is a classic technique that aims to partition cells into k cl
 
 * It is dependent on the randomly chosen initial coordinates. This requires multiple runs to verify that the clustering is stable. 
 
-That said, k-means clustering is still one of the best approaches for sample-based data compression. In this application, we set k to a large value such as the square root of the number of cells to obtain fine-grained clusters. These are not meant to be interpreted directly, but rather, the centroids are treated as “samples” for further analyses. The idea here is to obtain a single representative of each region of the expression space, reducing the number of samples and computational work in later steps like, e.g., trajectory reconstruction (Ji and Ji 2016). This approach will also eliminate differences in cell density across the expression space, ensuring that the most abundant cell type does not dominate downstream results.
+That said, k-means clustering is still one of the best approaches for sample-based data compression. We can set `k` to a large value such as the square root of the number of cells to obtain fine-grained clusters. These are not meant to be interpreted directly, but rather, the centroids are treated as “samples” for further analyses. The idea here is to obtain a single representative of each region of the expression space, reducing the number of samples and computational work in later steps like, e.g., trajectory reconstruction (Ji and Ji 2016). This approach will also eliminate differences in cell density across the expression space, ensuring that the most abundant cell type does not dominate downstream results.
 
-### 6.3.1 | Implementation of k-means clustering
-Base R provides the `kmeans()` function that does as its name suggests. We call this on our top PCs to obtain a clustering for a specified number of clusters in the `centers=` argument, after setting the random seed to ensure that the results are reproducible. In general, the k-means clusters correspond to the visual clusters on a previously obtained t-SNE plot.
-```{r}
-set.seed(1991)
-
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
-
-# Using PCA from HVG_var_logcounts
-cluster_kmeans_var <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts"), centers = 7)
-PAG_sceset_qc_norm_filt_corr$cluster_kmeans_var <- factor(cluster_kmeans_var$cluster)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", 
-               colour_by = "cluster_kmeans_var", text_by = "cluster_kmeans_var") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
-
-# Using PCA from HVG_cv2_logcounts
-cluster_kmeans_cv2 <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts"), centers = 7)
-PAG_sceset_qc_norm_filt_corr$cluster_kmeans_cv2 <- factor(cluster_kmeans_cv2$cluster)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", 
-               colour_by = "cluster_kmeans_cv2", text_by = "cluster_kmeans_cv2") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
-
-table(cluster_kmeans_cv2$cluster)
-table(cluster_kmeans_var$cluster)
-```
-
-### 6.3.2 | Choosing a reasonable "k"
-We could obtain a “reasonable” choice of k by computing the gap statistic using methods from the `cluster` package. This is the log-ratio of the expected to observed within-cluster sum of squares, where the expected value is computed by randomly distributing cells within the minimum bounding box of the original data. A larger gap statistic represents a lower observed sum of squares - and thus better clustering - compared to a population with no structure. Ideally, we would choose the k that maximizes the gap statistic, but this is often unhelpful as the tendency of k-means to favour spherical clusters drives a large k to capture different cluster shapes. Instead, we choose the most parsimonious k beyond which the increases in the gap statistic are considered insignificant.
+### 6.3.1 | Choosing a reasonable "k"
+We could first try to obtain a “reasonable” choice of k by computing the gap statistic using methods from the `cluster` package. This is the log-ratio of the expected to observed within-cluster sum of squares, where the expected value is computed by randomly distributing cells within the minimum bounding box of the original data. A larger gap statistic represents a lower observed sum of squares - and thus better clustering - compared to a population with no structure. Ideally, we would choose the k that maximizes the gap statistic, but this is often unhelpful as the tendency of k-means to favour spherical clusters drives a large `k` to capture different cluster shapes. Instead, we choose the most parsimonious `k` beyond which the increases in the gap statistic are considered insignificant (when the curve is reaching saturation).
 ```{r}
 library(cluster)
-set.seed(1991)
+set.seed(1714)
 
 # Using PCA from HVG_var_logcounts
 gaps_var <- clusGap(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts"), kmeans, K.max = 20)
@@ -705,48 +711,128 @@ plot(gaps_cv2$Tab[,"gap"], xlab = "Number of clusters", ylab = "Gap statistic")
 abline(v = best_k_cv2, col = "red")
 ```
 
-### 6.3.3 | Overclustering
-A more practical use of k-means is to deliberately set k to a large value to achieve overclustering. This will forcibly partition cells inside broad clusters that do not have well-defined internal structure. For example, we might be interested in the change in expression from one “side” of a cluster to the other, but the lack of any clear separation within the cluster makes it difficult to separate with graph-based methods, even at the highest resolution. k-means has no such problems and will readily split these broad clusters for greater resolution, though obviously one must be prepared for the additional work involved in interpreting a greater number of clusters.
+It is a good idea to run this with different seeds to verify that the results are stable.
+
+### 6.3.2 | Implementation of k-means clustering
+Once we have a `k` to start with, we can perform k-means clustering with `k` values around the computed one before selecting one resulting in the desired resolution. Base R provides the `kmeans()` function that does as its name suggests. We call this on our top PCs to obtain a clustering for a specified number of clusters in the `centers =` argument, after setting the random seed to ensure that the results are reproducible. In general, the k-means clusters correspond to the visual clusters on a previously obtained t-SNE plot, although there will be some divergences at least partially due to the fact that t-SNE is itself graph-based and so will naturally agree more with a graph-based clustering strategy.
 ```{r}
-set.seed(1991)
+set.seed(1714)
+cluster_kmeans_var <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts"), centers = 8)
+PAG_sceset_qc_norm_filt_corr$cluster_kmeans_var <- factor(cluster_kmeans_var$cluster)
 
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
-               colour_by = "PAG.arearegistration", shape_by = "cell.type") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+cluster_kmeans_cv2 <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts"), centers = 13)
+PAG_sceset_qc_norm_filt_corr$cluster_kmeans_cv2 <- factor(cluster_kmeans_cv2$cluster)
 
-# Using PCA from HVG_var_logcounts
+table(cluster_kmeans_var$cluster)
+table(cluster_kmeans_cv2$cluster)
+```
+
+We can now visualize the clustering results on our preferred reduced dimensionality plot:
+```{r}
+# t-SNE using PCA from HVG_var_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
+               colour_by = "cluster_kmeans_var", shape_by = "cell.type", 
+               text_by = "cluster_kmeans_var") + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+# t-SNE using PCA from HVG_cv2_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "cluster_kmeans_cv2", shape_by = "cell.type", 
+               text_by = "cluster_kmeans_cv2") + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+# UMAP using PCA from HVG_var_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type")  + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist", 
+               colour_by = "cluster_kmeans_var", shape_by = "cell.type",
+               text_by = "cluster_kmeans_var") + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+# UMAP using PCA from HVG_cv2_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type")  + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", 
+               colour_by = "cluster_kmeans_cv2", shape_by = "cell.type",
+               text_by = "cluster_kmeans_cv2")  + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+```
+
+### 6.3.3 | Overclustering
+A more practical use of k-means is to deliberately set `k` to a large value to achieve overclustering. This will forcibly partition cells inside broad clusters that do not have well-defined internal structure. For example, we might be interested in the change in expression from one “side” of a cluster to the other, but the lack of any clear separation within the cluster makes it difficult to separate with graph-based methods, even at the highest resolution. k-means has no such problems and will readily split these broad clusters for greater resolution, though obviously one must be prepared for the additional work involved in interpreting a greater number of clusters.
+```{r}
+set.seed(1714)
+
 overcluster_kmeans_var <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts"), centers = 20)
 PAG_sceset_qc_norm_filt_corr$overcluster_kmeans_var <- factor(overcluster_kmeans_var$cluster)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", 
-               colour_by = "overcluster_kmeans_var", text_by = "overcluster_kmeans_var") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
 
-# Using PCA from HVG_cv2_logcounts
 overcluster_kmeans_cv2 <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts"), centers = 20)
 PAG_sceset_qc_norm_filt_corr$overcluster_kmeans_cv2 <- factor(overcluster_kmeans_cv2$cluster)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", 
-               colour_by = "overcluster_kmeans_cv2", text_by = "overcluster_kmeans_cv2") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
 
 table(overcluster_kmeans_var$cluster)
 table(overcluster_kmeans_cv2$cluster)
 ```
 
+```{r}
+# t-SNE using PCA from HVG_var_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
+               colour_by = "overcluster_kmeans_var", shape_by = "cell.type", 
+               text_by = "overcluster_kmeans_var") + labs(title = "tSNE_var_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+# t-SNE using PCA from HVG_cv2_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
+               colour_by = "overcluster_kmeans_cv2", shape_by = "cell.type", 
+               text_by = "overcluster_kmeans_cv2") + labs(title = "tSNE_cv2_corrected_perplexity_15", x = "t-SNE 1", y = "t-SNE 2")
+
+# UMAP using PCA from HVG_var_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type")  + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist", 
+               colour_by = "overcluster_kmeans_var", shape_by = "cell.type",
+               text_by = "overcluster_kmeans_var") + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+# UMAP using PCA from HVG_cv2_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type")  + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", 
+               colour_by = "overcluster_kmeans_cv2", shape_by = "cell.type",
+               text_by = "overcluster_kmeans_cv2")  + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+```
+
 ### 6.3.4 | Assessing cluster separation
 The within-cluster sum of squares (WCSS) for each cluster is the most relevant diagnostic for k-means, given that the algorithm aims to find a clustering that minimizes the WCSS. Specifically, we use the WCSS to compute the root-mean-squared deviation (RMSD) that represents the spread of cells within each cluster. A cluster is more likely to have a low RMSD if it has no internal structure and is separated from other clusters (such that there are not many cells on the boundaries between clusters, which would result in a higher sum of squares from the centroid).
 ```{r}
-ncells_cluster_kmeans_cv2 <- tabulate(cluster_kmeans_cv2$cluster)
-tab_cluster_kmeans_cv2 <- data.frame(wcss = cluster_kmeans_cv2$withinss, ncells = ncells_cluster_kmeans_cv2)
-tab_cluster_kmeans_cv2$rms <- sqrt(tab_cluster_kmeans_cv2$wcss/tab_cluster_kmeans_cv2$ncells)
-tab_cluster_kmeans_cv2
-
+# Using PCA from HVG_var_logcounts
 ncells_cluster_kmeans_var <- tabulate(cluster_kmeans_var$cluster)
 tab_cluster_kmeans_var <- data.frame(wcss = cluster_kmeans_var$withinss, ncells = ncells_cluster_kmeans_var)
 tab_cluster_kmeans_var$rms <- sqrt(tab_cluster_kmeans_var$wcss/tab_cluster_kmeans_var$ncells)
 tab_cluster_kmeans_var
 
+# Using PCA from HVG_cv2_logcounts
+ncells_cluster_kmeans_cv2 <- tabulate(cluster_kmeans_cv2$cluster)
+tab_cluster_kmeans_cv2 <- data.frame(wcss = cluster_kmeans_cv2$withinss, ncells = ncells_cluster_kmeans_cv2)
+tab_cluster_kmeans_cv2$rms <- sqrt(tab_cluster_kmeans_cv2$wcss/tab_cluster_kmeans_cv2$ncells)
+tab_cluster_kmeans_cv2
+
+# Overclustering using PCA from HVG_var_logcounts
 ncells_overcluster_kmeans_var <- tabulate(overcluster_kmeans_var$cluster)
 tab_overcluster_kmeans_var <- data.frame(wcss = overcluster_kmeans_var$withinss, ncells = ncells_overcluster_kmeans_var)
 tab_overcluster_kmeans_var$rms <- sqrt(tab_overcluster_kmeans_var$wcss/tab_overcluster_kmeans_var$ncells)
 tab_overcluster_kmeans_var
 
+# Overclustering using PCA from HVG_cv2_logcounts
 ncells_overcluster_kmeans_cv2 <- tabulate(overcluster_kmeans_cv2$cluster)
 tab_overcluster_kmeans_cv2 <- data.frame(wcss = overcluster_kmeans_cv2$withinss, ncells = ncells_overcluster_kmeans_cv2)
 tab_overcluster_kmeans_cv2$rms <- sqrt(tab_overcluster_kmeans_cv2$wcss/tab_overcluster_kmeans_cv2$ncells)
@@ -755,12 +841,14 @@ tab_overcluster_kmeans_cv2
 
 To explore the relationships between k-means clusters, a natural approach is to compute distances between their centroids. This directly lends itself to visualization as a tree after hierarchical clustering.
 ```{r}
-cent_tree_cluster_kmeans_cv2 <- hclust(dist(cluster_kmeans_cv2$centers), "ward.D2")
-plot(cent_tree_cluster_kmeans_cv2)
-
+# Clustering with the estimated k
 cent_tree_cluster_kmeans_var <- hclust(dist(cluster_kmeans_var$centers), "ward.D2")
 plot(cent_tree_cluster_kmeans_var)
 
+cent_tree_cluster_kmeans_cv2 <- hclust(dist(cluster_kmeans_cv2$centers), "ward.D2")
+plot(cent_tree_cluster_kmeans_cv2)
+
+# Overclustering
 cent_tree_overcluster_kmeans_var <- hclust(dist(overcluster_kmeans_var$centers), "ward.D2")
 plot(cent_tree_overcluster_kmeans_var)
 
@@ -778,7 +866,7 @@ In practice, hierachical clustering is too slow to be used for anything but the 
 ### 6.4.1 | Implementation of hierarchical clustering
 We compute a cell-cell distance matrix using the top PCs and we apply hierarchical clustering with Ward’s method. We can then inspect the resulting tree. While both Ward’s method and complete linkage (`hclust()`’s default) yield compact clusters, we prefer the former as it is less affected by differences in variance between clusters. This yields a dendrogram that groups together cells with similar expression patterns across the chosen genes.
 ```{r}
-# Using PCA from HVG_var_logcounts
+## Using PCA from HVG_var_logcounts
 PAG_dist_var <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts")) # Making a distance matrix
 PAG_tree_var <- hclust(PAG_dist_var, "ward.D2") # Building a tree
 plot(PAG_tree_var)
@@ -801,7 +889,7 @@ labels_colors(PAG_dend_var) <- c(`dmpag_VGAT` = "cornflowerblue",
 
 plot(PAG_dend_var)
 
-# Using PCA from HVG_cv2_logcounts
+## Using PCA from HVG_cv2_logcounts
 PAG_dist_cv2 <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts")) # Making a distance matrix
 PAG_tree_cv2 <- hclust(PAG_dist_cv2, "ward.D2") # Building a tree
 plot(PAG_tree_cv2)
@@ -859,13 +947,21 @@ table(PAG_clust_cv2_cutree, PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
 
 We can now visualize the cluster assignments for all cells on any of the `ReducedDim` slots we previously computed (e.g. tSNE or UMAP). Adjacent cells are generally assigned to the same cluster, and the clustering results generally corresponds well to the grouping of cells on a t-SNE or UMAP plot.
 ```{r}
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", colour_by = "PAGarea_celltype")
+# Using PCA from HVG_var_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type")  + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 PAG_sceset_qc_norm_filt_corr$clusters_var_cutree <- factor(PAG_clust_var_cutree)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", colour_by = "clusters_var_cutree")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist", 
+               colour_by = "clusters_var_cutree", text_by = "clusters_var_cutree") + labs(title = "UMAP_var_corrected_10_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
+
+# Using PCA from HVG_cv2_logcounts
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "cell.type")  + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 
 PAG_sceset_qc_norm_filt_corr$clusters_cv2_cutree <- factor(PAG_clust_cv2_cutree)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_logcounts_10_neighbors_0.05_min_dist", colour_by = "clusters_cv2_cutree")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", 
+               colour_by = "clusters_cv2_cutree", text_by = "clusters_cv2_cutree")  + labs(title = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist", x = "UMAP 1", y = "UMAP 2")
 ```
 
 We can examine the distribution of cells in each cluster with respect to known factors. For instance, we can compare the cluster identities to batch to check the clustering is not driven by batch effects. We can also compare to any other interesting metadata to see what can be driving the clusters such as `cell.type` or `PAG.area`.
