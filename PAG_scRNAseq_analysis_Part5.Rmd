@@ -133,14 +133,15 @@ assayNames(PAG_sceset_qc_norm_filt)
 If the batch effect is successfully corrected, clusters corresponding to shared cell types or states should contain cells from multiple batches. The general recommendation is to use measured raw data for statistical testing (e.g. Differential Expression Analysis), corrected data for visual comparison of data, and reduced/feature selected data for other downstream analysis based on finding the underlying biological data manifold.
 
 ### 5.2.2 | Effectiveness of the correction
-We can use PCA to compare the effects of our normalization and batch correction. To evaluate the effectiveness of the correction we can plot the PCA output where colour corresponds to the technical replicates and shape corresponds to the individuals from which biological samples were acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed. In addition, if we plot the PCA results using the `size_by = total_features_by_counts` we can assess whether the count depth correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
+We can use PCA to compare the effects of our normalization and batch correction. To evaluate the effectiveness of the correction we can plot the PCA output where colour corresponds to the technical replicates and shape corresponds to the individuals from which biological samples were acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed. In addition, if we plot the PCA results using the `size_by = detected` we can assess whether the count depth correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
 
-*[IMP]*: If `feature_set = NULL`, the `ntop` features with the largest variances are used instead. This literally computes the variances from the expression values without considering any mean-variance trend. Note that the value of `ntop` is ignored if `feature_set` is specified. Given that we have fitted a mean-variance trend and obtained highly variable genes from it, we will use our HVG instead of using the `ntop` option.
+*[IMP]*: If `subset_row = NULL`, the `ntop` features with the largest variances are used instead. This literally computes the variances from the expression values without considering any mean-variance trend. Note that the value of `ntop` is ignored if `subset_row` is specified. Given that we have fitted a mean-variance trend and obtained highly variable genes from it, we will use our HVG instead of using the `ntop` option.
 ```{r}
 # Compute PCA for each of the assay slots with the HVGs obtained with variance modelling:
 for(n in assayNames(PAG_sceset_qc_norm_filt)) {
   set.seed(1991)
   PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                    ncomponents = 50, # default is to compute top 50 PCs
                                     exprs_values = n,
                                     subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
                                     name = paste0("PCA_HVG_var_", n)
@@ -184,6 +185,7 @@ We repeat the same operation using the genes obtained from modelling the CV2-mea
 for(n in assayNames(PAG_sceset_qc_norm_filt)) {
   set.seed(1992)
   PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                    ncomponents = 50, # default is to compute top 50 PCs
                                     exprs_values = n,
                                     subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
                                     name = paste0("PCA_HVG_cv2_", n)
@@ -223,7 +225,7 @@ multiplot(PCA_HVG_cv2_counts, PCA_HVG_cv2_logcounts_raw, PCA_HVG_cv2_logcounts, 
 
 Hint: try "Ctss", "Cd14", or "Cd68" as `colour_by = `. This will show how the more separated cells in the t-SNE plots are actually macrophages, with high expression levels for macrophage marker genes.
 
-Overall, we can clearly see that the first PC in the raw data is dominated by the library size / total detected genes in each sample (which explains >90% of the variance). Once we normalize and log-transform the raw counts using scran, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalization show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalization and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this). 
+Overall, we can clearly see that the first PC in the raw data is dominated by the library size / total detected genes in each sample (which explains >90% of the variance). Once we normalize and log-transform the raw counts using scran, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalization show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalization and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this).
 
 We can also look at the change in the `plotExplanatoryVariables()` output after normalization and batch correction:
 ```{r}
@@ -307,9 +309,33 @@ for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_s
   plot(proportion_var, xlab = "PC", ylab = "Proportion of variance explained (%)", main = n)
   abline(v = chosen_elbow, col = "red")
 }
+
+reducedDimNames(PAG_sceset_qc_norm_filt)
 ```
 
-Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for `d`. As we see in the scree plots using the `counts` assay, the first component explains most of the variability. After log-normalization with `scran`, that correlate is gone and we can properly assess a more appropriate elbow for our data.
+Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for `d`. As we see in the scree plots using the `counts` assay, the first component explains most of the variance. After log-normalization with `scran`, that correlate is gone and we can properly assess a more appropriate elbow for our data.
+
+we can also print the percentage of variance explained by each component, and look at the cumulative sum throughout any selected subset of PCs:
+```{r}
+# Other ways to look at the variance explained by each PC:
+summary(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar"))
+
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[1:5])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[6:10])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[11:15])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[16:20])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[21:25])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[26:30])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[31:35])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[36:40])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[41:45])
+sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")[46:50])
+
+cumsum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar"))
+
+plot(cumsum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")))
+hist((attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")), breaks = 100)
+```
 
 From a practical perspective, the use of the elbow point tends to retain fewer PCs compared to other methods. The definition of “much more variance” is relative so, in order to be retained, later PCs must explain an amount of variance that is comparable to that explained by the first few PCs. Strong biological variation in the early PCs will shift the elbow to the left (as it happens for our PCA plots using HVGs from Variance modelling), potentially excluding weaker (but still interesting) variation in the next PCs immediately following the elbow. We would keep the top 50 PCs just to be on the safe side.
 
@@ -350,15 +376,54 @@ The plots above depict the number of clusters detected in our dataset as a funct
 This strategy is the most pragmatic as it directly addresses the role of the bias-variance trade-off in downstream analyses, specifically clustering. There is no need to preserve biological signal beyond what is distinguishable in later steps. However, it involves strong assumptions about the nature of the biological differences between subpopulations - and indeed, discrete subpopulations may not even exist in studies of continuous processes like differentiation.
 
 ### 5.3.5 | Choosing the number of PCs
-After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would perhaps say that 30 and 40 PCs are values after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the plot becomes almost flat). If we look at the population structure approach, the suggested values are 13 and 16, respectively. We will thus try to settle for a middle point in an attempt to achieve a balance between the extremes, and therefore we will choose to use the first 25 PCs.
+After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would perhaps say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the plot becomes almost flat). If we look at the population structure approach, the suggested values are 13 and 16, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. We will continue to use the first 25 PCs in an attempt to retain a bit more of information. 
 
-Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new reducedDim slots with the subsetted PCs. We will keep all of them for now and specify the number of PCs to use on the following steps.
+Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new `reducedDim` slots with the subsetted or recalculated PCs. We will keep both the full set of PCs and the reduced version with the top 25 PCs in a different `reducedDim()` slot.
+```{r}
+# Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-cv2:
+set.seed(1992)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "logcounts",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                  ncomponents = 25,
+                                  name = "PCA_HVG_cv2_logcounts_25"
+                                  )
+
+set.seed(1992)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "corrected",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                  ncomponents = 25,
+                                  name = "PCA_HVG_cv2_corrected_25"
+                                  )
+
+# Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-variance:
+set.seed(1991)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "logcounts",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                  ncomponents = 25,
+                                  name = "PCA_HVG_var_logcounts_25"
+                                  )
+
+set.seed(1991)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "corrected",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                  ncomponents = 25,
+                                  name = "PCA_HVG_var_corrected_25"
+                                  )
+
+reducedDimNames(PAG_sceset_qc_norm_filt)
+ncol(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_logcounts"))
+ncol(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_logcounts_25"))
+```
 
 ## Step 5.4 | Visualization of the data after dimensionality reduction
 Dimensionality reduction allows us to compress the data into 2 or 3 dimensions for plotting. 
 
 ### 5.4.1 | Visualization with PCA
-Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components (PCs). The number of principal components is less than or equal to the number of original variables. Mathematically, the PCs correspond to the eigenvectors of the covariance matrix. The eigenvectors are sorted by eigenvalue so that the first principal component accounts for as much of the variability in the data as possible, and each succeeding component in turn has the highest variance possible under the constraint that it is orthogonal to the preceding components.
+Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components (PCs). The number of principal components is less than or equal to the number of original variables. Mathematically, the PCs correspond to the eigenvectors of the covariance matrix. The eigenvectors are sorted by eigenvalue so that the first principal component accounts for as much of the variance in the data as possible, and each succeeding component in turn has the highest variance possible under the constraint that it is orthogonal to the preceding components.
 
 We can apply PCA to visualize the relationships between cells in our dataset. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Ideally, we do this using the `logcounts` or the `corrected` slot of our `SingleCellExperiment` object. Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. *BUT* - log-transformation is not a proper normalization step and is not enough to account for different technical factors between the cells (e.g. sequencing depth). Therefore, we should not use `logcounts_raw` for our downstream analysis, but instead use the _logcounts_ slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalized by library size with `scran`. By default `scater` only uses the top 500 most variable genes to calculate the PCA, but this can be adjusted by changing the _ntop_ argument. We can also choose to use our HVGs instead, or any given list of genes we may obtain by other feature selection strategies.
 
@@ -424,7 +489,7 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
 
 Some advantages of using PCA for visualization are that it is predictable and will not introduce artificial structure in the visualization. It is also deterministic and robust to small changes in the input values. However, PCA is usually not satisfactory for visualization of complex populations. This is illustrated in our plots by the fact that we can only distinguish between excitatory and inhibitory cells, but that's about it.
 
-### 5.4.2 | t-SNE (t-stochastic neighbor embedding)
+### 5.4.2 | t-SNE (t-stochastic neighbour embedding)
 Another widely used approach for dimensionality reduction is the t-stochastic neighbour embedding (t-SNE) method (Van der Maaten and Hinton 2008). tSNE combines dimensionality reduction with random walks on the nearest-neighbour network to map high dimensional data to a 2-dimensional space while preserving local distances between cells. t-SNE tends to work better than PCA for separating cells in more diverse populations. This is because the former can directly capture non-linear relationships in high-dimensional space, whereas the latter must represent them (suboptimally) as linear components. However, this improvement comes at the cost of more computational effort and complexity. In particular, the non-linear and stochastic nature of the algorithm means that running it multiple times on the same dataset will result in different plots, making the results more difficult to intuitively interpret. Users should thus run the algorithm several times to ensure that the results are representative, and then set a `seed` to ensure that the chosen results are reproducible. It is also advisable to test different settings of the `perplexity` parameter as this will affect the distribution of points in the low-dimensional space.
 
 tSNE plots are the _de facto_ standard for visualization of scRNA-seq data, but should *NOT* be used for clustering. Furthermore, tSNE requires you to provide a value of `perplexity` which reflects the number of neighbours used to build the nearest-neighbour network - a high value creates a dense network which clumps cells together, whereas a low value makes the network more sparse allowing groups of cells to separate from each other. `scater` uses a default `perplexity` equal to the total number of cells divided by five (rounded down). You should try different perplexities and run it several times to make sure you are not getting a weird result. If your data are very homogeneous the tSNE plots are going to be hard to interpret, whereas if they contain very well defined clusters it will visualize them very nicely.
