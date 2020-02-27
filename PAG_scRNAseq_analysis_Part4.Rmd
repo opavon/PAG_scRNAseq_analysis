@@ -55,7 +55,7 @@ The simplest approach to quantifying per-gene variation is to compute the varian
 
 Calculation of the per-gene variance is simple but feature selection requires modelling of the mean-variance relationship. The log-transformation does not achieve perfect variance stabilization, which means that the variance of a gene is driven more by its abundance than its underlying biological heterogeneity. To account for this effect, we use the `modelGeneVar()` function to fit a trend to the variance with respect to abundance across all genes. Note that in previouse steps we have filtered the genes so that we keep only those expressed (with at least 1 count) in 4 cells or more.
 
-For each gene, `modelGeneVar()` computes the variance and mean of the log-expression values. A trend is fitted to the variance against the mean for all genes using `fitTrendVar`. The fitted value for each gene is used as a proxy for the technical component of variation for each gene, under the assumption that most genes exhibit a low baseline level of variation that is not biologically interesting. The biological component of variation for each gene is defined as the the residual from the trend. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized log-expression per gene), `total` (variance of the normalized log-expression per gene), `bio` (biological component of the variance), `tech` (technical component of the variance), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that bio<=0).
+For each gene, `modelGeneVar()` computes the variance and mean of the log-expression values. A trend is fitted to the variance against the mean for all genes using `fitTrendVar`. The fitted value for each gene is used as a proxy for the technical component of variation for each gene, under the assumption that most genes exhibit a low baseline level of variation that is not biologically interesting. The biological component of variation for each gene is defined as the residual from the trend. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized log-expression per gene), `total` (variance of the normalized log-expression per gene), `bio` (biological component of the variance), `tech` (technical component of the variance), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that bio<=0).
 ```{r}
 library(scran)
 start_time <- Sys.time() # Takes around 2s
@@ -359,7 +359,7 @@ dim(hvg_cv2_out_no_spikes_block)
 
 ### 4.3.1 | Filter uninteresting genes from the dataset
 _One important thing..._
-Now that we have modelled the gene expression variance and CV2, and before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
+Now that we have modelled the gene expression variance and CV2, and before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labelling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
 ```{r}
 ##### 
 ##Identify and mark the genes we want to drop:
@@ -482,10 +482,10 @@ Before we store the identified HVGs in our `SingleCellExperiment` object, we qui
 ```{r}
 fontsize <- theme(axis.text = element_text(size = 12), axis.title = element_text(size = 16))
 
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50]) + fontsize
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:50]) + fontsize
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:50]) + fontsize
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:50]) + fontsize
+plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-var modelling")
+plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-var modelling after blocking")
+plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-cv2 modelling")
+plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-cv2 modelling after blocking")
 ```
 
 Now that we have ordered, filtered, and inspected the identified HVGs we can add the results to the `metadata` component of the `PAG_sceset_qc_norm_filt` object. The metadata component can hold any object, as it is a list container. Any results that we’d like to keep are safe to store here, and this is a great way to save or share intermediate results that would otherwise be kept in separate objects. We thus store the names of the HVGs from the different approaches we used (even without filtering) so we can go back and find them again for any future comparisons we might want to do:
