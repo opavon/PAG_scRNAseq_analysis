@@ -380,23 +380,6 @@ After exploring the different options, we will try to make a decision on how man
 
 Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new `reducedDim` slots with the subsetted or recalculated PCs. We will keep both the full set of PCs and the reduced version with the top 25 PCs in a different `reducedDim()` slot.
 ```{r}
-# Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-cv2:
-set.seed(1992)
-PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
-                                  exprs_values = "logcounts",
-                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
-                                  ncomponents = 25,
-                                  name = "PCA_HVG_cv2_logcounts_25"
-                                  )
-
-set.seed(1992)
-PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
-                                  exprs_values = "corrected",
-                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
-                                  ncomponents = 25,
-                                  name = "PCA_HVG_cv2_corrected_25"
-                                  )
-
 # Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-variance:
 set.seed(1991)
 PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
@@ -412,6 +395,23 @@ PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
                                   subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
                                   ncomponents = 25,
                                   name = "PCA_HVG_var_corrected_25"
+                                  )
+
+# Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-cv2:
+set.seed(1992)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "logcounts",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                  ncomponents = 25,
+                                  name = "PCA_HVG_cv2_logcounts_25"
+                                  )
+
+set.seed(1992)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "corrected",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                  ncomponents = 25,
+                                  name = "PCA_HVG_cv2_corrected_25"
                                   )
 
 reducedDimNames(PAG_sceset_qc_norm_filt)
