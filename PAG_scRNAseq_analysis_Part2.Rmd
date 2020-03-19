@@ -802,11 +802,15 @@ gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total", co
                         plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_EYFP", colour_by = "use") + 
                           labs(title = "EYFP expression", x = NULL, y = "log2 raw expression"),
                         plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_tdTomato", colour_by = "use") + 
-                          labs(title = "tdTomato expression", x = NULL, y = "log2 raw expression"),
-                        plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGAT", colour_by = "use") + 
+                          labs(title = "tdTomato expression", x = NULL, y = "log2 raw expression")
+                        )
+
+# Plot the violin plots for the VGAT-VGluT2 expression separately
+gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGAT", colour_by = "use") + 
                           labs(title = "VGAT expression", x = NULL, y = "log2 raw expression"),
                         plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGluT2", colour_by = "use") + 
-                          labs(title = "VGluT2 expression", x = NULL, y = "log2 raw expression")
+                          labs(title = "VGluT2 expression", x = NULL, y = "log2 raw expression"),
+                        ncol = 2
                         )
 ```
 
