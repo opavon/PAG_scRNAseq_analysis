@@ -144,9 +144,13 @@ Given that we have full-length read data, we could use the gene lengths we compu
 However, according to this post by [Nikolay Oskolkov](https://towardsdatascience.com/pitfalls-of-data-normalization-bf05d65f1f4c), TPM counts for a given sample sum up to one million, which is a Simplex Space constraint. This means that TPM counts are not better than Library Size normalized counts as they also suffer from the Simplex Space bias, and one should not naively apply e.g. PCA on those counts. For a clearer explanation read the full post on the link above. We will refrain from using TPM and will stick with the normalization using the `scran` size factors.
 
 ## Step 3.3 | Compare the effects of different normalization strategies
-To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE close to zero.
+To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE closer to zero. Relative log expression (RLE) plots are a powerful tool for visualising unwanted variation in high dimensional data. These plots were originally devised for gene expression data from microarrays but can also be used on single-cell expression data. RLE plots are particularly useful for assessing whether a procedure aimed at removing unwanted variation (e.g., scaling normalisation) has been successful.
 
 If we look at the RLE plot, the graph shows a box plot of the RLE values for each cell (each line is a boxplot), the circles indicate the median (nearly all should be at 0 after normalization), and the line indicates the interquartile range.
+
+If style is “full”, the usual ggplot2 boxplot is created for each cell. Here, the box shows the inter-quartile range and whiskers extend no more than 1.5 times the IQR from the hinge (the 25th or 75th percentile). Data beyond the whiskers are called outliers and are plotted individually. The median (50th percentile) is shown with a white bar. This approach is detailed and flexible, but can take a long time to plot for large datasets.
+
+If style is “minimal”, a Tufte-style boxplot is created for each cell. Here, the median is shown with a circle, the IQR in a grey line, and “whiskers” (as defined above) for the plots are shown with coloured lines. No outliers are shown for this plot style. This approach is more succinct and faster for large numbers of cells.
 ```{r}
 library(ggplot2)
 library(sgeostat)
@@ -156,7 +160,7 @@ library(mvoutlier)
 p1 <- plotRLE(PAG_sceset_qc, 
               exprs_values = "counts",
               exprs_logged = TRUE,
-              style = "full",
+              style = "minimal", # alternatively try "full"
               legend = TRUE,
               colour_by = "mouse.id"
               ) + ggtitle("Raw counts")
@@ -165,7 +169,7 @@ p1 <- plotRLE(PAG_sceset_qc,
 p2 <- plotRLE(PAG_sceset_qc, 
               exprs_values = "logcounts_raw",
               exprs_logged = TRUE,
-              style = "full",
+              style = "minimal", # alternatively try "full"
               legend = TRUE,
               colour_by = "mouse.id"
               ) + ggtitle("Logcounts Raw")
@@ -174,15 +178,15 @@ p2 <- plotRLE(PAG_sceset_qc,
 p3 <- plotRLE(PAG_sceset_qc, 
               exprs_values = "logcounts",
               exprs_logged = TRUE,
-              style = "full",
+              style = "minimal", # alternatively try "full"
               legend = TRUE,
               colour_by = "mouse.id"
-              ) + ggtitle("scran")
+              ) + ggtitle("Logcounts Scran")
 
-# This might be too heavy to plot at once, so plot each graph one at a time:
-#plot(p1)
-#plot(p2)
-#plot(p3)
+# If you use `style = "full"`, the resulting plots will be too heavy to plot at once (around 140MB each), so plot each graph one at a time if that option is selecte instead of "minimal":
+plot(p1)
+plot(p2)
+plot(p3)
 ```
 
 ## Step 3.5 | Save the SingleCellExperiment object containing the log-normalized counts
