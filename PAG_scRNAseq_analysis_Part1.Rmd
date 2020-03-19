@@ -62,13 +62,13 @@ To go through this pipeline, you will need to install the following: [R3.6.1](ht
 
 Before installing any packages, check that TLS1.0 is unchecked and both TLS1.1 and TLS1.2 are selected in _InternetOptions>Advanced_, otherwise you will have problems accessing the CRAN mirrors. If you go to Tools/Global Options/Packages, unselect both the "Use secure download method for HTTP" and the "Use Internet Explorer library/proxy for HTTP" options.
 
-Once you have this, start an RStudio session and install the following packages by running the code in the console (not from the notebook chunk). You only need to install a package once, then you can load it using `library()`.
+Once you have this, start an RStudio session and install the following packages by *running the code in the console (not from the notebook chunk)*. You only need to install a package once, then you can load it using `library()`.
 ```{r}
 # # Consider setting stringsAsFactors=FALSE to make R read text as character data instead of factors. This must be done at the start of each R session:
 # options(stringsAsFactors = FALSE)
 # 
 # # Install packages from CRAN:
-# install.packages(c("backports", "boot", "blob", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "igraph", "knitr", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse", "uwot"))
+# install.packages(c("backports", "boot", "blob", "dbscan", "devtools", "ggplot2", "gplots", "HTMLUtils", "hwriter", "igraph", "knitr", "metap", "parallel", "Rcpp" , "rmarkdown", "tidyverse", "uwot"))
 # install.packages("stringi", configure.vars="ICUDT_DIR=<icudt_dir>")
 # 
 # # Install Bioconducor:
