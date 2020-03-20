@@ -33,14 +33,14 @@ Our data have been collected from samples originated from several animals and pr
 
 Computational correction of these effects is critical for eliminating batch-to-batch variation, allowing data across multiple batches to be combined for common downstream analysis. However, existing methods based on linear models (Ritchie et al. 2015; Leek et al. 2012) assume that the composition of cell populations are either known or the same across batches. To overcome these limitations, bespoke methods have been developed for batch correction of single-cell data (Haghverdi et al. 2018; Butler et al. 2018; Lin et al. 2019) that do not require a priori knowledge about the composition of the population. This allows them to be used in workflows for exploratory analyses of scRNA-seq data where such knowledge is usually unavailable.
 
-To account for technical confounders we need to identify and remove sources of variation in the expression data that are not related to the biological signal of interest. We could use spike-ins for this (in theory you add the same amount of ERCC in each cell lysate, so any variability should be technical noise), but these can turn out to be extremely variable across cells. Instead, we could use endogenous or housekeeping genes that do not vary systematically between cells. Where we have a large number of endogenous genes that, on average, do not vary systematically between cells and where we expect technical effects to affect a large number of genes (a very common and reasonable assumption), then such methods of batch correction can perform well.
+To account for technical confounders we need to identify and remove sources of variation in the expression data that are not related to the biological signal of interest. We could use spike-ins for this (in theory you add the same amount of ERCC in each cell lysate, so any variability in them should be technical noise), but these can turn out to be extremely variable across cells. Instead, we could use endogenous or housekeeping genes that do not vary systematically between cells. Where we have a large number of endogenous genes that, on average, do not vary systematically between cells and where we expect technical effects to affect a large number of genes (a very common and reasonable assumption), then such methods of batch correction can perform well.
 
 The most prominent technical covariates in single-cell data are _count depth (library size)_ and _processing batch_ (Luecken & Theis, Mol Syst Biol. 2019). Correcting for batch effects between samples or cells in the same experiment is the classical scenario known as _batch correction_ from bulk RNA-seq. This is different from _data integration_ from multiple experiments or collaborative projects. Irrespective of computational methods, the best method of batch correction is pre-empting the effect and avoiding it altogether by clever experimental design (Hicks et al, 2017). Batch effects can be avoided by pooling cells across experimental conditions and samples, as we did for our balanced batches.
 
 ## Step 5.1 | Identifying confounding and technical factors
 As we have mentioned, a big source of variability in scRNA-seq data, besides bad cells, are batch effects. We want to try to identify such effects and remove them, so our analysis picks up mainly biological effects.
 
-We continue using the `PAG_sceset_qc_norm_filt` after normalization. We should thus have a `logcounts` slot in `assays`:
+We continue using the `PAG_sceset_qc_norm_filt` after normalization. We should thus have a `logcounts` slot in `assays`, containing the normalized and log-transformed counts:
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
 options(stringsAsFactors = FALSE)
@@ -63,7 +63,7 @@ table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.id)
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$batch.processing)
 ```
 
-We can quickly observe that we have two clear confounds: (1) from any given animal we can only obtain one cell type (a limitation inherent to the use of mouse transgenic lines), and (2) half of our batches contain only one cell type (unbalanced), whereas the other half contain approximately half excitatiory and halfi inhibitory cells (balanced). We have made used of the balanced batches in previous steps (i.e. when modelling the technical variability to perform feature selection). Everything else seems pretty similar.
+We can quickly observe that we have two clear confounds: (1) from any given animal we can only obtain one cell type (a limitation inherent to the use of mouse transgenic lines), and (2) half of our batches contain only one cell type (unbalanced), whereas the other half contain approximately half excitatiory and half inhibitory cells (balanced). We have made use of the balanced batches in previous steps (i.e. when modelling the technical variability to perform feature selection). Everything else seems pretty similar.
 ```{r}
 summary(PAG_sceset_qc_norm_filt$cell.type)
 summary(PAG_sceset_qc_norm_filt$PAG.hemisphere)
@@ -113,7 +113,7 @@ To use this approach in a scRNA-seq context, we assume that the composition of c
 
 In most scRNA-seq applications, however, the factors of variation are not identical across batches and not known in advance. This motivates the use of more sophisticated batch correction methods such as `mnnCorrect()`, based on the detection of mutual nearest neighbours (MNNs) (Haghverdi et al. 2018). The MNN approach does not rely on pre-defined or equal population compositions across batches, only requiring that a subset of the population be shared between batches. In our case, each animal could be treated as a separate batch in their own right, reflecting (presumably uninteresting) biological differences due to genotype, age, sex or other factors that are inherent to our experimental design. `mnnCorrect()` was developed to merge different datasets obtained from the same biological system. It assumes that each batch shares at least one biological condition with each other batch, thus it works well for a variety of balanced experimental designs. However, in a confounded/replicate design biological effects will not be fit/preserved and we will only be able to remove batch effects from each individual separately in order to preserve biological (and technical) variance between individuals.
 
-Batch correction is necessary for downstream procedures that are not model-based, e.g., clustering and most forms of dimensionality reduction. However, if an analysis method can accept a design matrix (such as differential expression analysis), blocking on nuisance factors in the design matrix is preferable to using `removeBatchEffect()`. This is because the latter does not account for the loss of residual degrees of freedom, nor the uncertainty of estimation of the blocking factor terms. For our experimental design, `removeBatchEffect()` seems more appropriate than `mnnCorrect()`. Whereas we know the exact composition of each batch and can provide in the `batch` argument of `removeBatchEffect()`, the main requirement for `mnnCorrect()` is unfortunately not fulfilled, as each batch contains only one of two possible cell types. We will thus apply `removeBatchEffect()` in our dataset and store the results in a new slot so that we can compare them in our clustering analysis. 
+Batch correction is necessary for downstream procedures that are not model-based, e.g., clustering and most forms of dimensionality reduction. However, if an analysis method can accept a design matrix (such as differential expression analysis), blocking on nuisance factors in the design matrix is preferable to using `removeBatchEffect()`. This is because the latter does not account for the loss of residual degrees of freedom, nor the uncertainty of estimation of the blocking factor terms. For our experimental design, `removeBatchEffect()` seems more appropriate than `mnnCorrect()`. Whereas we know the exact composition of each batch and can provide in the `batch` argument of `removeBatchEffect()`, the main requirement for `mnnCorrect()` is unfortunately not fulfilled, as each unbalanced batch contains only one of two possible cell types. We will thus apply `removeBatchEffect()` in our dataset and store the results in a new slot so that we can compare them in our clustering analysis. 
 
 *Important:* The OSCA book suggests limiting the use of per-gene corrected values to visualization, e.g., when coloring points on a t-SNE plot by per-cell expression. This can be more aesthetically pleasing than uncorrected expression values that may contain large shifts on the colour scale between cells in different batches. Use of the corrected values in any quantitative procedure should be treated with caution, and should be backed up by similar results from an analysis on the uncorrected values. For gene-based procedures like differential expression (DE) analyses or gene network construction, it is desirable to use the original log-expression values or counts with batch effects being handled explicitly using blocking terms or via a meta-analysis across batches. In the dimensionality reduction steps, we will check whether our batches actually segregate and whether batch correction improves the obtained results. If it doesn't, we will follow the guidelines from the OSCA book and proceed using the `logcounts` assay.
 
@@ -223,9 +223,9 @@ PCA_HVG_cv2_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
 multiplot(PCA_HVG_cv2_counts, PCA_HVG_cv2_logcounts_raw, PCA_HVG_cv2_logcounts, PCA_HVG_cv2_corrected, cols = 2)
 ```
 
-Hint: try "Ctss", "Cd14", or "Cd68" as `colour_by = `. This will show how the more separated cells in the t-SNE plots are actually macrophages, with high expression levels for macrophage marker genes.
+__Hint: try "Ctss", "Cd14", or "Cd68" as `colour_by = `. This will show how the more separated cells in the t-SNE plots are actually macrophages, with high expression levels for macrophage marker genes.__
 
-Overall, we can clearly see that the first PC in the raw data is dominated by the library size / total detected genes in each sample (which explains >90% of the variance). Once we normalize and log-transform the raw counts using scran, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalization show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalization and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this).
+Overall, we can clearly see that the first PC in the raw data is dominated by the library size / total detected genes in each sample (which explains >90% of the variance). Once we normalize and log-transform the raw counts using _scran_, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalization show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalization and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this).
 
 We can also look at the change in the `plotExplanatoryVariables()` output after normalization and batch correction:
 ```{r}
@@ -257,7 +257,7 @@ for(n in assayNames(PAG_sceset_qc_norm_filt)) {
 }
 ```
 
-Here we can see how after applying `removeBatchEffect()`, `batch.processing` is no longer in the top of explanatory variables.`mouse.id` (and its correlate `mouse.age`) is still the highest explanatory variable, which reflects how cells were obtained. We also see some interesting variables that reflect the biology we are interested in, namely `PAGarea_celltype`, which is a combination of `PAG.areacollection` and `cell.type`, and `PAG.APaxis`. Although `batch.processing` is an important variable (and we certainly have batch effects, inherent to this type of experiments), the fact that we don't have properly balanced batches (only half of our batches are balanced) makes it hard to remove the batch effect alone leaving the biology intact, as by removing it we will also be removing some of its confounds linked to biology (such as `mouse.id` and `cell.type`). Given that in the PCA plots using HVGs from Var and CV2 modelling we don't see a massive batch effect, but rather we see interspread batches, we will continue to use the `corrected` assay for plotting and we will stick to the `logcounts` assay for clustering and downstream analysis. 
+Here we can see how after applying `removeBatchEffect()`, `batch.processing` is no longer in the top of explanatory variables.`mouse.id` (and its correlate `mouse.age`) is still the highest explanatory variable, which reflects how cells were obtained. We also see some interesting variables that reflect the biology we are interested in, namely `PAGarea_celltype`, which is a combination of `PAG.areacollection` and `cell.type`, and `PAG.APaxis`. Although `batch.processing` is an important variable (and we certainly have batch effects, inherent to this type of experiments), the fact that we don't have properly balanced batches (only half of our batches are balanced) makes it hard to remove the batch effect alone leaving the biology intact, as by removing it we will also be removing some of its confounds linked to biology (such as `mouse.id` and `cell.type`). Given that in the PCA plots using HVGs from Var and CV2 modelling we observed interspread batches, we will continue to use the `corrected` assay for plotting and we will stick to the `logcounts` assay for clustering and downstream analysis. 
 
 ## Step 5.3 | Dimensionality reduction
 Many scRNA-seq analysis procedures involve comparing cells based on their expression values across multiple genes. For example, clustering aims to identify cells with similar transcriptomic profiles by computing Euclidean distances across genes. In these applications, each individual gene represents a dimension of the data. More intuitively, if we had a scRNA-seq data set with two genes, we could make a two-dimensional plot where each axis represents the expression of one gene and each point in the plot represents a cell. This concept can be extended to data sets with thousands of genes where each cell’s expression profile defines its location in the high-dimensional expression space.
@@ -269,7 +269,7 @@ Principal components analysis (PCA) discovers axes in high-dimensional space tha
 
 By definition, the top PCs capture the dominant factors of heterogeneity in the data set. Thus, we can perform dimensionality reduction by restricting downstream analyses to the top PCs. This strategy is simple, highly effective and widely used throughout the data sciences. It takes advantage of the well-studied theoretical properties of the PCA - namely, that a low-rank approximation formed from the top PCs is the optimal approximation of the original data for a given matrix rank. It also allows us to use a wide range of fast PCA implementations for scalable and efficient data analysis.
 
-When applying PCA to scRNA-seq data, our assumption is that biological processes affect multiple genes in a coordinated manner. This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behaviour of many genes. By comparison, random technical or biological noise is expected to affect each gene independently. There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs. This motivates the use of the earlier PCs in our downstream analyses, which concentrates the biological signal to simultaneously reduce computational work and remove noise.
+When applying PCA to scRNA-seq data, our assumption is that biological processes affect multiple genes in a coordinated manner. This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behaviour of many genes. By comparison, random technical or biological noise is expected to affect each gene independently. There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs. This motivates the use of the earlier PCs in our downstream analyses, which concentrates the biological signal to simultaneously reduce computational work and remove noise. 
 
 We perform the PCA on the log-normalized expression values using the `runPCA()` function from _scater_. By default, `runPCA()` will compute the first 50 PCs and store them in the `reducedDims()` of the output SingleCellExperiment object. We can use only the top 2000 genes with the largest biological components to reduce computational work and noise, or any HVGs we have previously extracted from our data. Specifically, PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure. This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs.
 ```{r}
@@ -303,14 +303,28 @@ library(PCAtools)
 for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_sceset_qc_norm_filt))]) { # First reducedDimNames instance is the PCA with the ColData for QC
   set.seed(1991)
   principal_components <- reducedDim(PAG_sceset_qc_norm_filt, n)
+  tmpCol <- rep("grey", dim(principal_components)[2])
   proportion_var <- attr(principal_components, "percentVar")
   chosen_elbow <- PCAtools::findElbowPoint(proportion_var)
-  print(chosen_elbow)
-  plot(proportion_var, xlab = "PC", ylab = "Proportion of variance explained (%)", main = n)
-  abline(v = chosen_elbow, col = "red")
+  tmpCol[1:chosen_elbow] <- "aquamarine3"
+  plot(proportion_var, xlab = "PC #", ylab = "Proportion of variance explained (%)",
+       main = sprintf("Scree plot for %s", n), sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow))
+  abline(v = chosen_elbow, col = "red", lty = "dashed", lwd = 2)
+  abline(v = 25, col = "gray80", lty = "dotted", lwd = 2)
 }
 
-reducedDimNames(PAG_sceset_qc_norm_filt)
+# Alternative visualisation
+for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_sceset_qc_norm_filt))]) { # First reducedDimNames instance is the PCA with the ColData for QC
+  set.seed(1991)
+  principal_components <- reducedDim(PAG_sceset_qc_norm_filt, n)
+  tmpCol <- rep("grey", dim(principal_components)[2])
+  proportion_var <- attr(principal_components, "percentVar")
+  chosen_elbow <- PCAtools::findElbowPoint(proportion_var)
+  tmpCol[1:chosen_elbow] <- "aquamarine3"
+  barplot(proportion_var, xlab = "PC #", ylab = "Proportion of variance explained (%)",
+          main = sprintf("Scree plot for %s", n), sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
+          col = tmpCol, names.arg = 1:dim(principal_components)[2], cex.names = 0.8)
+}
 ```
 
 Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for `d`. As we see in the scree plots using the `counts` assay, the first component explains most of the variance. After log-normalization with `scran`, that correlate is gone and we can properly assess a more appropriate elbow for our data.
@@ -333,8 +347,10 @@ sum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentV
 
 cumsum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar"))
 
-plot(cumsum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")))
-hist((attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")), breaks = 100)
+plot(cumsum(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")),
+     xlab = "PC #", ylab = "Proportion of variance explained (%)", main = NULL)
+hist((attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar")), breaks = 100,
+     xlab = "PC #", ylab = "Proportion of variance explained (%)", main = NULL)
 ```
 
 From a practical perspective, the use of the elbow point tends to retain fewer PCs compared to other methods. The definition of “much more variance” is relative so, in order to be retained, later PCs must explain an amount of variance that is comparable to that explained by the first few PCs. Strong biological variation in the early PCs will shift the elbow to the left (as it happens for our PCA plots using HVGs from Variance modelling), potentially excluding weaker (but still interesting) variation in the next PCs immediately following the elbow. We would keep the top 50 PCs just to be on the safe side.
@@ -364,19 +380,19 @@ for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_s
   set.seed(1991)
   principal_components <- reducedDim(PAG_sceset_qc_norm_filt, n)
   choices <- getClusteredPCs(principal_components)
-  print(metadata(choices)$chosen)
-  plot(choices$n.pcs, choices$n.clusters, main = n, xlab = "Number of PCs", ylab = "Number of clusters")
+  plot(choices$n.pcs, choices$n.clusters, main = n, xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen))
   abline(a = 1, b = 1, col = "red")
-  abline(v = metadata(choices)$chosen, col = "grey80", lty = 2)
+  abline(v = metadata(choices)$chosen, col = "grey80", lty = 2, lwd = 2)
+  abline(v = 25, col = "aquamarine3", lty = "dotted", lwd = 2)
 }
 ```
 
-The plots above depict the number of clusters detected in our dataset as a function of the number of PCs. The red unbroken line represents the theoretical upper constraint on the number of clusters, while the grey dashed line is the number of PCs suggested by `getClusteredPCs()`.
+The plots above depict the number of clusters detected in our dataset as a function of the number of PCs. The red unbroken line represents the theoretical upper constraint on the number of clusters, while the grey dashed line is the number of PCs suggested by `getClusteredPCs()`. The green dotted line marks the top 25 PCs.
 
 This strategy is the most pragmatic as it directly addresses the role of the bias-variance trade-off in downstream analyses, specifically clustering. There is no need to preserve biological signal beyond what is distinguishable in later steps. However, it involves strong assumptions about the nature of the biological differences between subpopulations - and indeed, discrete subpopulations may not even exist in studies of continuous processes like differentiation.
 
 ### 5.3.5 | Choosing the number of PCs
-After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would perhaps say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the plot becomes almost flat). If we look at the population structure approach, the suggested values are 13 and 16, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. We will continue to use the first 25 PCs in an attempt to retain a bit more of information. 
+After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would perhaps say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the scree plot becomes almost flat), whereas 10 or 15 would be a perhaps more appropriate elbow. If we look at the population structure approach, the suggested values are 13 and 16, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. In an attempt to retain a bit more of information, we will keep the first 25 PCs. 
 
 Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new `reducedDim` slots with the subsetted or recalculated PCs. We will keep both the full set of PCs and the reduced version with the top 25 PCs in a different `reducedDim()` slot.
 ```{r}
@@ -427,7 +443,7 @@ Principal component analysis (PCA) is a statistical procedure that uses a transf
 
 We can apply PCA to visualize the relationships between cells in our dataset. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Ideally, we do this using the `logcounts` or the `corrected` slot of our `SingleCellExperiment` object. Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. *BUT* - log-transformation is not a proper normalization step and is not enough to account for different technical factors between the cells (e.g. sequencing depth). Therefore, we should not use `logcounts_raw` for our downstream analysis, but instead use the _logcounts_ slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalized by library size with `scran`. By default `scater` only uses the top 500 most variable genes to calculate the PCA, but this can be adjusted by changing the _ntop_ argument. We can also choose to use our HVGs instead, or any given list of genes we may obtain by other feature selection strategies.
 
-The problem with this approach is that PCA is a linear technique, i.e. only variation along a line in high-dimensional space is captured by each PC. As such, it cannot efficiently pack differences in `d` dimensions into the first 2 PCs. We will look at it nonetheless. We first remind ourselves of the `reducedDim` results we have already calculated and stored in our `SingleCellExperiment`:
+The problem with this approach is that PCA is a linear technique, i.e. only variation along a line in high-dimensional space is captured by each PC. As such, it cannot efficiently pack differences in `d` dimensions into the first 2 PCs. The linear dimensionality reduction techniques can not fully resolve the heterogeneity in single cell data: they are good at preserving the global structure of the data (connections between all the data points), but it seems that when it comes to single cell data it is more important to keep the local structure of the data (connections between neighboring points). We will look at it nonetheless, as it will become important as a preliminary step to perform clustering. We first remind ourselves of the `reducedDim` results we have already calculated and stored in our `SingleCellExperiment`:
 ```{r}
 reducedDimNames(PAG_sceset_qc_norm_filt)
 ```
@@ -492,13 +508,13 @@ Some advantages of using PCA for visualization are that it is predictable and wi
 ### 5.4.2 | t-SNE (t-stochastic neighbour embedding)
 Another widely used approach for dimensionality reduction is the t-stochastic neighbour embedding (t-SNE) method (Van der Maaten and Hinton 2008). tSNE combines dimensionality reduction with random walks on the nearest-neighbour network to map high dimensional data to a 2-dimensional space while preserving local distances between cells. t-SNE tends to work better than PCA for separating cells in more diverse populations. This is because the former can directly capture non-linear relationships in high-dimensional space, whereas the latter must represent them (suboptimally) as linear components. However, this improvement comes at the cost of more computational effort and complexity. In particular, the non-linear and stochastic nature of the algorithm means that running it multiple times on the same dataset will result in different plots, making the results more difficult to intuitively interpret. Users should thus run the algorithm several times to ensure that the results are representative, and then set a `seed` to ensure that the chosen results are reproducible. It is also advisable to test different settings of the `perplexity` parameter as this will affect the distribution of points in the low-dimensional space.
 
-tSNE plots are the _de facto_ standard for visualization of scRNA-seq data, but should *NOT* be used for clustering. Furthermore, tSNE requires you to provide a value of `perplexity` which reflects the number of neighbours used to build the nearest-neighbour network - a high value creates a dense network which clumps cells together, whereas a low value makes the network more sparse allowing groups of cells to separate from each other. `scater` uses a default `perplexity` equal to the total number of cells divided by five (rounded down). You should try different perplexities and run it several times to make sure you are not getting a weird result. If your data are very homogeneous the tSNE plots are going to be hard to interpret, whereas if they contain very well defined clusters it will visualize them very nicely.
+tSNE plots have been the _de facto_ standard for visualization of scRNA-seq data, but should *NOT* be used for clustering. Furthermore, tSNE requires you to provide a value of `perplexity` which reflects the number of neighbours used to build the nearest-neighbour network - a high value creates a dense network which clumps cells together, whereas a low value makes the network more sparse allowing groups of cells to separate from each other. `scater` uses a default `perplexity` equal to the total number of cells divided by five (rounded down). You should try different perplexities and run it several times to make sure you are not getting a weird result. If your data are very homogeneous the tSNE plots are going to be hard to interpret, whereas if they contain very well defined clusters it will visualize them very nicely.
 
-One of the main disadvantages of t-SNE is that it is much more computationally intensive than other visualization methods. We can mitigate this effect by setting `dimred = "PCA"` in `runtTSNE()`, which instructs the function to perform the t-SNE calculations on the top PCs to exploit the data compaction and noise removal provided by the PCA. It is possible to run t-SNE on the original expression matrix but this is less efficient.
+One of the main disadvantages of t-SNE is that it is much more computationally intensive than other visualization methods. We can mitigate this effect by setting `dimred = "PCA"` in `runtTSNE()`, which instructs the function to perform the t-SNE calculations on the top PCs to exploit the data compaction and noise removal provided by the PCA. It is possible to run t-SNE on the original expression matrix but this is less efficient. Again, if we select too many PCs, we will include “noisy” PCs from the tail of the plot, but if we select too few PCs we might loose the signal from the data, so we need to follow the reasoning we used earlier on to select a value close to the optimal number of informative PCs.
 
-Another issue with t-SNE is that it requires the user to be aware of additional parameters. It involves a random initialization so we need to (i) repeat the visualization several times to ensure that the results are representative and (ii) set the seed to ensure that the chosen results are reproducible. The `perplexity` is another important parameter that determines the granularity of the visualization. Low perplexities will favour resolution of finer structure, possibly to the point that the visualization is compromised by random noise. Thus, it is advisable to test different perplexity values to ensure that the choice of perplexity does not drive the interpretation of the plot. As a rule of thumb, N^1/2 shouldn't be far off the right perplexity, according to [this post by Nikolay Oskolkov](https://towardsdatascience.com/how-to-tune-hyperparameters-of-tsne-7c0596a18868)
+Another issue with t-SNE is that it requires the user to be aware of additional parameters. It involves a random initialization so we need to (i) repeat the visualization several times to ensure that the results are representative and (ii) set the seed to ensure that the chosen results are reproducible. The `perplexity` is another important parameter that determines the granularity of the visualization. Low perplexities will favour resolution of finer structure, possibly to the point that the visualization is compromised by random noise. Thus, it is advisable to test different perplexity values to ensure that the choice of perplexity does not drive the interpretation of the plot. As a rule of thumb, N^1/2 shouldn't be far off the right perplexity, according to [this post by Nikolay Oskolkov](https://towardsdatascience.com/how-to-tune-hyperparameters-of-tsne-7c0596a18868). Finally, we can also increase the `eta` (learning rate) and `max_iter` (number of iterations) hyperparameters. Importantly, really large values of `max_iter` become unfeasible for big data sets, so you can increase it up to a certain point before you need to wait days for your code to run. Again, according to the same post cited above, the optimal number of iterations should provide the largest distance between the data points of ~100 units.
 
-Finally, it is tempting to interpret the t-SNE results as a “map” of single-cell identities. This is generally unwise as any such interpretation is easily misled by the size and positions of the visual clusters. Specifically, t-SNE will inflate dense clusters and compress sparse ones, such that we cannot use the size as a measure of subpopulation heterogeneity. Similarly, t-SNE is not obliged to preserve the relative locations of non-neighboring clusters, such that we cannot use their positions to determine relationships between distant clusters. Despite its shortcomings, t-SNE is a proven tool for general-purpose visualization of scRNA-seq data and remains a popular choice in many analysis pipelines.
+Finally, it is tempting to interpret the t-SNE results as a “map” of single-cell identities. This is generally unwise as any such interpretation is easily misled by the size and positions of the visual clusters. Specifically, t-SNE will inflate dense clusters and compress sparse ones, such that we cannot use the size as a measure of subpopulation heterogeneity. Similarly, t-SNE is not obliged to preserve the relative locations of non-neighboring clusters, such that we cannot use their positions to determine relationships between distant clusters. Despite its shortcomings, t-SNE is a proven tool for general-purpose visualization of scRNA-seq data and remains a popular choice in many analysis pipelines. We will use it for now, but will later on compare it to UMAP and go over why the latter is a better option.
 ```{r}
 # Compute tSNE with different perplexities:
 range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
@@ -509,6 +525,7 @@ for(n in range_of_perplexities) {
                                      subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
                                      dimred = "PCA_HVG_var_corrected", 
                                      n_dimred = 25,
+                                     ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
                                      perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
                                      theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
                                      max_iter = 5000, # Default is 1000. 
@@ -593,6 +610,7 @@ for(n in range_of_perplexities) {
                                      subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
                                      dimred = "PCA_HVG_cv2_corrected", 
                                      n_dimred = 25,
+                                     ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
                                      perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
                                      theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
                                      max_iter = 5000, # Default is 1000. 
@@ -669,7 +687,13 @@ multiplot(tSNE_HVG_cv2_corrected_30, tSNE_HVG_cv2_corrected_40, tSNE_HVG_cv2_cor
 From the different configurations, it seems that `tSNE_var_corrected_perplexity_15` and `tSNE_cv2_corrected_perplexity_15` achieve a representation that is not too clumped (such that you can't really distinguish anything) nor too fragmented (so that you end up with a large number of very small groups). 
 
 ### 5.4.3 | UMAP (uniform manifold approximation and projection)
-The uniform manifold approximation and projection (UMAP) method (McInnes, Healy, and Melville 2018) is an alternative to t-SNE for non-linear dimensionality reduction. It is roughly similar to t-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space. However, the two methods are based on different theory, represented by differences in the various graph weighting equations, which leads to a different visualization. We will repeat the approach we followed for t-SNE, and calculate different UMAP plots while trying different choices of the key arguments:
+The uniform manifold approximation and projection (UMAP) method (McInnes, Healy, and Melville 2018) is an alternative to t-SNE for non-linear dimensionality reduction. It is roughly similar to t-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space. However, the two methods are based on different theory, represented by differences in the various graph weighting equations, which leads to a different visualization. Importantly, a series of posts by [Nikolay Oskolkov](https://towardsdatascience.com/tagged/stats-ml-life-sciences) detail how UMAP works and why exactly it is a better option over tSNE.
+
+UMAP is a dimension reduction technique which is based on solid mathematical principles and hence very different from tSNE which is a pure Machine Learning semi-empirical algorithm. The key problem of tSNE is the use of the Kullback Leibler (KL) divergence as a cost function. UMAP uses binary cross-entropy (CE) as a cost function instead of the Kullback-Leibler (KL)-divergence like tSNE does. This makes UMAP capable of capturing the global data structure in contrast to tSNE that can only model the local structure at moderate perplexity values. In other words, the choice of cost function means that tSNE does not guarantee that points far apart in high dimensions will be preserved to be far apart in low dimensions. However, it does guarantee that points close to each other in high dimensions will remain close to each other in low dimensions (hence, it is good at preserving local structure in the data). 
+
+Optimizing the KL-divergence makes tSNE unable to preserve global distances when performing dimension reduction. At large distances, X, between points in high dimensions, the distances, Y, between points in low dimensions are not guaranteed to be large in sense of the KL penalty. In contrast, you get a huge Cross-Entropy (CE) penalty for large X in case Y is small. In other words, the fact that UMAP uses CE makes it so that at low X we still want to have low Y in order to reduce the penalty. However, at large X, the Y distance really wants to be large too, because if it is small, the CE (X, Y) penalty will be enormous. This is not the case for tSNE's KL-divergence, as it doesn not have any difference in penalty between low and high Y at large X. Therefore the smarter choice of cost function by UMAP really ensures that points far away from each other in high dimensions will remain far away in low dimensions, as the CE cost function is capable of preserving global distances as well as local distances. For more information and further comparisons between the math of UMAP and tSNE, see the posts by [Nikolay Oskolkov](https://towardsdatascience.com/tagged/stats-ml-life-sciences).
+
+Like t-SNE, UMAP has its own suite of hyperparameters that affect the visualization. Of these, the number of neighbours (`n_neighbors`) and the minimum distance between embedded points (`min_dist`) have the greatest effect on the granularity of the output. If these values are too low, random noise will be incorrectly treated as high-resolution structure, while values that are too high will discard fine structure altogether in favour of obtaining an accurate overview of the entire dataset. Again, it is a good idea to test a range of values for these parameters to ensure that they do not compromise any conclusions drawn from a UMAP plot. We will thus repeat the approach we followed for t-SNE, and calculate different UMAP plots while trying different choices of the key hyperparameters:
 ```{r}
 range_of_neighbors = list(5, 10, 15, 20)
 range_of_min_dist = list(0.01, 0.05, 0.1, 0.2)
@@ -682,11 +706,12 @@ for(j in range_of_neighbors) {
                                        subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, 
                                        dimred = "PCA_HVG_var_corrected",
                                        n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
-                                       n_neighbors = j, #  Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
-                                       metric = "euclidean",
+                                       n_neighbors = j, # Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
+                                       ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
+                                       metric = "euclidean", # Other distance metrics to find nearest neighbors can be selected, such as "cosine", "manhattan", among others.
                                        n_epochs = 500, # Number of epochs to use during the optimization of the embedded coordinates.
                                        learning_rate = 1,
-                                       min_dist = k, # Low values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
+                                       min_dist = k, # Small values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
                                        name = paste0("UMAP_var_corrected_", j, "_neighbors_", k, "_min_dist"))
   }
 }
@@ -825,11 +850,12 @@ for(j in range_of_neighbors) {
                                        subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt, 
                                        dimred = "PCA_HVG_cv2_corrected",
                                        n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
-                                       n_neighbors = j, #  Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
-                                       metric = "euclidean",
+                                       n_neighbors = j, # Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
+                                       ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
+                                       metric = "euclidean", # Other distance metrics to find nearest neighbors can be selected, such as "cosine", "manhattan", among others.
                                        n_epochs = 500, # Number of epochs to use during the optimization of the embedded coordinates.
                                        learning_rate = 1,
-                                       min_dist = k, # Low values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
+                                       min_dist = k, # Small values will result in densely packed regions, that will likely more faithfully represent the manifold structure.
                                        name = paste0("UMAP_cv2_corrected_", j, "_neighbors_", k, "_min_dist"))
   }
 }
@@ -959,12 +985,12 @@ multiplot(UMAP_cv2_corrected_20_neighbors_0.01_min_dist, UMAP_cv2_corrected_20_n
 
 Compared to t-SNE, the UMAP visualization tends to have more compact visual clusters with more empty space between them. It also attempts to preserve more of the global structure than t-SNE. From a practical perspective, UMAP is much faster than t-SNE, which may be an important consideration for large datasets. UMAP also involves a series of randomization steps so setting the seed is critical. 
 
-Like t-SNE, UMAP has its own suite of hyperparameters that affect the visualization. Of these, the number of neighbours (`n_neighbors`) and the minimum distance between embedded points (`min_dist`) have the greatest effect on the granularity of the output. If these values are too low, random noise will be incorrectly treated as high-resolution structure, while values that are too high will discard fine structure altogether in favour of obtaining an accurate overview of the entire dataset. Again, it is a good idea to test a range of values for these parameters to ensure that they do not compromise any conclusions drawn from a UMAP plot.
-
 It is arguable whether the UMAP or t-SNE visualizations are more useful or aesthetically pleasing. UMAP aims to preserve more global structure but this necessarily reduces resolution within each visual cluster. However, UMAP is unarguably much faster, and for that reason alone, it is increasingly displacing t-SNE as the method of choice for visualizing large scRNA-seq data sets.
 
+From the different configurations, it seems that `UMAP_var_corrected_10_neighbors_0.01_min_dist`, `UMAP_cv2_corrected_10_neighbors_0.05_min_dist`, and `UMAP_cv2_corrected_15_neighbors_0.01_min_dist` achieve the best representations.
+
 ### 5.4.4 | Choosing the most representative plots
-As we have seen, tSNE and UMAP offer different solutions to represent the data in low dimensions. We have explored the data using both approaches and can see that the HVGs identified using the CV2 method have actually more power in separating subsets of neurons than the HVGs obtained using the Variance. It also seems that UMAP does a better job in representing our data in low-dimensional space, and we can observe both in tSNE and UMAP plots how excitatory and inhibitory cells separate quite clearly, and also somewhat distribute according to their anatomical origin. We also very clearly observe a minor subset of neurons that separate from the two main groups, and they have high expression of macrophage markers, indicating that some of the cells might've been contaminated by immune cells. 
+As we have seen, tSNE and UMAP offer different solutions to represent the data in low dimensions. We have explored the data using both approaches and can see that the HVGs identified using the CV2 method have actually more power in separating subsets of neurons than the HVGs obtained using the Variance. It also seems that UMAP does a better job in representing our data in low-dimensional space, and we can observe both in tSNE and UMAP plots how excitatory and inhibitory cells separate quite clearly, and also somewhat distribute according to their anatomical origin. We also very clearly observe a minor subset of neurons that separate from the two main groups, with high expression of macrophage markers, indicating that some of the cells might've been contaminated by immune cells. 
 ```{r}
 # Plot the selected t-SNE
 plotReducedDim(PAG_sceset_qc_norm_filt,
@@ -1068,11 +1094,85 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
 #       plot = tsne_smart,
 #       height = 7, width = 8)
 ```
+Now that we have a stable visualization of our data, we can try to explore it a bit more by using `facet_wrap` so we can separately visualize subsets of our data in the same embedding:
+```{r}
+# The UMAP with the full QCed dataset:
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration",
+               #size_by = "detected"
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP colored by PAG subdivision and shaped by type", x = "UMAP 1", y = "UMAP 2")
+
+# Separating by `PAG.arearegistration`:
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration",
+               #size_by = "detected"
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP subsetted by PAG subdivision", x = "UMAP 1", y = "UMAP 2") + facet_wrap(~PAG_sceset_qc_norm_filt$PAG.arearegistration, dir = "v")
+
+# Separating by `cell.type`:
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "PAG.arearegistration",
+               #size_by = "detected"
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP subsetted by cell type", x = "UMAP 1", y = "UMAP 2") + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+
+# Separating by `cell.type` and coloring by VGAT or VGlUT2 expression:
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "log2_total_counts_VGAT",
+               #size_by = "detected"
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP subsetted by cell type and colored by VGAT expression", x = "UMAP 1", y = "UMAP 2") + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "log2_total_counts_VGluT2",
+               #size_by = "detected"
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP subsetted by cell type and colored by VGluT2 expression", x = "UMAP 1", y = "UMAP 2") + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+
+# Separating by `cell.type` and coloring by whether a cell expresses VGAT or VGluT2 only, or a combination of both:
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "VGAT_VGluT2_expression", 
+               #size_by = "detected"
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP subsetted by cell type and colored by neurotransmitter profile", x = "UMAP 1", y = "UMAP 2") + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+
+# Separating and coloring by wether a cell expresses VGAT or VGluT2 only, or a combination of both:
+plotReducedDim(PAG_sceset_qc_norm_filt,
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "VGAT_VGluT2_expression",
+               #size_by = "detected"
+               shape_by = "cell.type", # "mouse.id"
+               point_alpha = 0.6,
+               point_size = 4
+               ) + labs(title = "UMAP subsetted and colored by neurotransmitter profile", x = "UMAP 1", y = "UMAP 2") + facet_wrap(~PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)
+summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)
+```
+
+These visualizations are very useful and they allow us to spot different things. For instance, it seems that VGAT cells from dlPAG separate in two different clusters. Additionaly, we observe that some VGAT cells fall under the coordinates of VGluT2 cells, and by coloring by different metadata values we can see that these are the ones that actually express only VGluT2. This is interesting because the rest of cells that express both VGAT and VGluT2 seem to be correctly assigned close to their cell type identity (as expected from the transgenic line they were obtained from). Importantly, both VGAT and VGluT2 genes were excluded after QC, and are not present in the subset of HVGs used for these dimensionality reduction techniques nor for subsequent analysis steps. Also note that the levels for the `VGAT_VGluT2_expression` factor in the metadata are: `VGAT_Cre_VGAT_only`, `VGAT_Cre_VGluT2_only`, `VGAT_Cre_both`, `VGAT_Cre_neither`, `VGluT2_Cre_VGluT2_only`, `VGluT2_Cre_VGAT_only`, `VGluT2_Cre_both`, `VGluT2_Cre_neither`. However, `VGluT2_Cre_VGAT_only` and `VGluT2_Cre_neither` have no cells and are hence dropped from the plot.
 
 ### 5.4.5 | Final notes on interpeting dimensionality reduction plots
-Dimensionality reduction for visualization necessarily involves discarding information and distorting the distances between cells in order to fit high-dimensional data into a 2-dimensional space. One might wonder whether the results of such extreme data compression can be trusted. Some of our more quantitative colleagues consider such visualizations to be more artistic than scientific, fit for little but impressing collaborators and reviewers. Perhaps this perspective is not entirely invalid, but we suggest that there is some value to be extracted from them provided that they are accompanied by an analysis of a higher-rank representation.
+Dimensionality reduction for visualization necessarily involves discarding information and distorting the distances between cells in order to fit high-dimensional data into a 2-dimensional space. One might wonder whether the results of such extreme data compression can be trusted. There is, however, some value to be extracted from them provided that they are accompanied by an analysis of a higher-rank representation.
 
-To illustrate, consider the interaction between clustering and t-SNE. As a general rule, we would not perform clustering on the t-SNE coordinates. Rather, we would cluster on the first 10-50 PCs and then visualize the cluster identities on the t-SNE plot. This ensures that clustering makes use of the information that was lost during compression into two dimensions. The t-SNE plot can then be used for a diagnostic inspection of the clustering output. In particular, the plot is most useful for checking whether two clusters are actually neighboring subclusters or whether a cluster can be split into further subclusters, which are generally safe interpretations of t-SNE coordinates.
+To illustrate, consider the interaction between clustering and t-SNE/UMAP. As a general rule, we would not perform clustering on the t-SNE coordinates. Rather, we would cluster on the first 10-50 PCs and then visualize the cluster identities on the t-SNE/UMAP plot. This ensures that clustering makes use of the information that was lost during compression into two dimensions. The t-SNE/UMAP plot can then be used for a diagnostic inspection of the clustering output. In particular, the plot is most useful for checking whether two clusters are actually neighboring subclusters or whether a cluster can be split into further subclusters, which are generally safe interpretations of t-SNE/UMAP coordinates.
 
 It is worth elaborating on why we should not perform downstream analyses directly on the t-SNE or UMAP coordinates. Let us put aside the fact that operating on the high-dimensional representations preserves more information; from a naive perspective, using the t-SNE coordinates is very tempting as it ensures that any results are immediately consistent with the visualizations (regardless of whether they are right). However, this can actually be considered a disservice as it masks the uncertainty of the results, leading us to place more confidence in them than is warranted. Rather than being errors, major discrepancies can instead be useful for motivating further investigation into the more ambiguous parts of the dataset; conversely, the lack of discrepancies increases trust in the results.
 
