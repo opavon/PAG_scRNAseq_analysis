@@ -1164,7 +1164,8 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                point_alpha = 0.6,
                point_size = 4
                ) + labs(title = "UMAP subsetted and colored by neurotransmitter profile", x = "UMAP 1", y = "UMAP 2") + facet_wrap(~PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)
-summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)
+summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)[1:4]
+summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)[5:8]
 ```
 
 These visualizations are very useful and they allow us to spot different things. For instance, it seems that VGAT cells from dlPAG separate in two different clusters. Additionaly, we observe that some VGAT cells fall under the coordinates of VGluT2 cells, and by coloring by different metadata values we can see that these are the ones that actually express only VGluT2. This is interesting because the rest of cells that express both VGAT and VGluT2 seem to be correctly assigned close to their cell type identity (as expected from the transgenic line they were obtained from). Importantly, both VGAT and VGluT2 genes were excluded after QC, and are not present in the subset of HVGs used for these dimensionality reduction techniques nor for subsequent analysis steps. Also note that the levels for the `VGAT_VGluT2_expression` factor in the metadata are: `VGAT_Cre_VGAT_only`, `VGAT_Cre_VGluT2_only`, `VGAT_Cre_both`, `VGAT_Cre_neither`, `VGluT2_Cre_VGluT2_only`, `VGluT2_Cre_VGAT_only`, `VGluT2_Cre_both`, `VGluT2_Cre_neither`. However, `VGluT2_Cre_VGAT_only` and `VGluT2_Cre_neither` have no cells and are hence dropped from the plot.
