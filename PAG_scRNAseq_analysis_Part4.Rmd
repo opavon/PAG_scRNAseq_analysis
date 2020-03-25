@@ -534,6 +534,37 @@ write.table(file = "PAG_hvg_cv2_out_no_spikes_filt.tsv", hvg_cv2_out_no_spikes_f
 write.table(file = "PAG_hvg_cv2_out_no_spikes_block_filt.tsv", hvg_cv2_out_no_spikes_block_filt, sep = "\t", quote = FALSE, col.names = NA)
 ```
 
+And we finally plot the modelled trend with the selected HVGs colored:
+```{r}
+# Identify selected HVGs
+hvg_index_var <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var_out_no_spikes_filt))
+
+# Plot variance-mean trend without blocking
+plot(var_fit_no_spikes$mean, 
+     var_fit_no_spikes$var, 
+     pch = 16, cex = 0.6,
+     main = "Mean-Variance relationship",
+     xlab = "Mean of log-expression", 
+     ylab = "Variance of log-expression")
+curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(var_fit_no_spikes$mean[hvg_index_var], var_fit_no_spikes$var[hvg_index_var], col = "orange")
+
+# Identify selected HVGs
+hvg_index_cv2 <- which(names(CV2_fit_no_spikes$mean) %in% rownames(hvg_cv2_out_no_spikes_filt))
+
+# Plot CV2 as a function of the mean without blocking and color HVGs differently
+plot(CV2_fit_no_spikes$mean,
+     CV2_fit_no_spikes$cv2, 
+     log = "xy",
+     pch = 16, cex = 0.6,
+     main = "Mean-CV2 relationship",
+     xlab = "Mean of normalized expression", 
+     ylab = "CV2 of normalized expression", 
+     xlim = c(1e-05, 1e+06))
+curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(CV2_fit_no_spikes$mean[hvg_index_cv2], CV2_fit_no_spikes$cv2[hvg_index_cv2], col = "orange")
+```
+
 ## Step 4.4 | Save the filtered SingleCellExperiment object containing HVGs
 ```{r}
 # Save the filtered data:
