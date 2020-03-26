@@ -48,7 +48,7 @@ library(SingleCellExperiment)
 library(scater)
 library(scran)
 
-PAG_sceset_qc_norm_filt <- readRDS("PAG_sceset_qc_norm_filt.rds") # Contains filtered cells and genes, and log-normalized data
+PAG_sceset_qc_norm_filt <- readRDS("PAG_sceset_qc_norm_filt.rds") # Contains filtered cells and genes, log-normalized, and filtered data
 assayNames(PAG_sceset_qc_norm_filt)
 ```
 

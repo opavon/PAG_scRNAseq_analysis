@@ -49,7 +49,7 @@ library(ROCR)
 
 PAG_sceset_qc_norm_filt_corr_clust <- readRDS("PAG_sceset_qc_norm_filt_corr_clust.rds") # Contains filtered cells and genes, and normalized data
 assayNames(PAG_sceset_qc_norm_filt_corr_clust)
-PAG_sceset_qc_norm_filt_corr_clust
+reducedDimNames(PAG_sceset_qc_norm_filt_corr)
 ```
 
 ```{r}
