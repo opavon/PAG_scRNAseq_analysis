@@ -28,7 +28,7 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 
 ***
 
-Below are some code scraps that have been taken out of the pipeline in favour of other preferred alternatives. They most likely require further adaptations before being reincorporated. 
+Below are some code scraps that have been taken out of the pipeline in favour of other preferred alternatives. They most likely require further adaptations before being reincorporated.
 
 # STEP 1 | Read Data and Metadata
 ## Step 1.5 | Add gene-based annotations
@@ -101,6 +101,7 @@ plotColData(PAG_sceset,
   xlab("Number of detected genes") +
   ylab("Y Chromosome counts")
 ```
+
 ## Step 2.5 | Gene QC
 ### 2.5.3 | Identities of the most highly expressed genes
 It can also be useful to plot gene expression frequency versus mean expression level to assess the effects of technical dropout in the dataset. The `plotExprsFreqVsMean()` function fits a non-linear least squares curve for the relationship between expression frequency and mean expression and uses this to define the number of genes above high technical dropout and the numbers of genes that are expressed (here defined as at least 4 counts) in at least 50% and at least 25% of cells. A subset of genes to be treated as feature controls can be specified, otherwise any feature controls previously defined are used. 
@@ -877,35 +878,6 @@ Out
 
 # STEP 5 | Identifying confounding factors, correcting batch effects, and dimensionality reduction
 ## Step 5.3 | Dimensionality reduction
-### 5.3.2 | Correlating PCs with experimental and QC variables of interest
-`scater` allows us to identify principal components that correlate with experimental and QC variables of interest (it ranks principle components by R^2^ from a linear model regressing PC value against any variable or annotation we have associated with each cell) to see which factor is driving a particular principal component.
-```{r}
-plotExplanatoryPCs(PAG_sceset_qc_norm_filt,
-                   dimred = "PCA_HVG_var_logcounts",
-                   n_dimred = 20,
-                   nvars_to_plot = 17,
-                   npcs_to_plot = 20,                 
-                   variables = c("mouse.id",
-                                 "mouse.sex",
-                                 "mouse.age",
-                                 "mouse.singlehousedays",
-                                 "cell.type",
-                                 "cell.fluorophor",
-                                 "slice.number",
-                                 "slice.depth",
-                                 "PAG.areacollection",
-                                 "PAG.hemisphere",
-                                 "PAG.APaxis",
-                                 "time.sinceslicinghour",
-                                 "PAGarea_celltype",
-                                 "batch.processing",
-                                 "batch.sequencing_round",
-                                 "detected",
-                                 "total"
-                                 )
-                   )
-```
-
 ### 5.3.3 | Denoising expression values using PCA
 Another strategy is to retain all PCs until the percentage of total variation explained reaches some threshold. For example, we might retain the top set of PCs that explains 80% of the total variation in the data. Of course, it would be pointless to swap one arbitrary parameter `d` for another `T`. Instead, we derive a suitable value for `T` by calculating the proportion of variance in the data that is attributed to the biological component. This is done using the `denoisePCA()` function with the variance modelling results from `modelGeneVar()` or related functions, where `T` is defined as the ratio of the sum of the biological components to the sum of total variances. Here, explicit feature selection is not strictly necessary, as `denoisePCA()` will automatically restrict the PCA to genes with positive biological components to ensure that `T` is always a positive value. The function returns a `SingleCellExperiment` object containing the PC scores for each cell in the `reducedDims` slot, where cells are rows and PCs are columns. The aim is to eliminate technical noise and enrich for biological signal in the retained PCs. This improves resolution of the underlying biology during downstream procedures such as clustering.
 
@@ -956,9 +928,279 @@ plotReducedDim(PAG_var_block_denoised,
                by_exprs_values = "logcounts")
 ```
 
+### 5.3.6 | Correlating PCs with experimental and QC variables of interest
+`scater` allows us to identify principal components that correlate with experimental and QC variables of interest (it ranks principle components by R^2^ from a linear model regressing PC value against any variable or annotation we have associated with each cell) to see which factor is driving a particular principal component.
+```{r}
+plotExplanatoryPCs(PAG_sceset_qc_norm_filt,
+                   dimred = "PCA_HVG_var_logcounts",
+                   n_dimred = 20,
+                   nvars_to_plot = 17,
+                   npcs_to_plot = 20,                 
+                   variables = c("mouse.id",
+                                 "mouse.sex",
+                                 "mouse.age",
+                                 "mouse.singlehousedays",
+                                 "cell.type",
+                                 "cell.fluorophor",
+                                 "slice.number",
+                                 "slice.depth",
+                                 "PAG.areacollection",
+                                 "PAG.hemisphere",
+                                 "PAG.APaxis",
+                                 "time.sinceslicinghour",
+                                 "PAGarea_celltype",
+                                 "batch.processing",
+                                 "batch.sequencing_round",
+                                 "detected",
+                                 "total"
+                                 )
+                   )
+```
+
 # STEP 6 | Clustering
-## Step 6.1 | Consensus clustering with SC3
-### 6.1.10 | SC3 Clustering using ion channels genes
+## Step 6.1 | Graph-based clustering
+### 6.1.2 | Assessing cluster separation
+One useful approach is to use the ratio matrix to form another graph where the nodes are clusters rather than cells. Edges between nodes are weighted according to the ratio of observed to expected edge weights between cells in those clusters. We can then repeat our graph operations on this new cluster-level graph. For example, we could obtain clusters of clusters, or we could simply create a new cluster-based layout for visualization. This is analogous to the “graph abstraction” approach described by Wolf et al. 2017.
+```{r}
+set.seed(1991)
+cluster_graph_var_rank <- igraph::graph_from_adjacency_matrix(log2(ratio_var_rank + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+# Increasing the weight to increase the visibility of the lines.
+plot(cluster_graph_var_rank, edge.width = igraph::E(cluster_graph_var_rank)$weight*5, layout = igraph::layout_with_lgl)
+
+cluster_graph_var_jaccard <- igraph::graph_from_adjacency_matrix(log2(ratio_var_jaccard + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+# Increasing the weight to increase the visibility of the lines.
+plot(cluster_graph_var_jaccard, edge.width = igraph::E(cluster_graph_var_jaccard)$weight*5, layout = igraph::layout_with_lgl)
+
+cluster_graph_cv2_rank <- igraph::graph_from_adjacency_matrix(log2(ratio_cv2_rank + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+plot(cluster_graph_cv2_rank, edge.width = igraph::E(cluster_graph_cv2_rank)$weight*5, layout = igraph::layout_with_lgl)
+
+cluster_graph_cv2_jaccard <- igraph::graph_from_adjacency_matrix(log2(ratio_cv2_jaccard + 1), mode = "upper", weighted = TRUE, diag = FALSE)
+plot(cluster_graph_cv2_jaccard, edge.width = igraph::E(cluster_graph_cv2_jaccard)$weight*5, layout = igraph::layout_with_lgl)
+```
+
+The graph itself can be visualized using a force-directed layout. This yields a dimensionality reduction result that is closely related to t-SNE and UMAP.
+```{r}
+set.seed(1991)
+reducedDim(PAG_sceset_qc_norm_filt_corr, "force_var") <- igraph::layout_with_fr(graph_var)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_var", dimred = "force_var")
+
+reducedDim(PAG_sceset_qc_norm_filt_corr, "force_cv2") <- igraph::layout_with_fr(graph_cv2)
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_cv2", dimred = "force_cv2")
+```
+
+## Step 6.1b | Subclustering or Cell-type specific Graph-based clustering
+Another approach to improving resolution is to repeat the feature selection and clustering within a single cluster. This aims to select HVGs and PCs that are more relevant to internal structure, improving resolution by avoiding noise from unnecessary features. Subsetting also encourages clustering methods to separate cells according to more modest heterogeneity in the absence of distinct subpopulations. We can repeat the steps we have done after normalization but subsetting the `SingleCellExperiment` object in excitatory and inhibitory cells:
+```{r}
+PAG_sceset_qc_norm_filt_corr_VGAT <- PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cell.type=="VGAT"]
+PAG_sceset_qc_norm_filt_corr_VGluT2 <- PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cell.type=="VGluT2"]
+```
+
+### 6.1b.1 | Implementation of graph-based clustering
+```{r}
+library(scran)
+# Using HVG from Var with rank-based weights
+graph_var_rank_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
+                                     k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                     #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                     type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                     subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
+                                     assay.type = "logcounts",
+                                     use.dimred = "PCA_HVG_var_logcounts")
+clusters_var_rank_VGAT <- igraph::cluster_walktrap(graph_var_rank_VGAT)$membership
+PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_var_rank_VGAT <- factor(clusters_var_rank_VGAT)
+table(PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_var_rank_VGAT)
+
+graph_var_rank_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
+                                       k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                       #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                       type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
+                                       assay.type = "logcounts",
+                                       use.dimred = "PCA_HVG_var_logcounts")
+clusters_var_rank_VGluT2 <- igraph::cluster_walktrap(graph_var_rank_VGluT2)$membership
+PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_var_rank_VGluT2 <- factor(clusters_var_rank_VGluT2)
+table(PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_var_rank_VGluT2)
+
+# Using HVG from Var with jaccard-based weights
+graph_var_jaccard_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
+                                        k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                        #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                        type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                        subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
+                                        assay.type = "logcounts",
+                                        use.dimred = "PCA_HVG_var_logcounts")
+clusters_var_jaccard_VGAT <- igraph::cluster_louvain(graph_var_jaccard_VGAT)$membership
+PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_var_jaccard_VGAT <- factor(clusters_var_jaccard_VGAT)
+table(PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_var_jaccard_VGAT)
+
+graph_var_jaccard_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
+                                          k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                          #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                          type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                          subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
+                                          assay.type = "logcounts",
+                                          use.dimred = "PCA_HVG_var_logcounts")
+clusters_var_jaccard_VGluT2 <- igraph::cluster_louvain(graph_var_jaccard_VGluT2)$membership
+PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_var_jaccard_VGluT2 <- factor(clusters_var_jaccard_VGluT2)
+table(PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_var_jaccard_VGluT2)
+ 
+# Using HVG from CV2 with rank-based weights
+graph_cv2_rank_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
+                                     k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                     #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                     type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                     subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                     assay.type = "logcounts",
+                                     use.dimred = "PCA_HVG_cv2_logcounts")
+clusters_cv2_rank_VGAT <- igraph::cluster_walktrap(graph_cv2_rank_VGAT)$membership
+PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_cv2_rank_VGAT <- factor(clusters_cv2_rank_VGAT)
+table(PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_cv2_rank_VGAT)
+
+graph_cv2_rank_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
+                                       k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                       #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                       type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                       assay.type = "logcounts",
+                                       use.dimred = "PCA_HVG_cv2_logcounts")
+clusters_cv2_rank_VGluT2 <- igraph::cluster_walktrap(graph_cv2_rank_VGluT2)$membership
+PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_cv2_rank_VGluT2 <- factor(clusters_cv2_rank_VGluT2)
+table(PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_cv2_rank_VGluT2)
+
+# Using HVG from CV2 with jaccard-based weights
+graph_cv2_jaccard_VGAT <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGAT,
+                                        k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                        #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                        type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                        subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                        assay.type = "logcounts",
+                                        use.dimred = "PCA_HVG_cv2_logcounts")
+clusters_cv2_jaccard_VGAT <- igraph::cluster_louvain(graph_cv2_jaccard_VGAT)$membership
+PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_cv2_jaccard_VGAT <- factor(clusters_cv2_jaccard_VGAT)
+table(PAG_sceset_qc_norm_filt_corr_VGAT$SNN_clusters_cv2_jaccard_VGAT)
+
+graph_cv2_jaccard_VGluT2 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr_VGluT2,
+                                          k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction.
+                                          #d = 50, # An integer scalar specifying the number of dimensions to use for the search.
+                                          type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+                                          subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                          assay.type = "logcounts",
+                                          use.dimred = "PCA_HVG_cv2_logcounts")
+clusters_cv2_jaccard_VGluT2 <- igraph::cluster_louvain(graph_cv2_jaccard_VGluT2)$membership
+PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_cv2_jaccard_VGluT2 <- factor(clusters_cv2_jaccard_VGluT2)
+table(PAG_sceset_qc_norm_filt_corr_VGluT2$SNN_clusters_cv2_jaccard_VGluT2)
+```
+
+```{r}
+# VGAT cells
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGAT, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "VGAT_VGluT2_expression") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from Var with rank-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGAT, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_var_rank_VGAT", text_by = "SNN_clusters_var_rank_VGAT") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from Var with jaccard-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGAT, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_var_jaccard_VGAT", text_by = "SNN_clusters_var_jaccard_VGAT") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from CV2 with rank-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGAT, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_rank_VGAT", text_by = "SNN_clusters_cv2_rank_VGAT") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from CV2 with jaccard-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGAT, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_jaccard_VGAT", text_by = "SNN_clusters_cv2_jaccard_VGAT") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+
+# VGluT2 cells
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGluT2, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "PAG.arearegistration", shape_by = "VGAT_VGluT2_expression") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from Var with rank-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGluT2, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_var_rank_VGluT2", text_by = "SNN_clusters_var_rank_VGluT2") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from Var with jaccard-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGluT2, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_var_jaccard_VGluT2", text_by = "SNN_clusters_var_jaccard_VGluT2") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from CV2 with rank-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGluT2, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_rank_VGluT2", text_by = "SNN_clusters_cv2_rank_VGluT2") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+## Using HVG from CV2 with jaccard-based weights
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_VGluT2, dimred = "UMAP_var_logcounts_10_neighbors_0.05_min_dist",
+               colour_by = "SNN_clusters_cv2_jaccard_VGluT2", text_by = "SNN_clusters_cv2_jaccard_VGluT2") + ggtitle("UMAP_var_logcounts_10_neighbors_0.05_min_dist")
+```
+
+### 6.1b.2 | Assessing cluster separation
+```{r}
+# VGAT
+ratio_var_rank_VGAT <- clusterModularity(graph_var_rank_VGAT, clusters_var_rank_VGAT, as.ratio = TRUE)
+ratio_var_rank_VGAT
+
+ratio_var_jaccard_VGAT <- clusterModularity(graph_var_jaccard_VGAT, clusters_var_jaccard_VGAT, as.ratio = TRUE)
+ratio_var_jaccard_VGAT
+
+ratio_cv2_rank_VGAT <- clusterModularity(graph_cv2_rank_VGAT, clusters_cv2_rank_VGAT, as.ratio = TRUE)
+ratio_cv2_rank_VGAT
+
+ratio_cv2_jaccard_VGAT <- clusterModularity(graph_cv2_jaccard_VGAT, clusters_cv2_jaccard_VGAT, as.ratio = TRUE)
+ratio_cv2_jaccard_VGAT
+
+# VGluT2
+ratio_var_rank_VGluT2 <- clusterModularity(graph_var_rank_VGluT2, clusters_var_rank_VGluT2, as.ratio = TRUE)
+ratio_var_rank_VGluT2
+
+ratio_var_jaccard_VGluT2 <- clusterModularity(graph_var_jaccard_VGluT2, clusters_var_jaccard_VGluT2, as.ratio = TRUE)
+ratio_var_jaccard_VGluT2
+
+ratio_cv2_rank_VGluT2 <- clusterModularity(graph_cv2_rank_VGluT2, clusters_cv2_rank_VGluT2, as.ratio = TRUE)
+ratio_cv2_rank_VGluT2
+
+ratio_cv2_jaccard_VGluT2 <- clusterModularity(graph_cv2_jaccard_VGluT2, clusters_cv2_jaccard_VGluT2, as.ratio = TRUE)
+ratio_cv2_jaccard_VGluT2
+```
+
+```{r}
+library(pheatmap)
+# VGAT
+pheatmap(log2(ratio_var_rank_VGAT + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+
+pheatmap(log2(ratio_var_jaccard_VGAT + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+
+pheatmap(log2(ratio_cv2_rank_VGAT + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+
+pheatmap(log2(ratio_cv2_jaccard_VGAT + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+
+# VGluT2
+pheatmap(log2(ratio_var_rank_VGluT2 + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+
+pheatmap(log2(ratio_var_jaccard_VGluT2 + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+
+pheatmap(log2(ratio_cv2_rank_VGluT2 + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+
+pheatmap(log2(ratio_cv2_jaccard_VGluT2 + 1), 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("white", "blue"))(100))
+         #col = rev(heat.colors(100)))
+```
+
+## Step 6.4 | Consensus clustering with SC3
+### 6.4.10 | SC3 Clustering using ion channels genes
 Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
 ```{r}
 PAG_ionchannels <- PAG_scRNAseq_gene_lists$genes.ionchannels
@@ -1043,7 +1285,7 @@ sc3_plot_markers(PAG_sceset_qc_ionchannels,
                  )
 ```
 
-### 6.1.11 | SC3 Clustering using Neuropeptides and Neuromodulators
+### 6.4.11 | SC3 Clustering using Neuropeptides and Neuromodulators
 Here we will run the same clustering approach but using only ion channel genes instead of all the genes. First we load the list of ion channel genes and keep the ones that are present in our dataset:
 ```{r}
 PAG_Neuromodulators_Peptides <- PAG_scRNAseq_gene_lists$genes.NeuromodulatorsPeptides
@@ -1102,7 +1344,7 @@ sc3_plot_markers(PAG_sceset_qc_Neuromodulators_Peptides,
                  )
 ```
 
-### 6.1.12 | SC3 Clustering ion channels genes instead of cells (need to transpose matrix in a new SCE object)
+### 6.4.12 | SC3 Clustering ion channels genes instead of cells (need to transpose matrix in a new SCE object)
 Run STEP 5.1.2 first, so you already have the subset of genes and the SCE object. Then transpose the SCE object with only ion channel genes you generated in the previous step:
 ```{r}
 # Keep only the rows that correspond to ion channel genes:
@@ -1140,7 +1382,7 @@ Explore results interactively:
 sc3_interactive(PAG_sceset_qc_ionchannels)
 ```
 
-### 6.1.13 | SC3 Clustering VGAT and VGluT2 cells separately
+### 6.4.13 | SC3 Clustering VGAT and VGluT2 cells separately
 Do this when you are ready for downstream analysis, after quality checks.  
 ```{r}
 # Is this the best way to subset the data? Probably not, there must be a way to do it without creating a new SCE object.
@@ -1149,37 +1391,8 @@ VGAT_sceset <- PAG_sceset[,grep("^[I]", colnames(PAG_sceset), value=TRUE)]
 VGluT2_sceset <- PAG_sceset[,grep("^[E]", colnames(PAG_sceset), value=TRUE)]
 ```
 
-## STEP 6.2 | Graph-based clustering
-### 6.2.2 | Assessing cluster separation
-One useful approach is to use the ratio matrix to form another graph where the nodes are clusters rather than cells. Edges between nodes are weighted according to the ratio of observed to expected edge weights between cells in those clusters. We can then repeat our graph operations on this new cluster-level graph. For example, we could obtain clusters of clusters, or we could simply create a new cluster-based layout for visualization. This is analogous to the “graph abstraction” approach described by Wolf et al. 2017.
-```{r}
-set.seed(1991)
-cluster_graph_var_rank <- igraph::graph_from_adjacency_matrix(log2(ratio_var_rank + 1), mode = "upper", weighted = TRUE, diag = FALSE)
-# Increasing the weight to increase the visibility of the lines.
-plot(cluster_graph_var_rank, edge.width = igraph::E(cluster_graph_var_rank)$weight*5, layout = igraph::layout_with_lgl)
-
-cluster_graph_var_jaccard <- igraph::graph_from_adjacency_matrix(log2(ratio_var_jaccard + 1), mode = "upper", weighted = TRUE, diag = FALSE)
-# Increasing the weight to increase the visibility of the lines.
-plot(cluster_graph_var_jaccard, edge.width = igraph::E(cluster_graph_var_jaccard)$weight*5, layout = igraph::layout_with_lgl)
-
-cluster_graph_cv2_rank <- igraph::graph_from_adjacency_matrix(log2(ratio_cv2_rank + 1), mode = "upper", weighted = TRUE, diag = FALSE)
-plot(cluster_graph_cv2_rank, edge.width = igraph::E(cluster_graph_cv2_rank)$weight*5, layout = igraph::layout_with_lgl)
-
-cluster_graph_cv2_jaccard <- igraph::graph_from_adjacency_matrix(log2(ratio_cv2_jaccard + 1), mode = "upper", weighted = TRUE, diag = FALSE)
-plot(cluster_graph_cv2_jaccard, edge.width = igraph::E(cluster_graph_cv2_jaccard)$weight*5, layout = igraph::layout_with_lgl)
-```
-
-The graph itself can be visualized using a force-directed layout. This yields a dimensionality reduction result that is closely related to t-SNE and UMAP.
-```{r}
-set.seed(1991)
-reducedDim(PAG_sceset_qc_norm_filt_corr, "force_var") <- igraph::layout_with_fr(graph_var)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_var", dimred = "force_var")
-
-reducedDim(PAG_sceset_qc_norm_filt_corr, "force_cv2") <- igraph::layout_with_fr(graph_cv2)
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, colour_by = "SNN_clusters_cv2", dimred = "force_cv2")
-```
-## STEP 6.6 | clusterExperiment [not yet implemented]
-## STEP 6.7 | bigSCale2
+## Step 6.7 | clusterExperiment [not yet implemented]
+## Step 6.8 | bigSCale2
 bigSCale is an analytical framework for big-scale single-cell data, available [here](https://github.com/iaconogi/bigSCale2).
 
 ```{r}
@@ -1265,12 +1478,12 @@ Signatures = getSignatures(PAG_sceset_qc)
 DT::datatable(Signatures[[1]])
 ```
 
-## Step 6.8 | BackSPIN - biclustering hierarchical [MATLAB/Python]
+## Step 6.9 | BackSPIN - biclustering hierarchical [MATLAB/Python]
 The BackSPIN biclustering algorithm was developed by Amit Zeisel and is described in Zeisel et al. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq Science 2015 (PMID: 25700174, doi: 10.1126/science.aaa1934). Please cite this paper if you use the BackSPIN algorithm in your work.
 
 Original MATLAB implementation by Amit Zeisel. This repo contains a standalone command-line version of BackSPIN, implemented in Python by Gioele La Manno (https://github.com/linnarsson-lab/BackSPIN)
 
-## Step 6.9 | SINCERA (hierarchical clustering) [not yet implemented]
+## Step 6.10 | SINCERA (hierarchical clustering) [not yet implemented]
 It performs a gene-level z-score transformation before doing clustering.
 It can also identify k as the minimum height of the hierarchical tree that generates no more than a specified number of singleton clusters (clusters containing only 1 cell).
 
@@ -1279,7 +1492,7 @@ SINCERA: a computational pipeline for SINgle CEll RNA-seq profiling Analysis, ca
 Website: https://research.cchmc.org/pbge/sincera.html
 Paper: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004575
 
-## Step 6.10 | pcaReduce [not yet implemented, but very stochastic and does not provide a stable result] 
+## Step 6.11 | pcaReduce [not yet implemented, but very stochastic and does not provide a stable result] 
 pcaReduce combines PCA, k-means and iterative hierarchical clustering. Starting from a large number of clusters pcaReduce iteratively merges similar clusters; after each merging event it removes the principle component explaning the least variance in the data.
 
 pcaReduce operates directly on the expression matrix. It is recommended to use a gene filter and log transformation before running pcaReduce. We will use the default SC3 gene filter (note that the exprs slot of a scater object is log-transformed by default).
@@ -1382,7 +1595,7 @@ pValues_KS <- p.adjust(pValues_KS, method = "fdr")
 ```
 
 ```{r}
-#How many of the significant DE genes are detected
+# How many of the significant DE genes are detected
 significant_DE_genes_KS <- names(pValues_KS)[pValues_KS < 0.05]
 length(significant_DE_genes_KS)
 ```
@@ -1410,7 +1623,7 @@ significant_DE_genes_W <- names(pValues_W)[pValues_W < 0.05]
 length(significant_DE_genes_W)
 ```
 ## Step 7.6 | SCDE [not yet implemented]
-The scde package implements routines for fitting individual error models for single-cell RNA-seq measurements. Briefly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells.
+The `scde` package implements routines for fitting individual error models for single-cell RNA-seq measurements. Briefly, the read counts observed for each gene are modeled using a mixture of a negative binomial (NB) distribution (for the amplified/detected transcripts) and low-level Poisson distribution (for the unobserved or background-level signal of genes that failed to amplify or were not detected for other reasons). These models can then be used to identify robustly differentially expressed genes between groups of cells.
 
 Website: http://hms-dbmi.github.io/scde/
 
@@ -1439,6 +1652,202 @@ Note this step takes a considerable amount of time unless multiple cores are use
 
 ```
 
-
 ## Step 7.7 | BPSC [not yet implemented]
 BPSC uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we’ve already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group (“control”) and can include other factors such as batches in the model.
+
+# STEP 10 | Seurat
+[Seurat](https://satijalab.org/seurat/) is an R package designed for QC, analysis, and exploration of single-cell RNA-seq data. Seurat aims to enable users to identify and interpret sources of heterogeneity from single-cell transcriptomic measurements, and to integrate diverse types of single-cell data. For more info see Butler et al. 2018 and Stuart, Butler et al. 2018. The following code has been adapted from the [Guided Clustering Tutorial](https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html).
+
+_IMP:_ Before starting this, run "Part I: from a gene expression matrix to a SingleCellExperiment object" again to load the raw data. Seurat uses its own object class, so we need to create a new object with the raw (non-normalised) data. Setting up a Seurat object:
+```{r}
+library(Seurat)
+library(dplyr)
+PAG_seurat <- CreateSeuratObject(counts = PAG_data,
+                                 project = "PAG_seurat_analysis",
+                                 min.cells = 1, # keep genes expressed in more than 1 cell
+                                 min.features = 2000, # keep cells with at least 2000 detected genes
+                                 meta.data = PAG_metadata)
+```
+
+## Step 10.1 | Pre-processing, data QC and normalization
+Selection and filtration of cells based on QC metrics, data normalization and scaling, and detection of highly variable features.
+```{r}
+# The [[ operator can add columns to object metadata. This is a great place to stash QC stats
+PAG_seurat[["percent.mt"]] <- PercentageFeatureSet(PAG_seurat, pattern = "^MT-")
+PAG_seurat[["percent.ercc"]] <- PercentageFeatureSet(PAG_seurat, pattern = "^ERCC-")
+head(PAG_seurat@meta.data, 5) # Metadata for the first 5 cells
+```
+
+Visualize QC metrics using a violin plot:
+```{r}
+VlnPlot(PAG_seurat, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ercc"), ncol = 4)
+```
+
+```{r}
+# FeatureScatter is typically used to visualize feature-feature relationships, but can be used
+# for anything calculated by the object, i.e. columns in object metadata, PC scores etc.
+
+plot1 <- FeatureScatter(PAG_seurat, feature1 = "nCount_RNA", feature2 = "percent.mt")
+plot2 <- FeatureScatter(PAG_seurat, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+CombinePlots(plots = list(plot1, plot2))
+```
+
+Filter the dataset according to specific quality  metrics:
+```{r}
+PAG_seurat <- subset(PAG_seurat, subset = nFeature_RNA > 2000 & percent.mt < 5)
+```
+
+After removing unwanted cells from the dataset, the next step is to normalize the data. By default, Seurat employs a global-scaling normalization method `LogNormalize` that normalizes the feature expression measurements for each cell by the total expression, multiplies this by a scale factor (10,000 by default), and log-transforms the result. Normalized values are stored in `SeuratObject[["RNA"]]@data`.
+```{r}
+PAG_seurat <- NormalizeData(PAG_seurat, normalization.method = "LogNormalize", scale.factor = 10000)
+PAG_seurat <- NormalizeData(PAG_seurat)
+```
+
+## Step 10.2 | Feature selection: identify highly variable features
+The next step consists on calculating a subset of features that exhibit high cell-to-cell variation in the dataset (i.e, they are highly expressed in some cells, and lowly expressed in others). Focusing on these genes in downstream analysis helps to highlight biological signal in single-cell datasets. Seurat directly models the mean-variance relationship inherent in single-cell data and implements in in the `FindVariableFeatures` function, returning 2000 features per dataset by default.
+```{r}
+PAG_seurat <- FindVariableFeatures(PAG_seurat, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(PAG_seurat), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(PAG_seurat)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+CombinePlots(plots = list(plot1, plot2))
+```
+
+## Step 10.3 | Scaling the data, peforming dimensionality reduction and determining the dimensionality of the dataset
+Linear transformation (scaling) is a standard pre-processing step prior to dimensionality reduction techniques like PCA. The `ScaleData` function:
+
+* Shifts the expression of each gene, so that the mean expression across cells is 0
+* Scales the expression of each gene, so that the variance across cells is and highly-expressed genes do not dominate
+* Stores the resuts in `SeuratObject[["RNA"]]@scale.data`
+```{r}
+all.genes <- rownames(PAG_seurat)
+PAG_seurat <- ScaleData(PAG_seurat, features = all.genes)
+
+# Scaling is an essential step in the Seurat workflow, but only on genes that will be used as input to PCA. To speed things up, the default in  ScaleData is only to perform scaling on the previously identified variable features (2,000 by default). To do this, omit the  features argument in the previous function call.
+```
+
+We can now perform PCA on the scaled data. By default, only the previously determined variable features are used as input, but can be defined using `features` argument if you wish to choose a different subset.
+```{r}
+PAG_seurat <- RunPCA(PAG_seurat, features = VariableFeatures(object = PAG_seurat))
+```
+
+Seurat provides several useful ways of visualizing both cells and features that define the PCA, including `VizDimReduction`, `DimPlot`, and `DimHeatmap`.
+```{r}
+# Examine and visualize PCA results a few different ways
+print(PAG_seurat[["pca"]], dims = 1:5, nfeatures = 5)
+VizDimLoadings(PAG_seurat, dims = 1:2, reduction = "pca")
+DimPlot(PAG_seurat, reduction = "pca")
+```
+
+`DimHeatmap` allows for easy exploration of the primary sources of heterogeneity in a dataset, and can be useful when trying to decide which PCs to include for further downstream analyses. Both cells and features are ordered according to their PCA scores. Setting cells to a number plots the extreme cells on both ends of the spectrum, which dramatically speeds plotting for large datasets. Though clearly a supervised analysis, this is a valuable tool for exploring correlated feature sets.
+```{r}
+DimHeatmap(PAG_seurat, dims = 1, cells = 500, balanced = TRUE)
+DimHeatmap(PAG_seurat, dims = 1:15, cells = 500, balanced = TRUE)
+```
+
+To overcome the extensive technical noise in any single feature for scRNA-seq data, Seurat clusters cells based on their PCA scores, with each PC essentially representing a metafeature that combines information across a correlated feature set. The top principal components therefore represent a robust compression of the dataset. However, how many componenets should we choose to include? 10? 20? 100?
+
+In Macosko et al, they implemented a resampling test inspired by the JackStraw procedure. They randomly permuted a subset of the data (1% by default) and rerun PCA, constructing a null distribution of feature scores, and repeat this procedure. They then identify significant PCs as those with a strong enrichment of low p-value features.
+```{r}
+# NOTE: This process can take a long time for big datasets.
+# Other techniques such as those implemented in ElbowPlot() can be used to reduce computation time
+PAG_seurat <- JackStraw(PAG_seurat, num.replicate = 100)
+PAG_seurat <- ScoreJackStraw(PAG_seurat, dims = 1:20)
+```
+
+The `JackStrawPlot` function provides a visualization tool for comparing the distribution of p-values for each PC with a uniform distribution (dashed line). Significant PCs will show a strong enrichment of features with low p-values (solid curve above the dashed line).
+```{r}
+JackStrawPlot(PAG_seurat, dims = 1:15)
+```
+
+An alternative heuristic method generates an `Elbow plot`: a ranking of principle components based on the percentage of variance explained by each one (`ElbowPlot` function). The elbow suggests a point by which the majority of true signal is captured.
+```{r}
+ElbowPlot(PAG_seurat)
+```
+
+Identifying the true dimensionality of a dataset can be challenging/uncertain for the user. It is therefore a good idea to try the three different methods described above. The first is more supervised, exploring PCs to determine relevant sources of heterogeneity, and could be used in conjunction with GSEA for example. The second implements a statistical test based on a random null model, but is time-consuming for large datasets, and may not return a clear PC cutoff. The third is a heuristic that is commonly used, and can be calculated instantly. It is also good practice to repeat downstream analyses with a different number of PCs (10, 15, or even 50!). Although the results often do not differ dramatically, it is best to err on the higher side when choosing this parameter.
+
+## Step 10.4 | Clustering
+Seurat v3 applies a graph-based clustering approach. It first constructs a KNN graph based on the euclidean distance in PCA space, and refine the edge weights between any two cells based on the shared overlap in their local neighborhoods (Jaccard similarity). This step is performed using the `FindNeighbors` function, and takes as input the previously defined dimensionality of the dataset.
+
+To cluster the cells, Seurat next applies modularity optimization techniques such as the Louvain algorithm (default) or SLM [SLM, Blondel et al., Journal of Statistical Mechanics], to iteratively group cells together, with the goal of optimizing the standard modularity function. The `FindClusters` function implements this procedure, and contains a resolution parameter that sets the "granularity" of the downstream clustering, with increased values leading to a greater number of clusters. We find that setting this parameter between 0.4-1.2 typically returns good results for single-cell datasets of around 3K cells. Optimal resolution often increases for larger datasets. The clusters can be found using the `Idents` function.
+```{r}
+PAG_seurat <- FindNeighbors(PAG_seurat, dims = 1:10)
+PAG_seurat <- FindClusters(PAG_seurat, resolution = 0.5)
+head(Idents(PAG_seurat), 5) # Look at cluster IDs of the first 5 cells
+```
+
+## Step 10.5 | Non-linear dimensionality reduction (UMAP and t-SNE)
+Seurat offers several non-linear dimensional reduction techniques, such as tSNE and UMAP, to visualize and explore these datasets. The goal of these algorithms is to learn the underlying manifold of the data in order to place similar cells together in a low-dimensional space. Cells within the graph-based clusters determined above should co-localize on these dimension reduction plots. Ideally use the same PCs input to the clustering analysis as input to the UMAP and tSNE.
+```{r}
+PAG_seurat <- RunTSNE(PAG_seurat, dims = 1:10)
+DimPlot(PAG_seurat, reduction = "tsne")
+```
+
+You can save the object at this point so that it can easily be loaded back in without having to rerun the computationally intensive steps performed above, or easily shared with collaborators.
+```{r}
+saveRDS(PAG_seurat, file = "../output/PAG_seurat_analysis.rds")
+```
+
+## Step 10.6 | Finding differentially expressed features (cluster biomarkers)
+Seurat can help find markers that define clusters via differential expression. By default, it identifes positive and negative markers of a single cluster (specified in ident.1), compared to all other cells. `FindAllMarkers` automates this process for all clusters, but you can also test groups of clusters vs. each other, or against all cells.
+
+The `min.pct` argument requires a feature to be detected at a minimum percentage in either of the two groups of cells, and the `thresh.test` argument requires a feature to be differentially expressed (on average) by some amount between the two groups. You can set both of these to 0, but with a dramatic increase in time - since this will test a large number of features that are unlikely to be highly discriminatory. As another option to speed up these computations, `max.cells.per.ident` can be set. This will downsample each identity class to have no more cells than whatever this is set to. While there is generally going to be a loss in power, the speed increases can be significiant and the most highly differentially expressed features will likely still rise to the top.
+```{r}
+# find all markers of cluster 1
+cluster1.markers <- FindMarkers(PAG_seurat, ident.1 = 1, min.pct = 0.25)
+head(cluster1.markers, n = 5)
+```
+
+```{r}
+# find all markers distinguishing cluster 3 from clusters 0 and 2
+cluster3.markers <- FindMarkers(PAG_seurat, ident.1 = 3, ident.2 = c(0, 1, 2), min.pct = 0.25)
+head(cluster3.markers, n = 10)
+```
+
+```{r}
+# find markers for every cluster compared to all remaining cells, report only the positive ones
+PAG_seurat.markers <- FindAllMarkers(PAG_seurat, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+PAG_seurat.markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_logFC)
+```
+
+Seurat has several tests for differential expression which can be set with the `test.use` parameter. For example, the ROC test returns the "classification power" for any individual marker (ranging from 0 - random, to 1 - perfect).
+```{r}
+cluster1.markers <- FindMarkers(PAG_seurat, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+```
+
+There are several tools for visualizing marker expression. `VlnPlot` (shows expression probability distributions across clusters), and `FeaturePlot` (visualizes feature expression on a tSNE or PCA plot) are the most commonly used visualizations, but additional methods are `RidgePlot`, `CellScatter`, and `DotPlot`.
+```{r}
+VlnPlot(PAG_seurat, features = c("Sst", "Npy"))
+
+# you can plot raw counts as well
+VlnPlot(PAG_seurat, features = c("Sst", "Npy"), slot = "counts", log = TRUE)
+
+FeaturePlot(PAG_seurat, features = c("MS4A1", "GNLY", "CD3E", "CD14", "FCER1A", "FCGR3A", "LYZ", "PPBP", 
+    "CD8A"))
+```
+
+`DoHeatmap` generates an expression heatmap for given cells and features.
+```{r}
+top10 <- PAG_seurat.markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_logFC)
+DoHeatmap(PAG_seurat, features = top10$gene) + NoLegend()
+```
+
+## Step 10.7 | Assigning cell type identity to clusters
+Finally, we can rename/assign an identity to the clusters we have been able to identify based on the data.
+```{r}
+new.cluster.ids <- c("Naive CD4 T", "Memory CD4 T", "CD14+ Mono", "B", 
+                     "CD8 T", "FCGR3A+ Mono", "NK", "DC", "Platelet")
+names(new.cluster.ids) <- levels(PAG_seurat)
+PAG_seurat <- RenameIdents(PAG_seurat, new.cluster.ids)
+DimPlot(PAG_seurat, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
+```
+
+Save the complete analysis:
+```{r}
+saveRDS(PAG_seurat, file = "../output/PAG_seurat_analysis_final.rds")
+```
