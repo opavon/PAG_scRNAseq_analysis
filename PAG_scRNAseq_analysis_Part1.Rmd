@@ -28,9 +28,11 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 
 ***
 
-# Before we get Started (uncomment if you need to run)
+# Getting started
+Consider uncommenting and running the following lines of code if necessary.
+
 ## Clean start - Delete user installed packages [optional]
-If for whatever reason you need to start over because your packages stopped working, try running the following to delete all user installed packages and then proceed to reinstall everything from scratch (source: [How to remove all user installed packages in R](https://www.r-bloggers.com/how-to-remove-all-user-installed-packages-in-r/)):
+If for whatever reason you need to start over because your packages stopped working, try running the following lines to delete all user installed packages and then proceed to reinstall everything from scratch (source: [How to remove all user installed packages in R](https://www.r-bloggers.com/how-to-remove-all-user-installed-packages-in-r/)).
 ```{r, echo=FALSE}
 # length(installed.packages())
 # 
@@ -60,7 +62,7 @@ If for whatever reason you need to start over because your packages stopped work
 ## Pre-required installation and necessary packages
 To go through this pipeline, you will need to install the following: [R3.6.1](https://cran.r-project.org/) | [RTools35](https://cran.r-project.org/bin/windows/Rtools/) | [RStudio 1.1.463](https://www.rstudio.com/products/rstudio/download/) | [Git](https://git-scm.com/) | [Bioconductor 3.10](https://www.bioconductor.org/install/).
 
-Before installing any packages, check that TLS1.0 is unchecked and both TLS1.1 and TLS1.2 are selected in _InternetOptions>Advanced_, otherwise you will have problems accessing the CRAN mirrors. If you go to Tools/Global Options/Packages, unselect both the "Use secure download method for HTTP" and the "Use Internet Explorer library/proxy for HTTP" options.
+Before installing any packages on Windows, check that TLS1.0 is unchecked and both TLS1.1 and TLS1.2 are selected in _InternetOptions>Advanced_, otherwise you will have problems accessing the CRAN mirrors. If you go to Tools/Global Options/Packages, unselect both the "Use secure download method for HTTP" and the "Use Internet Explorer library/proxy for HTTP" options.
 
 Once you have this, start an RStudio session and install the following packages by *running the code in the console (not from the notebook chunk)*. You only need to install a package once, then you can load it using `library()`.
 ```{r}

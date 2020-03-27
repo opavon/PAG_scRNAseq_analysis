@@ -535,7 +535,7 @@ UMAP_cv2_10_005_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_cor
                                                      colour_by = "kmeans_overcluster_cv2", shape_by = "cell.type",
                                                      text_by = "kmeans_overcluster_cv2")  + labs(title = "UMAP (cv2) - K-means (centers=20)", x = "UMAP 1", y = "UMAP 2")
 
-MAP_cv2_15_001_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+UMAP_cv2_15_001_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                     colour_by = "kmeans_overcluster_cv2", shape_by = "cell.type",
                                                     text_by = "kmeans_overcluster_cv2")  + labs(title = "UMAP (cv2) - K-means (centers=20)", x = "UMAP 1", y = "UMAP 2")
 
