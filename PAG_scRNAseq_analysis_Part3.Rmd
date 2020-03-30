@@ -33,6 +33,8 @@ Systematic differences in sequencing coverage between libraries are often observ
 
 Scaling normalization is the simplest and most commonly used class of normalization strategies. It involves dividing all counts for each cell by a cell-specific scaling factor, often called a “size factor” (Anders and Huber 2010). The assumption here is that any cell-specific bias (e.g., in capture or amplification efficiency) affects all genes equally via scaling of the expected mean count for that cell. The size factor for each cell represents the estimate of the relative bias in that cell, so division of its counts by its size factor should remove that bias. The resulting “normalized expression values” can then be used for downstream analyses such as clustering and dimensionality reduction.
 
+***
+
 _The following theory has been summarised from the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group)._
 
 Library sizes vary because scRNA-seq data is often sequenced on highly multiplexed platforms and the total reads which are derived from each cell may differ substantially. Library size must be corrected for by multiplying or dividing each column of the expression matrix by a normalization factor which is an estimate of the library size relative to the other cells. Many methods to correct for library size have been developped for bulk RNA-seq (e.g. UQ, SF, CPM, RPKM, FPKM, TPM).
@@ -60,7 +62,7 @@ The choice between these two normalization strategies depends on the biology of 
 In our case, we expect our dataset to contain a homogeneous population of neurons, with the majority of genes not differentially expressed between samples. Therefore, we will compute size factors for endogenous genes. We will not use spike-in transcripts as we did not add them in sufficient concentration to be used reliably.
 
 ## Step 3.1 | Compute size factors for endogenous genes
-We will use `scran` to calculate size factors for our samples and then use them for normalization. Importantly, see Vallejos et al., Nature Methods 2017 for an explanation of why it is not a good idea to use CPM normalization on scRNA-seq data.
+We will proceed with the `PAG_sceset_qc` after having applied the relevant QC to our dataset. We will use `scran` to calculate size factors for our samples and then use these for normalization. Importantly, see *Vallejos et al., Nature Methods 2017* for an explanation of why it is not a good idea to use CPM normalization and other bulk-based normalization methods on scRNA-seq data.
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
 options(stringsAsFactors = FALSE)

@@ -391,7 +391,7 @@ The plots above depict the number of clusters detected in our dataset as a funct
 
 This strategy is the most pragmatic as it directly addresses the role of the bias-variance trade-off in downstream analyses, specifically clustering. There is no need to preserve biological signal beyond what is distinguishable in later steps. However, it involves strong assumptions about the nature of the biological differences between subpopulations - and indeed, discrete subpopulations may not even exist in studies of continuous processes like differentiation.
 
-### 5.3.5 | Choosing the number of PCs
+### 5.3.5 | Deciding on the number of PCs
 After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would perhaps say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the scree plot becomes almost flat), whereas 10 or 15 would be a perhaps more appropriate elbow. If we look at the population structure approach, the suggested values are 13 and 16, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. In an attempt to retain a bit more of information, we will keep the first 25 PCs. 
 
 Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new `reducedDim` slots with the subsetted or recalculated PCs. We will keep both the full set of PCs and the reduced version with the top 25 PCs in a different `reducedDim()` slot.
@@ -402,16 +402,14 @@ PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
                                   exprs_values = "logcounts",
                                   subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
                                   ncomponents = 25,
-                                  name = "PCA_HVG_var_logcounts_25"
-                                  )
+                                  name = "PCA_HVG_var_logcounts_25")
 
 set.seed(1991)
 PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
                                   exprs_values = "corrected",
                                   subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
                                   ncomponents = 25,
-                                  name = "PCA_HVG_var_corrected_25"
-                                  )
+                                  name = "PCA_HVG_var_corrected_25")
 
 # Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-cv2:
 set.seed(1992)
@@ -419,16 +417,14 @@ PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
                                   exprs_values = "logcounts",
                                   subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
                                   ncomponents = 25,
-                                  name = "PCA_HVG_cv2_logcounts_25"
-                                  )
+                                  name = "PCA_HVG_cv2_logcounts_25")
 
 set.seed(1992)
 PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
                                   exprs_values = "corrected",
                                   subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
                                   ncomponents = 25,
-                                  name = "PCA_HVG_cv2_corrected_25"
-                                  )
+                                  name = "PCA_HVG_cv2_corrected_25")
 
 reducedDimNames(PAG_sceset_qc_norm_filt)
 ncol(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_logcounts"))
@@ -1087,7 +1083,7 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                point_size = 4
                ) + labs(title = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist", x = "UMAP 1", y = "UMAP 2")
 
-# Potential code to store plots when final:
+# Potential code to save plots when final:
 #saveRDS(UMAP_var_corrected_15_neighbors_0.05_min_dist, file = "filepath/filename.rds")
 #ggarrange(plotlist = list(plot1, plot2), ncol = 2, nrow = 1)
 #ggsave(filename = str_c("results/plots/", date, "_tsne_smart-seq2.pdf"),
@@ -1177,7 +1173,7 @@ To illustrate, consider the interaction between clustering and t-SNE/UMAP. As a 
 
 It is worth elaborating on why we should not perform downstream analyses directly on the t-SNE or UMAP coordinates. Let us put aside the fact that operating on the high-dimensional representations preserves more information; from a naive perspective, using the t-SNE coordinates is very tempting as it ensures that any results are immediately consistent with the visualizations (regardless of whether they are right). However, this can actually be considered a disservice as it masks the uncertainty of the results, leading us to place more confidence in them than is warranted. Rather than being errors, major discrepancies can instead be useful for motivating further investigation into the more ambiguous parts of the dataset; conversely, the lack of discrepancies increases trust in the results.
 
-## Step 5.5 | Save the filtered, corrected, and denoised SingleCellExperiment object
+## Step 5.5 | Save the corrected and denoised SingleCellExperiment object
 ```{r}
 saveRDS(PAG_sceset_qc_norm_filt, file = "PAG_sceset_qc_norm_filt_corr.rds")
 print("Part 5 - Done!")

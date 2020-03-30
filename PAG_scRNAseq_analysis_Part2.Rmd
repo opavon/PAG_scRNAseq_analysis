@@ -91,7 +91,9 @@ assayNames(PAG_sceset)
 ```
 
 ### 2.1.1 | Uniquify feature names
-To facilitate interpretation in the upcoming steps, we can use gene symbols as `rownames` instead of ENSEMBL IDs. `scater` provides the `uniquifyFeatureNames()` function to avoid non-unique gene symbols (in which case it pastes the ENSEMBL ID after it) or missing gene symbols (in which case it uses the ENSEMBL ID). _Cautionary note_: only do this for your own interpretation and analysis, if you release the expression matrix, make sure you use a stable ID such as ENSEMBL as the row name.
+To facilitate interpretation in the upcoming steps, we can use gene symbols as `rownames` instead of ENSEMBL IDs. `scater` provides the `uniquifyFeatureNames()` function to avoid non-unique gene symbols (in which case it pastes the ENSEMBL ID after it) or missing gene symbols (in which case it uses the ENSEMBL ID).
+
+_Cautionary note_: only do this for your own interpretation and analysis, if you release the expression matrix, make sure you use a stable ID such as ENSEMBL as the row name.
 ```{r}
 library(scater)
 head(rownames(PAG_sceset), 50)
@@ -142,14 +144,12 @@ par(mfrow = c(1,2)) # Draw figures in a 1 by 2 array.
 
 hist(PAG_sceset$total/1e6,
      breaks = 50,
-     xlab = "Read per sample (millions)", main = "", col = "grey80", ylab = "Number of cells"
-     )
+     xlab = "Read per sample (millions)", main = "", col = "grey80", ylab = "Number of cells")
 abline(v = c(0.4, 4.6), col = "blue", lwd = 2, lty = 2) # less than 400K reads and more than 4.6M
 
 hist(PAG_sceset$detected, 
      breaks = 50,
-     xlab = "Number of detected genes", main = "", col = "grey80", ylab = "Number of cells"
-     )
+     xlab = "Number of detected genes", main = "", col = "grey80", ylab = "Number of cells")
 abline(v = c(5000, 13000), col = "blue", lwd = 2, lty = 2) # exclude less than 5,000 features and more than 13K (potential doublets?)
 
 summary(PAG_sceset$total/1e6)
@@ -185,29 +185,25 @@ par(mfrow = c(2,2))
 # ERCCs
 hist(PAG_sceset$altexps_ERCC_percent,
      breaks = 50,
-     xlab = "ERCC proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "ERCC proportion (%)", ylab = "Number of cells", main = "", col = "grey80")
 abline(v = 1, col = "blue", lwd = 2, lty = 2)
 
 # Mitochondrial genes
 hist(PAG_sceset$subsets_Mitochondrial_percent,
      breaks = 50,
-     xlab = "Mitochondrial proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "Mitochondrial proportion (%)", ylab = "Number of cells", main = "", col = "grey80")
 abline(v = 15, col = "blue", lwd = 2, lty = 2)
 
 # Ribosomal genes
 hist(PAG_sceset$subsets_Ribosomal_percent,
      breaks = 50,
-     xlab = "Ribosomal proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "Ribosomal proportion (%)", ylab = "Number of cells", main = "", col = "grey80")
 abline(v = 20, col = "blue", lwd = 2, lty = 2)
 
 # TSO concatamers
 hist(PAG_sceset$subsets_TSO_concatamers_percent,
      breaks = 50,
-     xlab = "TSO concatamers proportion (%)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "TSO concatamers proportion (%)", ylab = "Number of cells", main = "", col = "grey80")
 abline(v = 5, col = "blue", lwd = 2, lty = 2)
 
 summary(PAG_sceset$altexps_ERCC_percent)
@@ -269,20 +265,17 @@ par(mfrow = c(1,3))
 # EYFP
 hist(PAG_sceset$subsets_EYFP_sum,
      breaks = 50,
-     xlab = "EYFP expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "EYFP expression (total counts)", ylab = "Number of cells", main = "", col = "grey80")
 
 # tdTomato
 hist(PAG_sceset$subsets_tdTomato_sum,
      breaks = 50,
-     xlab = "tdTomato expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "tdTomato expression (total counts)", ylab = "Number of cells", main = "", col = "grey80")
 
 # Cre
 hist(PAG_sceset$subsets_Cre_sum,
      breaks = 50,
-     xlab = "Cre expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "Cre expression (total counts)", ylab = "Number of cells", main = "", col = "grey80")
 ```
 
 ```{r}
@@ -382,14 +375,12 @@ par(mfrow = c(1,2))
 # VGAT
 hist(PAG_sceset$subsets_VGAT_sum,
      breaks = 50,
-     xlab = "VGAT expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "VGAT expression (total counts)", ylab = "Number of cells", main = "", col = "grey80")
 
 # VGluT2
 hist(PAG_sceset$subsets_VGluT2_sum,
      breaks = 50,
-     xlab = "VGluT2 expression (total counts)", ylab = "Number of cells", main = "", col = "grey80"
-     )
+     xlab = "VGluT2 expression (total counts)", ylab = "Number of cells", main = "", col = "grey80")
 ```
 
 ```{r}
@@ -764,13 +755,11 @@ PCA_based <- colnames(PAG_sceset)[PAG_sceset$outlier]
 
 venn.diag <- vennCounts(cbind(colnames(PAG_sceset) %in% Manual,
                               colnames(PAG_sceset) %in% MADs,
-                              colnames(PAG_sceset) %in% PCA_based)
-                        )
+                              colnames(PAG_sceset) %in% PCA_based))
 
 vennDiagram(venn.diag,
             names = c("Manual", "MADs", "PCA_based"),
-            circle.col = c("#E69F00", "#56B4E9", "#009E73")
-            )
+            circle.col = c("#E69F00", "#56B4E9", "#009E73"))
 ```
 
 ### 2.4.5 | Apply chosen cell filtering approach
@@ -802,16 +791,14 @@ gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total", co
                         plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_EYFP", colour_by = "use") + 
                           labs(title = "EYFP expression", x = NULL, y = "log2 raw expression"),
                         plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_tdTomato", colour_by = "use") + 
-                          labs(title = "tdTomato expression", x = NULL, y = "log2 raw expression")
-                        )
+                          labs(title = "tdTomato expression", x = NULL, y = "log2 raw expression"))
 
 # Plot the violin plots for the VGAT-VGluT2 expression separately
 gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGAT", colour_by = "use") + 
                           labs(title = "VGAT expression", x = NULL, y = "log2 raw expression"),
                         plotColData(PAG_sceset, x = "cell.type", y = "log2_total_counts_VGluT2", colour_by = "use") + 
                           labs(title = "VGluT2 expression", x = NULL, y = "log2 raw expression"),
-                        ncol = 2
-                        )
+                        ncol = 2)
 ```
 
 ## Step 2.5 | Gene QC
@@ -840,8 +827,7 @@ hist(log10(all_ave_counts),
      main = "", 
      col = "grey80", 
      xlab = expression(Log[10]~"average count (all)"),
-     xlim = c(-10,10)
-     )
+     xlim = c(-10,10))
 abline(v = 1, col = "blue", lwd = 2, lty = 2)
 
 # After removing low-quality cells:
@@ -850,8 +836,7 @@ hist(log10(use_ave_counts),
      main = "", 
      col = "grey80", 
      xlab = expression(Log[10]~"average count (use)"),
-     xlim = c(-10,10)
-     )
+     xlim = c(-10,10))
 abline(v = 1, col = "blue", lwd = 2, lty = 2)
 ```
 
@@ -935,14 +920,15 @@ summary(rowData(PAG_sceset)$not_predicted_gene)
 We next add the list of genes to use to a slow in our `rowData` so that we can subset the current `SingleCellExperiment` object to generate the QCed one:
 ```{r}
 # Assign the chosen list of filtered genes to $use slot corresponding to the rows (genes):
-rowData(PAG_sceset)$use <- (rowData(PAG_sceset)$genes_expressed & rowData(PAG_sceset)$not_predicted_gene) # We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
+rowData(PAG_sceset)$use <- (rowData(PAG_sceset)$genes_expressed & rowData(PAG_sceset)$not_predicted_gene) 
+# We will keep only the genes that are both expressed in at least X cells and NOT predicted genes.
 table(rowData(PAG_sceset)$use)
 dim(PAG_sceset) # We haven't changed anything in the SingleCellExperiment object yet.
 ```
 
 Now, the `colData(PAG_sceset)$use` should point to the _samples_ that have passed our QC, whereas the `rowData(PAG_sceset)$use` should point to the _genes_ that have passed our QC.
 
-## Step 2.6 | Create and save a QCed SingleCellExperiment object
+## Step 2.6 | Save the QCed SingleCellExperiment object
 We have now QCed our dataset. Before we proceed to normalization and downstream analyis, we save our progress.
 ```{r}
 # We could remove the saved PCA results from the reducedDim slot, but we can also just keep them in the reducedDim slot:

@@ -110,7 +110,7 @@ https://github.com/KrishnaswamyLab/MAGIC
 # STEP 0 | Set working directory
 If we have been working in RStudio and want to empty the current workspace we can run `rm(list=ls())`. We can also restart the R Session, and clean the current console by pressing `ctrl+l`. We start by setting up the directory where the data is:
 ```{r}
-# Set the directory where your data and/or scripts are:
+# Set the directory where your data and scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
 ```
 
@@ -121,11 +121,9 @@ The first thing we will do is to load the data and metadata from a .txt/csv file
 Our starting point is a gene expression matrix, a .txt/csv file where each column is a cell/sample, and each row a gene with its counts for any given cell. We load our data and inspect it:
 ```{r}
 options(stringsAsFactors = FALSE)
-
 # Load data:
 PAG_data <- read.delim("PAG_scRNAseq_data_190704_Raw_Gene_counts.txt", 
                        sep = "\t", header = TRUE, row.names = NULL)
-
 # Inspect the data by printing the initial columns and rows:
 PAG_data[1:10, 1:12]
 ```
@@ -147,13 +145,14 @@ PAG_metadata[1:10,1:10]
 
 In addition, we can prepare another .csv file containing several manually curated lists of genes (i.e. ion channel genes, neuromodulator genes, etc.) we may later use for analysis.
 ```{r}
-PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv", sep = ",", header = TRUE, row.names = NULL))
+PAG_scRNAseq_gene_lists <- data.frame(read.table("PAG_scRNAseq_gene_lists.csv",
+                                                 sep = ",", header = TRUE, row.names = NULL))
 PAG_scRNAseq_gene_lists[1:10,1:10]
 ```
 
 Finally, we want to carefully consider the annotations from the metadata that we will need for our biological analysis. Are they numerical or categorical? Will we use them in downstream statistical modeling? Once we know the key ones and how we will use them, we can add them as a `factor`. For example, `PAG.area` or `cell.type` are clearly important and categorical, so we specifically convert them to factors in the `PAG_metadata` object. We can also establish the order for the factor levels and even create new metadata factors from existing ones.
 
-A longer discussion on `factors` can be found [here](https://www.stat.berkeley.edu/~s133/factors.html)
+A longer discussion on `factors` can be found [here](https://www.stat.berkeley.edu/~s133/factors.html).
 ```{r}
 PAG_metadata$date.collection <- as.factor(PAG_metadata$date.collection)
 PAG_metadata$sample.number <- as.factor(PAG_metadata$sample.number)

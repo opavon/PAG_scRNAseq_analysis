@@ -1,6 +1,6 @@
 ---
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
-subtitle: "Parts IV: modelling the technical noise and feature selection"
+subtitle: "Parts IV: modelling technical noise and feature selection"
 author:
   - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
@@ -29,7 +29,7 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 ***
 
 # STEP 4 | Modelling technical and biological variability in gene expression to identify highly variable genes
-_Based on the [OSCA book](https://osca.bioconductor.org/feature-selection.html), the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html), and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun._
+_The following steps and explanations are based on the [OSCA book](https://osca.bioconductor.org/feature-selection.html), the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html), and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun._
 
 We often use scRNA-seq data in exploratory analyses to characterise heterogeneity across cells. Procedures like clustering and dimensionality reduction compare cells based on their gene expression profiles, which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells. The choice of genes to use in this calculation has a major impact on the behavior of the metric and the performance of downstream methods. We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise. This aims to preserve interesting biological structure without the variance that obscures that structure, and to reduce the size of the data to improve computational efficiency of later steps.
 
@@ -55,7 +55,7 @@ The simplest approach to quantifying per-gene variation is to compute the varian
 
 Calculation of the per-gene variance is simple but feature selection requires modelling of the mean-variance relationship. The log-transformation does not achieve perfect variance stabilization, which means that the variance of a gene is driven more by its abundance than its underlying biological heterogeneity. To account for this effect, we use the `modelGeneVar()` function to fit a trend to the variance with respect to abundance across all genes. Note that in previouse steps we have filtered the genes so that we keep only those expressed (with at least 1 count) in 4 cells or more.
 
-For each gene, `modelGeneVar()` computes the variance and mean of the log-expression values. A trend is fitted to the variance against the mean for all genes using `fitTrendVar`. The fitted value for each gene is used as a proxy for the technical component of variation for each gene, under the assumption that most genes exhibit a low baseline level of variation that is not biologically interesting. The biological component of variation for each gene is defined as the residual from the trend. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized log-expression per gene), `total` (variance of the normalized log-expression per gene), `bio` (biological component of the variance), `tech` (technical component of the variance), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that bio<=0).
+For each gene, `modelGeneVar()` computes the variance and mean of the log-expression values. A trend is fitted to the variance against the mean for all genes using `fitTrendVar`. The fitted value for each gene is used as a proxy for the technical component of variation for each gene, under the assumption that most genes exhibit a low baseline level of variation that is not biologically interesting. The biological component of variation for each gene is defined as the residual from the trend. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized log-expression per gene), `total` (variance of the normalized log-expression per gene), `bio` (biological component of the variance), `tech` (technical component of the variance), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that `bio<=0`).
 ```{r}
 library(scran)
 start_time <- Sys.time() # Takes around 2s
@@ -96,7 +96,7 @@ head(var_model_no_spikes[order(var_model_no_spikes$bio, decreasing = TRUE),])
 ### 4.1.2 | Coefficient of variation
 An alternative approach to quantification uses the _squared coefficient of variation (CV2)_ of the _normalized_ expression values *prior to log-transformation*. The CV2 is a widely used metric for describing variation in non-negative data and is closely related to the dispersion parameter of the negative binomial distribution in packages like _edgeR_ and _DESeq2_. We can compute the CV2 for each gene in the dataset using the `modelGeneCV2()` function, which provides a robust implementation of the approach described by Brennecke et al. (2013).
 
-For each gene, `modelGeneCV2()` computes the CV2 and mean of the counts after scaling them by the `size.factors`. A trend is fitted to the CV2 against the mean for all genes using `fitTrendCV2`. The fitted value for each gene is used as a proxy for the technical noise, assuming that most genes exhibit a low baseline level of variation that is not biologically interesting. The ratio of the total CV2 to the trend is used as a metric to rank interesting genes, with larger ratios being indicative of strong biological heterogeneity. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized expression per gene), `total` (squared coefficient of variation of the normalized expression per gene), `trend` (fitted value of the trend), `ratio` (ratio of `total` to `trend`), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that ratio<=1).
+For each gene, `modelGeneCV2()` computes the CV2 and mean of the counts after scaling them by the `size.factors`. A trend is fitted to the CV2 against the mean for all genes using `fitTrendCV2`. The fitted value for each gene is used as a proxy for the technical noise, assuming that most genes exhibit a low baseline level of variation that is not biologically interesting. The ratio of the total CV2 to the trend is used as a metric to rank interesting genes, with larger ratios being indicative of strong biological heterogeneity. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized expression per gene), `total` (squared coefficient of variation of the normalized expression per gene), `trend` (fitted value of the trend), `ratio` (ratio of `total` to `trend`), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that `ratio<=1`).
 ```{r}
 start_time <- Sys.time() # Takes around 2s
 CV2_model_no_spikes <- modelGeneCV2(PAG_sceset_qc_norm,
@@ -241,7 +241,7 @@ for (i in colnames(blocked.stats)) {
 }
 ```
 
-As we can see with the `modelGeneCv2` approach, blocking by batch leads to very bad fits, where the trend doesn't really follow the distribution from the gene expression. Looking at this plots, we will compare the HVGs we obtain with each approach before deciding. 
+As we can see with the `modelGeneCv2` approach, blocking by batch leads to very bad fits, where the trend doesn't really follow the distribution from the gene expression. Looking at these plots, we will compare the HVGs we obtain with each approach before deciding. 
 
 ## Step 4.2 | Strategies to identify highly variable genes
 Once we have quantified the per-gene variation, the next step is to select the subset of HVGs to use in downstream analyses. Formal detection of HVGs allows us to avoid genes that are highly variable due to technical factors such as sampling noise during RNA capture and library preparation. A large subset will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes, at the cost of increasing noise from irrelevant genes that might obscure said signal. It is thus difficult to determine the optimal trade-off for any given application as noise in one context may be useful signal in another.
@@ -359,7 +359,7 @@ dim(hvg_cv2_out_no_spikes_block)
 
 ### 4.3.1 | Filter uninteresting genes from the dataset
 _One important thing..._
-Now that we have modelled the gene expression variance and CV2, and before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labelling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
+Now that we have modelled the gene expression variance and CV2, and before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers), and genes used for transgenic labelling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different sets of HVGs:
 ```{r}
 ##### 
 ##Identify and mark the genes we want to drop:
@@ -421,36 +421,30 @@ hvg_cv2_out_no_spikes_block_filt <- hvg_cv2_out_no_spikes_block[filt_hvg_cv2_blo
 nrow(hvg_cv2_out_no_spikes_block_filt)
 ```
 
-### 4.3.2 | Visualize, store, and export HVGs
+### 4.3.2 | Compare feature selection approaches
 Now that we have removed the genes we are not interested in, we can use `limma` and `vennDiagram` to compare how many genes we get in each condition, and how much overlap we have between approaches:
 ```{r}
 library(limma)
 # Inspect the overlap between HVGs obtained with Var and Var-Block:
 venn_diag_var <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_filt),
-                                  rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt))
-                            )
+                                  rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt)))
 vennDiagram(venn_diag_var,
             names = c("Variance", "Variance $ Block"),
-            circle.col = c("#E69F00", "#56B4E9")
-            )
+            circle.col = c("#E69F00", "#56B4E9"))
 
 # Inspect the overlap between HVGs obtained with CV2 and CV2-Block:
 venn_diag_cv2 <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt),
-                                  rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_block_filt))
-                        )
+                                  rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_block_filt)))
 vennDiagram(venn_diag_cv2,
             names = c("CV2", "CV2 $ Block"),
-            circle.col = c("#E69F00", "#56B4E9")
-            )
+            circle.col = c("#E69F00", "#56B4E9"))
 
 # Inspect the overlap between HVGs obtained with Var and CV2:
 venn_diag_varcv2 <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_filt),
-                                     rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt))
-                               )
+                                     rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt)))
 vennDiagram(venn_diag_varcv2,
             names = c("Variance", "CV2"),
-            circle.col = c("#E69F00", "#56B4E9")
-            )
+            circle.col = c("#E69F00", "#56B4E9"))
 
 # Inspect the overlap between HVGs obtained with Var-Block and CV2-block:
 venn_diag_varcv2_block <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt),
@@ -458,24 +452,21 @@ venn_diag_varcv2_block <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in
                                      )
 vennDiagram(venn_diag_varcv2_block,
             names = c("Variance $ Block", "CV2 $ Block"),
-            circle.col = c("#E69F00", "#56B4E9")
-            )
+            circle.col = c("#E69F00", "#56B4E9"))
 
 # Inspect the overlap between HVGs obtained with Var-Block and CV2:
 venn_diag_varcv2_block <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt),
-                                           rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt))
-                                     )
+                                           rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt)))
 vennDiagram(venn_diag_varcv2_block,
             names = c("Variance $ Block", "CV2"),
-            circle.col = c("#E69F00", "#56B4E9")
-            )
+            circle.col = c("#E69F00", "#56B4E9"))
 ```
 
 Taking into account the above Venn Diagrams and the plots of the fitted mean-variance trends, it seems that modelling the variance with blocking by `batch.processing` selects most of the genes captured without blocking, with the advantage that it should more accurately capture the technical variability across batches. Although they look slightly noisier, the plots of the mean-variance relation for the individual batches look quite similar to each other and to the one obtained from the full dataset, so using the HVGs obtained with the blocking approach should be the better option here.
 
 Unfortunately, the same cannot be said for the HVGs obtained from modelling the CV2 with and without blocking. The overlap between HVGs from CV2 and CV2 after blocking is much lower than that obtained from modelling the variance, as seen in the Venn Diagrams. Looking at the plots for the CV2-mean trend for each individual batch we can see that the fitted trends are very variable and in most cases they don't really follow the distribution of the full population. In comparison to the one obtained from the full dataset, the CV2-mean trend of the individual batches look really bad and variable, so using the HVG obtained after blocking might not be a good idea in this case. 
 
-Taking all this into consideration, we will use the HVGs obtained after modelling the *mean-variance after blocking* and the *mean-CV2 relation without blocking*.
+Taking all this into consideration, we will use the HVGs obtained after modelling the *mean-variance after blocking* and the *mean-CV2 without blocking*.
 
 ### 4.3.3 | Visualize, store, and export HVGs
 Before we store the identified HVGs in our `SingleCellExperiment` object, we quickly check the distribution of expression values for the genes with the largest biological components to ensure that the variance/CV2 estimate is not being dominated by one or two outlier cells.
@@ -522,10 +513,10 @@ length(metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_block_filt)
 Just to ensure we keep everything, we also export the full table (not just the gene names) into a `.tsv` file:
 ```{r}
 # Before filtering unwanted genes:
-#write.table(file = "PAG_hvg_var_out_no_spikes.tsv", hvg_var_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
-#write.table(file = "PAG_hvg_var_out_no_spikes_block.tsv", hvg_var_out_no_spikes_block, sep = "\t", quote = FALSE, col.names = NA)
-#write.table(file = "PAG_hvg_cv2_out_no_spikes.tsv", hvg_cv2_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
-#write.table(file = "PAG_hvg_cv2_out_no_spikes_block.tsv", hvg_cv2_out_no_spikes_block, sep = "\t", quote = FALSE, col.names = NA)
+write.table(file = "PAG_hvg_var_out_no_spikes.tsv", hvg_var_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
+write.table(file = "PAG_hvg_var_out_no_spikes_block.tsv", hvg_var_out_no_spikes_block, sep = "\t", quote = FALSE, col.names = NA)
+write.table(file = "PAG_hvg_cv2_out_no_spikes.tsv", hvg_cv2_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
+write.table(file = "PAG_hvg_cv2_out_no_spikes_block.tsv", hvg_cv2_out_no_spikes_block, sep = "\t", quote = FALSE, col.names = NA)
 
 # After filtering unwanted genes:
 write.table(file = "PAG_hvg_var_out_no_spikes_filt.tsv", hvg_var_out_no_spikes_filt, sep = "\t", quote = FALSE, col.names = NA)
@@ -536,20 +527,34 @@ write.table(file = "PAG_hvg_cv2_out_no_spikes_block_filt.tsv", hvg_cv2_out_no_sp
 
 And we finally plot the modelled trend with the selected HVGs colored:
 ```{r}
-# Identify selected HVGs
+# Identify selected HVGs from mean-var modelling without blocking
 hvg_index_var <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var_out_no_spikes_filt))
 
 # Plot variance-mean trend without blocking
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
      pch = 16, cex = 0.6,
-     main = "Mean-Variance relationship",
+     main = "Mean-Variance relationship (no block)",
      xlab = "Mean of log-expression", 
      ylab = "Variance of log-expression")
 curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 points(var_fit_no_spikes$mean[hvg_index_var], var_fit_no_spikes$var[hvg_index_var], col = "orange")
 
-# Identify selected HVGs
+# Identify selected HVGs from mean-var modelling after blocking (although we plot them on the non-blocked graph instead of on 12 separate ones)
+hvg_index_var_block <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var_out_no_spikes_block_filt))
+# Should be pretty similar to the previous plot
+
+# Plot variance-mean trend without blocking
+plot(var_fit_no_spikes$mean, 
+     var_fit_no_spikes$var, 
+     pch = 16, cex = 0.6,
+     main = "Mean-Variance relationship (block)",
+     xlab = "Mean of log-expression", 
+     ylab = "Variance of log-expression")
+curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(var_fit_no_spikes$mean[hvg_index_var_block], var_fit_no_spikes$var[hvg_index_var_block], col = "orange")
+
+# Identify selected HVGs from mean-cv2 modelling without blocking
 hvg_index_cv2 <- which(names(CV2_fit_no_spikes$mean) %in% rownames(hvg_cv2_out_no_spikes_filt))
 
 # Plot CV2 as a function of the mean without blocking and color HVGs differently
@@ -557,13 +562,35 @@ plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
      pch = 16, cex = 0.6,
-     main = "Mean-CV2 relationship",
+     main = "Mean-CV2 relationship (no block)",
      xlab = "Mean of normalized expression", 
      ylab = "CV2 of normalized expression", 
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 points(CV2_fit_no_spikes$mean[hvg_index_cv2], CV2_fit_no_spikes$cv2[hvg_index_cv2], col = "orange")
+
+# Identify selected HVGs from mean-cv2 modelling after blocking (although we plot them on the non-blocked graph instead of on 12 separate ones)
+hvg_index_cv2_block <- which(names(CV2_fit_no_spikes$mean) %in% rownames(hvg_cv2_out_no_spikes_block_filt))
+
+# Plot CV2 as a function of the mean without blocking and color HVGs differently
+plot(CV2_fit_no_spikes$mean,
+     CV2_fit_no_spikes$cv2, 
+     log = "xy",
+     pch = 16, cex = 0.6,
+     main = "Mean-CV2 relationship (block)",
+     xlab = "Mean of normalized expression", 
+     ylab = "CV2 of normalized expression", 
+     xlim = c(1e-05, 1e+06))
+curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(CV2_fit_no_spikes$mean[hvg_index_cv2_block], CV2_fit_no_spikes$cv2[hvg_index_cv2_block], col = "orange")
+
+length(hvg_index_var)
+length(hvg_index_var_block)
+length(hvg_index_cv2)
+length(hvg_index_cv2_block)
 ```
+
+We can clearly see now why it is not a good idea to use the HVGs obtained from modelling the mean-cv2 trend after blocking, but we can do so for the mean-var trend.
 
 ## Step 4.4 | Save the filtered SingleCellExperiment object containing HVGs
 ```{r}
