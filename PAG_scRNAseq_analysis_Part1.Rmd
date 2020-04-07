@@ -114,6 +114,14 @@ If we have been working in RStudio and want to empty the current workspace we ca
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
 ```
 
+Load packages:
+```{r}
+library(tidyverse)
+library(stringr)
+library(SingleCellExperiment)
+library(AnnotationHub)
+```
+
 # STEP 1 | Read Data and Metadata 
 The first thing we will do is to load the data and metadata from a .txt/csv file, tidy it, and create a `SingleCellExperiment` object.
 
