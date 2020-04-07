@@ -80,11 +80,11 @@ is_Y <- which(rowData(PAG_sceset)$Chromosome == "Y")
 is_XIST <- which(rowData(PAG_sceset)$gene_name == "Xist")
 
 # EYFP, tdTomato, Cre, and TSO concatamers
-is_tdTomato <- which(rowData(PAG_sceset)$Chromosome == "A") # tdTomato fluorophor
+is_tdTomato <- which(rowData(PAG_sceset)$Chromosome == "A") # tdTomato fluorophore
 # Alternatively, if using gene_name use <- grepl("^tdTomato", rownames(PAG_sceset))
-is_EYFP <- which(rowData(PAG_sceset)$Chromosome == "B") # EYFP fluorophor
+is_EYFP <- which(rowData(PAG_sceset)$Chromosome == "B") # EYFP fluorophore
 # Alternatively, if using gene_name use <- grepl("^EYFP", rownames(PAG_sceset))
-is_Cre <- which(rowData(PAG_sceset)$Chromosome == "C") # Cre transgene to express fluorophors
+is_Cre <- which(rowData(PAG_sceset)$Chromosome == "C") # Cre transgene to express fluorophores
 # Alternatively, if using gene_name use <- grepl("^Cre", rownames(PAG_sceset))
 is_SmartSeqTSO <- which(rowData(PAG_sceset)$Chromosome == "D") # TSO concatamers
 
@@ -297,54 +297,124 @@ hist(PAG_sceset$subsets_Cre_sum,
 ```
 
 ```{r}
+## Violin plots from EYFP animals by Mouse ID
+# Using counts
+violin_fluorophores_EYFPbymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
+                                                         exprs_values = "counts",
+                                                         colour_by = "batch.processing", ncol = 3, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transgene expression levels in cells from Cre::EYFP animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_fluorophores_EYFPbymouse_counts
+
+ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_counts.pdf"),
+       plot = violin_fluorophores_EYFPbymouse_counts,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 24, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+# Using logcounts_raw
+violin_fluorophores_EYFPbymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
+                                                                exprs_values = "logcounts_raw",
+                                                                colour_by = "batch.processing", ncol = 3, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transgene expression levels in cells from Cre::EYFP animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_fluorophores_EYFPbymouse_logcounts_raw
+
+ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_logcounts_raw.pdf"),
+       plot = violin_fluorophores_EYFPbymouse_logcounts_raw,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 24, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+## Violin plots from tdTomato animals by Mouse ID
+# Using counts
+violin_fluorophores_tdTomatobymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
+                                                             exprs_values = "counts",
+                                                             colour_by = "batch.processing", ncol = 3, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transgene expression levels in cells from Cre::tdTomato animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_fluorophores_tdTomatobymouse_counts
+
+ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_counts.pdf"),
+       plot = violin_fluorophores_tdTomatobymouse_counts,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 24, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+# Using logcounts_raw
+violin_fluorophores_tdTomatobymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
+                                                                    exprs_values = "logcounts_raw",
+                                                                    colour_by = "batch.processing", ncol = 3, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transgene expression levels in cells from Cre::tdTomato animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_fluorophores_tdTomatobymouse_logcounts_raw
+
+ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_logcounts_raw.pdf"),
+       plot = violin_fluorophores_tdTomatobymouse_logcounts_raw,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 24, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+## Violin plots by fluorophore expressed
+# Using counts
+violin_fluorophores_celltype_counts <- plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophore",
+                                                      exprs_values = "counts", 
+                                                      colour_by = "mouse.id", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (raw counts)") + xlab("Fluorophore") + ylab("Expression (raw counts)")
+
+violin_fluorophores_celltype_counts
+
+ggsave(filename = str_c(date, "_violin_fluorophores_celltype_counts.pdf"),
+       plot = violin_fluorophores_celltype_counts,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+# Using logcounts_raw
+violin_fluorophores_celltype_logcounts_raw <- plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophore",
+                                                             exprs_values = "logcounts_raw", 
+                                                             colour_by = "mouse.id", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (log2 raw counts)") + xlab("Fluorophore") + ylab("Expression (log2 raw counts)")
+
+violin_fluorophores_celltype_logcounts_raw
+
+ggsave(filename = str_c(date, "_violin_fluorophores_celltype_logcounts_raw.pdf"),
+       plot = violin_fluorophores_celltype_logcounts_raw,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
 # Plot Expression values of EYFP and tdTomato in several ways:
-flurophor_expression_EYFPanimals <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
-                                                   exprs_values = "logcounts_raw", # alternatively try "counts"
-                                                   colour_by = "batch.processing", ncol = 3, theme_size = 10, point_alpha = 0.8) +
-  ggtitle("Transgene expression levels in Cre::EYFP animals") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)")
-
-flurophor_expression_EYFPanimals
-ggsave(filename = str_c(date, "_flurophor_expression_EYFPanimals.pdf"),
-       plot = flurophor_expression_EYFPanimals,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 24, height = 6, units = "in", dpi = 300
-       )
-
-flurophor_expression_tdTomatoanimals <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
-                                                       exprs_values = "logcounts_raw", # alternatively try "counts"
-                                                       colour_by = "batch.processing", ncol = 3, theme_size = 10, point_alpha = 0.8) +
-  ggtitle("Transgene expression levels in Cre::tdTomato animals") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)")
-
-flurophor_expression_tdTomatoanimals
-ggsave(filename = str_c(date, "_flurophor_expression_tdTomatoanimals.pdf"),
-       plot = flurophor_expression_tdTomatoanimals,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300
-       )
-
-plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophor", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "mouse.id", 
-               xlab = "Cell fluorophor") + ylab("Expression (log2 raw counts)")
-
 plotExpression(PAG_sceset, "tdTomato", x = "EYFP", 
                exprs_values = "counts",
-               colour_by = "cell.fluorophor", 
+               colour_by = "cell.fluorophore", 
                xlab = "EYFP (raw counts)") + ylab("tdTomato (raw counts)")
 
 plotExpression(PAG_sceset, "tdTomato", x = "EYFP", 
                exprs_values = "logcounts_raw",
-               colour_by = "cell.fluorophor", 
+               colour_by = "cell.fluorophore", 
                xlab = "EYFP (log2 raw counts)") + ylab("tdTomato (log2 raw counts)")
 
 plotColData(PAG_sceset,
             x = "detected",
             y = "subsets_EYFP_sum",
             colour_by = "mouse.id",
-            other_fields = "cell.fluorophor") +
-  facet_wrap(~cell.fluorophor) + 
+            other_fields = "cell.fluorophore") +
+  facet_wrap(~cell.fluorophore) + 
   xlab("Number of detected genes") +
   ylab("EYFP (counts)")
 
@@ -352,71 +422,117 @@ plotColData(PAG_sceset,
             x = "detected",
             y = "subsets_tdTomato_sum",
             colour_by = "mouse.id",
-            other_fields = "cell.fluorophor") +
-  facet_wrap(~cell.fluorophor) + 
+            other_fields = "cell.fluorophore") +
+  facet_wrap(~cell.fluorophore) + 
   xlab("Number of detected genes") +
   ylab("tdTomato (counts)")
 ```
 
-An easy way to check everything is as it should be is to look at whether each cell expresses only the fluorophor it should according to the transgenic line it was acquired from. A simple scatterplot of log-transformed counts of EYFP and tdTomato should be enough to reveal this.
+An easy way to check everything is as it should be is to look at whether each cell expresses only the fluorophore it should according to the transgenic line it was acquired from. A simple scatterplot of log-transformed counts of EYFP and tdTomato should be enough to reveal this.
 ```{r}
 # Log transform the counts for EYFP and tdTomato
 PAG_sceset$log2_total_counts_EYFP <- log2(PAG_sceset$subsets_EYFP_sum + 1)
 PAG_sceset$log2_total_counts_tdTomato <- log2(PAG_sceset$subsets_tdTomato_sum + 1)
 
 # In EYFP cells, plot the EYFP total counts against the tdTomato counts
-plot(PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$subsets_EYFP_sum,
-     PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$subsets_tdTomato_sum,
+plot(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$subsets_EYFP_sum,
+     PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$subsets_tdTomato_sum,
      xlim = c(0, max(PAG_sceset$subsets_EYFP_sum)),
      ylim = c(0, max(PAG_sceset$subsets_tdTomato_sum)),
      xlab = "EYFP (counts)", ylab = "tdTomato (counts)",
      type = "p", pch = 19, cex = 1.25, 
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
-
 # Add the equivalent plot for tdTomato cells
-points(PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$subsets_EYFP_sum,
-       PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$subsets_tdTomato_sum,
+points(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$subsets_EYFP_sum,
+       PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$subsets_tdTomato_sum,
        type = "p", pch = 19, cex = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
 
-
 # In EYFP cells, plot the EYFP log2 total counts against the tdTomato counts
-plot(PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$log2_total_counts_EYFP,
-     PAG_sceset[, PAG_sceset$cell.fluorophor == "EYFP"]$log2_total_counts_tdTomato,
+plot(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$log2_total_counts_EYFP,
+     PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$log2_total_counts_tdTomato,
      xlim = c(0, max(PAG_sceset$log2_total_counts_EYFP)),
      ylim = c(0, max(PAG_sceset$log2_total_counts_tdTomato)),
      xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)",
      type = "p", pch = 19, cex = 1.25, 
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
-
 # Add the equivalent plot for tdTomato cells
-points(PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$log2_total_counts_EYFP,
-       PAG_sceset[, PAG_sceset$cell.fluorophor == "tdTomato"]$log2_total_counts_tdTomato,
+points(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$log2_total_counts_EYFP,
+       PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$log2_total_counts_tdTomato,
        type = "p", pch = 19, cex = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
 
 
-# # Another way of doing the same without creating a new slot in colData:
-# # In EYFP cells, plot the EYFP log2 total counts against the tdTomato counts
-# plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophor == "EYFP"], "logcounts_raw"),
-#      assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophor == "EYFP"], "logcounts_raw"),
-#      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "logcounts_raw"))),
-#      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "logcounts_raw"))),
-#      xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)",
-#      type = "p", pch = 19, cex = 1.25, 
-#      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
-# 
-# # Add the equivalent plot for tdTomato cells
-# points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophor == "tdTomato"], "logcounts_raw"),
-#        assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophor == "tdTomato"], "logcounts_raw"),
-#        type = "p", pch = 19, cex = 1,
-#        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
+### Alternative way of doing this (without having to transform counts and assign them to a new slot in colData)
+## Scatter plot with counts
+# In EYFP cells, plot the EYFP log2 total counts against the tdTomato counts
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "counts"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "counts"))),
+     xlab = "EYFP (raw counts)", ylab = "tdTomato (raw counts)",
+     type = "p", pch = 19, cex = 1.25,
+     col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
+# Add the equivalent plot for tdTomato cells
+points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "tdTomato"], "counts"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "counts"),
+       type = "p", pch = 19, cex = 1,
+       col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
+
+# Save the plot
+pdf(file = str_c(path_for_figures, date, "_scatter_fluorophore_expression.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "counts"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "counts"))),
+     xlab = "EYFP (raw counts)", ylab = "tdTomato (raw counts)",
+     type = "p", pch = 19, cex = 1.25,
+     col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
+points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "tdTomato"], "counts"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "counts"),
+       type = "p", pch = 19, cex = 1,
+       col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
+dev.off()
+
+## Scatter plot with logcounts_raw
+# In EYFP cells, plot the EYFP log2 total counts against the tdTomato counts
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "logcounts_raw"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "logcounts_raw"))),
+     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)",
+     type = "p", pch = 19, cex = 1.25,
+     col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
+# Add the equivalent plot for tdTomato cells
+points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "tdTomato"], "logcounts_raw"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "logcounts_raw"),
+       type = "p", pch = 19, cex = 1,
+       col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
+
+# Save the plot
+pdf(file = str_c(path_for_figures, date, "_scatter_fluorophore_expression.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "logcounts_raw"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "logcounts_raw"))),
+     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)",
+     type = "p", pch = 19, cex = 1.25,
+     col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
+points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "tdTomato"], "logcounts_raw"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "logcounts_raw"),
+       type = "p", pch = 19, cex = 1,
+       col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
+dev.off()
 ```
 
-As we can see, we have a minority of cells that express both fluorophors when they should only express one. The safest is to exclude those, as there may have been contamination at one of the processing steps.
+As we can see, we have a minority of cells that express both fluorophores when they should only express one. The safest is to exclude those, as there may have been contamination at one of the processing steps.
 
 ### 2.3.4 | VGAT/VGluT2 expression
-We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2 promoters. However, we don't really know whether neurons in the midbrain area we are investigating express one or the other, or whether they express both? If the latter, in which proportions? We repeat the same approach we used for the fluorophors to inspect VGAT and VGluT2 expression.
+We isolated cells from transgenic animals expressing either EYFP or tdTomato as a reporter under VGAT or VGluT2 promoters. However, we don't really know whether neurons in the midbrain area we are investigating express one or the other, or whether they express both? If the latter, in which proportions? We repeat the same approach we used for the fluorophores to inspect VGAT and VGluT2 expression.
 ```{r}
 # Plot the histograms of the counts assigned to VGAT and VGluT2 in all cells:
 par(mfrow = c(1,2))
@@ -433,22 +549,110 @@ hist(PAG_sceset$subsets_VGluT2_sum,
 ```
 
 ```{r}
+## Violin plots from VGAT cells by Mouse ID
+# Using counts
+violin_VGATVGluT2_VGATbymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
+                                                       exprs_values = "counts",
+                                                       colour_by = "batch.processing", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_VGATVGluT2_VGATbymouse_counts
+
+ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_counts.pdf"),
+       plot = violin_VGATVGluT2_VGATbymouse_counts,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+# Using logcounts_raw
+violin_VGATVGluT2_VGATbymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
+                                                              exprs_values = "logcounts_raw",
+                                                              colour_by = "batch.processing", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_VGATVGluT2_VGATbymouse_logcounts_raw
+
+ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_logcounts_raw.pdf"),
+       plot = violin_VGATVGluT2_VGATbymouse_logcounts_raw,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+## Violin plots from VGluT2 cells by Mouse ID
+# Using counts
+violin_VGATVGluT2_VGluT2bymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
+                                                         exprs_values = "counts",
+                                                         colour_by = "batch.processing", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_VGATVGluT2_VGluT2bymouse_counts
+
+ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_counts.pdf"),
+       plot = violin_VGATVGluT2_VGluT2bymouse_counts,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+# Using logcounts_raw
+violin_VGATVGluT2_VGluT2bymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
+                                                                exprs_values = "logcounts_raw",
+                                                                colour_by = "batch.processing", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+violin_VGATVGluT2_VGluT2bymouse_logcounts_raw
+
+ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_logcounts_raw.pdf"),
+       plot = violin_VGATVGluT2_VGluT2bymouse_logcounts_raw,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+## Violin plots by Cell Type
+# Using counts
+violin_VGATVGluT2_celltype_counts <- plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x = "cell.type",
+                                                    exprs_values = "counts", 
+                                                    colour_by = "mouse.id", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (raw counts)") + xlab("Cell type") + ylab("Expression (raw counts)")
+
+violin_VGATVGluT2_celltype_counts
+
+ggsave(filename = str_c(date, "_violin_VGATVGluT2_celltype_counts.pdf"),
+       plot = violin_VGATVGluT2_celltype_counts,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+# Using logcounts_raw
+violin_VGATVGluT2_celltype_logcounts_raw <- plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x = "cell.type",
+                                                           exprs_values = "logcounts_raw", 
+                                                           colour_by = "mouse.id", ncol = 2, theme_size = 10, point_alpha = 0.8) +
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (log2 raw counts)") + xlab("Cell type") + ylab("Expression (log2 raw counts)")
+
+violin_VGATVGluT2_celltype_logcounts_raw
+
+ggsave(filename = str_c(date, "_violin_VGATVGluT2_celltype_logcounts_raw.pdf"),
+       plot = violin_VGATVGluT2_celltype_logcounts_raw,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 6, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
 # Plot Expression values of VGAT and VGluT2 in several ways:
-plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "batch.processing", ncol = 2, theme_size = 10, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels VGAT::Cre animals") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)")
-
-plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "batch.processing", ncol = 2, theme_size = 10, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels VGluT2::Cre animals") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)")
-
-plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x = "cell.type", 
-               exprs_values = "logcounts_raw", # alternatively try "counts"
-               colour_by = "mouse.id", 
-               xlab = "Cell type") + ylab("Expression (log2 raw counts)")
-
 plotExpression(PAG_sceset, "Slc32a1", x = "Slc17a6", 
                exprs_values = "counts", 
                colour_by = "cell.type",
@@ -484,36 +688,99 @@ We again use a scatterplot of log-transformed counts of VGAT and VGluT2 to quick
 PAG_sceset$log2_total_counts_VGAT <- log2(PAG_sceset$subsets_VGAT_sum + 1)
 PAG_sceset$log2_total_counts_VGluT2 <- log2(PAG_sceset$subsets_VGluT2_sum + 1)
 
-# In VGAT cells, plot the VGAT total counts against the VGluT2 counts
-plot(PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$subsets_VGAT_sum,
-     PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$subsets_VGluT2_sum,
-     xlim = c(0, max(PAG_sceset$subsets_VGAT_sum)),
-     ylim = c(0, max(PAG_sceset$subsets_VGluT2_sum)),
-     xlab = "VGAT (counts)", ylab = "VGluT2 (counts)",
+# # In VGAT cells, plot the VGAT total counts against the VGluT2 counts
+# plot(PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$subsets_VGAT_sum,
+#      PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$subsets_VGluT2_sum,
+#      xlim = c(0, max(PAG_sceset$subsets_VGAT_sum)),
+#      ylim = c(0, max(PAG_sceset$subsets_VGluT2_sum)),
+#      xlab = "VGAT (counts)", ylab = "VGluT2 (counts)",
+#      type = "p", pch = 19, cex = 1.25,
+#      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
+# # Add the equivalent plot for VGluT2 cells
+# points(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$subsets_VGAT_sum,
+#        PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$subsets_VGluT2_sum,
+#        type = "p", pch = 19, cex = 1,
+#        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
+# 
+# # In VGAT cells, plot the VGAT log2 counts against the VGluT2 counts
+# plot(PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$log2_total_counts_VGAT,
+#      PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$log2_total_counts_VGluT2,
+#      xlim = c(0, max(PAG_sceset$log2_total_counts_VGAT)),
+#      ylim = c(0, max(PAG_sceset$log2_total_counts_VGluT2)),
+#      xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)",
+#      type = "p", pch = 19, cex = 1.25,
+#      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
+# # Add the equivalent plot for VGluT2 cells
+# points(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$log2_total_counts_VGAT,
+#        PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$log2_total_counts_VGluT2,
+#        type = "p", pch = 19, cex = 1,
+#        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
+
+### Alternative way of doing this (without having to transform counts and assign them to colData)
+## Scatter plot with counts
+# In VGAT cells, plot the VGAT log2 counts against the VGluT2 counts
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "counts"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "counts"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "counts"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "counts"))),
+     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)",
      type = "p", pch = 19, cex = 1.25,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
-
 # Add the equivalent plot for VGluT2 cells
-points(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$subsets_VGAT_sum,
-       PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$subsets_VGluT2_sum,
+points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGluT2"], "counts"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "counts"),
        type = "p", pch = 19, cex = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
 
+# Save the plot
+pdf(file = str_c(path_for_figures, date, "_scatter_VGATVGluT2_expression.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "counts"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "counts"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "counts"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "counts"))),
+     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)",
+     type = "p", pch = 19, cex = 1.25,
+     col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
+points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGluT2"], "counts"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "counts"),
+       type = "p", pch = 19, cex = 1,
+       col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
+dev.off()
 
+
+## Scatter plot with logcounts_raw
 # In VGAT cells, plot the VGAT log2 counts against the VGluT2 counts
-plot(PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$log2_total_counts_VGAT,
-     PAG_sceset[, PAG_sceset$cell.type == "VGAT"]$log2_total_counts_VGluT2,
-     xlim = c(0, max(PAG_sceset$log2_total_counts_VGAT)),
-     ylim = c(0, max(PAG_sceset$log2_total_counts_VGluT2)),
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "logcounts_raw"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "logcounts_raw"))),
      xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)",
      type = "p", pch = 19, cex = 1.25,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
-
 # Add the equivalent plot for VGluT2 cells
-points(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$log2_total_counts_VGAT,
-       PAG_sceset[, PAG_sceset$cell.type == "VGluT2"]$log2_total_counts_VGluT2,
+points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGluT2"], "logcounts_raw"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "logcounts_raw"),
        type = "p", pch = 19, cex = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
+
+# Save the plot
+pdf(file = str_c(path_for_figures, date, "_scatter_VGATVGluT2_expression.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
+     assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
+     xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "logcounts_raw"))),
+     ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "logcounts_raw"))),
+     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)",
+     type = "p", pch = 19, cex = 1.25,
+     col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
+points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGluT2"], "logcounts_raw"),
+       assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "logcounts_raw"),
+       type = "p", pch = 19, cex = 1,
+       col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
+dev.off()
 ```
 
 As we can see, a large proportion of cells express both VGAT and VGlUT2. The coexpression of VGAT and VGluT2 has been reported previously in midbrain, so it shouldnt't be surprising. However, if we find cells that only express the opposite transporter as they should (e.g. if a VGAT-Cre cell only expresses VGluT2) we should consider excluding them (although again, these might just be dropout events, so we can use combinatorial QC metrics to err on the safe side).
@@ -578,12 +845,12 @@ PAG_sceset$filter_patchseq_cells <- (PAG_sceset$patch.recorded == "yes")
 table(PAG_sceset$filter_patchseq_cells)
 summary(PAG_sceset[,PAG_sceset$filter_patchseq_cells]$PAG.areacollection)
 
-# Custom filters: identify the cells that express the wrong fluorophor
-PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells <- (PAG_sceset$cell.fluorophor == "EYFP" & PAG_sceset$subsets_tdTomato_sum > 0)
+# Custom filters: identify the cells that express the wrong fluorophore
+PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells <- (PAG_sceset$cell.fluorophore == "EYFP" & PAG_sceset$subsets_tdTomato_sum > 0)
 table(PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_EYFP_cells]$PAG.areacollection)
 
-PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells <- (PAG_sceset$cell.fluorophor == "tdTomato" & PAG_sceset$subsets_EYFP_sum > 0)
+PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells <- (PAG_sceset$cell.fluorophore == "tdTomato" & PAG_sceset$subsets_EYFP_sum > 0)
 table(PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]$PAG.areacollection)
 
@@ -592,23 +859,23 @@ summary(PAG_sceset[,PAG_sceset$filter_by_wrong_flurorophor_tdTomato_cells]$PAG.a
 #table(PAG_sceset$filter_by_wrong_Xist_in_males)
 #summary(PAG_sceset[,PAG_sceset$filter_by_wrong_Xist_in_males]$PAG.areacollection)
 
-# Custom filters: label the cells not expressing any fluorophor to use them in combination of other filters
-PAG_sceset$cells_nofluorophor <- (PAG_sceset$subsets_EYFP_sum == 0 & PAG_sceset$subsets_tdTomato_sum == 0)
-table(PAG_sceset$cells_nofluorophor)
-summary(PAG_sceset[,PAG_sceset$cells_nofluorophor]$PAG.areacollection)
+# Custom filters: label the cells not expressing any fluorophore to use them in combination of other filters
+PAG_sceset$cells_nofluorophore <- (PAG_sceset$subsets_EYFP_sum == 0 & PAG_sceset$subsets_tdTomato_sum == 0)
+table(PAG_sceset$cells_nofluorophore)
+summary(PAG_sceset[,PAG_sceset$cells_nofluorophore]$PAG.areacollection)
 
-# Custom filters: from the VGAT cells not expressing VGAT, mark the ones expressing VGluT2 and not expressing any fluorophor (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
-PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- (PAG_sceset$cell.type == "VGAT" & PAG_sceset$cells_nofluorophor == TRUE & PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum > 0)
+# Custom filters: from the VGAT cells not expressing VGAT, mark the ones expressing VGluT2 and not expressing any fluorophore (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
+PAG_sceset$filter_by_wrong_transporter_VGAT_cells <- (PAG_sceset$cell.type == "VGAT" & PAG_sceset$cells_nofluorophore == TRUE & PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum > 0)
 table(PAG_sceset$filter_by_wrong_transporter_VGAT_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGAT_cells]$PAG.areacollection)
 
-# Custom filters: from the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT and not expressing any fluorophor (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
-PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- (PAG_sceset$cell.type == "VGluT2" & PAG_sceset$cells_nofluorophor == TRUE & PAG_sceset$subsets_VGAT_sum > 0 & PAG_sceset$subsets_VGluT2_sum == 0)
+# Custom filters: from the VGluT2 cells not expressing VGluT2, mark the ones expressing VGAT and not expressing any fluorophore (they might be wrongly aspirated cells - e.g. a neighbouring non-fluorescent cell was aspirated instead of the fluorescent one)
+PAG_sceset$filter_by_wrong_transporter_VGluT2_cells <- (PAG_sceset$cell.type == "VGluT2" & PAG_sceset$cells_nofluorophore == TRUE & PAG_sceset$subsets_VGAT_sum > 0 & PAG_sceset$subsets_VGluT2_sum == 0)
 table(PAG_sceset$filter_by_wrong_transporter_VGluT2_cells)
 summary(PAG_sceset[,PAG_sceset$filter_by_wrong_transporter_VGluT2_cells]$PAG.areacollection)
 
-# Custom filters: mark any cells with no expression of either VGAT nor VGluT2 nor fluorophor (again, these are likely to be dropouts)
-PAG_sceset$cells_noVGAT_noVGluT2 <- (PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum == 0 & PAG_sceset$cells_nofluorophor == TRUE)
+# Custom filters: mark any cells with no expression of either VGAT nor VGluT2 nor fluorophore (again, these are likely to be dropouts)
+PAG_sceset$cells_noVGAT_noVGluT2 <- (PAG_sceset$subsets_VGAT_sum == 0 & PAG_sceset$subsets_VGluT2_sum == 0 & PAG_sceset$cells_nofluorophore == TRUE)
 table(PAG_sceset$cells_noVGAT_noVGluT2)
 summary(PAG_sceset[,PAG_sceset$cells_noVGAT_noVGluT2]$PAG.areacollection)
 ```
@@ -831,18 +1098,19 @@ vennDiagram(venn.diag,
             circle.col = c("#E69F00", "#56B4E9", "#009E73"))
 
 # Save the plot
-ggsave(filename = str_c(date, "_venn_summary_cellQC_filters.pdf"),
+ggsave(filename = str_c(date, "_venn_cell_QC_filtering_summary.pdf"),
        plot = vennDiagram(venn.diag,
                           names = c("Manual", "MADs", "PCA based"),
                           circle.col = c("#E69F00", "#56B4E9", "#009E73")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
        )
 ```
 
 ### 2.4.5 | Apply chosen cell filtering approach
-After comparing the different filtering strategies, we can see that the Manual filter is the most flexible and allows us to add custom filters based on our experimental design (including the identity of the cells and the fluorophors they should express). We will prime knowing why we remove each cell and will thus apply the manual filter over the MADs and the PCA based filters.
+After comparing the different filtering strategies, we can see that the Manual filter is the most flexible and allows us to add custom filters based on our experimental design (including the identity of the cells and the fluorophores they should express). We will prime knowing why we remove each cell and will thus apply the manual filter over the MADs and the PCA based filters.
 ```{r}
 # Set the chosen filter as the "use" slot:
 PAG_sceset$use <- PAG_sceset$manual_filters
@@ -882,67 +1150,69 @@ cell_QC_summary <- gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.typ
                                                        colour_by = "filter_by_percent_top_100_manual", theme_size = 10, point_alpha = 0.8) + 
                                              ggtitle("Percent reads in top 100 genes") + xlab(NULL) + ylab("% reads in top 100 genes") + 
                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_EYFP",
+                                           plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_EYFP",
                                                        colour_by = "filter_by_wrong_flurorophor_tdTomato_cells", theme_size = 10, point_alpha = 0.8) + 
                                              ggtitle("EYFP expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_tdTomato",
+                                           plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_tdTomato",
                                                        colour_by = "filter_by_wrong_flurorophor_EYFP_cells", theme_size = 10, point_alpha = 0.8) + 
                                              ggtitle("tdTomato expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
                                            )
 # Save the plot
-ggsave(filename = str_c(date, "_cell_QC_summary.pdf"),
+ggsave(filename = str_c(date, "_violin_cell_QC_summary_specific.pdf"),
        plot = cell_QC_summary,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
        )
 
 # Plot a summary of the cell QC filters, highlighting all excluded cells in each subplot (default colours c("#729ECE", "#FF9E4A"):
 cell_QC_summary_all <- gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total_million",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("Library size") + xlab(NULL) + ylab("Total reads (millions)") +
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
                                                plotColData(PAG_sceset, x = "cell.type", y = "detected",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("Detected genes") + xlab(NULL) + ylab("Number of genes detected") + 
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("Percent reads in Mitochondrial genes") + xlab(NULL) + ylab("% reads in Mitochondrial genes") + 
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("Percent reads in Ribosomal genes") + xlab(NULL) + ylab("% reads in Ribosomal genes") +
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
                                                plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
                                                plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("Percent reads in top 100 genes") + xlab(NULL) + ylab("% reads in top 100 genes") + 
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_EYFP",
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                               plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_EYFP",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("EYFP expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.fluorophor", y = "log2_total_counts_tdTomato",
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+                                               plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_tdTomato",
                                                            colour_by = "use", theme_size = 10, point_alpha = 0.8) + 
                                                  ggtitle("tdTomato expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
-                                                 scale_colour_manual(name = "use", values = c("red","grey"), aesthetics = c("colour", "fill"))
+                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill"))
                                                )
 # Save the plot
-ggsave(filename = str_c(date, "_cell_QC_summary_all.pdf"),
+ggsave(filename = str_c(date, "_violin_cell_QC_summary_all.pdf"),
        plot = cell_QC_summary_all,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
        )
 ```
 
