@@ -37,11 +37,25 @@ The simplest approach to feature selection is to select the most variable genes 
 
 We continue using the `PAG_sceset_qc_norm` after normalization. We should thus have a `logcounts` slot in `assays`:
 ```{r}
-# If starting from stored results, load saved filtered dataset from previous Step:
-options(stringsAsFactors = FALSE)
+# Set the directory where your data and scripts are:
+setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
+
+# Set the path to save figures from this Part:
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part4_HVGs/"
+date <- Sys.Date()
+
+# Load packages:
+library(tidyverse)
 library(SingleCellExperiment)
 library(scater)
 library(scran)
+library(limma)
+library(ggplot2)
+```
+
+```{r}
+# If starting from stored results, load saved filtered dataset from previous Step:
+options(stringsAsFactors = FALSE)
 
 PAG_sceset_qc_norm <- readRDS("PAG_sceset_qc_norm.rds") # Contains filtered cells and genes, and log-normalized data
 assayNames(PAG_sceset_qc_norm)
@@ -62,11 +76,11 @@ start_time <- Sys.time() # Takes around 2s
 var_model_no_spikes <- modelGeneVar(PAG_sceset_qc_norm,
                                     block = NULL,
                                     min.mean = 0.1, parametric = TRUE,
-                                    assay.type = "logcounts") 
+                                    assay.type = "logcounts")
 
 # If block is not specified, the metadata of the DataFrame contains the output of running `fitTrendVar` on the specified features, along with the mean and var used to fit the trend.
-var_fit_no_spikes <- metadata(var_model_no_spikes) 
-sum(var_fit_no_spikes$mean == "0") # Number of genes with mean expression = 0 
+var_fit_no_spikes <- metadata(var_model_no_spikes)
+sum(var_fit_no_spikes$mean == "0") # Number of genes with mean expression = 0
 # If this is not 0, it means some dropouts were introduced by the normalization and log-transformation steps as we had excluded genes with zero expression in all cells before normalization
 
 end_time <- Sys.time()
@@ -75,12 +89,14 @@ end_time - start_time
 
 We next visually inspect the trend to confirm that it corresponds to the distribution of our data. A wave-like shape is typical of the mean-variance trend for log-expression values. A linear increase in the variance is observed as the mean increases from zero, as larger variances are obviously possible when the counts are not all equal to zero. In contrast, the relative contribution of sampling noise decreases at high abundances, resulting in a downward trend. The peak represents the point at which these two competing effects cancel each other out.
 ```{r}
+par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
+
 # Plot variance-mean trend without blocking
-plot(var_fit_no_spikes$mean, 
-     var_fit_no_spikes$var, 
+plot(var_fit_no_spikes$mean,
+     var_fit_no_spikes$var,
      pch = 16, cex = 0.6,
      main = "Mean-Variance relationship",
-     xlab = "Mean of log-expression", 
+     xlab = "Mean of log-expression",
      ylab = "Variance of log-expression")
 curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 ```
@@ -115,14 +131,16 @@ end_time - start_time
 
 This allows us to model the mean-CV2 relationship when considering the relevance of each gene. Again, our assumption is that most genes contain random noise and that the trend captures mostly technical variation. Large CV2 values that deviate strongly from the trend are likely to represent genes affected by biological structure. We can now visually inspect our fitted trend:
 ```{r}
+par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
+
 # Plot CV2 as a function of the mean without blocking
 plot(CV2_fit_no_spikes$mean,
-     CV2_fit_no_spikes$cv2, 
+     CV2_fit_no_spikes$cv2,
      log = "xy",
      pch = 16, cex = 0.6,
      main = "Mean-CV2 relationship",
-     xlab = "Mean of normalized expression", 
-     ylab = "CV2 of normalized expression", 
+     xlab = "Mean of normalized expression",
+     ylab = "CV2 of normalized expression",
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 ```
@@ -180,7 +198,7 @@ var_model_no_spikes_block <- modelGeneVar(PAG_sceset_qc_norm[,balanced_batch], #
                                           block = PAG_sceset_qc_norm[,balanced_batch]$batch.processing,
                                           min.mean = 0.1, parametric = TRUE,
                                           equiweight = FALSE,
-                                          assay.type = "logcounts") 
+                                          assay.type = "logcounts")
 # If equiweight = FALSE, A weighted average is used where the value for each level is weighted by the number of cells, otherwise all levels are equally weighted when combining statistics.
 head(var_model_no_spikes_block[order(var_model_no_spikes_block$bio, decreasing = TRUE),1:6])
 end_time <- Sys.time()
@@ -189,31 +207,33 @@ end_time - start_time
 
 We plot the fitted trends for the individual batches so that we can compare them. Although noisier, they seem quite consistent across batches.
 ```{r}
+par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
+
 #par(mfrow = c(3,4))
 blocked.stats <- var_model_no_spikes_block$per.block
 for (i in colnames(blocked.stats)) {
     current <- blocked.stats[[i]]
     #print(sum(current$mean == "0")) # Chech the number of genes with mean expression = 0 in each batch
-    plot(current$mean, 
+    plot(current$mean,
          current$total,
          main = paste0("Batch ", i, " | ", sum(current$mean == "0"), " zero-expression genes"),
          pch = 16, cex = 0.6,
-         xlab = "Mean of log-expression", 
+         xlab = "Mean of log-expression",
          ylab = "Variance of log-expression",
          xlim = c(0,20), ylim = c(0,30))
     curfit <- metadata(current)
-    curve(curfit$trend(x), col = 'dodgerblue', add = TRUE, lwd = 2) 
+    curve(curfit$trend(x), col = 'dodgerblue', add = TRUE, lwd = 2)
 }
 ```
 
 We now do the same for `modelGeneCV2`:
 ```{r}
 start_time <- Sys.time() # Takes around 12s
-CV2_model_no_spikes_block <- modelGeneCV2(PAG_sceset_qc_norm[,balanced_batch], # use only balanced batches 
+CV2_model_no_spikes_block <- modelGeneCV2(PAG_sceset_qc_norm[,balanced_batch], # use only balanced batches
                                           block = PAG_sceset_qc_norm[,balanced_batch]$batch.processing,
                                           size.factors = NULL, # If size.factors=NULL for the SingleCellExperiment method, sizeFactors(x) is used if available.
-                                          equiweight = FALSE, 
-                                          assay.type = "counts") 
+                                          equiweight = FALSE,
+                                          assay.type = "counts")
 # If equiweight = FALSE, a weighted average is used where the value for each level is weighted by the number of cells, otherwise all levels are equally weighted when combining statistics.
 end_time <- Sys.time()
 head(CV2_model_no_spikes_block[order(CV2_model_no_spikes_block$ratio, decreasing = TRUE),1:7])
@@ -222,22 +242,24 @@ end_time - start_time
 
 And plot the results:
 ```{r}
+par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
+
 #par(mfrow = c(3,4))
 blocked.stats <- CV2_model_no_spikes_block$per.block
 for (i in colnames(blocked.stats)) {
   current <- blocked.stats[[i]]
   #print(sum(current$mean == "0"))
-  plot(current$mean, 
+  plot(current$mean,
        current$total,
        log = "xy",
-       main = paste0("Batch ", i, " | ", sum(current$mean == "0"), " zero-expression genes"), 
+       main = paste0("Batch ", i, " | ", sum(current$mean == "0"), " zero-expression genes"),
        pch = 16, cex = 0.6,
-       xlab = "Mean of normalized expression", 
+       xlab = "Mean of normalized expression",
        ylab = "CV2 of normalized expression",
        xlim = c(1e-05, 1e+06), ylim = c(0.01,50)
        )
   curfit <- metadata(current)
-  curve(curfit$trend(x), col = 'dodgerblue', add = TRUE, lwd = 2) 
+  curve(curfit$trend(x), col = 'dodgerblue', add = TRUE, lwd = 2)
 }
 ```
 
@@ -323,7 +345,7 @@ dim(hvg_var_out_no_spikes_block)
 
 For `modelGeneCV2()`, we would instead choose the genes with the largest ratios, again limiting the maximum number to 15% of the total number of genes:
 ```{r}
-hvg_cv2_no_spikes <- getTopHVGs(CV2_model_no_spikes, 
+hvg_cv2_no_spikes <- getTopHVGs(CV2_model_no_spikes,
                                 var.field = "ratio", var.threshold = 1,
                                 n = round(nrow(CV2_model_no_spikes)*0.15) # Select the top `n` number or proportion of genes
                                 #fdr.field = "FDR", fdr.threshold = 0.05 # Select those genes with an adjusted p-value below 5% FDR
@@ -341,7 +363,7 @@ dim(hvg_cv2_out_no_spikes)
 
 And again after blocking by `batch.processing`:
 ```{r}
-hvg_cv2_no_spikes_block <- getTopHVGs(CV2_model_no_spikes_block, 
+hvg_cv2_no_spikes_block <- getTopHVGs(CV2_model_no_spikes_block,
                                       var.field = "ratio", var.threshold = 1,
                                       n = round(nrow(CV2_model_no_spikes_block)*0.15) # Select the top `n` number or proportion of genes
                                       #fdr.field = "FDR", fdr.threshold = 0.05 # Select those genes with an adjusted p-value below 5% FDR
@@ -373,13 +395,13 @@ rowData(PAG_sceset_qc_norm)$is_ribosomal <- (rowData(PAG_sceset_qc_norm)$gene_bi
 rowData(PAG_sceset_qc_norm)$is_X <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X")
 rowData(PAG_sceset_qc_norm)$is_Y <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y")
 # EYFP, tdTomato, Cre, and TSO concatamers
-rowData(PAG_sceset_qc_norm)$is_tdTomato <- (rowData(PAG_sceset_qc_norm)$Chromosome == "A") # tdTomato fluorophor
-rowData(PAG_sceset_qc_norm)$is_EYFP <- (rowData(PAG_sceset_qc_norm)$Chromosome == "B") # EYFP fluorophor
-rowData(PAG_sceset_qc_norm)$is_Cre <- (rowData(PAG_sceset_qc_norm)$Chromosome == "C") # Cre transgene to express fluorophors
+rowData(PAG_sceset_qc_norm)$is_tdTomato <- (rowData(PAG_sceset_qc_norm)$Chromosome == "A") # tdTomato fluorophore
+rowData(PAG_sceset_qc_norm)$is_EYFP <- (rowData(PAG_sceset_qc_norm)$Chromosome == "B") # EYFP fluorophore
+rowData(PAG_sceset_qc_norm)$is_Cre <- (rowData(PAG_sceset_qc_norm)$Chromosome == "C") # Cre transgene to express fluorophores
 rowData(PAG_sceset_qc_norm)$is_SmartSeqTSO <- (rowData(PAG_sceset_qc_norm)$Chromosome == "D") # TSO concatamers
 # VGAT and VGluT2
 rowData(PAG_sceset_qc_norm)$is_VGAT <- (rowData(PAG_sceset_qc_norm)$gene_name == "Slc32a1")
-rowData(PAG_sceset_qc_norm)$is_VGluT2 <- (rowData(PAG_sceset_qc_norm)$gene_name == "Slc17a6") 
+rowData(PAG_sceset_qc_norm)$is_VGluT2 <- (rowData(PAG_sceset_qc_norm)$gene_name == "Slc17a6")
 
 ###### 
 ## Merge all the genes to exclude:
@@ -437,14 +459,14 @@ venn_diag_cv2 <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rowname
                                   rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_block_filt)))
 vennDiagram(venn_diag_cv2,
             names = c("CV2", "CV2 $ Block"),
-            circle.col = c("#E69F00", "#56B4E9"))
+            circle.col = c("#595028", "#E87F5D"))
 
 # Inspect the overlap between HVGs obtained with Var and CV2:
 venn_diag_varcv2 <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_filt),
                                      rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt)))
 vennDiagram(venn_diag_varcv2,
             names = c("Variance", "CV2"),
-            circle.col = c("#E69F00", "#56B4E9"))
+            circle.col = c("#E69F00", "#595028"))
 
 # Inspect the overlap between HVGs obtained with Var-Block and CV2-block:
 venn_diag_varcv2_block <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt),
@@ -452,14 +474,85 @@ venn_diag_varcv2_block <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in
                                      )
 vennDiagram(venn_diag_varcv2_block,
             names = c("Variance $ Block", "CV2 $ Block"),
-            circle.col = c("#E69F00", "#56B4E9"))
+            circle.col = c("#56B4E9", "#E87F5D"))
 
 # Inspect the overlap between HVGs obtained with Var-Block and CV2:
-venn_diag_varcv2_block <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt),
+venn_diag_varblock_cv2 <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt),
                                            rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt)))
-vennDiagram(venn_diag_varcv2_block,
+vennDiagram(venn_diag_varblock_cv2,
             names = c("Variance $ Block", "CV2"),
-            circle.col = c("#E69F00", "#56B4E9"))
+            circle.col = c("#56B4E9", "#595028"))
+
+# Inspect the overlap between HVGs from all approaches at once:
+venn_diag_all <- vennCounts(cbind(rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_filt),
+                                  rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_var_out_no_spikes_block_filt),
+                                  rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_filt),
+                                  rownames(PAG_sceset_qc_norm_filt) %in% rownames(hvg_cv2_out_no_spikes_block_filt)))
+vennDiagram(venn_diag_all,
+            names = c("Variance", "Variance $ Block", "CV2", "CV2 $ Block"),
+            circle.col = c("#E69F00", "#56B4E9", "#595028", "#E87F5D"))
+
+
+## Save all plots
+ggsave(filename = str_c(date, "_venn_HVGs_var.pdf"),
+       plot = vennDiagram(venn_diag_var,
+                          names = c("Variance", "Variance $ Block"),
+                          circle.col = c("#E69F00", "#56B4E9")),
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+ggsave(filename = str_c(date, "_venn_HVGs_cv2.pdf"),
+       plot = vennDiagram(venn_diag_cv2,
+                          names = c("CV2", "CV2 $ Block"),
+                          circle.col = c("#595028", "#E87F5D")),
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+ggsave(filename = str_c(date, "_venn_HVGs_varcv2.pdf"),
+       plot = vennDiagram(venn_diag_varcv2,
+                          names = c("Variance", "CV2"),
+                          circle.col = c("#E69F00", "#595028")),
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+ggsave(filename = str_c(date, "_venn_HVGs_varcv2_block.pdf"),
+       plot = vennDiagram(venn_diag_varcv2_block,
+                          names = c("Variance $ Block", "CV2 $ Block"),
+                          circle.col = c("#56B4E9", "#E87F5D")),
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+ggsave(filename = str_c(date, "_venn_HVGs_varblock_cv2.pdf"),
+       plot = vennDiagram(venn_diag_varblock_cv2,
+                          names = c("Variance $ Block", "CV2"),
+                          circle.col = c("#56B4E9", "#595028")),
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+ggsave(filename = str_c(date, "_venn_HVGs_all.pdf"),
+       plot = vennDiagram(venn_diag_all,
+                          names = c("Variance", "Variance $ Block", "CV2", "CV2 $ Block"),
+                          circle.col = c("#E69F00", "#56B4E9", "#595028", "#E87F5D")),
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 9, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
 ```
 
 Taking into account the above Venn Diagrams and the plots of the fitted mean-variance trends, it seems that modelling the variance with blocking by `batch.processing` selects most of the genes captured without blocking, with the advantage that it should more accurately capture the technical variability across batches. Although they look slightly noisier, the plots of the mean-variance relation for the individual batches look quite similar to each other and to the one obtained from the full dataset, so using the HVGs obtained with the blocking approach should be the better option here.
@@ -471,12 +564,56 @@ Taking all this into consideration, we will use the HVGs obtained after modellin
 ### 4.3.3 | Visualize, store, and export HVGs
 Before we store the identified HVGs in our `SingleCellExperiment` object, we quickly check the distribution of expression values for the genes with the largest biological components to ensure that the variance/CV2 estimate is not being dominated by one or two outlier cells.
 ```{r}
-fontsize <- theme(axis.text = element_text(size = 12), axis.title = element_text(size = 16))
+# We can set any visualization parameters common to all plots at the beginning like this:
+theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), axis.ticks.x = element_blank())
 
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-var modelling")
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-var modelling after blocking")
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-cv2 modelling")
-plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:50]) + fontsize + ggtitle("Top 50 HVGs from mean-cv2 modelling after blocking")
+violin_HVG_var <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50],
+                                 exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                 ) + ggtitle("Top 50 HVGs from mean-var modelling") + theme_args
+violin_HVG_var
+ggsave(filename = str_c(date, "_violin_HVG_var.pdf"),
+       plot = violin_HVG_var,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+violin_HVG_var_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:50],
+                                       exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                       ) + ggtitle("Top 50 HVGs from mean-var modelling after blocking") + theme_args
+violin_HVG_var_block
+ggsave(filename = str_c(date, "_violin_HVG_var_block.pdf"),
+       plot = violin_HVG_var_block,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+violin_HVG_cv2 <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:50],
+                                       exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                 ) + ggtitle("Top 50 HVGs from mean-cv2 modelling") + theme_args
+violin_HVG_cv2
+ggsave(filename = str_c(date, "_violin_HVG_cv2.pdf"),
+       plot = violin_HVG_cv2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
+
+violin_HVG_cv2_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:50],
+                                       exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                       ) + ggtitle("Top 50 HVGs from mean-cv2 modelling after blocking") + theme_args
+violin_HVG_cv2_block
+ggsave(filename = str_c(date, "_violin_HVG_cv2_block.pdf"),
+       plot = violin_HVG_cv2_block,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 5, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent", pointsize = 12
+       )
 ```
 
 Now that we have ordered, filtered, and inspected the identified HVGs we can add the results to the `metadata` component of the `PAG_sceset_qc_norm_filt` object. The metadata component can hold any object, as it is a list container. Any results that we’d like to keep are safe to store here, and this is a great way to save or share intermediate results that would otherwise be kept in separate objects. We thus store the names of the HVGs from the different approaches we used (even without filtering) so we can go back and find them again for any future comparisons we might want to do:
@@ -527,6 +664,8 @@ write.table(file = "PAG_hvg_cv2_out_no_spikes_block_filt.tsv", hvg_cv2_out_no_sp
 
 And we finally plot the modelled trend with the selected HVGs colored:
 ```{r}
+par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
+
 # Identify selected HVGs from mean-var modelling without blocking
 hvg_index_var <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var_out_no_spikes_filt))
 
@@ -534,7 +673,7 @@ hvg_index_var <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var_out_n
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
      pch = 16, cex = 0.6,
-     main = "Mean-Variance relationship (no block)",
+     main = paste0("Mean-Variance relationship (no block) | ", length(hvg_index_var), " HVGs"),
      xlab = "Mean of log-expression", 
      ylab = "Variance of log-expression")
 curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
@@ -548,7 +687,7 @@ hvg_index_var_block <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
      pch = 16, cex = 0.6,
-     main = "Mean-Variance relationship (block)",
+     main = paste0("Mean-Variance relationship (block) | ", length(hvg_index_var_block), " HVGs"),
      xlab = "Mean of log-expression", 
      ylab = "Variance of log-expression")
 curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
@@ -562,7 +701,7 @@ plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
      pch = 16, cex = 0.6,
-     main = "Mean-CV2 relationship (no block)",
+     main = paste0("Mean-CV2 relationship (no block) | ", length(hvg_index_cv2), " HVGs"),
      xlab = "Mean of normalized expression", 
      ylab = "CV2 of normalized expression", 
      xlim = c(1e-05, 1e+06))
@@ -577,17 +716,76 @@ plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
      pch = 16, cex = 0.6,
-     main = "Mean-CV2 relationship (block)",
+     main = paste0("Mean-CV2 relationship (block) | ", length(hvg_index_cv2_block), " HVGs"),
      xlab = "Mean of normalized expression", 
      ylab = "CV2 of normalized expression", 
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 points(CV2_fit_no_spikes$mean[hvg_index_cv2_block], CV2_fit_no_spikes$cv2[hvg_index_cv2_block], col = "orange")
 
+## Print the number of detected HVGs for each case:
 length(hvg_index_var)
 length(hvg_index_var_block)
 length(hvg_index_cv2)
 length(hvg_index_cv2_block)
+
+
+## Save all the plots:
+pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(var_fit_no_spikes$mean, 
+     var_fit_no_spikes$var, 
+     pch = 16, cex = 0.6,
+     main = paste0("Mean-Variance relationship (no block) | ", length(hvg_index_var), " HVGs"),
+     xlab = "Mean of log-expression", 
+     ylab = "Variance of log-expression")
+curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(var_fit_no_spikes$mean[hvg_index_var], var_fit_no_spikes$var[hvg_index_var], col = "orange")
+dev.off()
+
+pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var_block.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(var_fit_no_spikes$mean, 
+     var_fit_no_spikes$var, 
+     pch = 16, cex = 0.6,
+     main = paste0("Mean-Variance relationship (block) | ", length(hvg_index_var_block), " HVGs"),
+     xlab = "Mean of log-expression", 
+     ylab = "Variance of log-expression")
+curve(var_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(var_fit_no_spikes$mean[hvg_index_var_block], var_fit_no_spikes$var[hvg_index_var_block], col = "orange")
+dev.off()
+
+pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(CV2_fit_no_spikes$mean,
+     CV2_fit_no_spikes$cv2, 
+     log = "xy",
+     pch = 16, cex = 0.6,
+     main = paste0("Mean-CV2 relationship (no block) | ", length(hvg_index_cv2), " HVGs"),
+     xlab = "Mean of normalized expression", 
+     ylab = "CV2 of normalized expression", 
+     xlim = c(1e-05, 1e+06))
+curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(CV2_fit_no_spikes$mean[hvg_index_cv2], CV2_fit_no_spikes$cv2[hvg_index_cv2], col = "orange")
+dev.off()
+
+pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2_block.pdf"),
+    width = 12, height = 9, pointsize = 12,
+    family = "Helvetica", bg = "transparent")
+plot(CV2_fit_no_spikes$mean,
+     CV2_fit_no_spikes$cv2, 
+     log = "xy",
+     pch = 16, cex = 0.6,
+     main = paste0("Mean-CV2 relationship (block) | ", length(hvg_index_cv2_block), " HVGs"),
+     xlab = "Mean of normalized expression", 
+     ylab = "CV2 of normalized expression", 
+     xlim = c(1e-05, 1e+06))
+curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
+points(CV2_fit_no_spikes$mean[hvg_index_cv2_block], CV2_fit_no_spikes$cv2[hvg_index_cv2_block], col = "orange")
+dev.off()
 ```
 
 We can clearly see now why it is not a good idea to use the HVGs obtained from modelling the mean-cv2 trend after blocking, but we can do so for the mean-var trend.
