@@ -1,0 +1,426 @@
+---
+title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
+subtitle: "Possibly useful plotting tools"
+author:
+  - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
+    affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
+    email: "oriol.pavon.16@ucl.ac.uk"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_notebook:
+    highlight: pygments
+    number_sections: FALSE
+    theme: lumen
+    toc: TRUE
+    toc_float: TRUE
+
+#output: rmdformats::readthedown:
+  #highlight: pygments
+---
+
+***
+
+This is a pipeline to analyse single-cell RNA sequencing data from Periaqueductal Gray neurons (1) isolated from acute midbrain slices of transgenic mice using visually guided aspiration via patch pipettes and (2) processed using SMART-seq2 (Picelli et al., Nature Protocols 2014). 
+
+This pipeline has been generated after attending the [EMBL-EBI RNA-Sequence Analysis Course](https://www.ebi.ac.uk/training/events/2019/rna-sequence-analysis) and [attending](https://training.csx.cam.ac.uk/bioinformatics/event/2823386) and following the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group). Many other resources have been used, including the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks, the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun, the [rnaseqGene workflow](https://bioconductor.org/packages/3.10/workflows/html/rnaseqGene.html) maintained by Michael Love, the [RNAseq123 workflow](https://bioconductor.org/packages/3.10/workflows/html/RNAseq123.html) maintained by Matthew Ritchie, and the [EGSEA123 workflow](https://bioconductor.org/packages/3.10/workflows/html/EGSEA123.html) maintained by Matthew Ritchie.
+
+Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber et al., Nature Methods 2015), [scRNA-tools](https://www.scrna-tools.org/), `scater` (McCarthy et al., Bioinformatics 2017), `scran` (Lun et al., F1000Res 2016), `SC3` (Kiselev et al., Nature Methods 2017), `Seurat` (Butler et al., Nature Biotechnology 2018), `clusterExperiment` (Risso et al., PLOS Computational Biology 2018), `limma` (Ritchie et al., Nucleic Acids Research 2015), `DESeq2` (Love et al., Genome Biology 2014), `edgeR` (Robinson et al., Bioinformatics 2010), `MAST` (Finak, McDavid, Yajima et al., Genome Biology 2015), `iSEE` (Rue-Albrecht & Marini et al., F1000Research 2018), `t-SNE` (van der Maaten & Hinton, Journal of Machine Learning Research 2008), `UMAP` (McInnes et al., arXiv 2018), and the [Mathematical Statistics and Machine Learning for Life Sciences](https://towardsdatascience.com/tagged/stats-ml-life-sciences) column by Nikolay Oskolkov.
+
+***
+
+# Possibly useful plotting tools
+Load the `PAG_sceset_qc_norm_filt_corr` after normalization, filtering, and batch correction. We should thus have a `corrected` slot in `assays`:
+```{r}
+set.seed(1991)
+library(SC3)
+library(scater)
+library(SingleCellExperiment)
+library(pheatmap)
+library(mclust)
+
+PAG_sceset_qc_norm_filt_corr <- readRDS("PAG_sceset_qc_norm_filt_corr.rds")
+assayNames(PAG_sceset_qc_norm_filt_corr)
+PAG_sceset_qc_norm_filt_corr
+```
+
+## scater::plotDot()
+Create a dot plot of expression values for a grouping of cells, where the size and color of each dot represents the proportion of detected expression values and the average expression, respectively, for each feature in each group of cells.
+
+## Patchwork - composing ggplots
+https://patchwork.data-imaginist.com/
+```{r}
+library(ggplot2)
+library(patchwork)
+
+p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
+p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
+
+p1 + p2
+
+p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
+p4 <- ggplot(mtcars) + geom_bar(aes(carb))
+
+(p1 | p2 | p3) /
+      p4
+```
+
+## gganimate - animating ggplots
+https://gganimate.com/
+```{r}
+library(ggplot2)
+library(gganimate)
+
+ggplot(mtcars, aes(factor(cyl), mpg)) + 
+  geom_boxplot() + 
+  # Here comes the gganimate code
+  transition_states(
+    gear,
+    transition_length = 2,
+    state_length = 1
+  ) +
+  enter_fade() + 
+  exit_shrink() +
+  ease_aes('sine-in-out')
+```
+
+## Allen atlas plots
+https://github.com/AllenInstitute/scrattch.vis/
+```{r}
+library(tasic2016data)
+library(scrattch.vis)
+options(stringsAsFactors = F)
+
+anno <- tasic_2016_anno
+anno <- anno[anno$primary_type_id > 0,]
+data <- tasic_2016_rpkm
+data_df <- cbind(sample_name = colnames(data),
+                 as.data.frame(t(data[c("Pvalb","Sst","Rorb"),])))
+
+group_violin_plot(data_df, 
+                  anno, 
+                  genes = c("Pvalb","Sst","Rorb"), 
+                  grouping = "primary_type", 
+                  log_scale = FALSE,
+                  font_size = 5,
+                  rotate_counts = TRUE)
+```
+
+# Building figures
+## Plots from Part 2
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part2_dataQC/"
+date <- Sys.Date()
+date <- gsub("-", "_", date)
+```
+
+Violin plots from transgenes:
+```{r}
+library(patchwork)
+# Load violin plots for fluorophores
+violin_fluorophores_EYFPbymouse_counts <- readRDS(file = str_c(path_for_figures, "violin_fluorophores_EYFPbymouse_counts.rds"))
+violin_fluorophores_EYFPbymouse_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_fluorophores_EYFPbymouse_logcounts_raw.rds"))
+violin_fluorophores_tdTomatobymouse_counts <- readRDS(file = str_c(path_for_figures, "violin_fluorophores_tdTomatobymouse_counts.rds"))
+violin_fluorophores_tdTomatobymouse_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_fluorophores_tdTomatobymouse_logcounts_raw.rds"))
+violin_fluorophores_celltype_counts <- readRDS(file = str_c(path_for_figures, "violin_fluorophores_celltype_counts.rds"))
+violin_fluorophores_celltype_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_fluorophores_celltype_logcounts_raw.rds"))
+
+# Refreshment of how these plots were created
+# theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+# violin_fluorophores_EYFPbymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
+#                                                                 exprs_values = "logcounts_raw",
+#                                                                 colour_by = "batch.processing", ncol = 3, theme_size = 12, point_alpha = 0.8) +
+#   ggtitle("Transgene expression levels in cells from Cre::EYFP animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+# violin_fluorophores_celltype_counts <- plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophore",
+#                                                       exprs_values = "counts", 
+#                                                       colour_by = "mouse.id", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+#   ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (raw counts)") + xlab("Fluorophore") + ylab("Expression (raw counts)")
+
+# Fix individual plots
+violin_fluorophores_EYFPbymouse_counts <- violin_fluorophores_EYFPbymouse_counts + ggtitle("Cre::EYFP animals")+ xlab("Mouse ID") + ylab("raw counts") 
+violin_fluorophores_EYFPbymouse_logcounts_raw <- violin_fluorophores_EYFPbymouse_logcounts_raw + ggtitle("Cre::EYFP animals")+ xlab("Mouse ID") + ylab("log2 raw counts") 
+violin_fluorophores_tdTomatobymouse_counts <- violin_fluorophores_tdTomatobymouse_counts + ggtitle("Cre::tdTomato animals")+ xlab("Mouse ID") + ylab("raw counts") 
+violin_fluorophores_tdTomatobymouse_logcounts_raw <- violin_fluorophores_tdTomatobymouse_logcounts_raw + ggtitle("Cre::tdTomato animals")+ xlab("Mouse ID") + ylab("log2 raw counts") 
+violin_fluorophores_celltype_counts <- violin_fluorophores_celltype_counts + ggtitle(NULL)+ xlab("Fluorophore") + ylab("raw counts") 
+violin_fluorophores_celltype_logcounts_raw <- violin_fluorophores_celltype_logcounts_raw + ggtitle(NULL)+ xlab("Fluorophore") + ylab("log2 raw counts") 
+
+# Compose figures using `patchwork`
+violin_fluorophores_byanimal_composed <- (violin_fluorophores_EYFPbymouse_counts + violin_fluorophores_EYFPbymouse_logcounts_raw) / 
+  (violin_fluorophores_tdTomatobymouse_counts + violin_fluorophores_tdTomatobymouse_logcounts_raw) + 
+  plot_annotation(title = "Transgene expression levels", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+violin_fluorophores_bycelltype_composed <- (violin_fluorophores_celltype_counts / violin_fluorophores_celltype_logcounts_raw) + 
+  plot_annotation(title = "Fluorophore expression levels", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+# Plot composed figures
+violin_fluorophores_byanimal_composed
+violin_fluorophores_bycelltype_composed
+
+# Save composed figures
+ggsave(filename = str_c(date, "_composed_violin_fluorophores_byanimal.pdf"),
+       plot = violin_fluorophores_byanimal_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 24, height = 12, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_composed_violin_fluorophores_bycelltype.pdf"),
+       plot = violin_fluorophores_bycelltype_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 12, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+```
+
+Violin plots from transporters:
+```{r}
+library(patchwork)
+# Load violin plots for transporters
+violin_VGATVGluT2_VGATbymouse_counts <- readRDS(file = str_c(path_for_figures, "violin_VGATVGluT2_VGATbymouse_counts.rds"))
+violin_VGATVGluT2_VGATbymouse_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_VGATVGluT2_VGATbymouse_logcounts_raw.rds"))
+violin_VGATVGluT2_VGluT2bymouse_counts <- readRDS(file = str_c(path_for_figures, "violin_VGATVGluT2_VGluT2bymouse_counts.rds"))
+violin_VGATVGluT2_VGluT2bymouse_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_VGATVGluT2_VGluT2bymouse_logcounts_raw.rds"))
+violin_VGATVGluT2_celltype_counts <- readRDS(file = str_c(path_for_figures, "violin_VGATVGluT2_celltype_counts.rds"))
+violin_VGATVGluT2_celltype_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_VGATVGluT2_celltype_logcounts_raw.rds"))
+
+# Refreshment of how these plots were created
+# theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+# violin_fluorophores_EYFPbymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
+#                                                                 exprs_values = "logcounts_raw",
+#                                                                 colour_by = "batch.processing", ncol = 3, theme_size = 12, point_alpha = 0.8) +
+#   ggtitle("Transgene expression levels in cells from Cre::EYFP animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+# violin_fluorophores_celltype_counts <- plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophore",
+#                                                       exprs_values = "counts", 
+#                                                       colour_by = "mouse.id", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+#   ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (raw counts)") + xlab("Fluorophore") + ylab("Expression (raw counts)")
+
+# Fix individual plots
+violin_VGATVGluT2_VGATbymouse_counts <- violin_VGATVGluT2_VGATbymouse_counts + ggtitle("VGAT::Cre animals")+ xlab("Mouse ID") + ylab("raw counts") 
+violin_VGATVGluT2_VGATbymouse_logcounts_raw <- violin_VGATVGluT2_VGATbymouse_logcounts_raw + ggtitle("VGAT::Cre  animals")+ xlab("Mouse ID") + ylab("log2 raw counts") 
+violin_VGATVGluT2_VGluT2bymouse_counts <- violin_VGATVGluT2_VGluT2bymouse_counts + ggtitle("VGluT2::Cre  animals")+ xlab("Mouse ID") + ylab("raw counts") 
+violin_VGATVGluT2_VGluT2bymouse_logcounts_raw <- violin_VGATVGluT2_VGluT2bymouse_logcounts_raw + ggtitle("VGluT2::Cre animals")+ xlab("Mouse ID") + ylab("log2 raw counts") 
+violin_VGATVGluT2_celltype_counts <- violin_VGATVGluT2_celltype_counts + ggtitle(NULL)+ xlab("Cell type") + ylab("raw counts") 
+violin_VGATVGluT2_celltype_logcounts_raw <- violin_VGATVGluT2_celltype_logcounts_raw + ggtitle(NULL)+ xlab("Cell type") + ylab("log2 raw counts") 
+
+# Compose figures using `patchwork`
+violin_transporters_byanimal_composed <- (violin_VGATVGluT2_VGATbymouse_counts + violin_VGATVGluT2_VGATbymouse_logcounts_raw) / 
+  (violin_VGATVGluT2_VGluT2bymouse_counts + violin_VGATVGluT2_VGluT2bymouse_logcounts_raw) + 
+  plot_annotation(title = "VGAT-VGluT2 expression levels", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+violin_transporters_bycelltype_composed <- (violin_VGATVGluT2_celltype_counts / violin_VGATVGluT2_celltype_logcounts_raw) + 
+  plot_annotation(title = "VGAT-VGluT2 expression levels", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+
+# Plot composed figures
+violin_transporters_byanimal_composed
+violin_transporters_bycelltype_composed
+
+# Save composed figures
+ggsave(filename = str_c(date, "_composed_violin_transporters_bycelltype.pdf"),
+       plot = violin_transporters_byanimal_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 10, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_composed_violin_transporters_bycelltype.pdf"),
+       plot = violin_transporters_bycelltype_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 12, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+```
+
+Violin plots from QC filters:
+```{r}
+library(patchwork)
+# Load individual violin plots, highlighting excluded cells:
+violin_cell_QC_library <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_library.rds"))
+violin_cell_QC_detected <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_detected.rds"))
+violin_cell_QC_mitochondrial <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_mitochondrial.rds"))
+violin_cell_QC_ribosomal <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_ribosomal.rds"))
+violin_cell_QC_ERCC <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_ERCC.rds"))
+violin_cell_QC_TSO <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_TSO.rds"))
+violin_cell_QC_top100genes <-readRDS(file = str_c(path_for_figures, "violin_cell_QC_top100genes.rds"))
+violin_cell_QC_EYFP <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_EYFP.rds"))
+violin_cell_QC_tdTomato <- readRDS(file = str_c(path_for_figures, "violin_cell_QC_tdTomato.rds"))
+
+# Refreshment of how these plots were created
+# violin_cell_QC_ERCC <- plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent",
+#                                    colour_by = "filter_by_pct_ERCC_manual", theme_size = 12, point_alpha = 0.8) + 
+#   ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
+#   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
+
+# Fix individual plots
+violin_cell_QC_library <- violin_cell_QC_library + ggtitle("Library size") + ylab("Total reads (millions)")
+violin_cell_QC_detected <- violin_cell_QC_detected + ggtitle("Detected genes") + ylab("Number of genes detected")
+violin_cell_QC_mitochondrial <- violin_cell_QC_mitochondrial + ggtitle("Mitochondrial genes") + ylab("% reads")
+violin_cell_QC_ribosomal <- violin_cell_QC_ribosomal + ggtitle("Ribosomal genes") + ylab("% reads")
+violin_cell_QC_ERCC <- violin_cell_QC_ERCC + ggtitle("ERCC spike-ins") + ylab("% reads")
+violin_cell_QC_TSO <- violin_cell_QC_TSO + ggtitle("TSO concatamers") + ylab("% reads")
+violin_cell_QC_top100genes <- violin_cell_QC_top100genes + ggtitle("Top 100 expressed genes") + ylab("% reads")
+violin_cell_QC_EYFP <- violin_cell_QC_EYFP + ggtitle("EYFP expression") + ylab("log2 raw counts")
+violin_cell_QC_tdTomato <- violin_cell_QC_tdTomato + ggtitle("tdTomato expression") + ylab("log2 raw counts")
+
+# Compose figure using `patchwork`
+cell_QC_summary_composed <- (violin_cell_QC_library + violin_cell_QC_detected + violin_cell_QC_mitochondrial) / 
+  (violin_cell_QC_ribosomal + violin_cell_QC_ERCC + violin_cell_QC_TSO) /
+  (violin_cell_QC_top100genes + violin_cell_QC_EYFP + violin_cell_QC_tdTomato) +
+  plot_annotation(title = "Summary of cell QC filters", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+# Plot composed figures
+cell_QC_summary_composed
+
+# Save composed figures
+ggsave(filename = str_c(date, "_composed_cell_QC_summary.pdf"),
+       plot = cell_QC_summary_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 10, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+```
+
+## Plots from Part 3
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part3_normalization/"
+date <- Sys.Date()
+date <- gsub("-", "_", date)
+```
+
+Violin plots from transporters:
+```{r}
+library(patchwork)
+
+# Load violin plots for transporters
+violin_QC_VGATbymouse_VGATVGluT2_counts <- readRDS(file = str_c(path_for_figures, "violin_QC_VGATbymouse_VGATVGluT2_counts.rds"))
+violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw.rds"))
+violin_QC_VGATbymouse_VGATVGluT2_logcounts <- readRDS(file = str_c(path_for_figures, "violin_QC_VGATbymouse_VGATVGluT2_logcounts.rds"))
+violin_QC_VGluT2bymouse_VGATVGluT2_counts <- readRDS(file = str_c(path_for_figures, "violin_QC_VGluT2bymouse_VGATVGluT2_counts.rds"))
+violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw.rds"))
+violin_QC_VGluT2bymouse_VGATVGluT2_logcounts <- readRDS(file = str_c(path_for_figures, "violin_QC_VGluT2bymouse_VGATVGluT2_logcounts.rds"))
+violin_QC_celltype_VGATVGluT2_counts <- readRDS(file = str_c(path_for_figures, "violin_QC_celltype_VGATVGluT2_counts.rds"))
+violin_QC_celltype_VGATVGluT2_logcounts_raw <- readRDS(file = str_c(path_for_figures, "violin_QC_celltype_VGATVGluT2_logcounts_raw.rds"))
+violin_QC_celltype_VGATVGluT2_logcounts <- readRDS(file = str_c(path_for_figures, "violin_QC_celltype_VGATVGluT2_logcounts.rds"))
+
+# Refreshment of how these plots were created
+# theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+# violin_QC_VGATbymouse_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
+#                                                           exprs_values = "counts",
+#                                                           colour_by = "batch.processing", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+#   ggtitle("Transporter expression levels in cells from VGAT::Cre animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
+# violin_QC_celltype_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
+#                                                        exprs_values = "counts", 
+#                                                        colour_by = "mouse.id", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+#   ggtitle("Transporter expression levels (raw counts)") + xlab("Cell type") + ylab("Expression (raw counts)")
+
+# Fix individual plots
+violin_QC_VGATbymouse_VGATVGluT2_counts <- violin_QC_VGATbymouse_VGATVGluT2_counts + ggtitle("VGAT::Cre animals")+ xlab("Mouse ID") + ylab("raw counts")
+violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw <- violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw + ggtitle("VGAT::Cre animals")+ xlab("Mouse ID") + ylab("log2 raw counts")
+violin_QC_VGATbymouse_VGATVGluT2_logcounts <- violin_QC_VGATbymouse_VGATVGluT2_logcounts + ggtitle("VGAT::Cre animals")+ xlab("Mouse ID") + ylab("logcounts")
+violin_QC_VGluT2bymouse_VGATVGluT2_counts <- violin_QC_VGluT2bymouse_VGATVGluT2_counts + ggtitle("VGluT2::Cre animals")+ xlab("Mouse ID") + ylab("raw counts")
+violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw <- violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw + ggtitle("VGluT2::Cre animals")+ xlab("Mouse ID") + ylab("log2 raw counts")
+violin_QC_VGluT2bymouse_VGATVGluT2_logcounts <- violin_QC_VGluT2bymouse_VGATVGluT2_logcounts + ggtitle("VGluT2::Cre animals")+ xlab("Mouse ID") + ylab("logcounts")
+violin_QC_celltype_VGATVGluT2_counts <- violin_QC_celltype_VGATVGluT2_counts + ggtitle(NULL)+ xlab("Cell type") + ylab("raw counts")
+violin_QC_celltype_VGATVGluT2_logcounts_raw <- violin_QC_celltype_VGATVGluT2_logcounts_raw + ggtitle(NULL)+ xlab("Cell type") + ylab("log2 raw counts")
+violin_QC_celltype_VGATVGluT2_logcounts <- violin_QC_celltype_VGATVGluT2_logcounts + ggtitle(NULL)+ xlab("Cell type") + ylab("logcounts")
+
+# Compose figures using `patchwork`
+violin_QC_transporters_byanimal_composed <- (violin_QC_VGATbymouse_VGATVGluT2_counts + violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw + violin_QC_VGATbymouse_VGATVGluT2_logcounts) / 
+  (violin_QC_VGluT2bymouse_VGATVGluT2_counts + violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw + violin_QC_VGluT2bymouse_VGATVGluT2_logcounts) + 
+  plot_annotation(title = "VGAT-VGluT2 expression levels after QC", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+violin_QC_transporters_bycelltype_composed <- (violin_QC_celltype_VGATVGluT2_counts / violin_QC_celltype_VGATVGluT2_logcounts_raw + violin_QC_celltype_VGATVGluT2_logcounts) + 
+  plot_annotation(title = "VGAT-VGluT2 expression levels after QC", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+# Plot composed figures
+violin_QC_transporters_byanimal_composed
+violin_QC_transporters_bycelltype_composed
+
+# Save composed figures
+ggsave(filename = str_c(date, "_composed_violin_QC_transporters_byanimal.pdf"),
+       plot = violin_QC_transporters_byanimal_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 30, height = 10, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_composed_violin_QC_transporters_bycelltype.pdf"),
+       plot = violin_QC_transporters_bycelltype_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 12, height = 18, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+```
+
+## Plots from Part 4
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part4_HVGs/"
+date <- Sys.Date()
+date <- gsub("-", "_", date)
+```
+
+```{r}
+library(patchwork)
+
+# Load violin plots for HVGs
+violin_HVG_var <- readRDS(file = str_c(path_for_figures, "violin_HVG_var.rds"))
+violin_HVG_var_block <- readRDS(file = str_c(path_for_figures, "violin_HVG_var_block.rds"))
+violin_HVG_cv2 <- readRDS(file = str_c(path_for_figures, "violin_HVG_cv2.rds"))
+violin_HVG_cv2_block <- readRDS(file = str_c(path_for_figures, "violin_HVG_cv2_block.rds"))
+
+# Refreshment of how these plots were created
+# theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), axis.ticks.x = element_blank())
+# violin_HVG_var <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50],
+#                                  exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+#                                  ) + ggtitle("Top 50 HVGs from mean-var modelling") + theme_args
+
+# Fix individual plots
+violin_HVG_var <- violin_HVG_var + ggtitle("Mean-var modelling")
+violin_HVG_var_block <- violin_HVG_var_block + ggtitle("Mean-var modelling blocking by batch")
+violin_HVG_cv2 <- violin_HVG_cv2 + ggtitle("Mean-cv2 modelling")
+violin_HVG_cv2_block <- violin_HVG_cv2_block + ggtitle("Mean-cv2 modelling blocking by batch")
+
+# Compose figures using `patchwork`
+violin_HVG_composed <- violin_HVG_var / violin_HVG_var_block / violin_HVG_cv2 / violin_HVG_cv2_block + 
+  plot_annotation(title = "Top 50 Highly Variable Genes", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+
+# Plot composed figures
+violin_HVG_composed
+
+# Save composed figures
+ggsave(filename = str_c(date, "_composed_violin_HVGs.pdf"),
+       plot = violin_HVG_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 20, height = 20, units = "in", dpi = 300,
+       family = "Helvetica", bg = "transparent"
+       )
+```
+
+## Plots from Part 5
