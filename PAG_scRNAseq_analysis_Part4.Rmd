@@ -43,6 +43,7 @@ setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_anal
 # Set the path to save figures from this Part:
 path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part4_HVGs/"
 date <- Sys.Date()
+date <- gsub("-", "_", date)
 
 # Load packages:
 library(tidyverse)
@@ -51,6 +52,7 @@ library(scater)
 library(scran)
 library(limma)
 library(ggplot2)
+library(xlsx)
 ```
 
 ```{r}
@@ -89,12 +91,10 @@ end_time - start_time
 
 We next visually inspect the trend to confirm that it corresponds to the distribution of our data. A wave-like shape is typical of the mean-variance trend for log-expression values. A linear increase in the variance is observed as the mean increases from zero, as larger variances are obviously possible when the counts are not all equal to zero. In contrast, the relative contribution of sampling noise decreases at high abundances, resulting in a downward trend. The peak represents the point at which these two competing effects cancel each other out.
 ```{r}
-par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
-
 # Plot variance-mean trend without blocking
 plot(var_fit_no_spikes$mean,
      var_fit_no_spikes$var,
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = "Mean-Variance relationship",
      xlab = "Mean of log-expression",
      ylab = "Variance of log-expression")
@@ -131,13 +131,11 @@ end_time - start_time
 
 This allows us to model the mean-CV2 relationship when considering the relevance of each gene. Again, our assumption is that most genes contain random noise and that the trend captures mostly technical variation. Large CV2 values that deviate strongly from the trend are likely to represent genes affected by biological structure. We can now visually inspect our fitted trend:
 ```{r}
-par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
-
 # Plot CV2 as a function of the mean without blocking
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2,
      log = "xy",
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = "Mean-CV2 relationship",
      xlab = "Mean of normalized expression",
      ylab = "CV2 of normalized expression",
@@ -207,8 +205,6 @@ end_time - start_time
 
 We plot the fitted trends for the individual batches so that we can compare them. Although noisier, they seem quite consistent across batches.
 ```{r}
-par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
-
 #par(mfrow = c(3,4))
 blocked.stats <- var_model_no_spikes_block$per.block
 for (i in colnames(blocked.stats)) {
@@ -217,7 +213,7 @@ for (i in colnames(blocked.stats)) {
     plot(current$mean,
          current$total,
          main = paste0("Batch ", i, " | ", sum(current$mean == "0"), " zero-expression genes"),
-         pch = 16, cex = 0.6,
+         pch = 16, cex = 0.6, las = 1,
          xlab = "Mean of log-expression",
          ylab = "Variance of log-expression",
          xlim = c(0,20), ylim = c(0,30))
@@ -242,8 +238,6 @@ end_time - start_time
 
 And plot the results:
 ```{r}
-par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
-
 #par(mfrow = c(3,4))
 blocked.stats <- CV2_model_no_spikes_block$per.block
 for (i in colnames(blocked.stats)) {
@@ -253,7 +247,7 @@ for (i in colnames(blocked.stats)) {
        current$total,
        log = "xy",
        main = paste0("Batch ", i, " | ", sum(current$mean == "0"), " zero-expression genes"),
-       pch = 16, cex = 0.6,
+       pch = 16, cex = 0.6, las = 1,
        xlab = "Mean of normalized expression",
        ylab = "CV2 of normalized expression",
        xlim = c(1e-05, 1e+06), ylim = c(0.01,50)
@@ -501,7 +495,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_var.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_cv2.pdf"),
@@ -511,7 +505,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_cv2.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_varcv2.pdf"),
@@ -521,7 +515,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varcv2.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_varcv2_block.pdf"),
@@ -531,7 +525,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varcv2_block.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_varblock_cv2.pdf"),
@@ -541,7 +535,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varblock_cv2.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_all.pdf"),
@@ -551,7 +545,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_all.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 ```
 
@@ -567,52 +561,64 @@ Before we store the identified HVGs in our `SingleCellExperiment` object, we qui
 # We can set any visualization parameters common to all plots at the beginning like this:
 theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), axis.ticks.x = element_blank())
 
+# HVG from mean-var modelling
 violin_HVG_var <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50],
                                  exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
                                  ) + ggtitle("Top 50 HVGs from mean-var modelling") + theme_args
 violin_HVG_var
+saveRDS(violin_HVG_var, file = str_c(path_for_figures, "violin_HVG_var.rds"))
+
 ggsave(filename = str_c(date, "_violin_HVG_var.pdf"),
        plot = violin_HVG_var,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
+# HVG from mean-var modelling blocking by batch
 violin_HVG_var_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:50],
                                        exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
                                        ) + ggtitle("Top 50 HVGs from mean-var modelling after blocking") + theme_args
 violin_HVG_var_block
+saveRDS(violin_HVG_var_block, file = str_c(path_for_figures, "violin_HVG_var_block.rds"))
+
 ggsave(filename = str_c(date, "_violin_HVG_var_block.pdf"),
        plot = violin_HVG_var_block,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
+# HVG from mean-cv2 modelling
 violin_HVG_cv2 <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:50],
                                        exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
                                  ) + ggtitle("Top 50 HVGs from mean-cv2 modelling") + theme_args
 violin_HVG_cv2
+saveRDS(violin_HVG_cv2, file = str_c(path_for_figures, "violin_HVG_cv2.rds"))
+
 ggsave(filename = str_c(date, "_violin_HVG_cv2.pdf"),
        plot = violin_HVG_cv2,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 
+# HVG from mean-cv2 modelling blocking by batch
 violin_HVG_cv2_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:50],
                                        exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
                                        ) + ggtitle("Top 50 HVGs from mean-cv2 modelling after blocking") + theme_args
 violin_HVG_cv2_block
+saveRDS(violin_HVG_cv2_block, file = str_c(path_for_figures, "violin_HVG_cv2_block.rds"))
+
 ggsave(filename = str_c(date, "_violin_HVG_cv2_block.pdf"),
        plot = violin_HVG_cv2_block,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent", pointsize = 12
+       family = "Helvetica", bg = "transparent"
        )
 ```
 
@@ -647,32 +653,63 @@ metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_block_filt <- rownames(h
 length(metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_block_filt)
 ```
 
-Just to ensure we keep everything, we also export the full table (not just the gene names) into a `.tsv` file:
+Just to ensure we keep everything, we also export the full table (not just the gene names) into a `.tsv`, `.csv`, or `.xlsx` file:
 ```{r}
+## Export into .tsv
 # Before filtering unwanted genes:
-write.table(file = "PAG_hvg_var_out_no_spikes.tsv", hvg_var_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
-write.table(file = "PAG_hvg_var_out_no_spikes_block.tsv", hvg_var_out_no_spikes_block, sep = "\t", quote = FALSE, col.names = NA)
-write.table(file = "PAG_hvg_cv2_out_no_spikes.tsv", hvg_cv2_out_no_spikes, sep = "\t", quote = FALSE, col.names = NA)
-write.table(file = "PAG_hvg_cv2_out_no_spikes_block.tsv", hvg_cv2_out_no_spikes_block, sep = "\t", quote = FALSE, col.names = NA)
+# write.table(hvg_var_out_no_spikes, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+# write.table(hvg_var_out_no_spikes_block, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes_block.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+# write.table(hvg_cv2_out_no_spikes, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+# write.table(hvg_cv2_out_no_spikes_block, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes_block.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+# 
+# # After filtering unwanted genes:
+# write.table(hvg_var_out_no_spikes_filt, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes_filt.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+# write.table(hvg_var_out_no_spikes_block_filt, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes_block_filt.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+# write.table(hvg_cv2_out_no_spikes_filt, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes_filt.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+# write.table(hvg_cv2_out_no_spikes_block_filt, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes_block_filt.tsv"),
+#             sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+
+## Export into .csv
+# Before filtering unwanted genes:
+write.csv(hvg_var_out_no_spikes, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes.csv"), quote = FALSE, row.names = TRUE)
+write.csv(hvg_var_out_no_spikes_block, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes_block.csv"), quote = FALSE, row.names = TRUE)
+write.csv(hvg_cv2_out_no_spikes, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes.csv"), quote = FALSE, row.names = TRUE)
+write.csv(hvg_cv2_out_no_spikes_block, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes_block.csv"), quote = FALSE, row.names = TRUE)
 
 # After filtering unwanted genes:
-write.table(file = "PAG_hvg_var_out_no_spikes_filt.tsv", hvg_var_out_no_spikes_filt, sep = "\t", quote = FALSE, col.names = NA)
-write.table(file = "PAG_hvg_var_out_no_spikes_block_filt.tsv", hvg_var_out_no_spikes_block_filt, sep = "\t", quote = FALSE, col.names = NA)
-write.table(file = "PAG_hvg_cv2_out_no_spikes_filt.tsv", hvg_cv2_out_no_spikes_filt, sep = "\t", quote = FALSE, col.names = NA)
-write.table(file = "PAG_hvg_cv2_out_no_spikes_block_filt.tsv", hvg_cv2_out_no_spikes_block_filt, sep = "\t", quote = FALSE, col.names = NA)
+write.csv(hvg_var_out_no_spikes_filt, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes_filt.csv"), quote = FALSE, row.names = TRUE)
+write.table(hvg_var_out_no_spikes_block_filt, file = str_c(path_for_figures, "PAG_hvg_var_out_no_spikes_block_filt.csv"), quote = FALSE, row.names = TRUE)
+write.table(hvg_cv2_out_no_spikes_filt, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes_filt.csv"), quote = FALSE, row.names = TRUE)
+write.table(hvg_cv2_out_no_spikes_block_filt, file = str_c(path_for_figures, "PAG_hvg_cv2_out_no_spikes_block_filt.csv"), quote = FALSE, row.names = TRUE)
+
+## Export everything into .xlsx files
+# library(xlsx)
+# write.xlsx(hvg_var_out_no_spikes, file = str_c(path_for_figures, "PAG_hvg_all.xlsx"), sheetName = "hvg_var")
+# write.xlsx(hvg_var_out_no_spikes_block, file = str_c(path_for_figures, "PAG_hvg_all_block.xlsx"), sheetName = "hvg_var_block")
+# write.xlsx(hvg_cv2_out_no_spikes, file = str_c(path_for_figures, "PAG_hvg_all.xlsx"), sheetName = "hvg_cv2", append = TRUE)
+# write.xlsx(hvg_cv2_out_no_spikes_block, file = str_c(path_for_figures, "PAG_hvg_all_block.xlsx"), sheetName = "hvg_cv2_block", append = TRUE)
+# write.xlsx(hvg_var_out_no_spikes_filt, file = str_c(path_for_figures, "PAG_hvg_all_filt.xlsx"), sheetName = "hvg_var_filt")
+# write.xlsx(hvg_var_out_no_spikes_block_filt, file = str_c(path_for_figures, "PAG_hvg_all_block_filt.xlsx"), sheetName = "hvg_var_block_filt")
+# write.xlsx(hvg_cv2_out_no_spikes_filt, file = str_c(path_for_figures, "PAG_hvg_all_filt.xlsx"), sheetName = "hvg_cv2_filt", append = TRUE)
+# write.xlsx(hvg_cv2_out_no_spikes_block_filt, file = str_c(path_for_figures, "PAG_hvg_all_block_filt.xlsx"), sheetName = "hvg_cv2_block_filt", append = TRUE)
 ```
 
 And we finally plot the modelled trend with the selected HVGs colored:
 ```{r}
-par(las = 1) # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
-
 # Identify selected HVGs from mean-var modelling without blocking
 hvg_index_var <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var_out_no_spikes_filt))
 
 # Plot variance-mean trend without blocking
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-Variance relationship (no block) | ", length(hvg_index_var), " HVGs"),
      xlab = "Mean of log-expression", 
      ylab = "Variance of log-expression")
@@ -686,7 +723,7 @@ hvg_index_var_block <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var
 # Plot variance-mean trend without blocking
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-Variance relationship (block) | ", length(hvg_index_var_block), " HVGs"),
      xlab = "Mean of log-expression", 
      ylab = "Variance of log-expression")
@@ -700,7 +737,7 @@ hvg_index_cv2 <- which(names(CV2_fit_no_spikes$mean) %in% rownames(hvg_cv2_out_n
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (no block) | ", length(hvg_index_cv2), " HVGs"),
      xlab = "Mean of normalized expression", 
      ylab = "CV2 of normalized expression", 
@@ -715,7 +752,7 @@ hvg_index_cv2_block <- which(names(CV2_fit_no_spikes$mean) %in% rownames(hvg_cv2
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (block) | ", length(hvg_index_cv2_block), " HVGs"),
      xlab = "Mean of normalized expression", 
      ylab = "CV2 of normalized expression", 
@@ -732,11 +769,11 @@ length(hvg_index_cv2_block)
 
 ## Save all the plots:
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var.pdf"),
-    width = 12, height = 9, pointsize = 12,
+    width = 12, height = 9,
     family = "Helvetica", bg = "transparent")
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-Variance relationship (no block) | ", length(hvg_index_var), " HVGs"),
      xlab = "Mean of log-expression", 
      ylab = "Variance of log-expression")
@@ -745,11 +782,11 @@ points(var_fit_no_spikes$mean[hvg_index_var], var_fit_no_spikes$var[hvg_index_va
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var_block.pdf"),
-    width = 12, height = 9, pointsize = 12,
+    width = 12, height = 9,
     family = "Helvetica", bg = "transparent")
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-Variance relationship (block) | ", length(hvg_index_var_block), " HVGs"),
      xlab = "Mean of log-expression", 
      ylab = "Variance of log-expression")
@@ -758,12 +795,12 @@ points(var_fit_no_spikes$mean[hvg_index_var_block], var_fit_no_spikes$var[hvg_in
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2.pdf"),
-    width = 12, height = 9, pointsize = 12,
+    width = 12, height = 9,
     family = "Helvetica", bg = "transparent")
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (no block) | ", length(hvg_index_cv2), " HVGs"),
      xlab = "Mean of normalized expression", 
      ylab = "CV2 of normalized expression", 
@@ -773,12 +810,12 @@ points(CV2_fit_no_spikes$mean[hvg_index_cv2], CV2_fit_no_spikes$cv2[hvg_index_cv
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2_block.pdf"),
-    width = 12, height = 9, pointsize = 12,
+    width = 12, height = 9,
     family = "Helvetica", bg = "transparent")
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
-     pch = 16, cex = 0.6,
+     pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (block) | ", length(hvg_index_cv2_block), " HVGs"),
      xlab = "Mean of normalized expression", 
      ylab = "CV2 of normalized expression", 
