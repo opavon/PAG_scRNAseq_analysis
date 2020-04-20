@@ -45,7 +45,40 @@ PAG_sceset_qc_norm_filt_corr
 
 ## scater::plotDot()
 Create a dot plot of expression values for a grouping of cells, where the size and color of each dot represents the proportion of detected expression values and the average expression, respectively, for each feature in each group of cells.
+```{r}
+library(scater)
+names(metadata(PAG_sceset_qc_norm_filt))
 
+plotDots(PAG_sceset_qc_norm_filt,
+         features = c("Drd1", "Drd2", "Drd3", "Drd4", "Drd5"),
+         group = "PAGarea_celltype",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("Dopamine Receptors")
+
+plotDots(PAG_sceset_qc_norm_filt,
+         features = c("Cacna2d1", "Asic4", "Pnoc", "Tac1"),
+         group = "PAGarea_celltype",
+         low_color = "white", high_color = "red",
+         max_ave = 5, max_detected = NULL
+         ) + ggtitle("Some Differentially expressed genes")
+
+pacemaker_channels <- c("Hcn1", "Hcn2", "Hcn3", "Hcn4", "Kcna4", "Kcnc3", "Kcnc4", "Kcnd1", "Kcnd2", "Kcnd3", "Scn8a", "Scn9a", "Cacna1g", "Cacna1h", "Cacna1i", "Cacna2d1")
+pacemaker_channels <- pacemaker_channels[(pacemaker_channels %in% rownames(PAG_sceset_qc_norm_filt))]
+plotDots(PAG_sceset_qc_norm_filt,
+         features =  pacemaker_channels,
+         group = "cell.type",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("Pacemaking ion channels")
+
+plotDots(PAG_sceset_qc_norm_filt,
+         features =  metadata(PAG_sceset_qc_norm_filt)$genes.icPotassium[(metadata(PAG_sceset_qc_norm_filt)$genes.icPotassium %in% rownames(PAG_sceset_qc_norm_filt))],
+         group = "PAGarea_celltype",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("Ion channels")
+```
 ## Patchwork - composing ggplots
 https://patchwork.data-imaginist.com/
 ```{r}
@@ -424,3 +457,51 @@ ggsave(filename = str_c(date, "_composed_violin_HVGs.pdf"),
 ```
 
 ## Plots from Part 5
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part5_batchCorr_reducedDim/"
+date <- Sys.Date()
+date <- gsub("-", "_", date)
+```
+
+Explanatory variables:
+```{r}
+library(patchwork)
+
+# Load plots from plotExplanatoryVariables()
+explanatory_variables_counts <- readRDS(file = str_c(path_for_figures, "explanatory_variables_counts.rds"))
+explanatory_variables_logcounts_raw <- readRDS(file = str_c(path_for_figures, "explanatory_variables_logcounts_raw.rds"))
+explanatory_variables_logcounts <- readRDS(file = str_c(path_for_figures, "explanatory_variables_logcounts.rds"))
+explanatory_variables_corrected <- readRDS(file = str_c(path_for_figures, "explanatory_variables_corrected.rds"))
+
+# Refreshment of how these plots were created
+# explanatory_variables_corrected <- plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
+#                                                             nvars_to_plot = 17,
+#                                                             exprs_values = "corrected",
+#                                                             variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
+#                                                                           "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
+#                                                                           "PAG.areacollection", "PAG.hemisphere", "PAG.APaxis", "PAGarea_celltype",
+#                                                                           "batch.processing", "batch.sequencing_round", "detected", "total")
+#                                                             ) + ggtitle("Corrected log-normalized counts")
+
+# # Compose figures using `patchwork`
+# explanatory_variables_composed <- explanatory_variables_counts + explanatory_variables_logcounts_raw + explanatory_variables_logcounts + explanatory_variables_corrected +
+#   plot_annotation(title = "Explanatory variables after normalisation and batch correction", tag_levels = "A", 
+#                   theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14)))
+# 
+# # Plot composed figures
+# explanatory_variables_composed
+# 
+# # Save composed figures
+# ggsave(filename = str_c(date, "_explanatory_variables_composed.pdf"),
+#        plot = explanatory_variables_composed,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 12, height = 9, units = "in", dpi = 300,
+#        family = "Helvetica", bg = "transparent"
+#        )
+```
+
