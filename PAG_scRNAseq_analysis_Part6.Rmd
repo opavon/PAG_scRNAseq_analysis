@@ -1333,6 +1333,7 @@ cluster_colors <- scater:::.get_palette("tableau10medium") # hidden scater colou
 
 for (k in 2:15) { 
     example_clusters <- cutree(PAG_tree_var, k = k)
+    if (k<=10){cluster_colors <- scater:::.get_palette("tableau10medium")} else{cluster_colors <- scater:::.get_palette("tableau20")}
     sil <- silhouette(example_clusters, dist = PAG_dist_var)
     sil_cols_var <- cluster_colors[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
     sil_cols_var <- sil_cols_var[order(-sil[,1], sil[,3])]
@@ -1341,6 +1342,7 @@ for (k in 2:15) {
 
 for (k in 2:15) { 
     example_clusters <- cutree(PAG_tree_cv2, k = k)
+    if (k<=10){cluster_colors <- scater:::.get_palette("tableau10medium")} else{cluster_colors <- scater:::.get_palette("tableau20")}
     sil <- silhouette(example_clusters, dist = PAG_dist_cv2)
     sil_cols_cv2 <- cluster_colors[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
     sil_cols_cv2 <- sil_cols_cv2[order(-sil[,1], sil[,3])]
