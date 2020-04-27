@@ -1558,7 +1558,7 @@ for(chosen_k in best_k) {
   consensus <- sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, k = chosen_k,
                                   show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
   consensus
-  ggsave(filename = str_c(date, "sc3_consensus_k", chosen_k, ".pdf"), 
+  ggsave(filename = str_c(date, "_sc3_consensus_k", chosen_k, ".pdf"), 
          plot = consensus,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
@@ -1569,7 +1569,7 @@ for(chosen_k in best_k) {
   # Silhouette plot
   silhouette <- sc3_plot_silhouette(PAG_sceset_qc_norm_filt_corr, k = chosen_k)
   silhouette
-  ggsave(filename = str_c(date, "sc3_silhouette_k", chosen_k, ".pdf"), 
+  ggsave(filename = str_c(date, "_sc3_silhouette_k", chosen_k, ".pdf"), 
          plot = silhouette,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
@@ -1580,7 +1580,7 @@ for(chosen_k in best_k) {
   # Stability index
   cluster_stability <- sc3_plot_cluster_stability(PAG_sceset_qc_norm_filt_corr, k = chosen_k)
   cluster_stability
-  ggsave(filename = str_c(date, "sc3_stability_k", chosen_k, ".pdf"), 
+  ggsave(filename = str_c(date, "_sc3_stability_k", chosen_k, ".pdf"), 
          plot = cluster_stability,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
@@ -1592,7 +1592,7 @@ for(chosen_k in best_k) {
   expression_panel <- sc3_plot_expression(PAG_sceset_qc_norm_filt_corr, k = chosen_k,
                                           show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
   expression_panel
-  ggsave(filename = str_c(date, "sc3_expression_k", chosen_k, ".pdf"), 
+  ggsave(filename = str_c(date, "_sc3_expression_k", chosen_k, ".pdf"), 
          plot = expression_panel,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
@@ -1605,7 +1605,7 @@ for(chosen_k in best_k) {
                                 p.val = 0.001,
                                 show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
   DE_genes
-  ggsave(filename = str_c(date, "sc3_DEgenes_k", chosen_k, ".pdf"), 
+  ggsave(filename = str_c(date, "_sc3_DEgenes_k", chosen_k, ".pdf"), 
          plot = DE_genes,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
@@ -1618,7 +1618,7 @@ for(chosen_k in best_k) {
                               auroc = 0.8, p.val = 0.01,
                               show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
   markers
-  ggsave(filename = str_c(date, "sc3_markers_k", chosen_k, ".pdf"), 
+  ggsave(filename = str_c(date, "_sc3_markers_k", chosen_k, ".pdf"), 
          plot = markers,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
