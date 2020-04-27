@@ -224,6 +224,11 @@ PAG_metadata$PAGarea_celltype <- factor(paste0(PAG_metadata$PAG.arearegistration
                                         levels = c("dmpag_VGAT", "dlpag_VGAT", "lpag_VGAT", "vlpag_VGAT", "dmpag_VGluT2",  "dlpag_VGluT2", "lpag_VGluT2", "vlpag_VGluT2"))
 levels(PAG_metadata$PAGarea_celltype)
 table(PAG_metadata$PAGarea_celltype)
+
+# And one last factor combining cell.type and PAG.APaxis:
+PAG_metadata$celltype_PAGAPaxis <- factor(paste0(PAG_metadata$cell.type, PAG_metadata$AP.axis))
+levels(PAG_metadata$celltype_PAGAPaxis)
+table(PAG_metadata$celltype_PAGAPaxis)
 ```
 
 Some useful functions to examine the metadata:
