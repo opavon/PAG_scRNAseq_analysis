@@ -33,6 +33,8 @@ Gene set enrichment analysis is a popular approach for prioritising the biologic
 
 * Gene Ontology (GO) is a controlled vocabulary to assign the following to a gene: Biological Processes, Cellular Components, Molecular Functions.
 
+* Gene set enrichment analysis allows for a more comprehensive investigation of the function of the markers genes previously identified, and can be performed using `kegga` or `goana` from _limma_.
+
 ## Cell type annotation [from OSCA]
 The most challenging task in scRNA-seq data analysis is arguably the interpretation of the results. Obtaining clusters of cells is fairly straightforward, but it is more difficult to determine what biological state is represented by each of those clusters. Doing so requires us to bridge the gap between the current dataset and prior biological knowledge, and the latter is not always available in a consistent and quantitative manner. Indeed, even the concept of a “cell type” is not clearly defined, with most practitioners possessing a “I’ll know it when I see it” intuition that is not amenable to computational analysis. As such, interpretation of scRNA-seq data is often manual and a common bottleneck in the analysis workflow.
 
