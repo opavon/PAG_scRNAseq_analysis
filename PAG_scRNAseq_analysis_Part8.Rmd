@@ -1,6 +1,6 @@
 ---
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
-subtitle: "Part VIII: Violin and Heatmap plots"
+subtitle: "Part VIII: data exploration via violin, heatmaps, and other plots"
 author:
   - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
