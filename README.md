@@ -11,19 +11,18 @@ To go through this pipeline, you will need to install the following: [R3.6.1](ht
 
 ## List of notebooks
 Mostly completed:
-* Part I: from a gene expression matrix to a SingleCellExperiment object
-* Part II: pre-processing and data quality control
-* Part III: normalization
-* Part IV: modelling technical noise and feature selection
-* Part V: batch correction and dimensionality reduction
-* Part VI: clustering
+* [Part I: from a gene expression matrix to a SingleCellExperiment object](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part1.Rmd)
+* [Part II: pre-processing and data quality control](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part2.Rmd)
+* [Part III: normalization](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part3.Rmd)
+* [Part IV: modelling technical noise and feature selection](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part4.Rmd)
+* [Part V: batch correction and dimensionality reduction](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part5.Rmd)
+* [Part VI: clustering](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part6.Rmd)
 
 Under development:
-* Part VII: differential expression analysis
-* Part VIII: data exploration via violin, heatmaps, and other plots
-* Part IX: gene set enrichment analysis
+* [Part VII: differential expression analysis](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part7.Rmd)
+* [Part VIII: data exploration via violin, heatmaps, and other plots](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part8.Rmd)
+* [Part IX: gene set enrichment analysis](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part9.Rmd)
 
 Other notebooks:
-
-* Possibly useful plotting tools
-* Code scraps
+* [Possibly useful plotting tools](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_PlottingDevel.Rmd)
+* [Code scraps](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_scraps.Rmd)
