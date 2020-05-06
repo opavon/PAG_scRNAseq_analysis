@@ -587,6 +587,10 @@ for (test_choice in desired_tests){
 celltype_dmpag_marker_set_summary
 ```
 
+_Subsetting like this gives the same as using restrict_
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$PAGarea_celltype
+restrict <- c("dmpag_VGAT", "dmpag_VGluT2") # the levels of groups for which to perform pairwise comparisons.
+
 #### Marker genes for cell type in dlPAG neurons
 To make sure we don't carry any variables from previous runs, we reset all the parameters to their default values:
 ```{r}
@@ -1337,7 +1341,7 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set)
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAGarea_celltype_/", "PAG_DE_results_", results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAGarea_celltype/", "PAG_DE_results_", results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         
         # Populate the summary data.frame:
         PAGarea_celltype_marker_set_summary = rbind(PAGarea_celltype_marker_set_summary,
