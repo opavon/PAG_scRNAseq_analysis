@@ -43,42 +43,203 @@ assayNames(PAG_sceset_qc_norm_filt_corr)
 PAG_sceset_qc_norm_filt_corr
 ```
 
+## Colour palettes
+```{r}
+# Colours PAG
+colours_PAGarea_celltype <- c(`dmpag_VGAT` = "red", `dlpag_VGAT` = "coral2", `lpag_VGAT` = "salmon", `vlpag_VGAT` = "darksalmon",
+                              `dmpag_VGluT2` = "cornflowerblue", `dlpag_VGluT2` = "cyan3", `lpag_VGluT2` = "aquamarine3", `vlpag_VGluT2` = "cadetblue3")
+
+colours_celltype = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255))
+
+# Heatmap palettes
+color = rev(viridis::magma(100))
+colorRampPalette(c("white", "blue"))(100)
+
+# Clustering colours:
+cluster_colours_10 <- c(`1` = "#729ECE", `2` = "#FF9E4A", `3` = "#67BF5C", `4` = "#ED665D", `5` = "#AD8BC9",
+                        `6` = "#A8786E", `7` = "#ED97CA", `8` = "#A2A2A2", `9` = "#CDCC5D", `10` = "#6DCCDA")
+
+cluster_colours_20 <- c(`1` = "#1F77B4", `2` = "#AEC7E8", `3` = "#FF7F0E", `4` = "#FFBB78", `5` = "#2CA02C",
+                        `6` = "#98DF8A", `7` = "#D62728", `8` = "#FF9896", `9` = "#9467BD", `10` = "#C5B0D5",
+                        `11` = "#8C564B", `12` = "#C49C94", `13` = "#E377C2", `14` = "#F7B6D2", `15` = "#7F7F7F", 
+                        `16` = "#C7C7C7", `17` = "#BCBD22", `18` = "#DBDB8D", `19` = "#17BECF", `20` = "#9EDAE5")
+
+cluster_colors <- scater:::.get_palette("tableau10medium") # hidden scater colours
+
+
+# Scater palettes:
+tableau20 = c("#1F77B4", "#AEC7E8", "#FF7F0E", "#FFBB78", "#2CA02C",
+              "#98DF8A", "#D62728", "#FF9896", "#9467BD", "#C5B0D5",
+              "#8C564B", "#C49C94", "#E377C2", "#F7B6D2", "#7F7F7F",
+              "#C7C7C7", "#BCBD22", "#DBDB8D", "#17BECF", "#9EDAE5")
+
+tableau10medium = c("#729ECE", "#FF9E4A", "#67BF5C", "#ED665D",
+                    "#AD8BC9", "#A8786E", "#ED97CA", "#A2A2A2",
+                    "#CDCC5D", "#6DCCDA")
+
+colorblind10 = c("#006BA4", "#FF800E", "#ABABAB", "#595959",
+                 "#5F9ED1", "#C85200", "#898989", "#A2C8EC",
+                 "#FFBC79", "#CFCFCF")
+
+trafficlight = c("#B10318", "#DBA13A", "#309343", "#D82526",
+                 "#FFC156", "#69B764", "#F26C64", "#FFDD71",
+                 "#9FCD99")
+
+purplegray12 = c("#7B66D2", "#A699E8", "#DC5FBD", "#FFC0DA",
+                 "#5F5A41", "#B4B19B", "#995688", "#D898BA",
+                 "#AB6AD5", "#D098EE", "#8B7C6E", "#DBD4C5")
+
+bluered12 = c("#2C69B0", "#B5C8E2", "#F02720", "#FFB6B0", "#AC613C",
+              "#E9C39B", "#6BA3D6", "#B5DFFD", "#AC8763", "#DDC9B4",
+              "#BD0A36", "#F4737A")
+
+greenorange12 = c("#32A251", "#ACD98D", "#FF7F0F", "#FFB977",
+                  "#3CB7CC", "#98D9E4", "#B85A0D", "#FFD94A",
+                  "#39737C", "#86B4A9", "#82853B", "#CCC94D")
+
+cyclic = c("#1F83B4", "#1696AC", "#18A188", "#29A03C", "#54A338",
+           "#82A93F", "#ADB828", "#D8BD35", "#FFBD4C", "#FFB022",
+           "#FF9C0E", "#FF810E", "#E75727", "#D23E4E", "#C94D8C",
+           "#C04AA7", "#B446B3", "#9658B1", "#8061B4", "#6F63BB")
+```
+
+More colour paletes can be found in the `gameofthrones` package (https://github.com/aljrico/gameofthrones):
+```{r}
+#install.packages("gameofthrones")
+library(gameofthrones)
+
+got_palettes <- list(
+  targaryen = c("#000000", "#4e0002", "#9D0005", "#9593A2", "#D8D8D8"),
+  targaryen2 = c("#E1DFC4", "#F52156", "#CA001B", "#B30000", "#600000"),
+  stark = c("#17181D", "#25252A", "#3C3E43", "#575964", "#9593A2"),
+  stark2 = c("#090A0C", "#591D18", "#938170", "#CCA15B", "#636166"),
+  stark3 =c("#0B1113",  "#1F2D2F", "#1C262A",  "#2D3A3E", "#989A9C"),
+  lannister = c("#5C0000", "#890000", "#C50000", "#FB7E00", "#FFA700"),
+  martell = c("#F1B043", "#FF9517", "#EF7300", "#ED4700", "#B20000"),
+  tully = c("#131142", "#DADEE1", "#C1000E"),
+  greyjoy = c("#000000", "#372E29", "#726255", "#F0C75E", "#ECB939"),
+  baratheon = c("#02060B", "#987411", "#B89017", "#F0BA00", "#FEFEF9"),
+  baratheon2 = c("#291D15", "#784632", "#8C5A3C", "#966446", "#C88C6E", "#E6D264", "#FFEB78"),
+  tyrell = c("#36A107", "#4D852B", "#60AA42", "#C4B92A", "#C4B600"),
+  white_walkers = c("#263464", "#345392", "#5492D0", "#6596C9", "#51B2FF"),
+  jon_snow = c("#132525", "#113232", "#747374", "#95C2C1", "#36AFAE"),
+  margaery = c("#82B5C4", "#A9BC7E", "#D7C42A", "#CDA25C", "#C37E90"),
+  daenerys = c("#792427", "#545058", "#2B818E", "#80A098", "#D1BDA2"),
+  game_of_thrones = c("#9A1408", "#B32B1B", "#966628", "#AAA549", "#B4AF6D"),
+  wildfire = c("#000000", "#002807", "#006300", "#009C00", "#00C800", "#6EFF6E", "#E6FFFF"),
+  arya = c("#232D37", "#37414B", "#889999", "#AAB7AF", "#5D7850")
+)
+```
+
 ## scater::plotDot()
 Create a dot plot of expression values for a grouping of cells, where the size and color of each dot represents the proportion of detected expression values and the average expression, respectively, for each feature in each group of cells.
 ```{r}
 library(scater)
-names(metadata(PAG_sceset_qc_norm_filt))
+#names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 
-plotDots(PAG_sceset_qc_norm_filt,
-         features = c("Drd1", "Drd2", "Drd3", "Drd4", "Drd5"),
-         group = "PAGarea_celltype",
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features = c("Drd1", "Drd2", "Drd3", "Drd4", "Drd5", "Dbh", "Th", "Ddc"),
+         group = "cell.type",
          low_color = "white", high_color = "red",
          max_ave = NULL, max_detected = NULL
-         ) + ggtitle("Dopamine Receptors")
+         ) + ggtitle("Dopamine")
 
-plotDots(PAG_sceset_qc_norm_filt,
-         features = c("Cacna2d1", "Asic4", "Pnoc", "Tac1"),
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features = c("Adra1a", "Adra1b", "Adra1d", "Adra2a", "Adra2b", "Adra2c", "Adrb1", "Adrb2", "Adrb3"),
+         group = "cell.type",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("Adrenergic receptors")
+
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features = c("Asic4", "Pnoc","Cacna2d1", "Tac1"),
          group = "PAGarea_celltype",
          low_color = "white", high_color = "red",
          max_ave = 5, max_detected = NULL
          ) + ggtitle("Some Differentially expressed genes")
 
-pacemaker_channels <- c("Hcn1", "Hcn2", "Hcn3", "Hcn4", "Kcna4", "Kcnc3", "Kcnc4", "Kcnd1", "Kcnd2", "Kcnd3", "Scn8a", "Scn9a", "Cacna1g", "Cacna1h", "Cacna1i", "Cacna2d1")
-pacemaker_channels <- pacemaker_channels[(pacemaker_channels %in% rownames(PAG_sceset_qc_norm_filt))]
-plotDots(PAG_sceset_qc_norm_filt,
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features = c("Kcnj2", "Kcnj12", "Kcnj4", "Kcnj14", "Kcnj3", "Kcnj6", "Kcnj9", "Kcnj5", "Kcnj10", "Kcnj16", "Kcnj8", "Kcnj11", "Kcnj13"),
+         group = "cell.type",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("IRK channels")
+
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features = c("Kcnj3", "Kcnj6", "Kcnj9", "Kcnj5"),
+         group = "cell.type",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("GIRK channels")
+
+pacemaker_channels <- c("Hcn1", "Hcn2", "Hcn3", "Hcn4", "Kcna4", "Kcnc3", "Kcnc4", "Kcnd1", "Kcnd2", "Kcnd3", "Kcnj6", "Scn7a", "Scn8a", "Scn9a", "Cacna1g", "Cacna1h", "Cacna1i", "Cacna2d1")
+pacemaker_channels <- pacemaker_channels[(pacemaker_channels %in% rownames(PAG_sceset_qc_norm_filt_corr_clust_de))]
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
          features =  pacemaker_channels,
          group = "cell.type",
          low_color = "white", high_color = "red",
          max_ave = NULL, max_detected = NULL
          ) + ggtitle("Pacemaking ion channels")
 
-plotDots(PAG_sceset_qc_norm_filt,
-         features =  metadata(PAG_sceset_qc_norm_filt)$genes.icPotassium[(metadata(PAG_sceset_qc_norm_filt)$genes.icPotassium %in% rownames(PAG_sceset_qc_norm_filt))],
+# Ion Channels
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features =  metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.npDataClub[(metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.npDataClub %in% rownames(PAG_sceset_qc_norm_filt_corr_clust_de))],
+         group = "cell.type",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("Ion Channels")
+
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features =  metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.npDataClub[(metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.npDataClub %in% rownames(PAG_sceset_qc_norm_filt_corr_clust_de))],
          group = "PAGarea_celltype",
          low_color = "white", high_color = "red",
          max_ave = NULL, max_detected = NULL
-         ) + ggtitle("Ion channels")
+         ) + ggtitle("Ion Channels")
+
+# DE genes
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features =  c(VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels],
+                       VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]),
+         group = "cell.type",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("DE Ion channels")
+
+# Monoamines
+plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+         features =  metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines[(metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines %in% rownames(PAG_sceset_qc_norm_filt_corr_clust_de))],
+         group = "PAGarea_celltype",
+         low_color = "white", high_color = "red",
+         max_ave = NULL, max_detected = NULL
+         ) + ggtitle("Neuromodulators")
 ```
+
+## Dot plots - Full control
+https://ltla.github.io/SingleCellThoughts/general/visualization.html
+```{r}
+library(scRNAseq)
+sce <- ZeiselBrainData()
+sce <- logNormCounts(sce)
+library(scater)
+ids <- colData(sce)[,c("level1class", "tissue")] # cell type and group.
+my.genes <- sample(rownames(sce), 5) # pick 5 genes, or your markers, whatever.
+# Compute average log-count per tissue/cell type combination.
+# Also compute proportion of cells with detected expression.
+ave <- sumCountsAcrossCells(sce, ids=ids, exprs_values='logcounts', average=TRUE, subset_row=my.genes)
+prop <- numDetectedAcrossCells(sce, ids=ids, average=TRUE, subset_row=my.genes)
+# Melt this into a long-form data.frame.
+combined <- melt(assay(ave))
+colnames(combined) <- c("Gene", "Column", "Average")
+combined$Proportion <- melt(assay(prop))[,3]
+combined <- cbind(combined, colData(ave)[combined$Column,])
+# Profit.
+ggplot(combined, mapping=aes(x=Gene, y=level1class)) +
+    geom_point(mapping=aes(size=Proportion, colour=Average)) +
+    scale_color_gradient(low="white", high="red") +
+    facet_wrap(~tissue)
+```
+
+
 ## Patchwork - composing ggplots
 https://patchwork.data-imaginist.com/
 ```{r}
@@ -138,6 +299,159 @@ group_violin_plot(data_df,
                   rotate_counts = TRUE)
 ```
 
+## Make a final figure
+https://github.com/massonix/sampling_artifacts/blob/master/1-PBMC/08-gene_signature_Smartseq.Rmd
+```{r}
+# Plot tSNE with k = 2
+tsne_k2 <- plot_tsne(sce = sce,
+                     exprs_value = "logcounts",
+                     color_by = "sc3_2_clusters",
+                     point_size = 2.5,
+                     point_alpha = 1,
+                     colors = c("royalblue1", "red2"),
+                     title = "SC3 clusters (k=2)"
+                     )
+tsne_k2 <- tsne_k2 +
+  scale_color_manual(values = c("royalblue1", "red2"), labels = c("cluster 1", "cluster 2")) +
+  theme(legend.title = element_blank())
+# Save tSNE
+ggsave(plot = tsne_k2, 
+       filename = str_c("results/plots/", date, "_Smart-seq2_tsne_k2.pdf"), 
+       device = "pdf",
+       height = 7, 
+       width = 8
+       )
+tsne_k2
+saveRDS(object = sce, file = "results/R_objects/sce_Smart-seq2.rds")
+
+# Effect of time + explained variability
+set.seed(1)
+palette <- c("#999999", "#92e8df", "#632c63", "#e4624e", "#c0e212")
+sce_f <- scater::filter(sce, temperature != "4ºC")
+tsne_smart_time <- plot_tsne(sce = sce_f,
+                             exprs_value = "logcounts",
+                             color_by = "time",
+                             point_size = 3,
+                             point_alpha = 1,
+                             colors = palette,
+                             title = "Smart-seq2"
+                             )
+
+tsne_smart_time <- tsne_smart_time + theme(legend.position = "bottom")
+legend_tsne_smart <- as_ggplot(get_legend(tsne_smart_time))
+tsne_smart_time <- tsne_smart_time + theme(plot.title = element_blank(),
+                                           legend.position = "none",
+                                           plot.background = element_blank(),
+                                           panel.border = element_blank(),
+                                           axis.title = element_blank(),
+                                           axis.ticks = element_blank(),
+                                           axis.text = element_blank())
+legend_explained_var <- as_ggplot(get_legend(explained_var))
+explained_var <- explained_var + theme(legend.position = "none")
+
+# SC3 clusters + distribution 0h/RT/4ºC cells in each cluster
+legend_k2 <- as_ggplot(get_legend(cluster_distr_gg))
+cluster_distr_gg <- cluster_distr_gg + theme(legend.position = "none")
+tsne_k2 <- tsne_k2 + theme(legend.position = "bottom")
+legend_tsne_k2 <- as_ggplot(get_legend(tsne_k2))
+tsne_k2 <- tsne_k2 + theme(plot.title = element_blank(),
+                           legend.position = "none",
+                           plot.background = element_blank(),
+                           panel.border = element_blank(),
+                           axis.title = element_blank(),
+                           axis.ticks = element_blank(),
+                           axis.text = element_blank())
+
+# Violin plot + tsne regressed
+violin_smart <- violin_smart + theme(legend.position = "none") + ggpubr::rotate_x_text(angle = -45, hjust = 0)
+tsne_regressed <- tsne_regressed + theme(legend.position = "bottom") 
+legend_tsne_regressed <- as_ggplot(get_legend(tsne_regressed))
+tsne_regressed <- tsne_regressed + theme(plot.title = element_text(face = "bold"),
+                                         legend.position = "none",
+                                         plot.background = element_blank(),
+                                         panel.border = element_blank(),
+                                         axis.title = element_blank(),
+                                         axis.ticks = element_blank(),
+                                         axis.text = element_blank())
+
+# Arrange figure
+tsne_smart_explained <- plot_grid( tsne_smart_time, 
+                                   NULL,
+                                   explained_var,
+                                   ncol = 3, 
+                                   nrow = 1,
+                                   rel_widths = c(1, 0.1, 1),
+                                   labels = c("a", "b"),
+                                   align = "h",
+                                   axis = "b"
+                                   )
+k2_distr <- plot_grid(tsne_k2, 
+                      NULL,
+                      cluster_distr_gg,
+                      ncol = 3, 
+                      nrow = 1,
+                      rel_widths = c(1, 0.1, 1),
+                      labels = c("c", "d"),
+                      align = "h",
+                      axis = "b"
+                      )
+violin_regressed <- plot_grid(violin_smart, 
+                              NULL,
+                              tsne_regressed,
+                              ncol = 3, 
+                              nrow = 1,
+                              rel_widths = c(1, 0.1, 1),
+                              labels = c("e", "f"),
+                              align = "h",
+                              axis = "b"
+                              )
+smart_fig <- plot_grid(tsne_smart_explained, 
+                       NULL,
+                       k2_distr,
+                       violin_regressed,
+                       ncol = 1, 
+                       nrow = 4,
+                       rel_heights = c(1, 0.05, 1, 1)
+                       )
+# Save figure
+ggsave(filename = str_c("doc/figures/R/", date, "_smart_seq_figure.pdf"), 
+       plot = smart_fig, 
+       width = 18, 
+       height = 26,
+       units = "cm"
+       )
+# Save legends
+legends_list <- list(legend_tsne_smart, legend_explained_var, legend_k2, legend_tsne_k2, legend_tsne_regressed)
+names(legends_list) <- c("legend_tsne_smart", "legend_explained_var", "legend_k2", "legend_tsne_k2", "legend_tsne_regressed")
+walk(names(legends_list), function(leg) {
+  ggsave(
+    filename = str_c("doc/figures/legends/", date, "_", leg, ".pdf"), 
+    plot = legends_list[[leg]], 
+    width = 9, 
+    height = 5,
+    units = "cm"
+  )
+})
+
+# Differential Expression Analysis
+Idents(pbmc_female) <- "temperature"
+pbmc_f_sub <- subset(pbmc_female, idents = c("fresh", "4ºC"))
+dea <- FindMarkers(pbmc_f_sub, ident.1 = "4ºC", test.use = "wilcox")
+dea <- rownames_to_column(dea, var = "gene")
+dea <- dplyr::mutate(dea, significance = ifelse(p_val_adj < 0.001, "sig", "no sig"))
+subset_data <- dplyr::filter(dea, avg_logFC > 0.9)
+volcano <- dea %>% 
+  dplyr::mutate(significance = ifelse(p_val_adj < 0.001, "sig", "no sig")) %>% 
+  ggplot(aes(avg_logFC, -1 * log10(p_val_adj), color = significance)) +
+    geom_point() +
+    geom_text_repel(data = subset_data, aes(label = gene), color = "black", size = 2.5) +
+    scale_color_manual(values = c("gray78", "chartreuse2")) +
+    labs(x = "log (fold-change)", y = "-log10 (p-value)", color = "") +
+    theme_classic()
+volcano
+saveRDS(volcano, "results/R_objects/ggplots/volcano_4ºC_pbmc.rds")
+```
+
 # Building figures
 ## Plots from Part 2
 ```{r}
@@ -145,7 +459,7 @@ library(tidyverse)
 library(ggplot2)
 library(patchwork)
 
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part2_dataQC/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part2_dataQC/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 ```
@@ -332,7 +646,7 @@ library(tidyverse)
 library(ggplot2)
 library(patchwork)
 
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part3_normalization/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part3_normalization/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 ```
@@ -412,7 +726,7 @@ library(tidyverse)
 library(ggplot2)
 library(patchwork)
 
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part4_HVGs/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part4_HVGs/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 ```
@@ -462,7 +776,7 @@ library(tidyverse)
 library(ggplot2)
 library(patchwork)
 
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part5_batchCorr_reducedDim/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part5_batchCorr_reducedDim/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 ```
@@ -483,7 +797,7 @@ explanatory_variables_corrected <- readRDS(file = str_c(path_for_figures, "expla
 #                                                             exprs_values = "corrected",
 #                                                             variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
 #                                                                           "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
-#                                                                           "PAG.areacollection", "PAG.hemisphere", "PAG.APaxis", "PAGarea_celltype",
+#                                                                           "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "PAGarea_celltype",
 #                                                                           "batch.processing", "batch.sequencing_round", "detected", "total")
 #                                                             ) + ggtitle("Corrected log-normalized counts")
 
