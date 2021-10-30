@@ -46,7 +46,7 @@ We continue using the `PAG_sceset_qc_norm_filt` after normalization. We should t
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
 
 # Set the path to save figures from this Part:
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part5_batchCorr_reducedDim/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part5_batchCorr_reducedDim/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 
@@ -73,8 +73,8 @@ assayNames(PAG_sceset_qc_norm_filt)
 The `table` and `summary` functions allow us to quickly inspect if we have any obvious biases or confounds (i.e. all the cells come from male or female mice, or from a particular location or sequencing batch).
 ```{r}
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.hemisphere)
-table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.arearegistration)
-table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.APaxis)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.area)
+table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$PAG.PaxinosAPmanual)
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.sex)
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$mouse.id)
 table(PAG_sceset_qc_norm_filt$cell.type, PAG_sceset_qc_norm_filt$batch.processing)
@@ -84,9 +84,9 @@ We can quickly observe that we have two clear confounds: (1) from any given anim
 ```{r}
 summary(PAG_sceset_qc_norm_filt$cell.type)
 summary(PAG_sceset_qc_norm_filt$PAG.hemisphere)
-summary(PAG_sceset_qc_norm_filt$PAG.areacollection)
+summary(PAG_sceset_qc_norm_filt$PAG.area)
 summary(PAG_sceset_qc_norm_filt$mouse.sex)
-summary(PAG_sceset_qc_norm_filt$PAG.arearegistration)
+summary(PAG_sceset_qc_norm_filt$PAG.area)
 ```
 
 ### 5.1.2 | Checking for important technical factors or explanatory variables
@@ -106,9 +106,9 @@ plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
                                        "cell.fluorophore",
                                        "slice.number",
                                        "slice.depth",
-                                       "PAG.areacollection",
+                                       "PAG.area",
                                        "PAG.hemisphere",
-                                       "PAG.APaxis",
+                                       "PAG.PaxinosAPmanual",
                                        "time.sinceslicinghour",
                                        "PAGarea_celltype",
                                        "batch.processing",
@@ -169,28 +169,28 @@ for(n in assayNames(PAG_sceset_qc_norm_filt)) {
 
 PCA_HVG_var_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                      dimred = "PCA_HVG_var_counts",
-                                     colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                     colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                      shape_by = "cell.type", # "mouse.id"
                                      size_by = "detected"
                                      ) + ggtitle("PCA using HVG (var) and raw counts")
 
 PCA_HVG_var_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "PCA_HVG_var_logcounts_raw",
-                                            colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                             shape_by = "cell.type", # "mouse.id"
                                             size_by = "detected"
                                             ) + ggtitle("PCA using HVG (var) and log2 raw counts") 
 
 PCA_HVG_var_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_var_logcounts",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected"
                                         ) + ggtitle("PCA using HVG (var) and log-normalized counts") 
 
 PCA_HVG_var_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_var_corrected",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected"
                                         ) + ggtitle("PCA using HVG (var) and batch corrected")
@@ -228,28 +228,28 @@ for(n in assayNames(PAG_sceset_qc_norm_filt)) {
 
 PCA_HVG_cv2_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                      dimred = "PCA_HVG_cv2_counts",
-                                     colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                     colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                      shape_by = "cell.type", # "mouse.id"
                                      size_by = "detected"
                                      ) + ggtitle("PCA using HVG (cv2) and raw counts")
 
 PCA_HVG_cv2_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "PCA_HVG_cv2_logcounts_raw",
-                                            colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                            colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                             shape_by = "cell.type", # "mouse.id"
                                             size_by = "detected"
                                             ) + ggtitle("PCA using HVG (cv2) and log2 raw counts") 
 
 PCA_HVG_cv2_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_cv2_logcounts",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected"
                                         ) + ggtitle("PCA using HVG (cv2) and log-normalized counts") 
 
 PCA_HVG_cv2_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_cv2_corrected",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.arearegistration", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected"
                                         ) + ggtitle("PCA using HVG (cv2) and batch corrected") 
@@ -283,7 +283,7 @@ explanatory_variables_counts <- plotExplanatoryVariables(PAG_sceset_qc_norm_filt
                                                          exprs_values = "counts",
                                                          variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                        "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
-                                                                       "PAG.areacollection", "PAG.hemisphere", "PAG.APaxis", "PAGarea_celltype",
+                                                                       "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "PAGarea_celltype",
                                                                        "batch.processing", "batch.sequencing_round", "detected", "total")
                                                          ) + ggtitle("Raw counts")
 saveRDS(explanatory_variables_counts, file = str_c(path_for_figures, "explanatory_variables_counts.rds"))
@@ -293,7 +293,7 @@ explanatory_variables_logcounts_raw <- plotExplanatoryVariables(PAG_sceset_qc_no
                                                                 exprs_values = "logcounts_raw",
                                                                 variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                               "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
-                                                                              "PAG.areacollection", "PAG.hemisphere", "PAG.APaxis", "PAGarea_celltype",
+                                                                              "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "PAGarea_celltype",
                                                                               "batch.processing", "batch.sequencing_round", "detected", "total")
                                                                 ) + ggtitle("Log2 raw counts")
 saveRDS(explanatory_variables_logcounts_raw, file = str_c(path_for_figures, "explanatory_variables_logcounts_raw.rds"))
@@ -304,7 +304,7 @@ explanatory_variables_logcounts <- plotExplanatoryVariables(PAG_sceset_qc_norm_f
                                                             exprs_values = "logcounts",
                                                             variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                           "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
-                                                                          "PAG.areacollection", "PAG.hemisphere", "PAG.APaxis", "PAGarea_celltype",
+                                                                          "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "PAGarea_celltype",
                                                                           "batch.processing", "batch.sequencing_round", "detected", "total")
                                                             ) + ggtitle("Log-normalized counts")
 saveRDS(explanatory_variables_logcounts, file = str_c(path_for_figures, "explanatory_variables_logcounts.rds"))
@@ -315,7 +315,7 @@ explanatory_variables_corrected <- plotExplanatoryVariables(PAG_sceset_qc_norm_f
                                                             exprs_values = "corrected",
                                                             variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                           "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
-                                                                          "PAG.areacollection", "PAG.hemisphere", "PAG.APaxis", "PAGarea_celltype",
+                                                                          "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "PAGarea_celltype",
                                                                           "batch.processing", "batch.sequencing_round", "detected", "total")
                                                             ) + ggtitle("Corrected log-normalized counts")
 saveRDS(explanatory_variables_corrected, file = str_c(path_for_figures, "explanatory_variables_corrected.rds"))
@@ -338,7 +338,7 @@ ggsave(filename = str_c(date, "_explanatory_variables_composed.pdf"),
        )
 ```
 
-Here we can see how after applying `removeBatchEffect()`, `batch.processing` is no longer in the top of explanatory variables.`mouse.id` (and its correlate `mouse.age`) is still the highest explanatory variable, which reflects how cells were obtained. We also see some interesting variables that reflect the biology we are interested in, namely `PAGarea_celltype`, which is a combination of `PAG.areacollection` and `cell.type`, and `PAG.APaxis`. Although `batch.processing` is an important variable (and we certainly have batch effects, inherent to this type of experiments), the fact that we don't have properly balanced batches (only half of our batches are balanced) makes it hard to remove the batch effect alone leaving the biology intact, as by removing it we will also be removing some of its confounds linked to biology (such as `mouse.id` and `cell.type`). Given that in the PCA plots using HVGs from Var and CV2 modelling we observed interspread batches, we will continue to use the `corrected` assay for plotting and we will stick to the `logcounts` assay for clustering and downstream analysis. 
+Here we can see how after applying `removeBatchEffect()`, `batch.processing` is no longer in the top of explanatory variables.`mouse.id` (and its correlate `mouse.age`) is still the highest explanatory variable, which reflects how cells were obtained. We also see some interesting variables that reflect the biology we are interested in, namely `PAGarea_celltype`, which is a combination of `PAG.area` and `cell.type`, and `PAG.PaxinosAPmanual`. Although `batch.processing` is an important variable (and we certainly have batch effects, inherent to this type of experiments), the fact that we don't have properly balanced batches (only half of our batches are balanced) makes it hard to remove the batch effect alone leaving the biology intact, as by removing it we will also be removing some of its confounds linked to biology (such as `mouse.id` and `cell.type`). Given that in the PCA plots using HVGs from Var and CV2 modelling we observed interspread batches, we will continue to use the `corrected` assay for plotting and we will stick to the `logcounts` assay for clustering and downstream analysis. 
 
 ## Step 5.3 | Dimensionality reduction
 Many scRNA-seq analysis procedures involve comparing cells based on their expression values across multiple genes. For example, clustering aims to identify cells with similar transcriptomic profiles by computing Euclidean distances across genes. In these applications, each individual gene represents a dimension of the data. More intuitively, if we had a scRNA-seq data set with two genes, we could make a two-dimensional plot where each axis represents the expression of one gene and each point in the plot represents a cell. This concept can be extended to data sets with thousands of genes where each cell’s expression profile defines its location in the high-dimensional expression space.
@@ -361,18 +361,18 @@ reducedDimNames(PAG_sceset_qc_norm_filt)
 
 We can inspect the different PCA results and colour them using different metadata:
 ```{r}
-plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected", colour_by = "cell.type", shape_by = "PAG.arearegistration") +
+plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected", colour_by = "cell.type", shape_by = "PAG.area") +
   ggtitle("PCA using HVG (var) and batch corrected")
 plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected", colour_by = "cell.type") +
   ggtitle("PCA using HVG (var) and batch corrected")
-plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected", colour_by = "PAG.arearegistration") +
+plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected", colour_by = "PAG.area") +
   ggtitle("PCA using HVG (var) and batch corrected")
 
-plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected", colour_by = "cell.type", shape_by = "PAG.arearegistration") +
+plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected", colour_by = "cell.type", shape_by = "PAG.area") +
   ggtitle("PCA using HVG (cv2) and batch corrected")
 plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected", colour_by = "cell.type") +
   ggtitle("PCA using HVG (cv2) and batch corrected")
-plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected", colour_by = "PAG.arearegistration") +
+plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected", colour_by = "PAG.area") +
   ggtitle("PCA using HVG (cv2) and batch corrected")
 ```
 
@@ -662,7 +662,7 @@ dev.off()
 ```
 
 ### 5.3.5 | Deciding on the number of PCs
-After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would perhaps say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the scree plot becomes almost flat), whereas 10 or 15 would be a perhaps more appropriate elbow. If we look at the population structure approach, the suggested values are 13 and 16, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. In an attempt to retain a bit more of information, we will keep the first 25 PCs. 
+After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the scree plot becomes almost flat), whereas 10 or 15 would be a perhaps more appropriate elbow. If we look at the population structure approach, the suggested values are 12 and 14, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. In an attempt to retain a bit more of information, we will keep the first 25 PCs. 
 
 Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new `reducedDim` slots with the subsetted or recalculated PCs. We will keep both the full set of PCs and the reduced version with the top 25 PCs in a different `reducedDim()` slot.
 ```{r}
@@ -720,7 +720,7 @@ We plot our PCA results using the `corrected` assay and use different metadata v
 PCA_HVG_var_corrected_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
                                                  by_exprs_values = "corrected", colour_by = "cell.type") + ggtitle("HVG (var)")
 PCA_HVG_var_corrected_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
-                                                by_exprs_values = "corrected", colour_by = "PAG.arearegistration") + ggtitle("HVG (var)")
+                                                by_exprs_values = "corrected", colour_by = "PAG.area") + ggtitle("HVG (var)")
 PCA_HVG_var_corrected_PAGarea_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
                                                          by_exprs_values = "corrected", colour_by = "PAGarea_celltype") + ggtitle("HVG (var)")
 PCA_HVG_var_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
@@ -729,7 +729,7 @@ PCA_HVG_var_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "
 PCA_HVG_cv2_corrected_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
                                                  colour_by = "cell.type") + ggtitle("HVG (cv2)")
 PCA_HVG_cv2_corrected_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
-                                                colour_by = "PAG.arearegistration") + ggtitle("HVG (cv2)")
+                                                colour_by = "PAG.area") + ggtitle("HVG (cv2)")
 PCA_HVG_cv2_corrected_PAGarea_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
                                                          colour_by = "PAGarea_celltype") + ggtitle("HVG (cv2)")
 PCA_HVG_cv2_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
@@ -761,7 +761,7 @@ plotReducedDim(PAG_sceset_qc_norm_filt,
                dimred = "PCA_HVG_var_corrected",
                ncomponents = 4,
                colour_by = "cell.type",
-               shape_by = "PAG.arearegistration",
+               shape_by = "PAG.area",
                by_exprs_values = "corrected")
 ```
 
@@ -800,28 +800,28 @@ for(n in range_of_perplexities) {
 reducedDimNames(PAG_sceset_qc_norm_filt)
 
 tSNE_HVG_var_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_5",
-                                           colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2")
+                                           colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_10",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_15",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_20",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_30",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_40",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_var_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_50",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2")
   
 tSNE_HVG_var_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_75",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2")
 
 # Prepare, plot, and save a composed plot
 library(patchwork)
@@ -866,28 +866,28 @@ for(n in range_of_perplexities) {
 reducedDimNames(PAG_sceset_qc_norm_filt)
 
 tSNE_HVG_cv2_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_5",
-                                           colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2")
+                                           colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_10",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_20",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_30",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_40",
-                                           colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2")
+                                           colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_50",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2")
 
 tSNE_HVG_cv2_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_75",
-                                            colour_by = "PAG.arearegistration", shape_by = "cell.type") + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2")
+                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2")
 
 
 # Prepare, plot, and save a composed plot
@@ -945,58 +945,58 @@ reducedDimNames(PAG_sceset_qc_norm_filt)
 
 #### n_neighbors = 5
 UMAP_var_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.01_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 5 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.05_min_dist",
-                                                               colour_by = "PAG.arearegistration",shape_by = "cell.type"
+                                                               colour_by = "PAG.area",shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 5 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.1_min_dist",
-                                                              colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                              colour_by = "PAG.area", shape_by = "cell.type"
                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.2_min_dist",
-                                                              colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                              colour_by = "PAG.area", shape_by = "cell.type"
                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 10
 UMAP_var_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 15
 UMAP_var_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 15 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 20
 UMAP_var_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 20 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 20 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_var_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 # Prepare and save composed plots
@@ -1085,58 +1085,58 @@ reducedDimNames(PAG_sceset_qc_norm_filt)
 
 #### n_neighbors = 5
 UMAP_cv2_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.01_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 5 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.05_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 5 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.1_min_dist",
-                                                              colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                              colour_by = "PAG.area", shape_by = "cell.type"
                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.2_min_dist",
-                                                              colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                              colour_by = "PAG.area", shape_by = "cell.type"
                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 10
 UMAP_cv2_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 15
 UMAP_cv2_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 15 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 #### n_neighbors = 20 
 UMAP_cv2_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 20 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                                colour_by = "PAG.area", shape_by = "cell.type"
                                                                 ) + labs(title = "n_neighbours = 20 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                               colour_by = "PAG.area", shape_by = "cell.type"
                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
 
 # Prepare and save composed plots
@@ -1209,11 +1209,11 @@ As we have seen, tSNE and UMAP offer different solutions to represent the data i
 ```{r}
 # Plot the selected t-SNE
 chosen_tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_15",
-                                                   colour_by = "PAG.arearegistration", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
+                                                   colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
                                                    ) + labs(title = "HVG (var) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
 
 chosen_tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                                   colour_by = "PAG.arearegistration", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
+                                                   colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
                                                    ) + labs(title = "HVG (cv2) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
 
 # Plot the selected t-SNE coloring for Cd68 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
@@ -1227,15 +1227,15 @@ chosen_tSNE_HVG_cv2_corrected_15_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 # Plot the selected UMAP
 chosen_UMAP_var_corrected_10_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                                    colour_by = "PAG.arearegistration", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
+                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
                                                     ) + labs(title = "HVG (var) - n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 
 chosen_UMAP_cv2_corrected_10_0.05 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                    colour_by = "PAG.arearegistration", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
+                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
                                                     ) + labs(title = "HVG (cv2) - n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 
 chosen_UMAP_cv2_corrected_15_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                    colour_by = "PAG.arearegistration", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
+                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
                                                     ) + labs(title = "HVG (cv2) - n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
 
 # Plot the selected UMAP coloring for Cd68 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
@@ -1289,12 +1289,12 @@ Now that we have a stable visualization of our data, we can try to explore it a 
 ```{r}
 # The UMAP with the full QCed dataset:
 chosen_UMAP_cv2_corrected_10_0.05 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                    colour_by = "PAG.arearegistration", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
+                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
                                                     ) + labs(title = "UMAP HVG (cv2) | n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
 
 # Separating by `cell.type`:
 chosen_UMAP_cv2_facet_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                 colour_by = "PAG.arearegistration", point_alpha = 0.6, point_size = 2
+                                                 colour_by = "PAG.area", point_alpha = 0.6, point_size = 2
                                                  ) + labs(title = "Facets by cell type and coloured by PAG subdivision", x = "UMAP 1", y = "UMAP 2"
                                                           ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
 
@@ -1315,16 +1315,16 @@ chosen_UMAP_cv2_facet_celltype_VGATVGluT2 <- plotReducedDim(PAG_sceset_qc_norm_f
                                                             ) + labs(title = "Facets by cell type and coloured by VGAT-VGluT2 profile", x = "UMAP 1", y = "UMAP 2"
                                                                      ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
 
-# Separating by `PAG.arearegistration`:
+# Separating by `PAG.area`:
 chosen_UMAP_cv2_facet_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
                                                 colour_by = "cell.type", point_alpha = 0.6, point_size = 2
                                                 ) + labs(title = "Facets by PAG subdivision and coloured by cell type", x = "UMAP 1", y = "UMAP 2"
-                                                         ) + facet_wrap(~PAG_sceset_qc_norm_filt$PAG.arearegistration, dir = "v")
+                                                         ) + facet_wrap(~PAG_sceset_qc_norm_filt$PAG.area, dir = "v")
 
 # Separating by whether a cell expresses VGAT or VGluT2 only, or a combination of both:
 chosen_UMAP_cv2_facet_VGATVGluT2 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                   colour_by = "PAG.arearegistration",  shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                   ) + labs(title = "Facets by VGAT-VGluT2 profile and coloUred by PAG subdivsion", x = "UMAP 1", y = "UMAP 2"
+                                                   colour_by = "PAG.area",  shape_by = "cell.type", point_alpha = 0.6, point_size = 2
+                                                   ) + labs(title = "Facets by VGAT-VGluT2 profile and coloured by PAG subdivsion", x = "UMAP 1", y = "UMAP 2"
                                                             ) + facet_wrap(~PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression, nrow = 2, drop = FALSE)
 
 # Prepare and save composed plots

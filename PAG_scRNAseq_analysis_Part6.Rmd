@@ -43,7 +43,7 @@ We continue using the `PAG_sceset_qc_norm_filt_corr` after normalization, filter
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
 
 # Set the path to save figures from this Part:
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part6_clustering/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part6_clustering/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 
@@ -158,7 +158,7 @@ We can then assign the cluster assignments back into our `SingleCellExperiment` 
 ```{r}
 ## Using t-SNE (var)
 tSNE_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
-                                           colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                           colour_by = "PAG.area", shape_by = "cell.type"
                                            ) + labs(title = "t-SNE (var) - PAG subdivisions", x = "t-SNE 1", y = "t-SNE 2")
 
 # Using HVG from Var with rank-based weights
@@ -173,7 +173,7 @@ tSNE_var_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimr
 
 ## Using t-SNE (cv2)
 tSNE_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                           colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                           colour_by = "PAG.area", shape_by = "cell.type"
                                            ) + labs(title = "t-SNE (cv2) - PAG subdivisions", x = "t-SNE 1", y = "t-SNE 2")
 
 # Using HVG from CV2 with rank-based weights
@@ -191,7 +191,7 @@ tSNE_cv2_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimr
 
 ## Using UMAP (var)
 UMAP_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                           colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                           colour_by = "PAG.area", shape_by = "cell.type"
                                            ) + labs(title = "UMAP (var) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
 
 # Using HVG from Var with rank-based weights
@@ -207,7 +207,7 @@ UMAP_var_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimr
 ## Using UMAP (cv2) - 10_neighbors_0.05_min_dist
 # Use "UMAP_cv2_corrected_10_neighbors_0.05_min_dist" or "UMAP_cv2_corrected_15_neighbors_0.01_min_dist"
 UMAP_cv2_10_005_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                  colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                  colour_by = "PAG.area", shape_by = "cell.type"
                                                   ) + labs(title = "UMAP (cv2) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
 
 # Using HVG from CV2 with rank-based weights
@@ -226,7 +226,7 @@ UMAP_cv2_10_005_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_cor
 ## Using UMAP (cv2) - 15_neighbors_0.01_min_dist
 # Use "UMAP_cv2_corrected_10_neighbors_0.05_min_dist" or "UMAP_cv2_corrected_15_neighbors_0.01_min_dist"
 UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                  colour_by = "PAG.arearegistration", shape_by = "cell.type"
+                                                  colour_by = "PAG.area", shape_by = "cell.type"
                                                   ) + labs(title = "UMAP (cv2) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
 
 # Using HVG from CV2 with rank-based weights
@@ -498,7 +498,7 @@ coassign_cv2_jaccard_k8
 coassign_cv2_jaccard_k10
 ```
 
-If we take a look at the matrices, we can see that althouhg all values are between 0 and 1, each matrix has a different `max` and `min` value. Given that we want to be able to visually compare the different methods and choose the one that provides the highest values in the diagonal, we can use `breaks =` in the `pheatmap()` function to ensure the color scale covers from 0 to 1. This ensures that the colors in the different heatmaps go from 0 to 1, and thus ensures that a matrix with a lower `max` value will have a different color than one with a higher `max` value. Otherwise the colors would go from `coassign_var_rank_k8[which.min(coassign_var_rank_k8)]` to `coassign_var_rank_k8[which.max(coassign_var_rank_k8)]` and will be different for each plot, so not directly comparable. This will allow us to visualise the best diagonal:
+If we take a look at the matrices, we can see that although all values are between 0 and 1, each matrix has a different `max` and `min` value. Given that we want to be able to visually compare the different methods and choose the one that provides the highest values in the diagonal, we can use `breaks =` in the `pheatmap()` function to ensure the color scale covers from 0 to 1. This ensures that the colors in the different heatmaps go from 0 to 1, and thus ensures that a matrix with a lower `max` value will have a different color than one with a higher `max` value. Otherwise the colors would go from `coassign_var_rank_k8[which.min(coassign_var_rank_k8)]` to `coassign_var_rank_k8[which.max(coassign_var_rank_k8)]` and will be different for each plot, so not directly comparable. This will allow us to visualise the best diagonal:
 ```{r}
 cluster_stability_var_rank_k8 <- pheatmap(coassign_var_rank_k8, main = "Cluster Stability (var) - Rank Walktrap (k=8)",
                                           cluster_rows = FALSE, cluster_cols = FALSE, angle_col = 0,
@@ -1225,7 +1225,7 @@ legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
 dev.off()
 ```
 
-We can examine the distribution of cells in each cluster with respect to known factors. For instance, we can compare the cluster identities to batch to check the clustering is not driven by batch effects. We can also compare to any other interesting metadata to see what can be driving the clusters such as `cell.type` or `PAG.arearegistration`.
+We can examine the distribution of cells in each cluster with respect to known factors. For instance, we can compare the cluster identities to batch to check the clustering is not driven by batch effects. We can also compare to any other interesting metadata to see what can be driving the clusters such as `cell.type` or `PAG.area`.
 ```{r}
 # HVG_var
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k, Batch = PAG_sceset_qc_norm_filt_corr$batch.processing)
@@ -1245,13 +1245,13 @@ We can also use a heatmap to visualize the expression profiles of the top 100 ge
 library(pheatmap)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr, 
             features = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt[1:200],
-            cluster_cols = PAG_tree_var, colour_columns_by = c("cutree_clusters_var_k", "PAG.areacollection", "cell.type"),
+            cluster_cols = PAG_tree_var, colour_columns_by = c("cutree_clusters_var_k", "PAG.area", "cell.type"),
             cluster_rows = FALSE, center = TRUE, symmetric = TRUE,
             main = "Heatmap (var) - Tree Cut")
 
 plotHeatmap(PAG_sceset_qc_norm_filt_corr, 
             features = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt[1:200],
-            cluster_cols = PAG_tree_cv2, colour_columns_by = c("cutree_clusters_cv2_k", "PAG.areacollection", "cell.type"),
+            cluster_cols = PAG_tree_cv2, colour_columns_by = c("cutree_clusters_cv2_k", "PAG.area", "cell.type"),
             cluster_rows = FALSE, center = TRUE, symmetric = TRUE,
             main = "Heatmap (cv2) - Tree Cut")
 ```
@@ -1556,7 +1556,7 @@ best_k <- list(7, 9) # Set the chosen K for the following plots
 for(chosen_k in best_k) {
   # Consensus Matrix
   consensus <- sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, k = chosen_k,
-                                  show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
+                                  show_pdata = c("cell.type", "PAG.area", paste0("sc3_", chosen_k, "_clusters")))
   consensus
   ggsave(filename = str_c(date, "_sc3_consensus_k", chosen_k, ".pdf"), 
          plot = consensus,
@@ -1590,7 +1590,7 @@ for(chosen_k in best_k) {
 
   # Expression panel
   expression_panel <- sc3_plot_expression(PAG_sceset_qc_norm_filt_corr, k = chosen_k,
-                                          show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
+                                          show_pdata = c("cell.type", "PAG.area", paste0("sc3_", chosen_k, "_clusters")))
   expression_panel
   ggsave(filename = str_c(date, "_sc3_expression_k", chosen_k, ".pdf"), 
          plot = expression_panel,
@@ -1603,7 +1603,7 @@ for(chosen_k in best_k) {
   # DE Genes
   DE_genes <- sc3_plot_de_genes(PAG_sceset_qc_norm_filt_corr, k = chosen_k,
                                 p.val = 0.001,
-                                show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
+                                show_pdata = c("cell.type", "PAG.area", paste0("sc3_", chosen_k, "_clusters")))
   DE_genes
   ggsave(filename = str_c(date, "_sc3_DEgenes_k", chosen_k, ".pdf"), 
          plot = DE_genes,
@@ -1616,7 +1616,7 @@ for(chosen_k in best_k) {
   # Marker Genes
   markers <- sc3_plot_markers(PAG_sceset_qc_norm_filt_corr, k = chosen_k,
                               auroc = 0.8, p.val = 0.01,
-                              show_pdata = c("cell.type", "PAG.arearegistration", paste0("sc3_", chosen_k, "_clusters")))
+                              show_pdata = c("cell.type", "PAG.area", paste0("sc3_", chosen_k, "_clusters")))
   markers
   ggsave(filename = str_c(date, "_sc3_markers_k", chosen_k, ".pdf"), 
          plot = markers,

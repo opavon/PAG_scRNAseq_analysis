@@ -41,7 +41,7 @@ We continue using the `PAG_sceset_qc_norm` after normalization. We should thus h
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
 
 # Set the path to save figures from this Part:
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures_in_progress/R_figures_Part4_HVGs/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part4_HVGs/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 
