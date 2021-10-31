@@ -239,15 +239,20 @@ PAG_metadata$PAG.area <- relevel(PAG_metadata$PAG.area, ref = "dmpag")
 levels(PAG_metadata$PAG.area)
 
 # We will also create an extra metadata factor by combining both cell.type and PAG.area, which we will use during the differential expression analysis:
-PAG_metadata$PAGarea_celltype <- factor(paste0(PAG_metadata$PAG.area, "_", PAG_metadata$cell.type),
-                                        levels = c("dmpag_VGAT", "dlpag_VGAT", "lpag_VGAT", "vlpag_VGAT", "dmpag_VGluT2",  "dlpag_VGluT2", "lpag_VGluT2", "vlpag_VGluT2"))
-levels(PAG_metadata$PAGarea_celltype)
-table(PAG_metadata$PAGarea_celltype)
+PAG_metadata$celltype_PAGarea <- factor(paste0(PAG_metadata$cell.type, "_", PAG_metadata$PAG.area),
+                                        levels = c("VGAT_dmpag", "VGAT_dlpag", "VGAT_lpag", "VGAT_vlpag", "VGluT2_dmpag",  "VGluT2_dlpag", "VGluT2_lpag", "VGluT2_vlpag"))
+levels(PAG_metadata$celltype_PAGarea)
+table(PAG_metadata$celltype_PAGarea)
 
-# And one last factor combining cell.type and PAG.PaxinosAPmanual:
+# We can also create one factor combining cell.type and PAG.PaxinosAPmanual:
 PAG_metadata$celltype_PAGAPaxis <- factor(paste0(PAG_metadata$cell.type, PAG_metadata$PAG.PaxinosAPmanual))
 levels(PAG_metadata$celltype_PAGAPaxis)
 table(PAG_metadata$celltype_PAGAPaxis)
+
+# And one last factor combining cell.type, PAG.area, and PAG.PaxinosAPmanual:
+PAG_metadata$celltype_PAGarea_PAGAPaxis <- factor(paste0(PAG_metadata$celltype_PAGarea, PAG_metadata$PAG.PaxinosAPmanual))
+levels(PAG_metadata$celltype_PAGarea_PAGAPaxis)
+table(PAG_metadata$celltype_PAGarea_PAGAPaxis)
 ```
 
 Some useful functions to examine the metadata:

@@ -83,7 +83,7 @@ tail(colnames(colData(PAG_sceset_qc_norm_filt_corr_clust)))
 class(PAG_sceset_qc_norm_filt_corr_clust$mouse.id)
 class(PAG_sceset_qc_norm_filt_corr_clust$cell.type)
 class(PAG_sceset_qc_norm_filt_corr_clust$PAG.area)
-levels(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype)
+levels(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea)
 ```
 
 ## Step 7.0 | Recap of clustering results
@@ -294,7 +294,7 @@ We can run the following chunk of code several times, changing the parameters fo
 groups <- PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k8
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "SNN_clusters_cv2_jaccard_k8_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "SNN_clusters_cv2_jaccard_k8_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -406,7 +406,7 @@ For the `cell.type` comparisons, we only need to iterate through the different s
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de$cell.type
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "celltype_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "celltype_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -537,7 +537,7 @@ For the `cell.type` comparisons, we only need to iterate through the different s
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area=="dmpag"]$cell.type
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "celltype_dmpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "celltype_dmpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -611,7 +611,7 @@ celltype_dmpag_marker_set_summary
 ```
 
 _Subsetting like this gives the same as using restrict_
-groups <- PAG_sceset_qc_norm_filt_corr_clust_de$PAGarea_celltype
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea
 restrict <- c("dmpag_VGAT", "dmpag_VGluT2") # the levels of groups for which to perform pairwise comparisons.
 
 #### Marker genes for cell type in dlPAG neurons
@@ -638,7 +638,7 @@ For the `cell.type` comparisons, we only need to iterate through the different s
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area=="dlpag"]$cell.type
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "celltype_dlpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "celltype_dlpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -735,7 +735,7 @@ For the `cell.type` comparisons, we only need to iterate through the different s
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area=="lpag"]$cell.type
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "celltype_lpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "celltype_lpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -832,7 +832,7 @@ For the `cell.type` comparisons, we only need to iterate through the different s
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area=="vlpag"]$cell.type
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "celltype_vlpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "celltype_vlpag_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -937,7 +937,7 @@ _we only need to iterate through the different statistical tests. The fact that 
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "PAGarea_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "PAGarea_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -1089,7 +1089,7 @@ We first check, __FILL WITH SOMETHING MEANINGFUL__
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGAT"]$PAG.area
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "PAGarea_vgat_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "PAGarea_vgat_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -1194,7 +1194,7 @@ We first check, __FILL WITH SOMETHING MEANINGFUL__
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGluT2"]$PAG.area
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "PAGarea_vglut2_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "PAGarea_vglut2_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -1275,8 +1275,8 @@ PAGarea_VGluT2_marker_set_summary[PAGarea_VGluT2_marker_set_summary$test=="wilco
 PAGarea_VGluT2_marker_set_summary[PAGarea_VGluT2_marker_set_summary$test=="binom",]
 ```
 
-### 7.1.6 | Marker genes for PAGarea_celltype
-We will now perform pairwise comparisons to identify marker genes for `PAGarea_celltype`. For this, we continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
+### 7.1.6 | Marker genes for celltype_PAGarea
+We will now perform pairwise comparisons to identify marker genes for `celltype_PAGarea`. For this, we continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
 ```{r}
 dim(PAG_sceset_qc_norm_filt_corr_clust)
 dim(PAG_sceset_qc_norm_filt_corr_clust_de)
@@ -1299,13 +1299,13 @@ restrict <- NULL # the levels of groups for which to perform pairwise comparison
 exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
 ```
 
-For the `PAGarea_celltype` comparisons, __FILL IN__
+For the `celltype_PAGarea` comparisons, __FILL IN__
 ```{r}
 # Set the groups to be compared (cluster IDs or metadata slot of interest):
-groups <- PAG_sceset_qc_norm_filt_corr_clust_de$PAGarea_celltype
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "PAGarea_celltype_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "PAGarea_celltype_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "celltype_PAGarea_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -1313,7 +1313,7 @@ desired_comparisons <- c("any", "some", "all") # how p-values are to be combined
 desired_directions <- c("up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
 
 # Initialise an empty data.frame to populate with a summary of marker genes:
-PAGarea_celltype_marker_set_summary <- data.frame()
+celltype_PAGarea_marker_set_summary <- data.frame()
 
 # Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
 for (test_choice in desired_tests){
@@ -1343,7 +1343,7 @@ for (test_choice in desired_tests){
                                   exclude = exclude)
       
       # Save results:
-      saveRDS(marker_genes, file = str_c(path_for_figures, "PAGarea_celltype/", results_name, "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      saveRDS(marker_genes, file = str_c(path_for_figures, "celltype_PAGarea/", results_name, "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
       
       # Create a variable with a value for each group name to iterate through:
       range_of_groups <- 1:paste(length(levels(groups)))
@@ -1364,10 +1364,10 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set)
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAGarea_celltype/", "PAG_DE_results_", results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "celltype_PAGarea/", "PAG_DE_results_", results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         
         # Populate the summary data.frame:
-        PAGarea_celltype_marker_set_summary = rbind(PAGarea_celltype_marker_set_summary,
+        celltype_PAGarea_marker_set_summary = rbind(celltype_PAGarea_marker_set_summary,
                                                     data.frame(marker_set = marker_set,
                                                                group = levels(groups)[chosen_group],
                                                                test = test,
@@ -1381,9 +1381,9 @@ for (test_choice in desired_tests){
 }
 
 # Check out the summary: 
-PAGarea_celltype_marker_set_summary[PAGarea_celltype_marker_set_summary$test=="t",]
-PAGarea_celltype_marker_set_summary[PAGarea_celltype_marker_set_summary$test=="wilcox",]
-PAGarea_celltype_marker_set_summary[PAGarea_celltype_marker_set_summary$test=="binom",]
+celltype_PAGarea_marker_set_summary[celltype_PAGarea_marker_set_summary$test=="t",]
+celltype_PAGarea_marker_set_summary[celltype_PAGarea_marker_set_summary$test=="wilcox",]
+celltype_PAGarea_marker_set_summary[celltype_PAGarea_marker_set_summary$test=="binom",]
 ```
 
 ### 7.1.7 | Marker genes for PAG AP axis
@@ -1407,7 +1407,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for Cluster 4 marker genes (t-test | all | up)")
@@ -1779,7 +1779,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for Cluster 4 marker genes (t-test | all | up)")
@@ -1840,7 +1840,7 @@ best_set_up_all_celltype_VGAT <- marker_set_up_all_celltype_1[1:30,]
 best_set_up_all_celltype_VGAT_names <- rownames(best_set_up_all_celltype_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_celltype_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -1848,7 +1848,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for VGAT marker genes (t-test | all | up)")
@@ -1858,7 +1858,7 @@ best_set_up_all_celltype_VGluT2 <- marker_set_up_all_celltype_2[1:30,]
 best_set_up_all_celltype_VGluT2_names <- rownames(best_set_up_all_celltype_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_celltype_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -1866,7 +1866,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for VGluT2 marker genes (t-test | all | up)")
@@ -1935,7 +1935,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dmPAG marker genes (t-test | all | up)")
@@ -1953,7 +1953,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dlPAG marker genes (t-test | all | up)")
@@ -1971,7 +1971,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for lPAG marker genes (t-test | all | up)")
@@ -1989,17 +1989,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for vlPAG marker genes (t-test | all | up)")
 ```
 
-##### Across PAGarea_celltype
+##### Across celltype_PAGarea
 We can also look at subdivision-specific markers:
 ```{r}
-marker_genes_up_all_PAGarea_celltype <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust,
-                                                    groups = PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype, # clustering results for each cell.
+marker_genes_up_all_celltype_PAGarea <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust,
+                                                    groups = PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea, # clustering results for each cell.
                                                     #test.type = c("t", "wilcox", "binom"), # t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
                                                     pval.type = "all", # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
                                                     #min.prop = NULL, # minimum proportion of significant comparisons per gene, Defaults to 0.5 when pval.type="some", otherwise zero.
@@ -2019,38 +2019,38 @@ marker_genes_up_all_PAGarea_celltype <- findMarkers(PAG_sceset_qc_norm_filt_corr
                                                     #std.lfc = FALSE, # whether log-fold changes should be standardized.
                                                     #gene.names = rownames(x), # character vector of gene names with one value for each row of x.
                                                     )
-marker_genes_up_all_PAGarea_celltype
+marker_genes_up_all_celltype_PAGarea
 ```
 
 We can quickly replot the UMAP coloured by PAG subdivision:
 ```{r}
 UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                  colour_by = "PAGarea_celltype", shape_by = "cell.type") + labs(title = "UMAP (cv2) - PAG subdivisions and cell types", 
+                                                  colour_by = "celltype_PAGarea", shape_by = "cell.type") + labs(title = "UMAP (cv2) - PAG subdivisions and cell types", 
                                                                                                                      x = "UMAP 1", y = "UMAP 2")
 plot(UMAP_cv2_15_001_PAGsubdivisions)
 ```
 
 ```{r}
 # Create a variable with a value for each group name to iterate through:
-range_of_groups <- 1:paste(length(levels(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype)))
+range_of_groups <- 1:paste(length(levels(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea)))
 # Create a separate table of results for each group and print the top 10 marker genes:
 for (chosen_group in range_of_groups) {
-  temp_marker_set <- marker_genes_up_all_PAGarea_celltype[[chosen_group]]
-  print(paste0("marker_set_up_all_PAGarea_celltype_", chosen_group))
+  temp_marker_set <- marker_genes_up_all_celltype_PAGarea[[chosen_group]]
+  print(paste0("marker_set_up_all_celltype_PAGarea_", chosen_group))
   print(temp_marker_set[1:10, 1:2])
-  marker_set <- paste0("marker_set_up_all_PAGarea_celltype_", chosen_group)
-  assign(marker_set, marker_genes_up_all_PAGarea_celltype[[chosen_group]])
+  marker_set <- paste0("marker_set_up_all_celltype_PAGarea_", chosen_group)
+  assign(marker_set, marker_genes_up_all_celltype_PAGarea[[chosen_group]])
 }
 ```
 
 ```{r}
 library(pheatmap)
 # dmPAG_VGAT
-best_set_up_all_dmPAG_VGAT<- marker_set_up_all_PAGarea_celltype_1[1:30,]
+best_set_up_all_dmPAG_VGAT<- marker_set_up_all_celltype_PAGarea_1[1:30,]
 best_set_up_all_dmPAG_VGAT_names <- rownames(best_set_up_all_dmPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dmPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2058,17 +2058,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dmPAG_VGAT marker genes (t-test | all | up)")
 
 # dlPAG_VGAT
-best_set_up_all_dlPAG_VGAT<- marker_set_up_all_PAGarea_celltype_2[1:30,]
+best_set_up_all_dlPAG_VGAT<- marker_set_up_all_celltype_PAGarea_2[1:30,]
 best_set_up_all_dlPAG_VGAT_names <- rownames(best_set_up_all_dlPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dlPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2076,17 +2076,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dlPAG_VGAT marker genes (t-test | all | up)")
 
 # lPAG_VGAT
-best_set_up_all_lPAG_VGAT<- marker_set_up_all_PAGarea_celltype_3[1:30,]
+best_set_up_all_lPAG_VGAT<- marker_set_up_all_celltype_PAGarea_3[1:30,]
 best_set_up_all_lPAG_VGAT_names <- rownames(best_set_up_all_lPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_lPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2094,17 +2094,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for lPAG_VGAT marker genes (t-test | all | up)")
 
 # vlPAG_VGAT
-best_set_up_all_vlPAG_VGAT<- marker_set_up_all_PAGarea_celltype_4[1:30,]
+best_set_up_all_vlPAG_VGAT<- marker_set_up_all_celltype_PAGarea_4[1:30,]
 best_set_up_all_vlPAG_VGAT_names <- rownames(best_set_up_all_vlPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_vlPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2112,17 +2112,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for vlPAG_VGAT marker genes (t-test | all | up)")
 
 # dmPAG_VGluT2
-best_set_up_all_dmPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_5[1:30,]
+best_set_up_all_dmPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_5[1:30,]
 best_set_up_all_dmPAG_VGluT2_names <- rownames(best_set_up_all_dmPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dmPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2130,17 +2130,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dmPAG_VGluT2 marker genes (t-test | all | up)")
 
 # dlPAG_VGluT2
-best_set_up_all_dlPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_6[1:30,]
+best_set_up_all_dlPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_6[1:30,]
 best_set_up_all_dlPAG_VGluT2_names <- rownames(best_set_up_all_dlPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dlPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2148,17 +2148,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dlPAG_VGluT2 marker genes (t-test | all | up)")
 
 # lPAG_VGluT2
-best_set_up_all_lPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_7[1:30,]
+best_set_up_all_lPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_7[1:30,]
 best_set_up_all_lPAG_VGluT2_names <- rownames(best_set_up_all_lPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_lPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2166,17 +2166,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for lPAG_VGluT2 marker genes (t-test | all | up)")
 
 # vlPAG_VGluT2
-best_set_up_all_vlPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_8[1:30,]
+best_set_up_all_vlPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_8[1:30,]
 best_set_up_all_vlPAG_VGluT2_names <- rownames(best_set_up_all_vlPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_vlPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2184,7 +2184,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for vlPAG_VGluT2 marker genes (t-test | all | up)")
@@ -2253,7 +2253,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for Cluster 4 marker genes (t-test | all | up)")
@@ -2314,7 +2314,7 @@ best_set_up_all_celltype_VGAT <- marker_set_up_all_celltype_1[1:30,]
 best_set_up_all_celltype_VGAT_names <- rownames(best_set_up_all_celltype_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_celltype_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2322,7 +2322,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for VGAT marker genes (t-test | all | up)")
@@ -2332,7 +2332,7 @@ best_set_up_all_celltype_VGluT2 <- marker_set_up_all_celltype_2[1:30,]
 best_set_up_all_celltype_VGluT2_names <- rownames(best_set_up_all_celltype_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_celltype_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2340,7 +2340,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for VGluT2 marker genes (t-test | all | up)")
@@ -2409,7 +2409,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dmPAG marker genes (t-test | all | up)")
@@ -2427,7 +2427,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dlPAG marker genes (t-test | all | up)")
@@ -2445,7 +2445,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for lPAG marker genes (t-test | all | up)")
@@ -2463,17 +2463,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for vlPAG marker genes (t-test | all | up)")
 ```
 
-##### Across PAGarea_celltype
+##### Across celltype_PAGarea
 We can also look at subdivision-specific markers:
 ```{r}
-marker_genes_up_all_PAGarea_celltype <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust,
-                                                    groups = PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype, # clustering results for each cell.
+marker_genes_up_all_celltype_PAGarea <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust,
+                                                    groups = PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea, # clustering results for each cell.
                                                     #test.type = c("t", "wilcox", "binom"), # t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
                                                     pval.type = "some", # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
                                                     #min.prop = NULL, # minimum proportion of significant comparisons per gene, Defaults to 0.5 when pval.type="some", otherwise zero.
@@ -2493,38 +2493,38 @@ marker_genes_up_all_PAGarea_celltype <- findMarkers(PAG_sceset_qc_norm_filt_corr
                                                     #std.lfc = FALSE, # whether log-fold changes should be standardized.
                                                     #gene.names = rownames(x), # character vector of gene names with one value for each row of x.
                                                     )
-marker_genes_up_all_PAGarea_celltype
+marker_genes_up_all_celltype_PAGarea
 ```
 
 We can quickly replot the UMAP coloured by PAG subdivision:
 ```{r}
 UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                  colour_by = "PAGarea_celltype", shape_by = "cell.type") + labs(title = "UMAP (cv2) - PAG subdivisions and cell types", 
+                                                  colour_by = "celltype_PAGarea", shape_by = "cell.type") + labs(title = "UMAP (cv2) - PAG subdivisions and cell types", 
                                                                                                                      x = "UMAP 1", y = "UMAP 2")
 plot(UMAP_cv2_15_001_PAGsubdivisions)
 ```
 
 ```{r}
 # Create a variable with a value for each group name to iterate through:
-range_of_groups <- 1:paste(length(levels(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype)))
+range_of_groups <- 1:paste(length(levels(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea)))
 # Create a separate table of results for each group and print the top 10 marker genes:
 for (chosen_group in range_of_groups) {
-  temp_marker_set <- marker_genes_up_all_PAGarea_celltype[[chosen_group]]
-  print(paste0("marker_set_up_all_PAGarea_celltype_", chosen_group))
+  temp_marker_set <- marker_genes_up_all_celltype_PAGarea[[chosen_group]]
+  print(paste0("marker_set_up_all_celltype_PAGarea_", chosen_group))
   print(temp_marker_set[1:10, 1:2])
-  marker_set <- paste0("marker_set_up_all_PAGarea_celltype_", chosen_group)
-  assign(marker_set, marker_genes_up_all_PAGarea_celltype[[chosen_group]])
+  marker_set <- paste0("marker_set_up_all_celltype_PAGarea_", chosen_group)
+  assign(marker_set, marker_genes_up_all_celltype_PAGarea[[chosen_group]])
 }
 ```
 
 ```{r}
 library(pheatmap)
 # dmPAG_VGAT
-best_set_up_all_dmPAG_VGAT<- marker_set_up_all_PAGarea_celltype_1[1:30,]
+best_set_up_all_dmPAG_VGAT<- marker_set_up_all_celltype_PAGarea_1[1:30,]
 best_set_up_all_dmPAG_VGAT_names <- rownames(best_set_up_all_dmPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dmPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2532,17 +2532,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dmPAG_VGAT marker genes (t-test | all | up)")
 
 # dlPAG_VGAT
-best_set_up_all_dlPAG_VGAT<- marker_set_up_all_PAGarea_celltype_2[1:30,]
+best_set_up_all_dlPAG_VGAT<- marker_set_up_all_celltype_PAGarea_2[1:30,]
 best_set_up_all_dlPAG_VGAT_names <- rownames(best_set_up_all_dlPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dlPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2550,17 +2550,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dlPAG_VGAT marker genes (t-test | all | up)")
 
 # lPAG_VGAT
-best_set_up_all_lPAG_VGAT<- marker_set_up_all_PAGarea_celltype_3[1:30,]
+best_set_up_all_lPAG_VGAT<- marker_set_up_all_celltype_PAGarea_3[1:30,]
 best_set_up_all_lPAG_VGAT_names <- rownames(best_set_up_all_lPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_lPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2568,17 +2568,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for lPAG_VGAT marker genes (t-test | all | up)")
 
 # vlPAG_VGAT
-best_set_up_all_vlPAG_VGAT<- marker_set_up_all_PAGarea_celltype_4[1:30,]
+best_set_up_all_vlPAG_VGAT<- marker_set_up_all_celltype_PAGarea_4[1:30,]
 best_set_up_all_vlPAG_VGAT_names <- rownames(best_set_up_all_vlPAG_VGAT)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_vlPAG_VGAT_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2586,17 +2586,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for vlPAG_VGAT marker genes (t-test | all | up)")
 
 # dmPAG_VGluT2
-best_set_up_all_dmPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_5[1:30,]
+best_set_up_all_dmPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_5[1:30,]
 best_set_up_all_dmPAG_VGluT2_names <- rownames(best_set_up_all_dmPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dmPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2604,17 +2604,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dmPAG_VGluT2 marker genes (t-test | all | up)")
 
 # dlPAG_VGluT2
-best_set_up_all_dlPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_6[1:30,]
+best_set_up_all_dlPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_6[1:30,]
 best_set_up_all_dlPAG_VGluT2_names <- rownames(best_set_up_all_dlPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_dlPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2622,17 +2622,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for dlPAG_VGluT2 marker genes (t-test | all | up)")
 
 # lPAG_VGluT2
-best_set_up_all_lPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_7[1:30,]
+best_set_up_all_lPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_7[1:30,]
 best_set_up_all_lPAG_VGluT2_names <- rownames(best_set_up_all_lPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_lPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2640,17 +2640,17 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for lPAG_VGluT2 marker genes (t-test | all | up)")
 
 # vlPAG_VGluT2
-best_set_up_all_vlPAG_VGluT2<- marker_set_up_all_PAGarea_celltype_8[1:30,]
+best_set_up_all_vlPAG_VGluT2<- marker_set_up_all_celltype_PAGarea_8[1:30,]
 best_set_up_all_vlPAG_VGluT2_names <- rownames(best_set_up_all_vlPAG_VGluT2)
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             features = best_set_up_all_vlPAG_VGluT2_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype), 
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea), 
             # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
@@ -2658,7 +2658,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
             color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("PAG.area", "cell.type", "PAGarea_celltype"), # how the columns should be annotated with colours.
+            colour_columns_by = c("PAG.area", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = TRUE, cluster_cols = FALSE,
             main = "Heatmap for vlPAG_VGluT2 marker genes (t-test | all | up)")
@@ -2814,7 +2814,7 @@ Find cell type specific markers:
 ```{r}
 # Set the parameters:
 results_name <- "cell_type_" # String to be added to the filename when saving the results.
-# "SNN_jaccard_k8_cluster_", "PAG_subdivisions_", "celltype_", "PAGarea_celltype_", "celltype_PAGAPaxis_"
+# "SNN_jaccard_k8_cluster_", "PAG_subdivisions_", "celltype_", "celltype_PAGarea_", "celltype_PAGAPaxis_"
 
 test <- "binom" # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
 comparisons <- "all" # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
@@ -2956,7 +2956,7 @@ In _DESeq2_, the custom class is called _DESeqDataSet_. It is built on top of th
 We have two types of cells, _VGAT_ and _VGluT2_, across four different anatomical subdivisions.
 ```{r}
 table(PAG_sceset_qc_norm_filt_corr_clust$cell.type, PAG_sceset_qc_norm_filt_corr_clust$PAG.area)
-table(PAG_sceset_qc_norm_filt_corr_clust$PAGarea_celltype)
+table(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea)
 ```
 
 __Note__: it could be helpful for us if the first level of a factor is the reference level (e.g. control, or untreated samples). The reason is that by specifying this, functions further in the pipeline can be used and will give comparisons such as "treatment vs control", without needing to specify additional arguments. However, in our case it doesn't make much sense, as we are not comparing treatments or conditions in a time sequence, and there is no clear reference level for `cell.type` or `mouse.id`. We can, however, relevel the `PAG.area` so that `dmpag` and not `dlpag` is the top level, as we did in _Part I_ of the pipeline. We don't need to run this again.
@@ -2973,7 +2973,7 @@ __Interactions__: Interaction terms can be added to the design formula, in order
 * combine the factors of interest into a single factor with all combinations of the original factors
 * change the design to include just this factor, e.g. `~ group`
 
-Using this design is similar to adding an interaction term, in that it models multiple condition effects which can be easily extracted with results. Suppose we have two factors `genotype` (with values I, II, and III) and `condition` (with values A and B), and we want to extract the condition effect specifically for each genotype. To adapt this to our data, we could think of this as the following: our two factors will be `cell.type` (with values _VGAT_ and _VGlUT2_) and `PAG.area` (with values _dmpag_, _dlpag_, _lpag_, _vlpag_). To obtain the `PAG.area` effect for a specific `cell.type` we could merge both factors into a combined one (`PAGarea_celltype`), and use that in the model instead of the other two with an interaction term. We will do both approaches.
+Using this design is similar to adding an interaction term, in that it models multiple condition effects which can be easily extracted with results. Suppose we have two factors `genotype` (with values I, II, and III) and `condition` (with values A and B), and we want to extract the condition effect specifically for each genotype. To adapt this to our data, we could think of this as the following: our two factors will be `cell.type` (with values _VGAT_ and _VGlUT2_) and `PAG.area` (with values _dmpag_, _dlpag_, _lpag_, _vlpag_). To obtain the `PAG.area` effect for a specific `cell.type` we could merge both factors into a combined one (`celltype_PAGarea`), and use that in the model instead of the other two with an interaction term. We will do both approaches.
 
 __A note on multi-factor designs:__
 Experiments with more than one factor influencing the counts can be analyzed using design formula that include the additional variables. In fact, `DESeq2` can analyze any possible experimental design that can be expressed with fixed effects terms (multiple factors, designs with interactions, designs with continuous variables, splines, and so on are all possible).
@@ -3011,7 +3011,7 @@ PAG_DESeq_set_12a <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm
 #### Design 3 ####
 PAG_DESeq_set_3 <- DESeqDataSetFromMatrix(countData = assay(PAG_sceset_qc_norm_filt_corr_clust, "counts_rounded"), 
                                           colData = colData(PAG_sceset_qc_norm_filt_corr_clust),
-                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + PAGarea_celltype)
+                                          design = ~ mouse.sex + batch.processing + batch.sequencing_round + celltype_PAGarea)
 ```
 
 There are two separate analysis paths we can follow from here: visual exploration of sample relationships (transformation, distance calculation, plotting) and statistical testing for differences attributable to our conditions. Importantly, the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements. However, for visualization and exploratory analysis, transformed counts are typically more suitable. Thus, it is critical to separate the two workflows and use the appropriate input data for each of them.
@@ -3419,7 +3419,7 @@ plotMDS(PAG_DGE_list, top = 500, labels = NULL, col = as.numeric(PAG_DGE_list$sa
 _edgeR_ is designed for bulkRNA and is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, the enables us to include other factors such as `batch` to the model. We have a `DGEList` object containing all the necessary information. We first define a design matrix, using the same formula syntax as we did for _DESeq2_.
 ```{r}
 names(PAG_DGE_list)
-PAG_DGE_design <- model.matrix(~ mouse.sex + batch.processing + batch.sequencing_round + PAGarea_celltype,
+PAG_DGE_design <- model.matrix(~ mouse.sex + batch.processing + batch.sequencing_round + celltype_PAGarea,
                                data = PAG_DGE_list$samples)
 ```
 
@@ -3680,13 +3680,13 @@ For each gene, `MAST` will fit a Hurdle model with a separate intercept for each
 ```{r}
 # Model expression as function of condition & number of detected genes
 start_time <- Sys.time() # Takes around 10 minutes
-PAG_zlm <- zlm(~ mouse.sex + batch.processing + batch.sequencing_round + PAGarea_celltype, 
+PAG_zlm <- zlm(~ mouse.sex + batch.processing + batch.sequencing_round + celltype_PAGarea, 
                sca = PAG_MAST_sca, parallel = TRUE)
 end_time <- Sys.time()
 end_time - start_time
 ```
 
-We could run a likelihood ratio test here, testing for differences when we drop the `PAGarea_celltype` factor. Note that any arbitrary contrast matrix can be tested here, and specified either using a matrix or syntactically (see `Hypothesis` for details).
+We could run a likelihood ratio test here, testing for differences when we drop the `celltype_PAGarea` factor. Note that any arbitrary contrast matrix can be tested here, and specified either using a matrix or syntactically (see `Hypothesis` for details).
 ```{r}
 #only test the condition coefficient.
 PAG_zlm_summary <- summary(PAG_zlm, doLRT='conditionStim') 

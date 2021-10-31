@@ -874,8 +874,8 @@ We compute a cell-cell distance matrix using the top PCs and we apply hierarchic
 ```{r}
 library(dendextend)
 
-# Create palette for PAGarea_celltype:
-colours_PAGarea_celltype <- c(`dmpag_VGAT` = "red", `dlpag_VGAT` = "coral2", `lpag_VGAT` = "salmon", `vlpag_VGAT` = "darksalmon",
+# Create palette for celltype_PAGarea:
+colours_celltype_PAGarea <- c(`dmpag_VGAT` = "red", `dlpag_VGAT` = "coral2", `lpag_VGAT` = "salmon", `vlpag_VGAT` = "darksalmon",
                               `dmpag_VGluT2` = "cornflowerblue", `dlpag_VGluT2` = "cyan3", `lpag_VGluT2` = "aquamarine3", `vlpag_VGluT2` = "cadetblue3")
 
 ## Using PCA from HVG_var_logcounts
@@ -890,11 +890,11 @@ PAG_tree_var <- hclust(PAG_dist_var, method = "ward.D2") # Agglomeration method 
 # Making a prettier dendrogram
 PAG_tree_var$labels <- seq_along(PAG_tree_var$labels)
 PAG_dend_var <- as.dendrogram(PAG_tree_var, hang = 0.1)
-combined_fac_var <- paste0(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
-labels_colors(PAG_dend_var) <- colours_PAGarea_celltype[combined_fac_var][order.dendrogram(PAG_dend_var)]
+combined_fac_var <- paste0(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea)
+labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", ylab = "Height", las = 1)
-legend("topright", col = colours_PAGarea_celltype, pch = 19, cex = 0.75,  bty = "n",
-       legend = levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype))
+legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
+       legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 
 
 ## Using PCA from HVG_cv2_logcounts
@@ -909,29 +909,29 @@ PAG_tree_cv2 <- hclust(PAG_dist_cv2, "ward.D2")
 # Making a prettier dendrogram
 PAG_tree_cv2$labels <- seq_along(PAG_tree_cv2$labels)
 PAG_dend_cv2 <- as.dendrogram(PAG_tree_cv2, hang = 0.1)
-combined_fac_cv2 <- paste0(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
-labels_colors(PAG_dend_cv2) <- colours_PAGarea_celltype[combined_fac_cv2][order.dendrogram(PAG_dend_cv2)]
+combined_fac_cv2 <- paste0(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea)
+labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_cv2][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", ylab = "Height", las = 1)
-legend("topright", col = colours_PAGarea_celltype, pch = 19, cex = 0.75,  bty = "n",
-       legend = levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype))
+legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
+       legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 
 ## Save plots
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_var.pdf"),
     width = 12, height = 9,
     family = "Helvetica", bg = "transparent")
-labels_colors(PAG_dend_var) <- colours_PAGarea_celltype[combined_fac_var][order.dendrogram(PAG_dend_var)]
+labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", ylab = "Height", las = 1)
-legend("topright", col =colours_PAGarea_celltype, pch = 19, cex = 0.75,  bty = "n",
-       legend = levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype))
+legend("topright", col =colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
+       legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cv2.pdf"),
     width = 12, height = 9,
     family = "Helvetica", bg = "transparent")
-labels_colors(PAG_dend_cv2) <- colours_PAGarea_celltype[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
+labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", ylab = "Height", las = 1)
-legend("topright", col = colours_PAGarea_celltype, pch = 19, cex = 0.75,  bty = "n",
-       legend = levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype))
+legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
+       legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 dev.off()
 ```
 
@@ -1231,13 +1231,13 @@ We can examine the distribution of cells in each cluster with respect to known f
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k, Batch = PAG_sceset_qc_norm_filt_corr$batch.processing)
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k, Mouse = PAG_sceset_qc_norm_filt_corr$mouse.id)
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k, Cell_Type = PAG_sceset_qc_norm_filt_corr$cell.type)
-table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k, PAGarea_Celltype = PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
+table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k, celltype_PAGarea = PAG_sceset_qc_norm_filt_corr$celltype_PAGarea)
 
 # HVG_cv2
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k, Batch = PAG_sceset_qc_norm_filt_corr$batch.processing)
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k, Mouse = PAG_sceset_qc_norm_filt_corr$mouse.id)
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k, Cell_Type = PAG_sceset_qc_norm_filt_corr$cell.type)
-table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k, PAGarea_Celltype = PAG_sceset_qc_norm_filt_corr$PAGarea_celltype)
+table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k, celltype_PAGarea = PAG_sceset_qc_norm_filt_corr$celltype_PAGarea)
 ```
 
 We can also use a heatmap to visualize the expression profiles of the top 100 genes with the largest biological components. If there is structure, we should see "blocks" in expression that correspond nicely to known sample features. We possibly could have subclustered further, in which case we would subset and repeat the above process.
@@ -1656,14 +1656,14 @@ plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k 
 ## Hierarchical Clustering
 # Dendrograms (cell type)
 par(mfrow = c(1,2))
-labels_colors(PAG_dend_var) <- colours_PAGarea_celltype[combined_fac_var][order.dendrogram(PAG_dend_var)]
+labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", ylab = "Height", las = 1)
-legend("topright", col = colours_PAGarea_celltype, pch = 19, cex = 0.75,  bty = "n",
-       legend = levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype))
-labels_colors(PAG_dend_cv2) <- colours_PAGarea_celltype[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
+legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
+       legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
+labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", ylab = "Height", las = 1)
-legend("topright", col = colours_PAGarea_celltype, pch = 19, cex = 0.75,  bty = "n",
-       legend = levels(PAG_sceset_qc_norm_filt_corr$PAGarea_celltype))
+legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
+       legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 par(mfrow = c(2,2))
 # Dendrograms (var and cv2)
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
