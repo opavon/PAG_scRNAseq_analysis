@@ -53,6 +53,7 @@ library(scran)
 library(limma)
 library(ggplot2)
 library(xlsx)
+library(extrafont)
 ```
 
 ```{r}
@@ -563,7 +564,7 @@ theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
 
 # HVG from mean-var modelling
 violin_HVG_var <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50],
-                                 exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                 exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
                                  ) + ggtitle("Top 50 HVGs from mean-var modelling") + theme_args
 violin_HVG_var
 saveRDS(violin_HVG_var, file = str_c(path_for_figures, "violin_HVG_var.rds"))
@@ -578,7 +579,7 @@ ggsave(filename = str_c(date, "_violin_HVG_var.pdf"),
 
 # HVG from mean-var modelling blocking by batch
 violin_HVG_var_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:50],
-                                       exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                       exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
                                        ) + ggtitle("Top 50 HVGs from mean-var modelling after blocking") + theme_args
 violin_HVG_var_block
 saveRDS(violin_HVG_var_block, file = str_c(path_for_figures, "violin_HVG_var_block.rds"))
@@ -593,7 +594,7 @@ ggsave(filename = str_c(date, "_violin_HVG_var_block.pdf"),
 
 # HVG from mean-cv2 modelling
 violin_HVG_cv2 <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:50],
-                                       exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                       exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
                                  ) + ggtitle("Top 50 HVGs from mean-cv2 modelling") + theme_args
 violin_HVG_cv2
 saveRDS(violin_HVG_cv2, file = str_c(path_for_figures, "violin_HVG_cv2.rds"))
@@ -608,7 +609,7 @@ ggsave(filename = str_c(date, "_violin_HVG_cv2.pdf"),
 
 # HVG from mean-cv2 modelling blocking by batch
 violin_HVG_cv2_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:50],
-                                       exprs_values = "logcounts", theme_size = 12, point_alpha = 0.8
+                                       exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
                                        ) + ggtitle("Top 50 HVGs from mean-cv2 modelling after blocking") + theme_args
 violin_HVG_cv2_block
 saveRDS(violin_HVG_cv2_block, file = str_c(path_for_figures, "violin_HVG_cv2_block.rds"))

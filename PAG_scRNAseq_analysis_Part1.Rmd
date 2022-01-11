@@ -78,8 +78,17 @@ Once you have this, start an RStudio session and install the following packages 
 # library(BiocManager)
 # 
 # # Install packages from Bioconductor:
-# BiocManager::install(c("AnnotationDbi", "AnnotationHub", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "dendextend", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "ensembldb", "gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "limma", "M3Drop", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "PCAtools", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "schex", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SingleR", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA", "xlsx"))
-# 
+# BiocManager::install(c("AnnotationDbi", "AnnotationHub", "apeglm", "BiocNeighbors", "BiocParallel", "BiocStyle", "BioQC", "beachmat", "clusterExperiment", "DelayedArray", "dendextend", "DESeq2", "destiny", "edgeR", "EGSEA", "EGSEAdata", "ensembldb", ""gage", "GenomicRanges", "GenomeInfoDb", "ggfortify", "GO.db", "globaltest", "GSVA", "httpuv", "hgu133plus2.db", "hgu133a.db", "igraph", "iSEE", "KEGG.db", "limma", "M3Drop", "MAST", "matrixStats", "monocle", "MultiAssayExperiment", "mvoutlier", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "PADOG", "pathview", "PCAtools", "pheatmap", "purrr", "Rhdf5lib", "RSQLite", "Rtsne", "RUVSeq", "safe", "SC3", "scater", "scde", "scfind", "schex", "scmap", "SCnorm", "scran", "Seurat", "SingleCellExperiment", "SingleR", "SummarizedExperiment", "sva", "topGO", "TSCAN", "TxDb.Mmusculus.UCSC.mm10.ensGene", "umap", "uwot", "WGCNA", "xlsx"))
+
+# # Install packages necessary for using different fonts in plots:
+# install.packages("extrafont", "extrafontdb")
+# remotes::install_version("Rttf2pt1", version = "1.3.8") # see https://github.com/wch/extrafont/issues/88
+# # The first time you run the package extrafont, you will need to load the fonts as explained in https://github.com/wch/extrafont
+# # # library(extrafont)
+# # # font_import()
+# # # loadfonts()
+# # The next time you only need to load the package normally with library(extrafont)
+ 
 # # Install packages from github:
 # library(devtools)
 # devtools::install_github("iaconogi/bigSCale2")

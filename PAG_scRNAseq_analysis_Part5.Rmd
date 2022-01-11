@@ -59,6 +59,7 @@ library(limma)
 library(PCAtools)
 library(ggplot2)
 library(patchwork)
+library(extrafont)
 ```
 
 ```{r}
@@ -116,7 +117,7 @@ plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
                                        "detected",
                                        "total"
                                        ),
-                         theme_size = 12
+                         theme_size = 11
                          ) + ggtitle("Counts log-normalized with Scran")
 
 ```

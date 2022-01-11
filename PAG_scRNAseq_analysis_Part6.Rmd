@@ -60,6 +60,7 @@ library(dynamicTreeCut)
 library(dendextend)
 library(cluster)
 library(patchwork)
+library(extrafont)
 ```
 
 ```{r}

@@ -80,6 +80,7 @@ library(scran)
 library(ggplot2)
 library(sgeostat)
 library(mvoutlier)
+library(extrafont)
 ```
 
 ```{r}
@@ -191,7 +192,7 @@ theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
 # Using counts
 violin_QC_VGATbymouse_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                           exprs_values = "counts",
-                                                          colour_by = "batch.processing", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                          colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
 
 violin_QC_VGATbymouse_VGATVGluT2_counts
@@ -208,7 +209,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_counts.pdf"),
 # Using logcounts_raw
 violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                  exprs_values = "logcounts_raw",
-                                                                 colour_by = "batch.processing", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                                 colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
 
 violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw
@@ -225,7 +226,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw.p
 # Using logcounts
 violin_QC_VGATbymouse_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                              exprs_values = "logcounts",
-                                                             colour_by = "batch.processing", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                             colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + theme_args
 
 violin_QC_VGATbymouse_VGATVGluT2_logcounts
@@ -243,7 +244,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts.pdf")
 # Using counts
 violin_QC_VGluT2bymouse_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                             exprs_values = "counts",
-                                                            colour_by = "batch.processing", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                            colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
 
 violin_QC_VGluT2bymouse_VGATVGluT2_counts
@@ -260,7 +261,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_counts.pdf"),
 # Using logcounts_raw
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                    exprs_values = "logcounts_raw",
-                                                                   colour_by = "batch.processing", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                                   colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
 
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw
@@ -277,7 +278,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw
 # Using logcounts
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                exprs_values = "logcounts",
-                                                               colour_by = "batch.processing", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                               colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + theme_args
 
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts
@@ -295,7 +296,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts.pdf
 # Using counts
 violin_QC_celltype_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                        exprs_values = "counts", 
-                                                       colour_by = "mouse.id", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                       colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels after QC (raw counts)") + xlab("Cell type") + ylab("Expression (raw counts)")
 
 violin_QC_celltype_VGATVGluT2_counts
@@ -312,7 +313,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_counts.pdf"),
 # Using logcounts_raw
 violin_QC_celltype_VGATVGluT2_logcounts_raw <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                               exprs_values = "logcounts_raw", 
-                                                              colour_by = "mouse.id", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                              colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels after QC (log2 raw counts)") + xlab("Cell type") + ylab("Expression (log2 raw counts)")
 
 violin_QC_celltype_VGATVGluT2_logcounts_raw
@@ -329,7 +330,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_logcounts_raw.pdf"
 # Using logcounts
 violin_QC_celltype_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                           exprs_values = "logcounts", 
-                                                          colour_by = "mouse.id", ncol = 2, theme_size = 12, point_alpha = 0.8) +
+                                                          colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
   ggtitle("Transporter expression levels after QC (logcounts)") + xlab("Cell type") + ylab("Expression (log-normalized counts)")
 
 violin_QC_celltype_VGATVGluT2_logcounts
