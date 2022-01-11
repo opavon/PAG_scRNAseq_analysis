@@ -157,7 +157,7 @@ ggsave(filename = str_c(date, "_UMAP_cv2_15_001_PAGsubdivisions.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_UMAP_cv2_15_001_JaccardLouvain_k8.pdf"),
@@ -165,7 +165,7 @@ ggsave(filename = str_c(date, "_UMAP_cv2_15_001_JaccardLouvain_k8.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 

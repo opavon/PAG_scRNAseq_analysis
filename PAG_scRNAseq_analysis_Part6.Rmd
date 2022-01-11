@@ -278,7 +278,7 @@ ggsave(filename = str_c(date, "_SNN_clusters_tSNE_var_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_SNN_clusters_tSNE_cv2_composed.pdf"),
@@ -286,7 +286,7 @@ ggsave(filename = str_c(date, "_SNN_clusters_tSNE_cv2_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_SNN_clusters_UMAP_var_composed.pdf"),
@@ -294,7 +294,7 @@ ggsave(filename = str_c(date, "_SNN_clusters_UMAP_var_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_10_005_composed.pdf"),
@@ -302,7 +302,7 @@ ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_10_005_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_15_001_composed.pdf"),
@@ -310,7 +310,7 @@ ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_15_001_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -375,35 +375,35 @@ ggsave(filename = str_c(date, "_SNN_cluster_modularity_var_rank_k8.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_SNN_cluster_modularity_var_rank_k8.pdf"),
        plot = cluster_modularity_var_rank_k8,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_rank_k7.pdf"),
        plot = cluster_modularity_cv2_rank_k7,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_cluster_modularity_cv2_jaccard_k8.pdf"),
        plot = cluster_modularity_cv2_jaccard_k8,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_cluster_modularity_cv2_jaccard_k10.pdf"),
        plot = cluster_modularity_cv2_jaccard_k10,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -531,35 +531,35 @@ ggsave(filename = str_c(date, "_SNN_cluster_stability_var_rank_k8.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_SNN_cluster_stability_var_jaccard_k10.pdf"),
        plot = cluster_stability_var_jaccard_k10,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_rank_k7.pdf"),
        plot = cluster_stability_cv2_rank_k7,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_jaccard_k8.pdf"),
        plot = cluster_stability_cv2_jaccard_k8,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_jaccard_k10.pdf"),
        plot = cluster_stability_cv2_jaccard_k10,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -612,7 +612,7 @@ abline(v = 10, col = "aquamarine3", lty = "dotted", lwd = 2)
 
 pdf(file = str_c(path_for_figures, date, "_kmeans_gap_statistic.pdf"),
     width = 12, height = 18,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 par(mfrow = c(2,1))
 plot(gaps_var$Tab[,"gap"], xlab = "Number of clusters", ylab = "Gap statistic", las = 1,
      main = "Reasonable K for HVG (var)", sub = sprintf("Suggested value of K: %s", best_k_var))
@@ -690,7 +690,7 @@ ggsave(filename = str_c(date, "_kmeans_tSNE_clusters_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_kmeans_UMAP_clusters_composed.pdf"),
@@ -698,7 +698,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_clusters_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 18, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -765,7 +765,7 @@ ggsave(filename = str_c(date, "_kmeans_tSNE_overclusters_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_kmeans_UMAP_overclusters_composed.pdf"),
@@ -773,7 +773,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_overclusters_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 18, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -837,7 +837,7 @@ plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab =
 ## Save plots
 pdf(file = str_c(path_for_figures, date, "_kmeans_dendrogram_var.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 par(mfrow = c(1,2), las = 1)
 plot(cent_tree_cluster_kmeans_var, main = "K-means Dendrogram (var)", xlab = "k = 8", ylab = "Height", sub = "")
 plot(cent_tree_overcluster_kmeans_var, main = "K-means Dendrogram (var)", xlab = "k = 20", ylab = "Height", sub = "")
@@ -845,7 +845,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_kmeans_dendrogram_cv2.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 par(mfrow = c(1,2), las = 1)
 plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k = 10", ylab = "Height", sub = "")
 plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k = 20", ylab = "Height", sub = "")
@@ -856,7 +856,7 @@ ggsave(filename = str_c(date, "_kmeans_clusters_UMAP_cv2_10_005_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -918,7 +918,7 @@ legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = 
 ## Save plots
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_var.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", ylab = "Height", las = 1)
 legend("topright", col =colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
@@ -927,7 +927,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cv2.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", ylab = "Height", las = 1)
 legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
@@ -973,7 +973,7 @@ legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
 ## Save plots
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutreeDynamic_var.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
@@ -982,7 +982,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutreeDynamic_cv2.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- cluster_colours_20[PAG_clust_cv2_cutreeDynamic][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
@@ -1039,7 +1039,7 @@ legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
 ## Save plots
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_k_var.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_k][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using k=8", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
@@ -1049,7 +1049,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_h_var.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_h][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using h=290", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
@@ -1059,7 +1059,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_k_cv2.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_k][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using k=10", ylab = "Height", las = 1)
 abline(h = 235, col = "red")
@@ -1069,7 +1069,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_h_cv2.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_h][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using h=235", ylab = "Height", las = 1)
 abline(h = 235, col = "red")
@@ -1181,7 +1181,7 @@ ggsave(filename = str_c(date, "_hierarchical_UMAP_var_clusters_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_hierarchical_UMAP_cv2_10_005_clusters_composed.pdf"),
@@ -1189,7 +1189,7 @@ ggsave(filename = str_c(date, "_hierarchical_UMAP_cv2_10_005_clusters_composed.p
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_hierarchical_UMAP_cv2_15_001_clusters_composed.pdf"),
@@ -1197,12 +1197,12 @@ ggsave(filename = str_c(date, "_hierarchical_UMAP_cv2_15_001_clusters_composed.p
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrograms.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 par(mfrow = c(2,2))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
@@ -1296,7 +1296,7 @@ plot(sil_cv2_cutree, main = paste("Silhouette from Hierarchical (Cutree):", leng
 # Save plots:
 pdf(file = str_c(path_for_figures, date, "_hierarchical_silhouettes.pdf"),
     width = 16, height = 12,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 par(mfrow = c(2,2))
 plot(sil_var_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut):", length(unique(PAG_clust_var_cutreeDynamic)), "clusters"),
      border = sil_cols_var_cutreeDynamic, col = sil_cols_var_cutreeDynamic, do.col.sort = FALSE)
@@ -1525,7 +1525,7 @@ ggsave(filename = str_c(date, "_sc3_UMAP_clusters_k7_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_sc3_UMAP_clusters_k9_composed.pdf"),
@@ -1533,7 +1533,7 @@ ggsave(filename = str_c(date, "_sc3_UMAP_clusters_k9_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -1563,7 +1563,7 @@ for(chosen_k in best_k) {
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
          width = 12, height = 9, units = "in", dpi = 300,
-         family = "Helvetica", bg = "transparent"
+         family = "Arial", bg = "transparent"
          )
   
   # Silhouette plot
@@ -1574,7 +1574,7 @@ for(chosen_k in best_k) {
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
          width = 12, height = 9, units = "in", dpi = 300,
-         family = "Helvetica", bg = "transparent"
+         family = "Arial", bg = "transparent"
          )
   
   # Stability index
@@ -1585,7 +1585,7 @@ for(chosen_k in best_k) {
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
          width = 12, height = 9, units = "in", dpi = 300,
-         family = "Helvetica", bg = "transparent"
+         family = "Arial", bg = "transparent"
          )
 
   # Expression panel
@@ -1597,7 +1597,7 @@ for(chosen_k in best_k) {
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
          width = 12, height = 18, units = "in", dpi = 300,
-         family = "Helvetica", bg = "transparent"
+         family = "Arial", bg = "transparent"
          )
 
   # DE Genes
@@ -1610,7 +1610,7 @@ for(chosen_k in best_k) {
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
          width = 12, height = 18, units = "in", dpi = 300,
-         family = "Helvetica", bg = "transparent"
+         family = "Arial", bg = "transparent"
          )
 
   # Marker Genes
@@ -1623,7 +1623,7 @@ for(chosen_k in best_k) {
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
          width = 12, height = 18, units = "in", dpi = 300,
-         family = "Helvetica", bg = "transparent"
+         family = "Arial", bg = "transparent"
          )
 }
 ```

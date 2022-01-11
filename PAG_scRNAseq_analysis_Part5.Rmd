@@ -209,7 +209,7 @@ ggsave(filename = str_c(date, "_PCA_batch_correction_var_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -268,7 +268,7 @@ ggsave(filename = str_c(date, "_PCA_batch_correction_cv2_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -334,7 +334,7 @@ ggsave(filename = str_c(date, "_explanatory_variables_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -425,7 +425,7 @@ tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_var_logcounts.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
@@ -444,7 +444,7 @@ tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_var_corrected.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
@@ -463,7 +463,7 @@ tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_cv2_logcounts.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
@@ -482,7 +482,7 @@ tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_cv2_corrected.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
@@ -593,7 +593,7 @@ tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_var_logcounts.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
@@ -612,7 +612,7 @@ tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_var_corrected.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
@@ -631,7 +631,7 @@ tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_cv2_logcounts.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
@@ -650,7 +650,7 @@ tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_cv2_corrected.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
@@ -751,7 +751,7 @@ ggsave(filename = str_c(date, "_PCA_HVG_corrected_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 18, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -838,7 +838,7 @@ ggsave(filename = str_c(date, "_tSNE_HVG_var_corrected_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 18, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -905,7 +905,7 @@ ggsave(filename = str_c(date, "_tSNE_HVG_cv2_corrected_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 18, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -1033,28 +1033,28 @@ ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_5_composed.pdf"
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_10_composed.pdf"),
        plot = UMAP_HVG_var_corrected_neighbors_10,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_15_composed.pdf"),
        plot = UMAP_HVG_var_corrected_neighbors_15,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_20_composed.pdf"),
        plot = UMAP_HVG_var_corrected_neighbors_20,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -1173,28 +1173,28 @@ ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_5_composed.pdf"
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_10_composed.pdf"),
        plot = UMAP_HVG_cv2_corrected_neighbors_10,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_15_composed.pdf"),
        plot = UMAP_HVG_cv2_corrected_neighbors_15,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_20_composed.pdf"),
        plot = UMAP_HVG_cv2_corrected_neighbors_20,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -1273,7 +1273,7 @@ ggsave(filename = str_c(date, "_chosen_tSNE_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_chosen_UMAP_composed.pdf"),
@@ -1281,7 +1281,7 @@ ggsave(filename = str_c(date, "_chosen_UMAP_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 18, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -1345,28 +1345,28 @@ ggsave(filename = str_c(date, "_chosen_UMAP_cv2_corrected_10_0.05.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_chosen_UMAP_cv2_facet_PAGarea.pdf"),
        plot = chosen_UMAP_cv2_facet_PAGarea,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_chosen_UMAP_facet_celltype_composed.pdf"),
        plot = chosen_UMAP_facet_celltype_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 18, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_chosen_UMAP_cv2_facet_VGATVGluT2.pdf"),
        plot = chosen_UMAP_cv2_facet_VGATVGluT2,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 18, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 

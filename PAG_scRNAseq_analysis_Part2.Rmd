@@ -317,7 +317,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 24, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 # Using logcounts_raw
 violin_fluorophores_EYFPbymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
@@ -333,7 +333,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_logcounts_raw.pd
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 24, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ## Violin plots from tdTomato animals by Mouse ID
@@ -351,7 +351,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_counts.pdf")
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 24, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 # Using logcounts_raw
 violin_fluorophores_tdTomatobymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
@@ -367,7 +367,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_logcounts_ra
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 24, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ## Violin plots by fluorophore expressed
@@ -385,7 +385,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_celltype_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts_raw
@@ -402,7 +402,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_celltype_logcounts_raw.pdf")
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Plot Expression values of EYFP and tdTomato in several ways:
@@ -498,7 +498,7 @@ legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_fluorophore_expression_counts.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
      assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "counts"))),
@@ -536,7 +536,7 @@ legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_fluorophore_expression_logcounts_raw.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
      assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "logcounts_raw"))),
@@ -592,7 +592,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts_raw
@@ -609,7 +609,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_logcounts_raw.pdf"
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ## Violin plots from VGluT2 cells by Mouse ID
@@ -627,7 +627,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts_raw
@@ -644,7 +644,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_logcounts_raw.pd
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ## Violin plots by Cell Type
@@ -662,7 +662,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_celltype_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts_raw
@@ -679,7 +679,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_celltype_logcounts_raw.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Plot Expression values of VGAT and VGluT2 in several ways:
@@ -769,7 +769,7 @@ legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_VGATVGluT2_expression_counts.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "counts"),
      assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "counts"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "counts"))),
@@ -808,7 +808,7 @@ legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_VGATVGluT2_expression_logcounts_raw.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
      assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "logcounts_raw"))),
@@ -1150,7 +1150,7 @@ ggsave(filename = str_c(date, "_venn_cell_QC_filtering_summary.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -1238,7 +1238,7 @@ ggsave(filename = str_c(date, "_violin_cell_QC_summary_composed.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 10, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 
@@ -1286,7 +1286,7 @@ ggsave(filename = str_c(date, "_violin_cell_QC_summary_specific.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 
@@ -1334,7 +1334,7 @@ ggsave(filename = str_c(date, "_violin_cell_QC_summary_all.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 

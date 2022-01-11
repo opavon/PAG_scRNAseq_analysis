@@ -121,7 +121,7 @@ legend("bottomright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rg
 # Save as a pdf:
 pdf(file = str_c(path_for_figures, date, "_SizeFactors_LibrarySize.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 
 plot(PAG_sceset_qc$total_million,
      sizeFactors(PAG_sceset_qc),
@@ -202,7 +202,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts_raw
@@ -219,7 +219,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw.p
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts
@@ -236,7 +236,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts.pdf")
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ## Violin plots from VGluT2 cells by Mouse ID
@@ -254,7 +254,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts_raw
@@ -271,7 +271,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts
@@ -288,7 +288,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts.pdf
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ## Violin plots by Cell Type
@@ -306,7 +306,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts_raw
@@ -323,7 +323,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_logcounts_raw.pdf"
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # Using logcounts
@@ -340,7 +340,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_logcounts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 6, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -366,7 +366,7 @@ legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGAT"], "counts"),
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "counts"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "counts"))),
@@ -405,7 +405,7 @@ legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGAT"], "logcounts_raw"),
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "logcounts_raw"))),
@@ -444,7 +444,7 @@ legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGAT"], "logcounts"),
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "logcounts"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "logcounts"))),
@@ -489,7 +489,7 @@ ggsave(filename = str_c(date, "_RLE_minimal_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 16, height = 12, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # With log-transformation
@@ -505,7 +505,7 @@ ggsave(filename = str_c(date, "_RLE_minimal_logcounts_raw.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 16, height = 12, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # After scran normalization
@@ -521,7 +521,7 @@ ggsave(filename = str_c(date, "_RLE_minimal_logcounts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 16, height = 12, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 plot(p1)
@@ -542,7 +542,7 @@ ggsave(filename = str_c(date, "_RLE_full_counts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 16, height = 12, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # With log-transformation
@@ -558,7 +558,7 @@ ggsave(filename = str_c(date, "_RLE_full_logcounts_raw.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 16, height = 12, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # After scran normalization
@@ -574,7 +574,7 @@ ggsave(filename = str_c(date, "_RLE_full_logcounts.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 16, height = 12, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # If you use `style = "full"`, the resulting plots will be too heavy to plot at once (around 140MB each), so plot each graph one at a time if that option is selected instead of "minimal":

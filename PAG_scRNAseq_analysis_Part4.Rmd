@@ -495,7 +495,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_var.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_cv2.pdf"),
@@ -505,7 +505,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_cv2.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_varcv2.pdf"),
@@ -515,7 +515,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varcv2.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_varcv2_block.pdf"),
@@ -525,7 +525,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varcv2_block.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_varblock_cv2.pdf"),
@@ -535,7 +535,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varblock_cv2.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ggsave(filename = str_c(date, "_venn_HVGs_all.pdf"),
@@ -545,7 +545,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_all.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 12, height = 9, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -573,7 +573,7 @@ ggsave(filename = str_c(date, "_violin_HVG_var.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # HVG from mean-var modelling blocking by batch
@@ -588,7 +588,7 @@ ggsave(filename = str_c(date, "_violin_HVG_var_block.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # HVG from mean-cv2 modelling
@@ -603,7 +603,7 @@ ggsave(filename = str_c(date, "_violin_HVG_cv2.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 # HVG from mean-cv2 modelling blocking by batch
@@ -618,7 +618,7 @@ ggsave(filename = str_c(date, "_violin_HVG_cv2_block.pdf"),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 20, height = 5, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 ```
 
@@ -770,7 +770,7 @@ length(hvg_index_cv2_block)
 ## Save all the plots:
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
      pch = 16, cex = 0.6, las = 1,
@@ -783,7 +783,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var_block.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
      pch = 16, cex = 0.6, las = 1,
@@ -796,7 +796,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
@@ -811,7 +811,7 @@ dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2_block.pdf"),
     width = 12, height = 9,
-    family = "Helvetica", bg = "transparent")
+    family = "Arial", bg = "transparent")
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
      log = "xy",
