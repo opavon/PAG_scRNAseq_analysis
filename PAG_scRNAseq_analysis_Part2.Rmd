@@ -301,14 +301,26 @@ hist(PAG_sceset$subsets_Cre_sum,
 
 ```{r}
 # We can set any visualization parameters common to all plots at the beginning like this:
-theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+theme_args_violin_bymouse <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                                   axis.title = element_text(size = 11, face = "plain"),
+                                   axis.text = element_text(size = 10, face = "plain"),
+                                   axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+                                   legend.text = element_text(size = 9, face = "plain"), 
+                                   strip.text = element_text(size = 10, face = "plain"))
+
+theme_args_violin_byfluorophore <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                                         axis.title = element_text(size = 11, face = "plain"),
+                                         axis.text = element_text(size = 10, face = "plain"), 
+                                         legend.text = element_text(size = 9, face = "plain"), 
+                                         strip.text = element_text(size = 10, face = "plain"))
 
 ## Violin plots from EYFP animals by Mouse ID
 # Using counts
 violin_fluorophores_EYFPbymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
                                                          exprs_values = "counts",
                                                          colour_by = "batch.processing", ncol = 3, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transgene expression levels in cells from Cre::EYFP animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
+  ggtitle("Transgene expression in cells from Cre::EYFP animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_fluorophores_EYFPbymouse_counts
 saveRDS(violin_fluorophores_EYFPbymouse_counts, file = str_c(path_for_figures, "violin_fluorophores_EYFPbymouse_counts.rds"))
@@ -317,7 +329,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_counts.pdf"),
        plot = violin_fluorophores_EYFPbymouse_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 24, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -325,7 +337,8 @@ ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_counts.pdf"),
 violin_fluorophores_EYFPbymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
                                                                 exprs_values = "logcounts_raw",
                                                                 colour_by = "batch.processing", ncol = 3, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transgene expression levels in cells from Cre::EYFP animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+  ggtitle("Transgene expression in cells from Cre::EYFP animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_fluorophores_EYFPbymouse_logcounts_raw
 saveRDS(violin_fluorophores_EYFPbymouse_logcounts_raw, file = str_c(path_for_figures, "violin_fluorophores_EYFPbymouse_logcounts_raw.rds"))
@@ -334,7 +347,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_logcounts_raw.pd
        plot = violin_fluorophores_EYFPbymouse_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 24, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Helvetica", bg = "transparent"
        )
 
@@ -343,7 +356,8 @@ ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_logcounts_raw.pd
 violin_fluorophores_tdTomatobymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
                                                              exprs_values = "counts",
                                                              colour_by = "batch.processing", ncol = 3, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transgene expression levels in cells from Cre::tdTomato animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
+  ggtitle("Transgene expression in cells from Cre::tdTomato animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_fluorophores_tdTomatobymouse_counts
 saveRDS(violin_fluorophores_tdTomatobymouse_counts, file = str_c(path_for_figures, "violin_fluorophores_tdTomatobymouse_counts.rds"))
@@ -352,14 +366,15 @@ ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_counts.pdf")
        plot = violin_fluorophores_tdTomatobymouse_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 24, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Helvetica", bg = "transparent"
        )
 # Using logcounts_raw
 violin_fluorophores_tdTomatobymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
                                                                     exprs_values = "logcounts_raw",
                                                                     colour_by = "batch.processing", ncol = 3, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transgene expression levels in cells from Cre::tdTomato animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+  ggtitle("Transgene expression in cells from Cre::tdTomato animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_fluorophores_tdTomatobymouse_logcounts_raw
 saveRDS(violin_fluorophores_tdTomatobymouse_logcounts_raw, file = str_c(path_for_figures, "violin_fluorophores_tdTomatobymouse_logcounts_raw.rds"))
@@ -368,7 +383,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_logcounts_ra
        plot = violin_fluorophores_tdTomatobymouse_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 24, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -377,7 +392,8 @@ ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_logcounts_ra
 violin_fluorophores_celltype_counts <- plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophore",
                                                       exprs_values = "counts", 
                                                       colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Fluorophore expression levels (raw counts)") + xlab("Fluorophore") + ylab("Expression (raw counts)")
+  ggtitle("Fluorophore expression levels (raw counts)") + xlab("Fluorophore") + ylab("Expression (raw counts)") +
+  theme_args_violin_byfluorophore
 
 violin_fluorophores_celltype_counts
 saveRDS(violin_fluorophores_celltype_counts, file = str_c(path_for_figures, "violin_fluorophores_celltype_counts.rds"))
@@ -386,7 +402,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_celltype_counts.pdf"),
        plot = violin_fluorophores_celltype_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -394,7 +410,8 @@ ggsave(filename = str_c(date, "_violin_fluorophores_celltype_counts.pdf"),
 violin_fluorophores_celltype_logcounts_raw <- plotExpression(PAG_sceset, c("EYFP", "tdTomato"), x = "cell.fluorophore",
                                                              exprs_values = "logcounts_raw", 
                                                              colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Fluorophore expression levels (log2 raw counts)") + xlab("Fluorophore") + ylab("Expression (log2 raw counts)")
+  ggtitle("Fluorophore expression levels (log2 raw counts)") + xlab("Fluorophore") + ylab("Expression (log2 raw counts)") +
+  theme_args_violin_byfluorophore
 
 violin_fluorophores_celltype_logcounts_raw
 saveRDS(violin_fluorophores_celltype_logcounts_raw, file = str_c(path_for_figures, "violin_fluorophores_celltype_logcounts_raw.rds"))
@@ -403,7 +420,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_celltype_logcounts_raw.pdf")
        plot = violin_fluorophores_celltype_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -448,8 +465,8 @@ plot(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$subsets_EYFP_sum,
      PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$subsets_tdTomato_sum,
      xlim = c(0, max(PAG_sceset$subsets_EYFP_sum)),
      ylim = c(0, max(PAG_sceset$subsets_tdTomato_sum)),
-     main = "Scatter plot of fluorophore expression (raw counts)",
-     xlab = "EYFP (counts)", ylab = "tdTomato (counts)",
+     main = "Scatter plot of fluorophore expression (raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "EYFP (counts)", ylab = "tdTomato (counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 # Add the equivalent plot for tdTomato cells
@@ -457,7 +474,7 @@ points(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$subsets_EYFP_sum,
        PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$subsets_tdTomato_sum,
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("Cre::EYFP cells", "Cre::tdTomato cells"))
 
 # In EYFP cells, plot the EYFP log2 total counts against the tdTomato counts
@@ -465,8 +482,8 @@ plot(PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$log2_total_counts_EYFP,
      PAG_sceset[, PAG_sceset$cell.fluorophore == "EYFP"]$log2_total_counts_tdTomato,
      xlim = c(0, max(PAG_sceset$log2_total_counts_EYFP)),
      ylim = c(0, max(PAG_sceset$log2_total_counts_tdTomato)),
-     main = "Scatter plot of fluorophore expression (log2 raw counts)",
-     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)",
+     main = "Scatter plot of fluorophore expression (log2 raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 # Add the equivalent plot for tdTomato cells
@@ -474,7 +491,7 @@ points(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$log2_total_counts
        PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"]$log2_total_counts_tdTomato,
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("Cre::EYFP cells", "Cre::tdTomato cells"))
 
 
@@ -485,8 +502,8 @@ plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore 
      assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "counts"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "counts"))),
-     main = "Scatter plot of fluorophore expression (raw counts)",
-     xlab = "EYFP (raw counts)", ylab = "tdTomato (raw counts)",
+     main = "Scatter plot of fluorophore expression (raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "EYFP (raw counts)", ylab = "tdTomato (raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 # Add the equivalent plot for tdTomato cells
@@ -494,26 +511,26 @@ points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophor
        assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "counts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("Cre::EYFP cells", "Cre::tdTomato cells"))
 
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_fluorophore_expression_counts.pdf"),
-    width = 12, height = 9,
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
      assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "counts"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "counts"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "counts"))),
-     main = "Scatter plot of fluorophore expression (raw counts)",
-     xlab = "EYFP (raw counts)", ylab = "tdTomato (raw counts)",
+     main = "Scatter plot of fluorophore expression (raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "EYFP (raw counts)", ylab = "tdTomato (raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "tdTomato"], "counts"),
        assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "counts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("Cre::EYFP cells", "Cre::tdTomato cells"))
 dev.off()
 
@@ -523,8 +540,8 @@ plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore 
      assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "logcounts_raw"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "logcounts_raw"))),
-     main = "Scatter plot of fluorophore expression (log2 raw counts)",
-     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)",
+     main = "Scatter plot of fluorophore expression (log2 raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 # Add the equivalent plot for tdTomato cells
@@ -532,26 +549,26 @@ points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophor
        assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "logcounts_raw"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("Cre::EYFP cells", "Cre::tdTomato cells"))
 
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_fluorophore_expression_logcounts_raw.pdf"),
-    width = 12, height = 9,
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
      assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "EYFP"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", ], "logcounts_raw"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", ], "logcounts_raw"))),
-     main = "Scatter plot of fluorophore expression (log2 raw counts)",
-     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)",
+     main = "Scatter plot of fluorophore expression (log2 raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "EYFP (log2 raw counts)", ylab = "tdTomato (log2 raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 200, 0, 255/2, maxColorValue = 255))
 points(assay(PAG_sceset[rownames(PAG_sceset)=="EYFP", PAG_sceset$cell.fluorophore == "tdTomato"], "logcounts_raw"),
        assay(PAG_sceset[rownames(PAG_sceset)=="tdTomato", PAG_sceset$cell.fluorophore == "tdTomato"], "logcounts_raw"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(255, 0, 0, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 200, 0, 255/2, maxColorValue = 255), rgb(255, 0, 0, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("Cre::EYFP cells", "Cre::tdTomato cells"))
 dev.off()
 ```
@@ -577,14 +594,26 @@ hist(PAG_sceset$subsets_VGluT2_sum,
 
 ```{r}
 # We can set any visualization parameters common to all plots at the beginning like this:
-theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+theme_args_violin_bymouse <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                                   axis.title = element_text(size = 11, face = "plain"),
+                                   axis.text = element_text(size = 10, face = "plain"),
+                                   axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+                                   legend.text = element_text(size = 9, face = "plain"), 
+                                   strip.text = element_text(size = 10, face = "plain"))
+
+theme_args_violin_bytype <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                                  axis.title = element_text(size = 11, face = "plain"),
+                                  axis.text = element_text(size = 10, face = "plain"), 
+                                  legend.text = element_text(size = 9, face = "plain"), 
+                                  strip.text = element_text(size = 10, face = "plain"))
 
 ## Violin plots from VGAT cells by Mouse ID
 # Using counts
 violin_VGATVGluT2_VGATbymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                        exprs_values = "counts",
                                                        colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGAT::Cre animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_VGATVGluT2_VGATbymouse_counts
 saveRDS(violin_VGATVGluT2_VGATbymouse_counts, file = str_c(path_for_figures, "violin_VGATVGluT2_VGATbymouse_counts.rds"))
@@ -593,7 +622,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_counts.pdf"),
        plot = violin_VGATVGluT2_VGATbymouse_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -601,7 +630,8 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_counts.pdf"),
 violin_VGATVGluT2_VGATbymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                               exprs_values = "logcounts_raw",
                                                               colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGAT::Cre animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_VGATVGluT2_VGATbymouse_logcounts_raw
 saveRDS(violin_VGATVGluT2_VGATbymouse_logcounts_raw, file = str_c(path_for_figures, "violin_VGATVGluT2_VGATbymouse_logcounts_raw.rds"))
@@ -610,7 +640,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_logcounts_raw.pdf"
        plot = violin_VGATVGluT2_VGATbymouse_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -619,7 +649,8 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGATbymouse_logcounts_raw.pdf"
 violin_VGATVGluT2_VGluT2bymouse_counts <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                          exprs_values = "counts",
                                                          colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_VGATVGluT2_VGluT2bymouse_counts
 saveRDS(violin_VGATVGluT2_VGluT2bymouse_counts, file = str_c(path_for_figures, "violin_VGATVGluT2_VGluT2bymouse_counts.rds"))
@@ -628,7 +659,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_counts.pdf"),
        plot = violin_VGATVGluT2_VGluT2bymouse_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -636,7 +667,8 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_counts.pdf"),
 violin_VGATVGluT2_VGluT2bymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                 exprs_values = "logcounts_raw",
                                                                 colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_VGATVGluT2_VGluT2bymouse_logcounts_raw
 saveRDS(violin_VGATVGluT2_VGluT2bymouse_logcounts_raw, file = str_c(path_for_figures, "violin_VGATVGluT2_VGluT2bymouse_logcounts_raw.rds"))
@@ -645,7 +677,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_logcounts_raw.pd
        plot = violin_VGATVGluT2_VGluT2bymouse_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -654,7 +686,8 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_VGluT2bymouse_logcounts_raw.pd
 violin_VGATVGluT2_celltype_counts <- plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                     exprs_values = "counts", 
                                                     colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels (raw counts)") + xlab("Cell type") + ylab("Expression (raw counts)")
+  ggtitle("Transporter expression levels (raw counts)") + xlab("Cell type") + ylab("Expression (raw counts)") +
+  theme_args_violin_bytype
 
 violin_VGATVGluT2_celltype_counts
 saveRDS(violin_VGATVGluT2_celltype_counts, file = str_c(path_for_figures, "violin_VGATVGluT2_celltype_counts.rds"))
@@ -663,7 +696,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_celltype_counts.pdf"),
        plot = violin_VGATVGluT2_celltype_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -671,7 +704,8 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_celltype_counts.pdf"),
 violin_VGATVGluT2_celltype_logcounts_raw <- plotExpression(PAG_sceset, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                            exprs_values = "logcounts_raw", 
                                                            colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels (log2 raw counts)") + xlab("Cell type") + ylab("Expression (log2 raw counts)")
+  ggtitle("Transporter expression levels (log2 raw counts)") + xlab("Cell type") + ylab("Expression (log2 raw counts)") +
+  theme_args_violin_bytype
 
 violin_VGATVGluT2_celltype_logcounts_raw
 saveRDS(violin_VGATVGluT2_celltype_logcounts_raw, file = str_c(path_for_figures, "violin_VGATVGluT2_celltype_logcounts_raw.rds"))
@@ -680,7 +714,7 @@ ggsave(filename = str_c(date, "_violin_VGATVGluT2_celltype_logcounts_raw.pdf"),
        plot = violin_VGATVGluT2_celltype_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -756,8 +790,8 @@ plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "
      assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "counts"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "counts"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "counts"))),
-     main = "Scatter plot of VGAT-VGluT2 expression (raw counts)",
-     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression (raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 # Add the equivalent plot for VGluT2 cells
@@ -765,26 +799,26 @@ points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type ==
        assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "counts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_VGATVGluT2_expression_counts.pdf"),
-    width = 12, height = 9,
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "counts"),
      assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "counts"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "counts"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "counts"))),
-     main = "Scatter plot of VGAT-VGluT2 expression (raw counts)",
-     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression (raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGluT2"], "counts"),
        assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "counts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 dev.off()
 
@@ -795,8 +829,8 @@ plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "
      assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "logcounts_raw"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "logcounts_raw"))),
-     main = "Scatter plot of VGAT-VGluT2 expression (log2 raw counts)",
-     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression (log2 raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 # Add the equivalent plot for VGluT2 cells
@@ -804,26 +838,26 @@ points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type ==
        assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "logcounts_raw"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 
 # Save the plot
 pdf(file = str_c(path_for_figures, date, "_scatter_VGATVGluT2_expression_logcounts_raw.pdf"),
-    width = 12, height = 9,
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
      assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGAT"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", ], "logcounts_raw"))),
      ylim = c(0, max(assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", ], "logcounts_raw"))),
-     main = "Scatter plot of VGAT-VGluT2 expression (log2 raw counts)",
-     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression (log2 raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1, # plot axis labels always horizontal (defaults to 0: always parallel to the axis)
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 points(assay(PAG_sceset[rownames(PAG_sceset)=="Slc32a1", PAG_sceset$cell.type == "VGluT2"], "logcounts_raw"),
        assay(PAG_sceset[rownames(PAG_sceset)=="Slc17a6", PAG_sceset$cell.type == "VGluT2"], "logcounts_raw"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 dev.off()
 ```
@@ -1147,11 +1181,12 @@ vennDiagram(venn.diag,
 ggsave(filename = str_c(date, "_venn_cell_QC_filtering_summary.pdf"),
        plot = vennDiagram(venn.diag,
                           names = c("Manual", "MADs", "PCA based"),
-                          main = "Venn Diagram of excluded cells",
+                          main = "Venn Diagram of excluded cells", 
+                          cex = c(1.1, 1, 0.9),
                           circle.col = c("#E69F00", "#56B4E9", "#009E73")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -1170,67 +1205,75 @@ Once we have applied our cell filter, we can quickly inspect the distribution of
 ```{r}
 library(patchwork)
 
+theme_args_violin_summary <- theme(plot.title = element_text(size = 11, face = "bold"), 
+                                  axis.title = element_text(size = 11, face = "plain"),
+                                  axis.text = element_text(size = 10, face = "plain"), 
+                                  legend.text = element_text(size = 9, face = "plain"), 
+                                  strip.text = element_text(size = 10, face = "plain"))
+
 # Make individual violin plots, highlighting excluded cells (default colours c("#729ECE", "#FF9E4A"):
 violin_cell_QC_library <- plotColData(PAG_sceset, x = "cell.type", y = "total_million",
                                       colour_by = "filter_by_total_counts_manual", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("Library size") + xlab(NULL) + ylab("Total reads (millions)") +
+  ggtitle("Library size") + xlab(NULL) + ylab("# of reads (millions)") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_library, file = str_c(path_for_figures, "violin_cell_QC_library.rds"))
 
 violin_cell_QC_detected <- plotColData(PAG_sceset, x = "cell.type", y = "detected",
                                        colour_by = "filter_by_expr_features_manual", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("Detected genes") + xlab(NULL) + ylab("Number of genes detected") + 
+  ggtitle("Detected genes") + xlab(NULL) + ylab("# of genes detected") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_detected, file = str_c(path_for_figures, "violin_cell_QC_detected.rds"))
 
 violin_cell_QC_mitochondrial <- plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent",
                                             colour_by = "filter_by_pct_Mitochondrial_manual", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("Percent reads in Mitochondrial genes") + xlab(NULL) + ylab("% reads in Mitochondrial genes") +
+  ggtitle("Mitochondrial genes") + xlab(NULL) + ylab("% of total reads") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_mitochondrial, file = str_c(path_for_figures, "violin_cell_QC_mitochondrial.rds"))
 
 violin_cell_QC_ribosomal <- plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent",
                                         colour_by = "filter_by_pct_Ribosomal_manual", theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Percent reads in Ribosomal genes") + xlab(NULL) + ylab("% reads in Ribosomal genes") +
+  ggtitle("Ribosomal genes") + xlab(NULL) + ylab("% of total reads") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_ribosomal, file = str_c(path_for_figures, "violin_cell_QC_ribosomal.rds"))
 
 violin_cell_QC_ERCC <- plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent",
                                    colour_by = "filter_by_pct_ERCC_manual", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
+  ggtitle("ERCC spike-ins") + xlab(NULL) + ylab("% of total reads") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_ERCC, file = str_c(path_for_figures, "violin_cell_QC_ERCC.rds"))
 
 violin_cell_QC_TSO <- plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
                                   colour_by = "filter_by_pct_TSO_concatamer_manual", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
+  ggtitle("TSO concatamers") + xlab(NULL) + ylab("% of total reads") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_TSO, file = str_c(path_for_figures, "violin_cell_QC_TSO.rds"))
 
 violin_cell_QC_top100genes <- plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
                                           colour_by = "filter_by_percent_top_100_manual", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("Percent reads in top 100 genes") + xlab(NULL) + ylab("% reads in top 100 genes") + 
+  ggtitle("Top 100 genes") + xlab(NULL) + ylab("% of total reads") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_top100genes, file = str_c(path_for_figures, "violin_cell_QC_top100genes.rds"))
 
 violin_cell_QC_EYFP <- plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_EYFP",
                                    colour_by = "filter_by_wrong_fluorophore_tdTomato_cells", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("EYFP expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
+  ggtitle("EYFP expression") + xlab(NULL) + ylab("log2 raw counts") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_EYFP, file = str_c(path_for_figures, "violin_cell_QC_EYFP.rds"))
 
 violin_cell_QC_tdTomato <- plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_tdTomato",
                                        colour_by = "filter_by_wrong_fluorophore_EYFP_cells", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("tdTomato expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
+  ggtitle("tdTomato expression") + xlab(NULL) + ylab("log2 raw counts") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_tdTomato, file = str_c(path_for_figures, "violin_cell_QC_tdTomato.rds"))
 
 # Compose figure using `patchwork`
-cell_QC_summary_composed <- (violin_cell_QC_library + violin_cell_QC_detected + violin_cell_QC_mitochondrial) / 
-  (violin_cell_QC_ribosomal + violin_cell_QC_ERCC + violin_cell_QC_TSO) /
-  (violin_cell_QC_top100genes + violin_cell_QC_EYFP + violin_cell_QC_tdTomato) +
-  plot_annotation(title = "Summary of cell QC filters", theme = theme(plot.title = element_text(size = 18)), tag_levels = "A") + 
-  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 14))
+cell_QC_summary_composed <- (violin_cell_QC_library + violin_cell_QC_detected) / 
+  (violin_cell_QC_mitochondrial + violin_cell_QC_ribosomal) /
+  (violin_cell_QC_ERCC + violin_cell_QC_TSO) /
+  (violin_cell_QC_EYFP + violin_cell_QC_tdTomato) / 
+  (violin_cell_QC_top100genes + plot_spacer()) +
+  plot_annotation(title = "Summary of cell QC filters", theme = theme(plot.title = element_text(size = 12, face = "bold")), tag_levels = "A") + 
+  plot_layout(guides = "collect") + theme(plot.tag = element_text(size = 11))
 
 cell_QC_summary_composed
 
@@ -1239,105 +1282,106 @@ ggsave(filename = str_c(date, "_violin_cell_QC_summary_composed.pdf"),
        plot = cell_QC_summary_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 10, units = "in", dpi = 300,
+       width = 7, height = 10, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
 
-## Plot a summary of the cell QC filters, highlighting only one filter at time (default colours c("#729ECE", "#FF9E4A"):
-cell_QC_summary <- gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total_million", 
-                                                       colour_by = "filter_by_total_counts_manual", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("Library size") + xlab(NULL) + ylab("Total reads (millions)") +
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.type", y = "detected",
-                                                       colour_by = "filter_by_expr_features_manual", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("Detected genes") + xlab(NULL) + ylab("Number of genes detected") + 
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent",
-                                                       colour_by = "filter_by_pct_Mitochondrial_manual", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("Percent reads in Mitochondrial genes") + xlab(NULL) + ylab("% reads in Mitochondrial genes") + 
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent",
-                                                       colour_by = "filter_by_pct_Ribosomal_manual", theme_size = 11, point_alpha = 0.8) +
-                                             ggtitle("Percent reads in Ribosomal genes") + xlab(NULL) + ylab("% reads in Ribosomal genes") +
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent",
-                                                       colour_by = "filter_by_pct_ERCC_manual", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
-                                                       colour_by = "filter_by_pct_TSO_concatamer_manual", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
-                                                       colour_by = "filter_by_percent_top_100_manual", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("Percent reads in top 100 genes") + xlab(NULL) + ylab("% reads in top 100 genes") + 
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_EYFP",
-                                                       colour_by = "filter_by_wrong_fluorophore_tdTomato_cells", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("EYFP expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-                                           plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_tdTomato",
-                                                       colour_by = "filter_by_wrong_fluorophore_EYFP_cells", theme_size = 11, point_alpha = 0.8) + 
-                                             ggtitle("tdTomato expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
-                                             scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
-                                           )
-# Save the plot
-ggsave(filename = str_c(date, "_violin_cell_QC_summary_specific.pdf"),
-       plot = cell_QC_summary,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-
-
-## Plot a summary of the cell QC filters, highlighting all excluded cells in each subplot (default colours c("#729ECE", "#FF9E4A"):
-cell_QC_summary_all <- gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total_million",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("Library size") + xlab(NULL) + ylab("Total reads (millions)") +
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.type", y = "detected",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("Detected genes") + xlab(NULL) + ylab("Number of genes detected") + 
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("Percent reads in Mitochondrial genes") + xlab(NULL) + ylab("% reads in Mitochondrial genes") + 
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("Percent reads in Ribosomal genes") + xlab(NULL) + ylab("% reads in Ribosomal genes") +
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("Percent reads in top 100 genes") + xlab(NULL) + ylab("% reads in top 100 genes") + 
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_EYFP",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("EYFP expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-                                               plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_tdTomato",
-                                                           colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-                                                 ggtitle("tdTomato expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
-                                                 scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill"))
-                                               )
-# Save the plot
-ggsave(filename = str_c(date, "_violin_cell_QC_summary_all.pdf"),
-       plot = cell_QC_summary_all,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
+# Below are a couple of alternative (old) ways of generating this plot:
+# ## Plot a summary of the cell QC filters, highlighting only one filter at time (default colours c("#729ECE", "#FF9E4A"):
+# cell_QC_summary <- gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total_million", 
+#                                                        colour_by = "filter_by_total_counts_manual", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("Library size") + xlab(NULL) + ylab("Total reads (millions)") +
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.type", y = "detected",
+#                                                        colour_by = "filter_by_expr_features_manual", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("Detected genes") + xlab(NULL) + ylab("Number of genes detected") + 
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent",
+#                                                        colour_by = "filter_by_pct_Mitochondrial_manual", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("Percent reads in Mitochondrial genes") + xlab(NULL) + ylab("% reads in Mitochondrial genes") + 
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent",
+#                                                        colour_by = "filter_by_pct_Ribosomal_manual", theme_size = 11, point_alpha = 0.8) +
+#                                              ggtitle("Percent reads in Ribosomal genes") + xlab(NULL) + ylab("% reads in Ribosomal genes") +
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent",
+#                                                        colour_by = "filter_by_pct_ERCC_manual", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
+#                                                        colour_by = "filter_by_pct_TSO_concatamer_manual", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
+#                                                        colour_by = "filter_by_percent_top_100_manual", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("Percent reads in top 100 genes") + xlab(NULL) + ylab("% reads in top 100 genes") + 
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_EYFP",
+#                                                        colour_by = "filter_by_wrong_fluorophore_tdTomato_cells", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("EYFP expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
+#                                            plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_tdTomato",
+#                                                        colour_by = "filter_by_wrong_fluorophore_EYFP_cells", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("tdTomato expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
+#                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
+#                                            )
+# # Save the plot
+# ggsave(filename = str_c(date, "_violin_cell_QC_summary_specific.pdf"),
+#        plot = cell_QC_summary,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 7, height = 10, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+# 
+# 
+# ## Plot a summary of the cell QC filters, highlighting all excluded cells in each subplot (default colours c("#729ECE", "#FF9E4A"):
+# cell_QC_summary_all <- gridExtra::grid.arrange(plotColData(PAG_sceset, x = "cell.type", y = "total_million",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("Library size") + xlab(NULL) + ylab("Total reads (millions)") +
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.type", y = "detected",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("Detected genes") + xlab(NULL) + ylab("Number of genes detected") + 
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_Mitochondrial_percent",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("Percent reads in Mitochondrial genes") + xlab(NULL) + ylab("% reads in Mitochondrial genes") + 
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_Ribosomal_percent",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("Percent reads in Ribosomal genes") + xlab(NULL) + ylab("% reads in Ribosomal genes") +
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERCC_percent",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("Percent reads in top 100 genes") + xlab(NULL) + ylab("% reads in top 100 genes") + 
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_EYFP",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("EYFP expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
+#                                                plotColData(PAG_sceset, x = "cell.fluorophore", y = "log2_total_counts_tdTomato",
+#                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
+#                                                  ggtitle("tdTomato expression") + xlab(NULL) + ylab("Expression (log2 raw counts)") + 
+#                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill"))
+#                                                )
+# # Save the plot
+# ggsave(filename = str_c(date, "_violin_cell_QC_summary_all.pdf"),
+#        plot = cell_QC_summary_all,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 7, height = 10, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
 ```
 
 ## Step 2.5 | Gene QC
