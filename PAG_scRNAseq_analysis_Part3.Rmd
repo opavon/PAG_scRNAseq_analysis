@@ -111,28 +111,26 @@ Plotting the size factors against the library sizes should show a positive corre
 plot(PAG_sceset_qc$total_million,
      sizeFactors(PAG_sceset_qc),
      log = "xy", 
-     main = "Correlation between size factors and library size",
-     xlab = "Library size (million reads)", 
-     ylab = "Size factor",
+     main = "Correlation between size factors and library size", font.main = 2, cex.main = 1.1,
+     xlab = "Library size (million reads)", ylab = "Size factor", font.lab = 1, cex.lab = 1,
      col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255))[factor(PAG_sceset_qc$cell.type)], 
      type = "p", pch = 19, cex = 1.25, las = 1)
-legend("bottomright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("bottomright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells")) #legend = levels(factor(PAG_sceset_qc$cell.type))
 
 # Save as a pdf:
 pdf(file = str_c(path_for_figures, date, "_SizeFactors_LibrarySize.pdf"),
-    width = 12, height = 9,
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 
 plot(PAG_sceset_qc$total_million,
      sizeFactors(PAG_sceset_qc),
      log = "xy",
-     main = "Correlation between size factors and library size",
-     xlab = "Library size (million reads)", 
-     ylab = "Size factor", 
+     main = "Correlation between size factors and library size", font.main = 2, cex.main = 1.1,
+     xlab = "Library size (million reads)", ylab = "Size factor", font.lab = 1, cex.lab = 1,
      col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255))[factor(PAG_sceset_qc$cell.type)], 
      type = "p", pch = 19, cex = 1.25, las = 1)
-legend("bottomright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("bottomright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/3, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells")) #legend = levels(factor(PAG_sceset_qc$cell.type))
 
 dev.off()
@@ -186,14 +184,27 @@ However, according to this post by [Nikolay Oskolkov](https://towardsdatascience
 During QC we noticed that a large proportion of cells seemed to express both the transporter (VGAT or VGluT2) used to create the transgenic line and the other one. Now that we have normalized and log-transformed the counts and filtered low quality cells, we can re-do the plots showing the expression levels of VGAT and VGluT2 and store them:
 ```{r}
 # We can set any visualization parameters common to all plots at the beginning like this:
-theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+theme_args_violin_bymouse <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                                   axis.title = element_text(size = 11, face = "plain"),
+                                   axis.text = element_text(size = 10, face = "plain"),
+                                   axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+                                   legend.text = element_text(size = 9, face = "plain"), 
+                                   strip.text = element_text(size = 10, face = "plain"))
+
+theme_args_violin_bytype <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                                  axis.title = element_text(size = 11, face = "plain"),
+                                  axis.text = element_text(size = 10, face = "plain"), 
+                                  legend.text = element_text(size = 9, face = "plain"), 
+                                  strip.text = element_text(size = 10, face = "plain"))
+
 
 ## Violin plots from VGAT cells by Mouse ID
 # Using counts
 violin_QC_VGATbymouse_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                           exprs_values = "counts",
                                                           colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_QC_VGATbymouse_VGATVGluT2_counts
 saveRDS(violin_QC_VGATbymouse_VGATVGluT2_counts, file = str_c(path_for_figures, "violin_QC_VGATbymouse_VGATVGluT2_counts.rds"))
@@ -202,7 +213,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_counts.pdf"),
        plot = violin_QC_VGATbymouse_VGATVGluT2_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -210,7 +221,8 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_counts.pdf"),
 violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                  exprs_values = "logcounts_raw",
                                                                  colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") +
+  theme_args_violin_bymouse
 
 violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw
 saveRDS(violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw, file = str_c(path_for_figures, "violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw.rds"))
@@ -219,7 +231,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw.p
        plot = violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -227,7 +239,8 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw.p
 violin_QC_VGATbymouse_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                              exprs_values = "logcounts",
                                                              colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + 
+  theme_args_violin_bymouse
 
 violin_QC_VGATbymouse_VGATVGluT2_logcounts
 saveRDS(violin_QC_VGATbymouse_VGATVGluT2_logcounts, file = str_c(path_for_figures, "violin_QC_VGATbymouse_VGATVGluT2_logcounts.rds"))
@@ -236,7 +249,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts.pdf")
        plot = violin_QC_VGATbymouse_VGATVGluT2_logcounts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -245,7 +258,8 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts.pdf")
 violin_QC_VGluT2bymouse_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                             exprs_values = "counts",
                                                             colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (raw counts)") + xlab("Mouse ID") + ylab("Expression (raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_QC_VGluT2bymouse_VGATVGluT2_counts
 saveRDS(violin_QC_VGluT2bymouse_VGATVGluT2_counts, file = str_c(path_for_figures, "violin_QC_VGluT2bymouse_VGATVGluT2_counts.rds"))
@@ -254,7 +268,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_counts.pdf"),
        plot = violin_QC_VGluT2bymouse_VGATVGluT2_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -262,7 +276,8 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_counts.pdf"),
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                    exprs_values = "logcounts_raw",
                                                                    colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (log2 raw counts)") + xlab("Mouse ID") + ylab("Expression (log2 raw counts)") + 
+  theme_args_violin_bymouse
 
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw
 saveRDS(violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw, file = str_c(path_for_figures, "violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw.rds"))
@@ -271,7 +286,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw
        plot = violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -279,7 +294,8 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                exprs_values = "logcounts",
                                                                colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + theme_args
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + 
+  theme_args_violin_bymouse
 
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts
 saveRDS(violin_QC_VGluT2bymouse_VGATVGluT2_logcounts, file = str_c(path_for_figures, "violin_QC_VGluT2bymouse_VGATVGluT2_logcounts.rds"))
@@ -288,7 +304,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts.pdf
        plot = violin_QC_VGluT2bymouse_VGATVGluT2_logcounts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -297,7 +313,8 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts.pdf
 violin_QC_celltype_VGATVGluT2_counts <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                        exprs_values = "counts", 
                                                        colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels after QC (raw counts)") + xlab("Cell type") + ylab("Expression (raw counts)")
+  ggtitle("Transporter expression levels after QC (raw counts)") + xlab("Cell type") + ylab("Expression (raw counts)") + 
+  theme_args_violin_bytype
 
 violin_QC_celltype_VGATVGluT2_counts
 saveRDS(violin_QC_celltype_VGATVGluT2_counts, file = str_c(path_for_figures, "violin_QC_celltype_VGATVGluT2_counts.rds"))
@@ -306,7 +323,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_counts.pdf"),
        plot = violin_QC_celltype_VGATVGluT2_counts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -314,7 +331,8 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_counts.pdf"),
 violin_QC_celltype_VGATVGluT2_logcounts_raw <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                               exprs_values = "logcounts_raw", 
                                                               colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels after QC (log2 raw counts)") + xlab("Cell type") + ylab("Expression (log2 raw counts)")
+  ggtitle("Transporter expression levels after QC (log2 raw counts)") + xlab("Cell type") + ylab("Expression (log2 raw counts)") + 
+  theme_args_violin_bytype
 
 violin_QC_celltype_VGATVGluT2_logcounts_raw
 saveRDS(violin_QC_celltype_VGATVGluT2_logcounts_raw, file = str_c(path_for_figures, "violin_QC_celltype_VGATVGluT2_logcounts_raw.rds"))
@@ -323,7 +341,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_logcounts_raw.pdf"
        plot = violin_QC_celltype_VGATVGluT2_logcounts_raw,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -331,7 +349,8 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_logcounts_raw.pdf"
 violin_QC_celltype_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                           exprs_values = "logcounts", 
                                                           colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels after QC (logcounts)") + xlab("Cell type") + ylab("Expression (log-normalized counts)")
+  ggtitle("Transporter expression levels after QC (logcounts)") + xlab("Cell type") + ylab("Expression (log-normalized counts)") + 
+  theme_args_violin_bytype
 
 violin_QC_celltype_VGATVGluT2_logcounts
 saveRDS(violin_QC_celltype_VGATVGluT2_logcounts, file = str_c(path_for_figures, "violin_QC_celltype_VGATVGluT2_logcounts.rds"))
@@ -340,7 +359,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_logcounts.pdf"),
        plot = violin_QC_celltype_VGATVGluT2_logcounts,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 6, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -352,8 +371,8 @@ plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "counts"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "counts"))),
      ylim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", ], "counts"))),
-     main = "Scatter plot of VGAT-VGluT2 expression after QC (raw counts)",
-     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression after QC (raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 # Add the equivalent plot for VGluT2 cells
@@ -361,26 +380,26 @@ points(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cel
        assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGluT2"], "counts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 
 # Save the plot
-pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression.pdf"),
-    width = 12, height = 9,
+pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression_counts.pdf"),
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGAT"], "counts"),
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "counts"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "counts"))),
      ylim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", ], "counts"))),
-     main = "Scatter plot of VGAT-VGluT2 expression after QC (raw counts)",
-     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression after QC (raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (raw counts)", ylab = "VGluT2 (raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 points(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGluT2"], "counts"),
        assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGluT2"], "counts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 dev.off()
 
@@ -391,8 +410,8 @@ plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "logcounts_raw"))),
      ylim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", ], "logcounts_raw"))),
-     main = "Scatter plot of VGAT-VGluT2 expression after QC (log2 raw counts)",
-     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression after QC (log2 raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 # Add the equivalent plot for VGluT2 cells
@@ -400,26 +419,26 @@ points(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cel
        assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGluT2"], "logcounts_raw"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 
 # Save the plot
-pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression.pdf"),
-    width = 12, height = 9,
+pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression_logcounts_raw.pdf"),
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGAT"], "logcounts_raw"),
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "logcounts_raw"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "logcounts_raw"))),
      ylim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", ], "logcounts_raw"))),
-     main = "Scatter plot of VGAT-VGluT2 expression after QC (log2 raw counts)",
-     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)",
+     main = "Scatter plot of VGAT-VGluT2 expression after QC (log2 raw counts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (log2 raw counts)", ylab = "VGluT2 (log2 raw counts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 points(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGluT2"], "logcounts_raw"),
        assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGluT2"], "logcounts_raw"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 dev.off()
 
@@ -430,8 +449,8 @@ plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "logcounts"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "logcounts"))),
      ylim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", ], "logcounts"))),
-     main = "Scatter plot of VGAT-VGluT2 expression after QC (logcounts)",
-     xlab = "VGAT (logcounts)", ylab = "VGluT2 (logcounts)",
+     main = "Scatter plot of VGAT-VGluT2 expression after QC (logcounts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (logcounts)", ylab = "VGluT2 (logcounts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 # Add the equivalent plot for VGluT2 cells
@@ -439,26 +458,26 @@ points(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cel
        assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGluT2"], "logcounts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 
 # Save the plot
-pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression.pdf"),
-    width = 12, height = 9,
+pdf(file = str_c(path_for_figures, date, "_scatter_QC_VGAT-VGluT2_expression_logcounts.pdf"),
+    width = 5, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGAT"], "logcounts"),
      assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGAT"], "logcounts"),
      xlim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", ], "logcounts"))),
      ylim = c(0, max(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", ], "logcounts"))),
-     main = "Scatter plot of VGAT-VGluT2 expression after QC (logcounts)",
-     xlab = "VGAT (logcounts)", ylab = "VGluT2 (logcounts)",
+     main = "Scatter plot of VGAT-VGluT2 expression after QC (logcounts)", font.main = 2, cex.main = 1.1,
+     xlab = "VGAT (logcounts)", ylab = "VGluT2 (logcounts)", font.lab = 1, cex.lab = 1,
      type = "p", pch = 19, cex = 1.25, las = 1,
      col = rgb(255, 119, 124, 255/2, maxColorValue = 255))
 points(assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc32a1", PAG_sceset_qc$cell.type == "VGluT2"], "logcounts"),
        assay(PAG_sceset_qc[rownames(PAG_sceset_qc)=="Slc17a6", PAG_sceset_qc$cell.type == "VGluT2"], "logcounts"),
        type = "p", pch = 19, cex = 1, las = 1,
        col = rgb(0, 156, 181, 255/6, maxColorValue = 255))
-legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.75,  bty = "n",
+legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255)), pch = 19, cex = 0.8,  bty = "n",
        legend = c("VGAT::Cre cells", "VGluT2::Cre cells"))
 dev.off()
 ```
@@ -476,6 +495,12 @@ library(ggplot2)
 library(sgeostat)
 library(mvoutlier)
 
+# We can set any visualization parameters common to all plots at the beginning like this:
+theme_args_RLE <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                        axis.title = element_text(size = 11, face = "plain"),
+                        axis.text = element_text(size = 10, face = "plain"),
+                        legend.text = element_text(size = 9, face = "plain"))
+
 ## Using the "minimal" option
 # Without log-transformation
 p1 <- plotRLE(PAG_sceset_qc,
@@ -483,13 +508,14 @@ p1 <- plotRLE(PAG_sceset_qc,
               exprs_logged = TRUE,
               style = "minimal", # "full" or "minimal"
               legend = TRUE,
-              colour_by = "batch.processing" # "mouse.id" or "batch.processing"
-              ) + ggtitle("Cell-wise relative log expression (raw counts)")
+              colour_by = "batch.processing", # "mouse.id" or "batch.processing"
+              theme_size = 11
+              ) + ggtitle("Cell-wise relative log expression (raw counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_minimal_counts.pdf"),
        plot = p1,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 16, height = 12, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -500,12 +526,12 @@ p2 <- plotRLE(PAG_sceset_qc,
               style = "minimal", # "full" or "minimal"
               legend = TRUE,
               colour_by = "batch.processing" # "mouse.id" or "batch.processing"
-              ) + ggtitle("Cell-wise relative log expression (log2 raw counts)")
+              ) + ggtitle("Cell-wise relative log expression (log2 raw counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_minimal_logcounts_raw.pdf"),
        plot = p2,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 16, height = 12, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -516,12 +542,12 @@ p3 <- plotRLE(PAG_sceset_qc,
               style = "minimal", # "full" or "minimal"
               legend = TRUE,
               colour_by = "batch.processing" # "mouse.id" or "batch.processing"
-              ) + ggtitle("Cell-wise relative log expression (log-normalized counts)")
+              ) + ggtitle("Cell-wise relative log expression (log-normalized counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_minimal_logcounts.pdf"),
        plot = p3,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 16, height = 12, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -537,12 +563,12 @@ p1_full <- plotRLE(PAG_sceset_qc,
                    style = "full", # "full" or "minimal"
                    legend = TRUE,
                    colour_by = "mouse.id" # "mouse.id" or "batch.processing"
-                   ) + ggtitle("Cell-wise relative log expression (raw counts)")
+                   ) + ggtitle("Cell-wise relative log expression (raw counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_full_counts.pdf"),
        plot = p1_full,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 16, height = 12, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -553,12 +579,12 @@ p2_full <- plotRLE(PAG_sceset_qc,
                    style = "full", # "full" or "minimal"
                    legend = TRUE,
                    colour_by = "mouse.id" # "mouse.id" or "batch.processing"
-                   ) + ggtitle("Cell-wise relative log expression (log2 raw counts)")
+                   ) + ggtitle("Cell-wise relative log expression (log2 raw counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_full_logcounts_raw.pdf"),
        plot = p2_full,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 16, height = 12, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -569,12 +595,12 @@ p3_full <- plotRLE(PAG_sceset_qc,
                    style = "full", # "full" or "minimal"
                    legend = TRUE,
                    colour_by = "mouse.id" # "mouse.id" or "batch.processing"
-                   ) + ggtitle("Cell-wise relative log expression (log-normalized counts)")
+                   ) + ggtitle("Cell-wise relative log expression (log-normalized counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_full_logcounts.pdf"),
        plot = p3_full,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 16, height = 12, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
