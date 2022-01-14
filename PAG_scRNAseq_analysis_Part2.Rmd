@@ -348,7 +348,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_EYFPbymouse_logcounts_raw.pd
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 
 ## Violin plots from tdTomato animals by Mouse ID
@@ -367,7 +367,7 @@ ggsave(filename = str_c(date, "_violin_fluorophores_tdTomatobymouse_counts.pdf")
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
-       family = "Helvetica", bg = "transparent"
+       family = "Arial", bg = "transparent"
        )
 # Using logcounts_raw
 violin_fluorophores_tdTomatobymouse_logcounts_raw <- plotExpression(PAG_sceset[, PAG_sceset$cell.fluorophore == "tdTomato"], c("EYFP", "tdTomato", "Cre"), x = "mouse.id",
