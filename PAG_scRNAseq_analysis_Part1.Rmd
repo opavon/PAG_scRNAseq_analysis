@@ -271,7 +271,7 @@ class(PAG_metadata$slice.depth)
 class(PAG_metadata$sample.id)
 
 # Useful factor functions:
-table(PAG_metadata$PAG.arearegistration)
+table(PAG_metadata$PAG.area)
 levels(PAG_metadata$mouse.id)
 ```
 
