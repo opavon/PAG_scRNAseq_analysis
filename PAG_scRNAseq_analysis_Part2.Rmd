@@ -1528,8 +1528,27 @@ PAG_sceset_qc <- PAG_sceset[rowData(PAG_sceset)$use, colData(PAG_sceset)$use]
 dim(PAG_sceset)
 dim(PAG_sceset_qc)
 PAG_sceset_qc # QCed dataset
-table(PAG_sceset_qc$PAG.area)
+```
 
+Before saving and finishing this section, we can take a look at the total number of cells before and after QC:
+```{r}
+# Relation of aspirated and sequenced cells before QC:
+table(PAG_sceset$cell.type)
+table(PAG_sceset$PAG.area)
+table(PAG_sceset$celltype_PAGarea)
+table(PAG_sceset$PAG.hemisphere)
+table(PAG_sceset$mouse.sex)
+
+# Relation of aspirated and sequenced cells after QC:
+table(PAG_sceset_qc$cell.type)
+table(PAG_sceset_qc$PAG.area)
+table(PAG_sceset_qc$celltype_PAGarea)
+table(PAG_sceset_qc$PAG.hemisphere)
+table(PAG_sceset_qc$mouse.sex)
+```
+
+
+```{r}
 # Save the filtered and QCed dataset:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc.rds")
 print("Part 2 - Done!")
