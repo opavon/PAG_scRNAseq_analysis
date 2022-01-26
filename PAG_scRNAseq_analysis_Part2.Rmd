@@ -172,8 +172,29 @@ hist(PAG_sceset$detected,
      breaks = 50,
      xlab = "Number of detected genes", main = "Detected genes", col = "grey80", ylab = "Number of cells")
 abline(v = c(5000, 13000), col = "blue", lwd = 2, lty = 2) # exclude less than 5,000 features and more than 13K (potential doublets?)
+```
 
+Let's quickly take a look at the percentages of cells above a certain cutoff for total number of reads, uniquely mapping reads, and % uniquely mapping reads.
+```{r}
+# Total sequenced reads
+summary(PAG_sceset$reads.total/1e6)
+
+# Uniquely mapping reads
+summary(PAG_sceset$reads.unique/1e6)
+
+# % uniquely mapping reads
+summary(PAG_sceset$reads.percentunique)
+sum(PAG_sceset$reads.percentunique > 70) # number of cells with at least 70% of reads uniquely mapping to the genome
+sum(PAG_sceset$reads.percentunique > 70) / ncol(PAG_sceset) * 100 # % of cells with at least 70% of reads uniquely mapping to the genome
+
+# Total reads mapped to annotated genes
 summary(PAG_sceset$total/1e6)
+
+# % of total reads mapped to annotated genes
+summary((PAG_sceset$total/1e6) / (PAG_sceset$reads.total/1e6) * 100)
+summary((PAG_sceset$total/1e6) / (PAG_sceset$reads.unique/1e6) * 100)
+
+# Total genes detected
 summary(PAG_sceset$detected)
 ```
 
