@@ -435,12 +435,12 @@ head(hvg_out_no_spikes_batch)
 ```
 
 __One important thing...__
-Before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
+Before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatemers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different HVGs:
 ```{r}
 # Identify the genes we want to drop:
 is_X_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X") # Find which genes correspond to chromosome X 
 is_Y_qc_norm <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y") # Find which genes correspond to chromosome Y
-is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find genes assigned to feature controls (ERCC, Mitochondrial, Ribosomal, tdTomato, EYFP, Cre, TSO concatamers, VGAT, VGluT2)
+is_feature_control_qc_norm <- (rowData(PAG_sceset_qc_norm)$is_feature_control) # Find genes assigned to feature controls (ERCC, Mitochondrial, Ribosomal, tdTomato, EYFP, Cre, TSO concatemers, VGAT, VGluT2)
 
 filter_genes_qc_norm <- !(is_X_qc_norm | is_Y_qc_norm | is_feature_control_qc_norm)
 
@@ -690,7 +690,7 @@ scRNA-seq is capable of measuring the expression of many thousands of genes in e
 For scRNA-seq data, we will be focusing on unsupervised methods of feature selection which don’t require any a priori information, such as cell-type labels or biological group, since they may not be available, or may be unreliable, for many experiments. In contrast, differential expression can be considered a form of supervised feature selection since it uses the known biological label of each sample to identify features (i.e. genes) which are expressed at different levels across groups.
 
 __One important thing...__
-Before identifying HVGs, consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as some of them are not be biologically informative and others have been used to select the cells.
+Before identifying HVGs, consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatemers) and genes used for transgenic labeling of cells (VGAT and VGluT2) from the dataset before proceeding to downstream analysis, as some of them are not be biologically informative and others have been used to select the cells.
 ```{r}
 dim(PAG_sceset_qc_norm)
 

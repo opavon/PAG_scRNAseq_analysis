@@ -741,7 +741,7 @@ violin_cell_QC_detected <- violin_cell_QC_detected + ggtitle("Detected genes") +
 violin_cell_QC_mitochondrial <- violin_cell_QC_mitochondrial + ggtitle("Mitochondrial genes") + ylab("% reads")
 violin_cell_QC_ribosomal <- violin_cell_QC_ribosomal + ggtitle("Ribosomal genes") + ylab("% reads")
 violin_cell_QC_ERCC <- violin_cell_QC_ERCC + ggtitle("ERCC spike-ins") + ylab("% reads")
-violin_cell_QC_TSO <- violin_cell_QC_TSO + ggtitle("TSO concatamers") + ylab("% reads")
+violin_cell_QC_TSO <- violin_cell_QC_TSO + ggtitle("TSO concatemers") + ylab("% reads")
 violin_cell_QC_top100genes <- violin_cell_QC_top100genes + ggtitle("Top 100 expressed genes") + ylab("% reads")
 violin_cell_QC_EYFP <- violin_cell_QC_EYFP + ggtitle("EYFP expression") + ylab("log2 raw counts")
 violin_cell_QC_tdTomato <- violin_cell_QC_tdTomato + ggtitle("tdTomato expression") + ylab("log2 raw counts")

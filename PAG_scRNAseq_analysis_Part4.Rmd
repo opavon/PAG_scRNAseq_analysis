@@ -376,7 +376,7 @@ dim(hvg_cv2_out_no_spikes_block)
 
 ### 4.3.1 | Filter uninteresting genes from the dataset
 _One important thing..._
-Now that we have modelled the gene expression variance and CV2, and before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatamers), and genes used for transgenic labelling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different sets of HVGs:
+Now that we have modelled the gene expression variance and CV2, and before moving on to downstream analysis, we consider dropping any Ribosomal, Mitochondrial, ERCC, sex-specific genes (e.g. XIST), transgenes (EYFP, tdTomato, Cre, TSO concatemers), and genes used for transgenic labelling of cells (VGAT and VGluT2) from the dataset, as some of them are not be biologically informative and others have been used to select the cells. We do so for both our `SingleCellExperiment` object and for the different sets of HVGs:
 ```{r}
 ##### 
 ##Identify and mark the genes we want to drop:
@@ -389,11 +389,11 @@ rowData(PAG_sceset_qc_norm)$is_ribosomal <- (rowData(PAG_sceset_qc_norm)$gene_bi
 # Genes from sex chromosomes
 rowData(PAG_sceset_qc_norm)$is_X <- (rowData(PAG_sceset_qc_norm)$Chromosome == "X")
 rowData(PAG_sceset_qc_norm)$is_Y <- (rowData(PAG_sceset_qc_norm)$Chromosome == "Y")
-# EYFP, tdTomato, Cre, and TSO concatamers
+# EYFP, tdTomato, Cre, and TSO concatemers
 rowData(PAG_sceset_qc_norm)$is_tdTomato <- (rowData(PAG_sceset_qc_norm)$Chromosome == "A") # tdTomato fluorophore
 rowData(PAG_sceset_qc_norm)$is_EYFP <- (rowData(PAG_sceset_qc_norm)$Chromosome == "B") # EYFP fluorophore
 rowData(PAG_sceset_qc_norm)$is_Cre <- (rowData(PAG_sceset_qc_norm)$Chromosome == "C") # Cre transgene to express fluorophores
-rowData(PAG_sceset_qc_norm)$is_SmartSeqTSO <- (rowData(PAG_sceset_qc_norm)$Chromosome == "D") # TSO concatamers
+rowData(PAG_sceset_qc_norm)$is_SmartSeqTSO <- (rowData(PAG_sceset_qc_norm)$Chromosome == "D") # TSO concatemers
 # VGAT and VGluT2
 rowData(PAG_sceset_qc_norm)$is_VGAT <- (rowData(PAG_sceset_qc_norm)$gene_name == "Slc32a1")
 rowData(PAG_sceset_qc_norm)$is_VGluT2 <- (rowData(PAG_sceset_qc_norm)$gene_name == "Slc17a6")

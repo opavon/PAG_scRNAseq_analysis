@@ -82,14 +82,14 @@ is_Y <- which(rowData(PAG_sceset)$Chromosome == "Y")
 # XIST gene
 is_XIST <- which(rowData(PAG_sceset)$gene_name == "Xist")
 
-# EYFP, tdTomato, Cre, and TSO concatamers
+# EYFP, tdTomato, Cre, and TSO concatemers
 is_tdTomato <- which(rowData(PAG_sceset)$Chromosome == "A") # tdTomato fluorophore
 # Alternatively, if using gene_name use <- grepl("^tdTomato", rownames(PAG_sceset))
 is_EYFP <- which(rowData(PAG_sceset)$Chromosome == "B") # EYFP fluorophore
 # Alternatively, if using gene_name use <- grepl("^EYFP", rownames(PAG_sceset))
 is_Cre <- which(rowData(PAG_sceset)$Chromosome == "C") # Cre transgene to express fluorophores
 # Alternatively, if using gene_name use <- grepl("^Cre", rownames(PAG_sceset))
-is_SmartSeqTSO <- which(rowData(PAG_sceset)$Chromosome == "D") # TSO concatamers
+is_SmartSeqTSO <- which(rowData(PAG_sceset)$Chromosome == "D") # TSO concatemers
 
 # VGAT and VGluT2
 is_VGAT <- which(rowData(PAG_sceset)$gene_name == "Slc32a1")
@@ -136,7 +136,7 @@ PAG_sceset <- addPerCellQC(PAG_sceset,
                                           tdTomato = is_tdTomato,
                                           EYFP = is_EYFP,
                                           Cre = is_Cre,
-                                          TSO_concatamers = is_SmartSeqTSO,
+                                          TSO_concatemers = is_SmartSeqTSO,
                                           VGAT = is_VGAT,
                                           VGluT2 = is_VGluT2
                                           )
@@ -148,7 +148,7 @@ colnames(colData(PAG_sceset))
 ## Step 2.3 | Cell QC
 We next need to remove low-quality cells to ensure that technical effects do not distort downstream analyses. Some of the metrics we can use to assess quality are automatically calculated in the previous step, including Library size, Number of expressed features, Proportion of spike-in reads, Proportion of mitochondrial reads, etc. Together, these metrics helps us spot failures in cDNA capture (failed reverse transcription) and cell damage during isolation.
 
-_See the the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun and the [Orchestrating Single-Cell Analysis with Bioconductor book](https://osca.bioconductor.org/) by Robert Amezquita and Stephanie Hicks  for more details on this and following QC steps._
+_See the the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun and the [Orchestrating Single-Cell Analysis with Bioconductor book](https://bioconductor.org/books/release/OSCA/) by Robert Amezquita, Aaron Lun, Stephanie Hicks, and Raphael Gottardo for more details on this and following QC steps._
 
 ### 2.3.1 | Library size and Number of expressed features
 Two common measures of cell quality are the library size (total sum of counts across all features) and the number of detected features in each library. 
@@ -212,10 +212,10 @@ plotColData(PAG_sceset,
   stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 ```
 
-### 2.3.2 | ERCCs, Mitochondrial and Ribosomal RNAs, and TSO concatamers
-Another measure of cell quality is the ratio between ERCC spike-in RNAs and endogenous RNAs. This ratio can be used to estimate the total amount of RNA in the captured cells. Cells with a high proportion of spike-in RNAs had probably low starting amounts of RNA, likely due to the cell being dead or stressed which may result in the RNA being degraded.The quantity of spike-in RNA added to each cell should be constant, which means that the proportion should increase upon loss of endogenous RNA in low-quality cells.
+### 2.3.2 | ERCCs, Mitochondrial and Ribosomal RNAs, and TSO concatemers
+Another measure of cell quality is the ratio between ERCC spike-in RNAs and endogenous RNAs. This ratio can be used to estimate the total amount of RNA in the captured cells. Cells with a high proportion of spike-in RNAs had probably low starting amounts of RNA, likely due to the cell being dead or stressed which may result in the RNA being degraded. The quantity of spike-in RNA added to each cell should be constant, which means that the proportion should increase upon loss of endogenous RNA in low-quality cells.
 
-It is also worth looking at the proportion of reads mapped to genes in the Mitochondrial/Ribosomal genome amd to TSO concatamers. High proportions are indicative of poor-quality cells, possibly because of increased apoptosis and/or loss of cytoplasmic RNA from lysed cells. We will be looking at both the histograms and plots with every individual cell.
+It is also worth looking at the proportion of reads mapped to genes in the Mitochondrial/Ribosomal genome amd to TSO concatemers. High proportions are indicative of poor-quality cells, possibly because of increased apoptosis and/or loss of cytoplasmic RNA from lysed cells. We will be looking at both the histograms and plots with every individual cell.
 
 _IMPORTANT_: cells of small dimensions will have a higher fraction of ERCC reads than larger cells, so take this into account if you think this might be the case. In addition, cells with a high active metabolic rate may have larger proportion of mitochondrial transcripts. For these reasons the best strategy is to simultaneously take the different quality measures into considiration before deciding whether to exclude a cell or not.
 
@@ -242,16 +242,16 @@ hist(PAG_sceset$subsets_Ribosomal_percent,
      xlab = "Ribosomal proportion (%)", ylab = "Number of cells", main = "Ribosomal genes", col = "grey80")
 abline(v = 20, col = "blue", lwd = 2, lty = 2)
 
-# TSO concatamers
-hist(PAG_sceset$subsets_TSO_concatamers_percent,
+# TSO concatemers
+hist(PAG_sceset$subsets_TSO_concatemers_percent,
      breaks = 50,
-     xlab = "TSO concatamers proportion (%)", ylab = "Number of cells", main = "TSO concatamers", col = "grey80")
+     xlab = "TSO concatemers proportion (%)", ylab = "Number of cells", main = "TSO concatemers", col = "grey80")
 abline(v = 5, col = "blue", lwd = 2, lty = 2)
 
 summary(PAG_sceset$altexps_ERCC_percent)
 summary(PAG_sceset$subsets_Mitochondrial_percent)
 summary(PAG_sceset$subsets_Ribosomal_percent)
-summary(PAG_sceset$subsets_TSO_concatamers_percent)
+summary(PAG_sceset$subsets_TSO_concatemers_percent)
 ```
 
 ```{r}
@@ -289,12 +289,12 @@ plotColData(PAG_sceset,
 
 plotColData(PAG_sceset,
             x = "detected",
-            y = "subsets_TSO_concatamers_percent",
+            y = "subsets_TSO_concatemers_percent",
             colour_by = "PAG.area",
             other_fields = "cell.type") +
   facet_wrap(~cell.type) + 
   xlab("Number of detected genes") +
-  ylab("TSO concatamers proportion (%)") +
+  ylab("TSO concatemers proportion (%)") +
   stat_smooth(method = "lm", se = FALSE, size = 0.5, fullrange = TRUE)
 ```
 
@@ -883,7 +883,7 @@ legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0
 dev.off()
 ```
 
-As we can see, a large proportion of cells express both VGAT and VGlUT2. The coexpression of VGAT and VGluT2 has been reported previously in midbrain, so it shouldnt't be surprising. However, if we find cells that only express the opposite transporter as they should (e.g. if a VGAT-Cre cell only expresses VGluT2) we should consider excluding them (although again, these might just be dropout events, so we can use combinatorial QC metrics to err on the safe side).
+As we can see, a large proportion of cells express both VGAT and VGluT2. The coexpression of VGAT and VGluT2 has been reported previously in midbrain, so it shouldnt't be surprising. However, it may also come from our isolation method, as we may be aspirating synaptic terminals from neighbouring neurons, so we will not be using this metric to exclude cells. Similarly, if we find cells that only express the opposite transporter as they should (e.g. if a VGAT-Cre cell only expresses VGluT2) we should consider excluding them (although again, these might just be dropout events, so we can use combinatorial QC metrics to err on the safe side).
 
 ## Step 2.4 | Filtering low quality cells
 Choosing a filtering threshold for the above quality metrics is not straightforward as their absolute values depend on the experimental protocol. For example, sequencing to greater depths will lead to more reads and more expressed features, regardless of the quality of the cells, and using more spike-in RNA in the protocol will result in higher spike-in proportions. The histograms and plots from the previous section should allow us to visualise the distribution of our samples and more easily identify any obvious outliers.
@@ -931,10 +931,10 @@ summary(PAG_sceset[,PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual]$PAG.area)
 
 PAG_sceset$filter_by_pct_Ribosomal_manual <- PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual | PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual
 
-# Not more than 5% of counts in TSO concatamers
-PAG_sceset$filter_by_pct_TSO_concatamer_manual <- (PAG_sceset$subsets_TSO_concatamers_percent > 5)
-table(PAG_sceset$filter_by_pct_TSO_concatamer_manual)
-summary(PAG_sceset[,PAG_sceset$filter_by_pct_TSO_concatamer_manual]$PAG.area)
+# Not more than 5% of counts in TSO concatemers
+PAG_sceset$filter_by_pct_TSO_concatemer_manual <- (PAG_sceset$subsets_TSO_concatemers_percent > 5)
+table(PAG_sceset$filter_by_pct_TSO_concatemer_manual)
+summary(PAG_sceset[,PAG_sceset$filter_by_pct_TSO_concatemer_manual]$PAG.area)
 
 # Custom filters: remove Aqueduct cell and Patch-seq cells:
 PAG_sceset$filter_AQ_cells <- (PAG_sceset$cell.id == "AQ")
@@ -1019,8 +1019,8 @@ PAG_sceset$manual_filters <- !(
     # Remove cells with unusual proportion of reads in Ribosomal genes
     PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual |
     PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual |
-    # Remove cells with unusual proportion of reads in TSO concatamers
-    PAG_sceset$filter_by_pct_TSO_concatamer_manual |
+    # Remove cells with unusual proportion of reads in TSO concatemers
+    PAG_sceset$filter_by_pct_TSO_concatemer_manual |
     # Remove cells from the Aqueduct Ependymal layer
     PAG_sceset$filter_AQ_cells |
     # Remove cells from patch-seq
@@ -1044,7 +1044,7 @@ data.frame(ByLibSize = sum(PAG_sceset$filter_by_total_counts_manual),
            ByMitochondrial = sum(PAG_sceset$filter_by_pct_Mitochondrial_manual), 
            ByRibosomalVGAT = sum(PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual),
            ByRibosomalVGluT2 = sum(PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual),
-           ByTSOconcatamer = sum(PAG_sceset$filter_by_pct_TSO_concatamer_manual),
+           ByTSOconcatemer = sum(PAG_sceset$filter_by_pct_TSO_concatemer_manual),
            ByAqueduct = sum(PAG_sceset$filter_AQ_cells),
            ByPatchseqRecorded = sum(PAG_sceset$filter_patchseq_cells),
            #ByXist = sum(PAG_sceset$filter_by_wrong_Xist_in_males),
@@ -1068,7 +1068,7 @@ plyr::ldply(list(ByLibSize = colnames(PAG_sceset[, PAG_sceset$filter_by_total_co
                  ByMitochondrial = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Mitochondrial_manual]),
                  ByRibosomalVGAT = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Ribosomal_VGAT_manual]),
                  ByRibosomalVGluT2 = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_Ribosomal_VGluT2_manual]),
-                 ByTSOconcatamer = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_TSO_concatamer_manual]),
+                 ByTSOconcatemer = colnames(PAG_sceset[, PAG_sceset$filter_by_pct_TSO_concatemer_manual]),
                  ByAqueduct = colnames(PAG_sceset[, PAG_sceset$filter_AQ_cells]),
                  ByPatchseqRecorded = colnames(PAG_sceset[, PAG_sceset$filter_patchseq_cells]),
                  #ByXist = colnames(PAG_sceset[, PAG_sceset$filter_by_wrong_Xist_in_males]),
@@ -1090,9 +1090,13 @@ Systematic differences in the QC metrics can be handled to some extent using the
 * In our case, we could add either the `mouse.id` or the `cell.type` (e.g. `batch = PAG_sceset$mouse.id`) as an argument that specifies the batch to which each sample belongs. A median/MAD is calculated for each batch, and outliers are then identified within each batch.
 
 Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. A 3-MAD threshold has a fairly simple interpretation for normal distributions, enabling the removal of points with lower than 1% likelihood. 
+
 * The default MAD threshold in the `isOutlier()` function is set to `nmads = 3`. 
+
 * We begin by removing cells with log-library sizes that are more than 4 MADs below the median log-library size. A log-transformation improves resolution at small values, especially when the MAD of the raw values is comparable to or greater than the median. We also remove cells where the log-transformed number of expressed genes is 4 MADs below the median value.
+
 * However, if the 4-MAD threshold is too restrictive or not restrictive enough, we can try to loosen it a bit by setting it to 5 or 3.
+
 ```{r}
 # Total counts
 PAG_sceset$filter_by_total_counts_MADs <- isOutlier(PAG_sceset$total, nmads = 5, type = "both", log = TRUE, batch = NULL)
@@ -1122,10 +1126,10 @@ PAG_sceset$filter_by_pct_Ribosomal_MADs <- isOutlier(PAG_sceset$subsets_Ribosoma
 table(PAG_sceset$filter_by_pct_Ribosomal_MADs)
 attr(PAG_sceset$filter_by_pct_Ribosomal_MADs, "thresholds")
 
-# TSO concatamers
-PAG_sceset$filter_by_pct_TSO_concatamer_MADs <- isOutlier(PAG_sceset$subsets_TSO_concatamers_percent, nmads = 5, type = "higher", batch = NULL)
-table(PAG_sceset$filter_by_pct_TSO_concatamer_MADs)
-attr(PAG_sceset$filter_by_pct_TSO_concatamer_MADs, "thresholds")
+# TSO concatemers
+PAG_sceset$filter_by_pct_TSO_concatemer_MADs <- isOutlier(PAG_sceset$subsets_TSO_concatemers_percent, nmads = 5, type = "higher", batch = NULL)
+table(PAG_sceset$filter_by_pct_TSO_concatemer_MADs)
+attr(PAG_sceset$filter_by_pct_TSO_concatemer_MADs, "thresholds")
 ```
 
 Subsetting by column will retain only the high-quality cells that pass each filter described above. We examine the number of cells removed by each filter as well as the total number of retained cells. Removal of a substantial proportion of cells (> 10%) may be indicative of an overall issue with data quality.
@@ -1142,8 +1146,8 @@ PAG_sceset$MADs_filters <- !(
     PAG_sceset$filter_by_pct_Mitochondrial_MADs |
     # Remove cells with unusual proportion of reads in Ribosomal genes
     PAG_sceset$filter_by_pct_Ribosomal_MADs |
-    # Remove cells with unusual proportion of reads in TSO concatamers
-    PAG_sceset$filter_by_pct_TSO_concatamer_MADs
+    # Remove cells with unusual proportion of reads in TSO concatemers
+    PAG_sceset$filter_by_pct_TSO_concatemer_MADs
 )
 
 data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_MADs), 
@@ -1151,7 +1155,7 @@ data.frame(ByLibSize=sum(PAG_sceset$filter_by_total_counts_MADs),
            ByERCC=sum(PAG_sceset$filter_by_pct_ERCC_MADs), 
            ByMitochondrial=sum(PAG_sceset$filter_by_pct_Mitochondrial_MADs), 
            ByRibosomal=sum(PAG_sceset$filter_by_pct_Ribosomal_MADs),
-           ByTSOconcatamer=sum(PAG_sceset$filter_by_pct_TSO_concatamer_MADs),
+           ByTSOconcatemer=sum(PAG_sceset$filter_by_pct_TSO_concatemer_MADs),
            Remaining=sum(PAG_sceset$MADs_filters)
            )
 
@@ -1170,7 +1174,7 @@ library(mvoutlier)
 set.seed(1991)
 PAG_sceset <- runColDataPCA(PAG_sceset, outliers = TRUE,
                             variables = list("sum", "detected", "altexps_ERCC_percent", "subsets_Mitochondrial_percent", 
-                                             "subsets_Ribosomal_percent", "subsets_TSO_concatamers_percent"),
+                                             "subsets_Ribosomal_percent", "subsets_TSO_concatemers_percent"),
                             name = "PCA_coldata")
 plotReducedDim(PAG_sceset, dimred = "PCA_coldata", colour_by = "outlier", shape_by = "PAG.area")
 table(PAG_sceset$outlier)
@@ -1263,9 +1267,9 @@ violin_cell_QC_ERCC <- plotColData(PAG_sceset, x = "cell.type", y = "altexps_ERC
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_ERCC, file = str_c(path_for_figures, "violin_cell_QC_ERCC.rds"))
 
-violin_cell_QC_TSO <- plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
-                                  colour_by = "filter_by_pct_TSO_concatamer_manual", theme_size = 11, point_alpha = 0.8) + 
-  ggtitle("TSO concatamers") + xlab(NULL) + ylab("% of total reads") + theme_args_violin_summary +
+violin_cell_QC_TSO <- plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatemers_percent",
+                                  colour_by = "filter_by_pct_TSO_concatemer_manual", theme_size = 11, point_alpha = 0.8) + 
+  ggtitle("TSO concatemers") + xlab(NULL) + ylab("% of total reads") + theme_args_violin_summary +
   scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill"))
 saveRDS(violin_cell_QC_TSO, file = str_c(path_for_figures, "violin_cell_QC_TSO.rds"))
 
@@ -1330,9 +1334,9 @@ ggsave(filename = str_c(date, "_violin_cell_QC_summary_composed.pdf"),
 #                                                        colour_by = "filter_by_pct_ERCC_manual", theme_size = 11, point_alpha = 0.8) + 
 #                                              ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
 #                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
-#                                            plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
-#                                                        colour_by = "filter_by_pct_TSO_concatamer_manual", theme_size = 11, point_alpha = 0.8) + 
-#                                              ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
+#                                            plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatemers_percent",
+#                                                        colour_by = "filter_by_pct_TSO_concatemer_manual", theme_size = 11, point_alpha = 0.8) + 
+#                                              ggtitle("Percent reads in TSO concatemers") + xlab(NULL) + ylab("% reads in TSO concatemers") + 
 #                                              scale_colour_manual(name = "Excluded", values = c("grey", "red"), aesthetics = c("colour", "fill")),
 #                                            plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
 #                                                        colour_by = "filter_by_percent_top_100_manual", theme_size = 11, point_alpha = 0.8) + 
@@ -1378,9 +1382,9 @@ ggsave(filename = str_c(date, "_violin_cell_QC_summary_composed.pdf"),
 #                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
 #                                                  ggtitle("Percent reads in ERCC spike-ins") + xlab(NULL) + ylab("% reads in ERCC spike-ins") + 
 #                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
-#                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatamers_percent",
+#                                                plotColData(PAG_sceset, x = "cell.type", y = "subsets_TSO_concatemers_percent",
 #                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
-#                                                  ggtitle("Percent reads in TSO concatamers") + xlab(NULL) + ylab("% reads in TSO concatamers") + 
+#                                                  ggtitle("Percent reads in TSO concatemers") + xlab(NULL) + ylab("% reads in TSO concatemers") + 
 #                                                  scale_colour_manual(name = "Keep cell", values = c("red","grey"), aesthetics = c("colour", "fill")),
 #                                                plotColData(PAG_sceset, x = "cell.type", y = "percent_top_100",
 #                                                            colour_by = "use", theme_size = 11, point_alpha = 0.8) + 
@@ -1454,7 +1458,7 @@ summary(filter_low_abundance_genes_use)
 ```
 
 ### 2.5.2 | Filtering uninteresting genes
-An alternative approach to gene filtering is to select genes that have non-zero counts in at least n cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
+An alternative approach to gene filtering is to select genes that have non-zero counts in at least `n` cells. This provides some more protection against genes with outlier expression patterns, i.e., strong expression in only one or two cells. Such outliers are typically uninteresting as they can arise from amplification artifacts that are not replicable across cells. (The exception is for studies involving rare cells where the outliers may be biologically relevant.) We can thus have a look at the number of cells expressing each gene.
 ```{r}
 # Count the number of non-zero counts (or any value set by the detection_limit) in each row (per feature) or column (per cell). With byrow=TRUE we count the number of cells that express each gene more than certain number of times.
 all_numcells <- nexprs(PAG_sceset, detection_limit = 0, byrow = TRUE) 
@@ -1486,7 +1490,7 @@ smoothScatter(log10(use_ave_counts),
 #points(log10(use_ave_counts[control_features_use]), use_numcells[control_features_use], col = "red", pch = 16, cex = 0.5)
 ```
 
-As we already mentioned, genes expressed in very few cells are often uninteresting as they might be driven by amplification artifacts (though they may also also arise from rare populations). We could thus remove genes that are expressed in fewer than n cells. 
+As we already mentioned, genes expressed in very few cells are often uninteresting as they might be driven by amplification artifacts (though they may also also arise from rare populations). We could thus remove genes that are expressed in fewer than `n` cells. 
 ```{r}
 # Filter the genes not expressed in at least n cells
 filter_low_abundance_genes_alternative_all <- all_numcells >= 5
