@@ -29,7 +29,7 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 ***
 
 # STEP 4 | Modelling technical and biological variability in gene expression to identify highly variable genes
-_The following steps and explanations are based on the [OSCA book](https://osca.bioconductor.org/feature-selection.html), the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html), and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun._
+_The following steps and explanations are based on the [OSCA book](https://bioconductor.org/books/release/OSCA/), the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html), and [Description of the HVG machinery in scran](https://github.com/LTLA/HVGDetection2018) maintained by Aaron Lun._
 
 We often use scRNA-seq data in exploratory analyses to characterise heterogeneity across cells. Procedures like clustering and dimensionality reduction compare cells based on their gene expression profiles, which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells. The choice of genes to use in this calculation has a major impact on the behavior of the metric and the performance of downstream methods. We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise. This aims to preserve interesting biological structure without the variance that obscures that structure, and to reduce the size of the data to improve computational efficiency of later steps.
 
@@ -288,7 +288,7 @@ We can also only remove the obviously uninteresting genes with variances below t
 
 By retaining all potential biological signal, we give secondary population structure the chance to manifest. This is most useful for rare subpopulations where the relevant markers will not exhibit strong overdispersion owing to the small number of affected cells. It will also preserve a weak but consistent effect across many genes with small biological components; admittedly, though, this is not of major interest in most scRNA-seq studies given the difficulty of experimentally validating population structure in the absence of strong marker genes.
 
-The obvious cost is that more noise is also captured, which can reduce the resolution of otherwise well-separated populations and mask the secondary signal that we were trying to preserve. The use of more genes also introduces more computational work in each downstream step. This strategy is thus best suited to very heterogeneous populations containing many different cell types (possibly across many datasets that are to be merged, as in Chapter 13) where there is a justified fear of ignoring marker genes for low-abundance subpopulations under a competitive top X approach.
+The obvious cost is that more noise is also captured, which can reduce the resolution of otherwise well-separated populations and mask the secondary signal that we were trying to preserve. The use of more genes also introduces more computational work in each downstream step. This strategy is thus best suited to very heterogeneous populations containing many different cell types where there is a justified fear of ignoring marker genes for low-abundance subpopulations under a competitive top X approach.
 
 ### 4.2.4 | Based on a priori genes of interest
 A blunt yet effective feature selection strategy is to use pre-defined sets of interesting genes. The aim is to focus on specific aspects of biological heterogeneity that may be masked by other factors when using unsupervised methods for HVG selection. One example application lies in the dissection of transcriptional changes during the earliest stages of cell fate commitment (Messmer et al. 2019), which may be modest relative to activity in other pathways (e.g., cell cycle, metabolism). Indeed, if our aim is to show that there is no meaningful heterogeneity in a given pathway, we would - at the very least - be obliged to repeat our analysis using only the genes in that pathway to maximize power for detecting such heterogeneity.
@@ -495,7 +495,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_var.pdf"),
                           circle.col = c("#E69F00", "#56B4E9")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -505,7 +505,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_cv2.pdf"),
                           circle.col = c("#595028", "#E87F5D")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -515,7 +515,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varcv2.pdf"),
                           circle.col = c("#E69F00", "#595028")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -525,7 +525,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varcv2_block.pdf"),
                           circle.col = c("#56B4E9", "#E87F5D")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -535,7 +535,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_varblock_cv2.pdf"),
                           circle.col = c("#56B4E9", "#595028")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -545,7 +545,7 @@ ggsave(filename = str_c(date, "_venn_HVGs_all.pdf"),
                           circle.col = c("#E69F00", "#56B4E9", "#595028", "#E87F5D")),
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -563,9 +563,9 @@ Before we store the identified HVGs in our `SingleCellExperiment` object, we qui
 theme_args <- theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), axis.ticks.x = element_blank())
 
 # HVG from mean-var modelling
-violin_HVG_var <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:50],
+violin_HVG_var <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_filt)[1:25],
                                  exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
-                                 ) + ggtitle("Top 50 HVGs from mean-var modelling") + theme_args
+                                 ) + ggtitle("Top 25 HVGs from mean-var modelling") + theme_args
 violin_HVG_var
 saveRDS(violin_HVG_var, file = str_c(path_for_figures, "violin_HVG_var.rds"))
 
@@ -573,14 +573,14 @@ ggsave(filename = str_c(date, "_violin_HVG_var.pdf"),
        plot = violin_HVG_var,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
 # HVG from mean-var modelling blocking by batch
-violin_HVG_var_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:50],
+violin_HVG_var_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_var_out_no_spikes_block_filt)[1:25],
                                        exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
-                                       ) + ggtitle("Top 50 HVGs from mean-var modelling after blocking") + theme_args
+                                       ) + ggtitle("Top 25 HVGs from mean-var modelling after blocking") + theme_args
 violin_HVG_var_block
 saveRDS(violin_HVG_var_block, file = str_c(path_for_figures, "violin_HVG_var_block.rds"))
 
@@ -588,14 +588,14 @@ ggsave(filename = str_c(date, "_violin_HVG_var_block.pdf"),
        plot = violin_HVG_var_block,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
 # HVG from mean-cv2 modelling
-violin_HVG_cv2 <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:50],
+violin_HVG_cv2 <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_filt)[1:25],
                                        exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
-                                 ) + ggtitle("Top 50 HVGs from mean-cv2 modelling") + theme_args
+                                 ) + ggtitle("Top 25 HVGs from mean-cv2 modelling") + theme_args
 violin_HVG_cv2
 saveRDS(violin_HVG_cv2, file = str_c(path_for_figures, "violin_HVG_cv2.rds"))
 
@@ -603,14 +603,14 @@ ggsave(filename = str_c(date, "_violin_HVG_cv2.pdf"),
        plot = violin_HVG_cv2,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
 # HVG from mean-cv2 modelling blocking by batch
-violin_HVG_cv2_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:50],
+violin_HVG_cv2_block <- plotExpression(PAG_sceset_qc_norm_filt, features = rownames(hvg_cv2_out_no_spikes_block_filt)[1:25],
                                        exprs_values = "logcounts", theme_size = 11, point_alpha = 0.8
-                                       ) + ggtitle("Top 50 HVGs from mean-cv2 modelling after blocking") + theme_args
+                                       ) + ggtitle("Top 25 HVGs from mean-cv2 modelling after blocking") + theme_args
 violin_HVG_cv2_block
 saveRDS(violin_HVG_cv2_block, file = str_c(path_for_figures, "violin_HVG_cv2_block.rds"))
 
@@ -618,7 +618,7 @@ ggsave(filename = str_c(date, "_violin_HVG_cv2_block.pdf"),
        plot = violin_HVG_cv2_block,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 20, height = 5, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -770,7 +770,7 @@ length(hvg_index_cv2_block)
 
 ## Save all the plots:
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
@@ -783,7 +783,7 @@ points(var_fit_no_spikes$mean[hvg_index_var], var_fit_no_spikes$var[hvg_index_va
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_var_block.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 plot(var_fit_no_spikes$mean, 
      var_fit_no_spikes$var, 
@@ -796,7 +796,7 @@ points(var_fit_no_spikes$mean[hvg_index_var_block], var_fit_no_spikes$var[hvg_in
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
@@ -811,7 +811,7 @@ points(CV2_fit_no_spikes$mean[hvg_index_cv2], CV2_fit_no_spikes$cv2[hvg_index_cv
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_trend_HVGs_cv2_block.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 plot(CV2_fit_no_spikes$mean,
      CV2_fit_no_spikes$cv2, 
