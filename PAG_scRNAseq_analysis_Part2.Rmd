@@ -62,7 +62,7 @@ assayNames(PAG_sceset)
 ## Step 2.1 | Set control features
 The package `scater` allows us to define control features (genes) that we can use for quality checks, such as ERCC spike-ins if we have them, Mitochondrial and Ribosomal genes, and any fluorophores used to identify the cells if they came from transgenic animals.
 
-If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SingleCellExperiment` object. If you are doing this on the gene symbols, beware of the human gene family that also starts with "ERCC". We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `splitAltExps()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalization.
+If we have ERCC spike-ins in our dataset, and these are labeled accordingly in the gene names, we can store them in a dedicated slot of the `SingleCellExperiment` object. If you are doing this on the gene symbols, beware of the human gene family that also starts with "ERCC". We need to explicitly indicate that the ERCC set is, in fact, a spike-in set with the `splitAltExps()` function. This is necessary as spike-ins require special treatment in some downstream steps such as variance estimation and normalisation.
 ```{r}
 # ERCCs
 is_spike <- grepl("^ERCC-", rownames(PAG_sceset))
@@ -219,7 +219,7 @@ It is also worth looking at the proportion of reads mapped to genes in the Mitoc
 
 _IMPORTANT_: cells of small dimensions will have a higher fraction of ERCC reads than larger cells, so take this into account if you think this might be the case. In addition, cells with a high active metabolic rate may have larger proportion of mitochondrial transcripts. For these reasons the best strategy is to simultaneously take the different quality measures into considiration before deciding whether to exclude a cell or not.
 
-_Using ERCC for normalization vs using them for QC_: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalization, but it will still be useful for QC. If you want to use them for normalization, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only, in which case you would want about 5-10% of the reads going to the spike-ins. If this is not the case, it suggests that you need to alter the dilution.
+_Using ERCC for normalisation vs using them for QC_: ERCCs contain 96 different sequences at increasing concentrations. If you use a very diluted volume (1:5,000,000) you will only get the ones at a higher concentration, so it will not be useful for normalisation, but it will still be useful for QC. If you want to use them for normalisation, you would need roughly 50% of your reads to be from ERCCs (which might be a waste of reads if you are not benchmarking different methods). We will use them for QC only, in which case you would want about 5-10% of the reads going to the spike-ins. If this is not the case, it suggests that you need to alter the dilution.
 ```{r}
 # Plot the histograms of the percentage of feature controls in all cells:
 par(mfrow = c(2,2))
@@ -1537,7 +1537,7 @@ dim(PAG_sceset) # We haven't changed anything in the SingleCellExperiment object
 Now, the `colData(PAG_sceset)$use` should point to the _samples_ that have passed our QC, whereas the `rowData(PAG_sceset)$use` should point to the _genes_ that have passed our QC.
 
 ## Step 2.6 | Save the QCed SingleCellExperiment object
-We have now QCed our dataset. Before we proceed to normalization and downstream analyis, we save our progress.
+We have now QCed our dataset. Before we proceed to normalisation and downstream analyis, we save our progress.
 ```{r}
 # We could remove the saved PCA results from the reducedDim slot, but we can also just keep them in the reducedDim slot:
 PAG_sceset # Full dataset containing all the filters

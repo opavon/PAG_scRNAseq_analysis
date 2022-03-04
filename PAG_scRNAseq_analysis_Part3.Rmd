@@ -1,6 +1,6 @@
 ---
 title: "Topographic, single-cell gene expression profiling of Periaqueductal Gray neurons"
-subtitle: "Part III: normalization"
+subtitle: "Part III: normalisation"
 author:
   - name: "Oriol Pavon Arocas, Sarah F. Olesen, and Tiago Branco"
     affiliation: "Sainsbury Wellcome Centre for Neural Circuits and Behaviour, University College London, UK"
@@ -31,44 +31,44 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 # STEP 3 | Normalization of cell-specific biases
 Systematic differences in sequencing coverage between libraries are often observed in single-cell RNA sequencing data (Stegle, Teichmann, and Marioni 2015). They typically arise from technical differences in cDNA capture or PCR amplification efficiency across cells, attributable to the difficulty of achieving consistent library preparation with minimal starting material. Normalization aims to remove these differences such that they do not interfere with comparisons of the expression profiles between cells. This ensures that any observed heterogeneity or differential expression within the cell population are driven by biology and not technical biases.
 
-Scaling normalization is the simplest and most commonly used class of normalization strategies. It involves dividing all counts for each cell by a cell-specific scaling factor, often called a “size factor” (Anders and Huber 2010). The assumption here is that any cell-specific bias (e.g., in capture or amplification efficiency) affects all genes equally via scaling of the expected mean count for that cell. The size factor for each cell represents the estimate of the relative bias in that cell, so division of its counts by its size factor should remove that bias. The resulting “normalized expression values” can then be used for downstream analyses such as clustering and dimensionality reduction.
+Scaling normalisation is the simplest and most commonly used class of normalisation strategies. It involves dividing all counts for each cell by a cell-specific scaling factor, often called a “size factor” (Anders and Huber 2010). The assumption here is that any cell-specific bias (e.g., in capture or amplification efficiency) affects all genes equally via scaling of the expected mean count for that cell. The size factor for each cell represents the estimate of the relative bias in that cell, so division of its counts by its size factor should remove that bias. The resulting “normalised expression values” can then be used for downstream analyses such as clustering and dimensionality reduction.
 
 ***
 
 _The following theory has been summarised from the online course on [Analysis of single cell RNA-seq data](https://github.com/hemberg-lab/scRNA.seq.course) by the [Hemberg Lab](https://www.sanger.ac.uk/science/groups/hemberg-group)._
 
-Library sizes vary because scRNA-seq data is often sequenced on highly multiplexed platforms and the total reads which are derived from each cell may differ substantially. Library size must be corrected for by multiplying or dividing each column of the expression matrix by a normalization factor which is an estimate of the library size relative to the other cells. Many methods to correct for library size have been developped for bulk RNA-seq (e.g. UQ, SF, CPM, RPKM, FPKM, TPM).
+Library sizes vary because scRNA-seq data is often sequenced on highly multiplexed platforms and the total reads which are derived from each cell may differ substantially. Library size must be corrected for by multiplying or dividing each column of the expression matrix by a normalisation factor which is an estimate of the library size relative to the other cells. Many methods to correct for library size have been developped for bulk RNA-seq (e.g. UQ, SF, CPM, RPKM, FPKM, TPM).
 
 * The _Upperquartile (UQ)_: In the upperquartile method (Bullard et al. 2010), each column is divided by the 75% quantile of the counts for each library. Often the calculated quantile is scaled by the median across cells to keep the absolute level of expression relatively consistent. A drawback to this method is that for low-depth scRNA-seq experiments the large number of undetected genes may result in the 75% quantile being zero (or close to it). This limitation can be overcome by generalizing the idea and using a higher quantile (eg. the 99% quantile is the default in scater) or by excluding zeros prior to calculating the 75% quantile.
 
 * The _Relative log expression (RLE) size factor (SF)_: The size factor (SF) was proposed and popularized by DESeq (Anders and Huber 2010). First the geometric mean of each gene across all cells is calculated. The size factor for each cell is the median across genes of the ratio of the expression to the gene geometric mean. A drawback to this method is that since it uses the geometric mean only genes with non-zero expression values across all cells can be used in its calculation, making it unadvisable for large low-depth scRNA-seq experiments.
 
-* Using _CPM (counts per million)_: The simplest way to normalize RNAseq data is to convert it to counts per million (CPM) by dividing each column by its total then multiplying by 1,000,000. _RPKM_ (read per kilobase per milion), _FPKM_ (fragment per kilobase per million) and _TPM_ (transcripts per million) are variants on CPM which further adjust counts by the length of the respective gene/transcript. 
+* Using _CPM (counts per million)_: The simplest way to normalise RNAseq data is to convert it to counts per million (CPM) by dividing each column by its total then multiplying by 1,000,000. _RPKM_ (read per kilobase per milion), _FPKM_ (fragment per kilobase per million) and _TPM_ (transcripts per million) are variants on CPM which further adjust counts by the length of the respective gene/transcript. 
     + Spike-ins should be excluded from the calculation of total expression in order to correct for total cell RNA content (we should only use endogenous genes).
-    + One potential drawback of CPM is relevant to situations where a dataset contains genes that are both very highly expressed and differentially expressed across the cells. In this case, the total molecules in the cell may depend of whether such genes are on/off in the cell and normalizing by total molecules may hide the differential expression of those genes and/or falsely create differential expression for the remaining genes.  
+    + One potential drawback of CPM is relevant to situations where a dataset contains genes that are both very highly expressed and differentially expressed across the cells. In this case, the total molecules in the cell may depend of whether such genes are on/off in the cell and normalising by total molecules may hide the differential expression of those genes and/or falsely create differential expression for the remaining genes.  
 
-* Using _scran (scRNA-seq specific)_: The `scran` package implements a variant on CPM specialized for single-cell data (Lun et al. Genome Biology 2016). Briefly, this method deals with the problem of vary large numbers of zero values per cell by pooling cells together calculating a normalization factor (similar to CPM) for the sum of each pool. Since each cell is found in many different pools, cell-specific factors can be deconvoluted from the collection of pool-specific factors using linear algebra.
+* Using _scran (scRNA-seq specific)_: The `scran` package implements a variant on CPM specialized for single-cell data (Lun et al. Genome Biology 2016). Briefly, this method deals with the problem of vary large numbers of zero values per cell by pooling cells together calculating a normalisation factor (similar to CPM) for the sum of each pool. Since each cell is found in many different pools, cell-specific factors can be deconvoluted from the collection of pool-specific factors using linear algebra.
 
-* Using _SCnorm (scRNA-seq specific)_: Another method developed to normalize scRNA-seq data (Bacher et al. Nature Methods 2017).
+* Using _SCnorm (scRNA-seq specific)_: Another method developed to normalise scRNA-seq data (Bacher et al. Nature Methods 2017).
 
 ***
 
-_A note on scaling normalization strategies_ from the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun.
+_A note on scaling normalisation strategies_ from the [simpleSingleCell workflow in Bioconductor](https://bioconductor.org/packages/3.9/workflows/html/simpleSingleCell.html) maintained by Aaron Lun.
 
-Scaling normalization strategies for scRNA-seq data can be broadly divided into two classes. The first class assumes that there exists a subset of genes that are not DE between samples. The second class uses the fact that the same amount of spike-in RNA was added to each cell, and therefore differences in the coverage of the spike-in transcripts can only be due to cell-specific biases (e.g., in capture efficiency or sequencing depth). Scaling normalization is then applied to equalize spike-in coverage across cells.
+Scaling normalisation strategies for scRNA-seq data can be broadly divided into two classes. The first class assumes that there exists a subset of genes that are not DE between samples. The second class uses the fact that the same amount of spike-in RNA was added to each cell, and therefore differences in the coverage of the spike-in transcripts can only be due to cell-specific biases (e.g., in capture efficiency or sequencing depth). Scaling normalisation is then applied to equalize spike-in coverage across cells.
 
-The choice between these two normalization strategies depends on the biology of the cells and the features of interest. If the majority of genes are expected to be DE and there is no reliable house-keeping set, spike-in normalization may be the only option for removing cell-specific biases. Spike-in normalization should also be used if differences in the total RNA content of individual cells are of interest. In any particular cell, an increase in the amount of endogenous RNA will not increase spike-in coverage (with or without library quantification). Thus, the former will not be represented as part of the bias in the latter, which means that the effects of total RNA content on expression will not be removed upon scaling. With non-DE normalization, an increase in RNA content will systematically increase the expression of all genes in the non-DE subset, such that it will be treated as bias and removed.
+The choice between these two normalisation strategies depends on the biology of the cells and the features of interest. If the majority of genes are expected to be DE and there is no reliable house-keeping set, spike-in normalisation may be the only option for removing cell-specific biases. Spike-in normalisation should also be used if differences in the total RNA content of individual cells are of interest. In any particular cell, an increase in the amount of endogenous RNA will not increase spike-in coverage (with or without library quantification). Thus, the former will not be represented as part of the bias in the latter, which means that the effects of total RNA content on expression will not be removed upon scaling. With non-DE normalisation, an increase in RNA content will systematically increase the expression of all genes in the non-DE subset, such that it will be treated as bias and removed.
 
 In our case, we expect our dataset to contain a homogeneous population of neurons, with the majority of genes not differentially expressed between samples. Therefore, we will compute size factors for endogenous genes. We will not use spike-in transcripts as we did not add them in sufficient concentration to be used reliably.
 
 ## Step 3.1 | Compute size factors for endogenous genes
-We will proceed with the `PAG_sceset_qc` after having applied the relevant QC to our dataset. We will use `scran` to calculate size factors for our samples and then use these for normalization. Importantly, see *Vallejos et al., Nature Methods 2017* for an explanation of why it is not a good idea to use CPM normalization and other bulk-based normalization methods on scRNA-seq data.
+We will proceed with the `PAG_sceset_qc` after having applied the relevant QC to our dataset. We will use `scran` to calculate size factors for our samples and then use these for normalisation. Importantly, see *Vallejos et al., Nature Methods 2017* for an explanation of why it is not a good idea to use CPM normalisation and other bulk-based normalisation methods on scRNA-seq data.
 ```{r}
 # Set the directory where your data and scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
 
 # Set the path to save figures from this Part:
-path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part3_normalization/"
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part3_normalisation/"
 date <- Sys.Date()
 date <- gsub("-", "_", date)
 
@@ -91,7 +91,7 @@ PAG_sceset_qc <- readRDS("PAG_sceset_qc.rds") # Contains filtered cells and gene
 assayNames(PAG_sceset_qc)
 ```
 
-We should _not_ include spike-ins in the normalization step, as we want to normalize by the genes each cell endogenously expressed. We can later calculate separate size factors for the spike-in transcripts.
+We should _not_ include spike-ins in the normalisation step, as we want to normalise by the genes each cell endogenously expressed. We can later calculate separate size factors for the spike-in transcripts.
 ```{r}
 # For large datasets of highly heterogeneous data with multiple cell types we should run a preclustering step:
 # set.seed(1991)
@@ -104,7 +104,7 @@ PAG_sceset_qc <- computeSumFactors(PAG_sceset_qc, min.mean = 1, sizes = seq(21, 
 summary(sizeFactors(PAG_sceset_qc))
 ```
 
-`scran` sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. If you find `scran` has calculated negative size factors (you can see this at the Min. column of the above summary) try increasing the cluster and pool sizes until they are all positive.
+`scran` sometimes calculates negative or zero size factors. These will completely distort the normalised expression matrix. If you find `scran` has calculated negative size factors (you can see this at the Min. column of the above summary) try increasing the cluster and pool sizes until they are all positive.
 
 Plotting the size factors against the library sizes should show a positive correlation.
 ```{r}
@@ -138,7 +138,7 @@ dev.off()
 
 Indeed, our size factors are tightly correlated with the library sizes for all cells. This suggests that the systematic differences between cells are primarily driven by differences in capture efficiency or sequencing depth. Any DE between cells would yield a non-linear trend between the total count and size factor, and/or increased scatter around the trend. This does not occur here as strong DE is unlikely to exist within a homogeneous population of cells.
 
-As we mentioned, we will not normalize using Spike-ins size factors, as we did not add a high enough concentration of ERCCs to achieve a sampling distribution/sequencing coverage constant across cells. If both the deconvolution size factors and the spike-in size factors captured similar technical biases in sequencing depth and capture efficiency, we should observe a positive correlation between them. However, if we plot one against the other, we can clearly see that this is not the case, and spike-in size factors are very low in most cells, reflecting the fact that for most cells the percentage of reads allocated to spike-ins was not high enough to use them for normalization purposes.
+As we mentioned, we will not normalise using Spike-ins size factors, as we did not add a high enough concentration of ERCCs to achieve a sampling distribution/sequencing coverage constant across cells. If both the deconvolution size factors and the spike-in size factors captured similar technical biases in sequencing depth and capture efficiency, we should observe a positive correlation between them. However, if we plot one against the other, we can clearly see that this is not the case, and spike-in size factors are very low in most cells, reflecting the fact that for most cells the percentage of reads allocated to spike-ins was not high enough to use them for normalisation purposes.
 ```{r}
 PAG_sceset_qc_spikes <- PAG_sceset_qc # Make a copy of the SingleCellExperiment object to avoid altering the current one
 PAG_sceset_qc_spikes <- computeSpikeFactors(PAG_sceset_qc_spikes, "ERCC", assay.type = "counts")
@@ -151,12 +151,12 @@ ggplot(to.plot, aes(x = DeconvFactor, y = SpikeFactor, color = CellType)) +
     scale_y_log10() + geom_abline(intercept = 0, slope = 1, color = "red")
 ```
 
-We will thus use spike-ins for QC only, and we will normalize our dataset using the deconvolution size factors.
+We will thus use spike-ins for QC only, and we will normalise our dataset using the deconvolution size factors.
 
-## Step 3.2 | Apply the size factors to normalize gene expression
-We will now calculate normalized expression values using the `logNormCounts()` method from `scater` (McCarthy et al., 2017). This uses the deconvolution size factors for the endogenous genes, and the spike-in-based size factors for the spike-in transcripts. Each expression value can be interpreted as a log-transformed “normalized count”, and can be used in downstream applications like clustering or dimensionality reduction.
+## Step 3.2 | Apply the size factors to normalise gene expression
+We will now calculate normalised expression values using the `logNormCounts()` method from `scater` (McCarthy et al., 2017). This uses the deconvolution size factors for the endogenous genes, and the spike-in-based size factors for the spike-in transcripts. Each expression value can be interpreted as a log-transformed “normalised count”, and can be used in downstream applications like clustering or dimensionality reduction.
 
-The count data are used to compute normalized log-expression values for use in downstream analyses. Each value is defined as the log2-ratio of each count to the size factor for the corresponding cell, after adding a pseudo-count of 1 to avoid undefined values at zero counts. Division of the counts for each gene by its appropriate size factor ensures that any cell-specific biases are removed. If spike-in-specific size factors are present in `SingleCellExperiment`, they will be automatically applied to normalize the spike-in transcripts separately from the endogenous genes.
+The count data are used to compute normalised log-expression values for use in downstream analyses. Each value is defined as the log2-ratio of each count to the size factor for the corresponding cell, after adding a pseudo-count of 1 to avoid undefined values at zero counts. Division of the counts for each gene by its appropriate size factor ensures that any cell-specific biases are removed. If spike-in-specific size factors are present in `SingleCellExperiment`, they will be automatically applied to normalise the spike-in transcripts separately from the endogenous genes.
 
 The log-transformation provides some measure of variance stabilization (Law et al., 2014), so that high-abundance genes with large variances do not dominate downstream analyses. The computed values are stored as an expression matrix in addition to the other assay elements.
 ```{r}
@@ -167,9 +167,9 @@ assayNames(PAG_sceset_qc)
 The log-transformation is useful as differences in the log-values represent log-fold changes in expression. This is important in downstream procedures based on Euclidean distances, which includes many forms of clustering and dimensionality reduction. By operating on log-transformed data, we ensure that these procedures are measuring distances between cells based on log-fold changes in expression.
 
 ### 3.2.1 | TPM Normalization
-Data from full length protocols may benefit from normalization methods that take into account gene length (Patel et al, 2014; Kowalczyk et al, 2015; Soneson & Robinson, 2018). A commonly used normalization method for full-length scRNA-seq data is TPM normalization (Li et al, 2009), which comes from bulk RNA-seq analysis.
+Data from full length protocols may benefit from normalisation methods that take into account gene length (Patel et al, 2014; Kowalczyk et al, 2015; Soneson & Robinson, 2018). A commonly used normalisation method for full-length scRNA-seq data is TPM normalisation (Li et al, 2009), which comes from bulk RNA-seq analysis.
 
-Given that we have full-length read data, we could use the gene lengths we computed at the begining to apply TPM normalization:
+Given that we have full-length read data, we could use the gene lengths we computed at the begining to apply TPM normalisation:
 ```{r}
 #assay(PAG_sceset_qc, "TPM") <- calculateTPM(PAG_sceset_qc,
 #                                            lengths = rowData(PAG_sceset_qc_norm)$gene_length,
@@ -178,10 +178,10 @@ Given that we have full-length read data, we could use the gene lengths we compu
 #assayNames(PAG_sceset_qc)
 ```
 
-However, according to this post by [Nikolay Oskolkov](https://towardsdatascience.com/pitfalls-of-data-normalization-bf05d65f1f4c), TPM counts for a given sample sum up to one million, which is a Simplex Space constraint. This means that TPM counts are not better than Library Size normalized counts as they also suffer from the Simplex Space bias, and one should not naively apply e.g. PCA on those counts. For a clearer explanation read the full post on the link above. We will refrain from using TPM and will stick with the normalization using the `scran` size factors.
+However, according to this post by [Nikolay Oskolkov](https://towardsdatascience.com/pitfalls-of-data-normalization-bf05d65f1f4c), TPM counts for a given sample sum up to one million, which is a Simplex Space constraint. This means that TPM counts are not better than Library Size normalised counts as they also suffer from the Simplex Space bias, and one should not naively apply e.g. PCA on those counts. For a clearer explanation read the full post on the link above. We will refrain from using TPM and will stick with the normalisation using the `scran` size factors.
 
-### 3.2.2 | Plots after normalization
-During QC we noticed that a large proportion of cells seemed to express both the transporter (VGAT or VGluT2) used to create the transgenic line and the other one. Now that we have normalized and log-transformed the counts and filtered low quality cells, we can re-do the plots showing the expression levels of VGAT and VGluT2 and store them:
+### 3.2.2 | Plots after normalisation
+During QC we noticed that a large proportion of cells seemed to express both the transporter (VGAT or VGluT2) used to create the transgenic line and the other one. Now that we have normalised and log-transformed the counts and filtered low quality cells, we can re-do the plots showing the expression levels of VGAT and VGluT2 and store them:
 ```{r}
 # We can set any visualization parameters common to all plots at the beginning like this:
 theme_args_violin_bymouse <- theme(plot.title = element_text(size = 12, face = "bold"), 
@@ -239,7 +239,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGATbymouse_VGATVGluT2_logcounts_raw.p
 violin_QC_VGATbymouse_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGAT"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                              exprs_values = "logcounts",
                                                              colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + 
+  ggtitle("Transporter expression levels in cells from VGAT::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalised counts)") + 
   theme_args_violin_bymouse
 
 violin_QC_VGATbymouse_VGATVGluT2_logcounts
@@ -294,7 +294,7 @@ ggsave(filename = str_c(date, "_violin_QC_VGluT2bymouse_VGATVGluT2_logcounts_raw
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc[, PAG_sceset_qc$cell.type == "VGluT2"], c("Slc32a1", "Slc17a6"), x = "mouse.id",
                                                                exprs_values = "logcounts",
                                                                colour_by = "batch.processing", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalized counts)") + 
+  ggtitle("Transporter expression levels in cells from VGluT2::Cre animals after QC (logcounts)") + xlab("Mouse ID") + ylab("Expression (log-normalised counts)") + 
   theme_args_violin_bymouse
 
 violin_QC_VGluT2bymouse_VGATVGluT2_logcounts
@@ -349,7 +349,7 @@ ggsave(filename = str_c(date, "_violin_QC_celltype_VGATVGluT2_logcounts_raw.pdf"
 violin_QC_celltype_VGATVGluT2_logcounts <- plotExpression(PAG_sceset_qc, c("Slc32a1", "Slc17a6"), x = "cell.type",
                                                           exprs_values = "logcounts", 
                                                           colour_by = "mouse.id", ncol = 2, theme_size = 11, point_alpha = 0.8) +
-  ggtitle("Transporter expression levels after QC (logcounts)") + xlab("Cell type") + ylab("Expression (log-normalized counts)") + 
+  ggtitle("Transporter expression levels after QC (logcounts)") + xlab("Cell type") + ylab("Expression (log-normalised counts)") + 
   theme_args_violin_bytype
 
 violin_QC_celltype_VGATVGluT2_logcounts
@@ -482,10 +482,10 @@ legend("topright", col = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0
 dev.off()
 ```
 
-## Step 3.3 | Compare the effects of different normalization strategies
-To compare the efficiency of different normalization methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalized cells have an RLE closer to zero. Relative log expression (RLE) plots are a powerful tool for visualising unwanted variation in high dimensional data. These plots were originally devised for gene expression data from microarrays but can also be used on single-cell expression data. RLE plots are particularly useful for assessing whether a procedure aimed at removing unwanted variation (e.g., scaling normalisation) has been successful.
+## Step 3.3 | Compare the effects of different normalisation strategies
+To compare the efficiency of different normalisation methods we can use visual inspection of PCA plots and calculation of cell-wise relative log expression via scater's `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) RLE across the cell, whereas normalised cells have an RLE closer to zero. Relative log expression (RLE) plots are a powerful tool for visualising unwanted variation in high dimensional data. These plots were originally devised for gene expression data from microarrays but can also be used on single-cell expression data. RLE plots are particularly useful for assessing whether a procedure aimed at removing unwanted variation (e.g., scaling normalisation) has been successful.
 
-If we look at the RLE plot, the graph shows a box plot of the RLE values for each cell (each line is a boxplot), the circles indicate the median (nearly all should be at 0 after normalization), and the line indicates the interquartile range.
+If we look at the RLE plot, the graph shows a box plot of the RLE values for each cell (each line is a boxplot), the circles indicate the median (nearly all should be at 0 after normalisation), and the line indicates the interquartile range.
 
 If style is “full”, the usual ggplot2 boxplot is created for each cell. Here, the box shows the inter-quartile range and whiskers extend no more than 1.5 times the IQR from the hinge (the 25th or 75th percentile). Data beyond the whiskers are called outliers and are plotted individually. The median (50th percentile) is shown with a white bar. This approach is detailed and flexible, but can take a long time to plot for large datasets.
 
@@ -535,14 +535,14 @@ ggsave(filename = str_c(date, "_RLE_minimal_logcounts_raw.pdf"),
        family = "Arial", bg = "transparent"
        )
 
-# After scran normalization
+# After scran normalisation
 p3 <- plotRLE(PAG_sceset_qc,
               exprs_values = "logcounts",
               exprs_logged = TRUE,
               style = "minimal", # "full" or "minimal"
               legend = TRUE,
               colour_by = "batch.processing" # "mouse.id" or "batch.processing"
-              ) + ggtitle("Cell-wise relative log expression (log-normalized counts)") + theme_args_RLE
+              ) + ggtitle("Cell-wise relative log expression (log-normalised counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_minimal_logcounts.pdf"),
        plot = p3,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
@@ -588,14 +588,14 @@ ggsave(filename = str_c(date, "_RLE_full_logcounts_raw.pdf"),
        family = "Arial", bg = "transparent"
        )
 
-# After scran normalization
+# After scran normalisation
 p3_full <- plotRLE(PAG_sceset_qc,
                    exprs_values = "logcounts",
                    exprs_logged = TRUE,
                    style = "full", # "full" or "minimal"
                    legend = TRUE,
                    colour_by = "mouse.id" # "mouse.id" or "batch.processing"
-                   ) + ggtitle("Cell-wise relative log expression (log-normalized counts)") + theme_args_RLE
+                   ) + ggtitle("Cell-wise relative log expression (log-normalised counts)") + theme_args_RLE
 ggsave(filename = str_c(date, "_RLE_full_logcounts.pdf"),
        plot = p3_full,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
@@ -610,10 +610,10 @@ ggsave(filename = str_c(date, "_RLE_full_logcounts.pdf"),
 #plot(p3_full)
 ```
 
-## Step 3.5 | Save the SingleCellExperiment object containing the log-normalized counts
-We now have normalized our gene expression values for our dataset, so we can store our `SingleCellExperiment` object and proceed to identifying highly variable genes.
+## Step 3.5 | Save the SingleCellExperiment object containing the log-normalised counts
+We now have normalised our gene expression values for our dataset, so we can store our `SingleCellExperiment` object and proceed to identifying highly variable genes.
 ```{r}
-# Save the normalized data:
+# Save the normalised data:
 saveRDS(PAG_sceset_qc, file = "PAG_sceset_qc_norm.rds")
 print("Part 3 - Done!")
 ```

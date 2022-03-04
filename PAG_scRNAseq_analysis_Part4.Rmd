@@ -35,7 +35,7 @@ We often use scRNA-seq data in exploratory analyses to characterise heterogeneit
 
 The simplest approach to feature selection is to select the most variable genes based on their expression across the population. This assumes that genuine biological differences will manifest as increased variation in the affected genes, compared to other genes that are only affected by technical noise or a baseline level of “uninteresting” biological variation (e.g., from transcriptional bursting). Several methods are available to quantify the variation per gene and to select an appropriate set of highly variable genes (HVGs).
 
-We continue using the `PAG_sceset_qc_norm` after normalization. We should thus have a `logcounts` slot in `assays`:
+We continue using the `PAG_sceset_qc_norm` after normalisation. We should thus have a `logcounts` slot in `assays`:
 ```{r}
 # Set the directory where your data and scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
@@ -60,7 +60,7 @@ library(extrafont)
 # If starting from stored results, load saved filtered dataset from previous Step:
 options(stringsAsFactors = FALSE)
 
-PAG_sceset_qc_norm <- readRDS("PAG_sceset_qc_norm.rds") # Contains filtered cells and genes, and log-normalized data
+PAG_sceset_qc_norm <- readRDS("PAG_sceset_qc_norm.rds") # Contains filtered cells and genes, and log-normalised data
 assayNames(PAG_sceset_qc_norm)
 ```
 
@@ -68,11 +68,11 @@ assayNames(PAG_sceset_qc_norm)
 Variability in the observed expression values across genes can be driven by genuine biological heterogeneity or uninteresting technical noise. To distinguish between these two possibilties, we need to model the technical component of the variability of the expression values for each gene.
 
 ### 4.1.1 | Variance of the log-counts
-The simplest approach to quantifying per-gene variation is to compute the variance of the _log-normalized expression_ values (referred to as “logcounts” for simplicity) for each gene across all cells in the population (A. T. L. Lun, McCarthy, and Marioni 2016). This has an advantage in that the feature selection is based on the same log-values that are used for later downstream steps. In particular, genes with the largest variances in log-values will contribute the most to the Euclidean distances between cells. By using log-values here, we ensure that our quantitative definition of heterogeneity is consistent throughout the entire analysis.
+The simplest approach to quantifying per-gene variation is to compute the variance of the _log-normalised expression_ values (referred to as “logcounts” for simplicity) for each gene across all cells in the population (A. T. L. Lun, McCarthy, and Marioni 2016). This has an advantage in that the feature selection is based on the same log-values that are used for later downstream steps. In particular, genes with the largest variances in log-values will contribute the most to the Euclidean distances between cells. By using log-values here, we ensure that our quantitative definition of heterogeneity is consistent throughout the entire analysis.
 
 Calculation of the per-gene variance is simple but feature selection requires modelling of the mean-variance relationship. The log-transformation does not achieve perfect variance stabilization, which means that the variance of a gene is driven more by its abundance than its underlying biological heterogeneity. To account for this effect, we use the `modelGeneVar()` function to fit a trend to the variance with respect to abundance across all genes. Note that in previouse steps we have filtered the genes so that we keep only those expressed (with at least 1 count) in 4 cells or more.
 
-For each gene, `modelGeneVar()` computes the variance and mean of the log-expression values. A trend is fitted to the variance against the mean for all genes using `fitTrendVar`. The fitted value for each gene is used as a proxy for the technical component of variation for each gene, under the assumption that most genes exhibit a low baseline level of variation that is not biologically interesting. The biological component of variation for each gene is defined as the residual from the trend. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized log-expression per gene), `total` (variance of the normalized log-expression per gene), `bio` (biological component of the variance), `tech` (technical component of the variance), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that `bio<=0`).
+For each gene, `modelGeneVar()` computes the variance and mean of the log-expression values. A trend is fitted to the variance against the mean for all genes using `fitTrendVar`. The fitted value for each gene is used as a proxy for the technical component of variation for each gene, under the assumption that most genes exhibit a low baseline level of variation that is not biologically interesting. The biological component of variation for each gene is defined as the residual from the trend. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalised log-expression per gene), `total` (variance of the normalised log-expression per gene), `bio` (biological component of the variance), `tech` (technical component of the variance), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that `bio<=0`).
 ```{r}
 library(scran)
 start_time <- Sys.time() # Takes around 2s
@@ -84,7 +84,7 @@ var_model_no_spikes <- modelGeneVar(PAG_sceset_qc_norm,
 # If block is not specified, the metadata of the DataFrame contains the output of running `fitTrendVar` on the specified features, along with the mean and var used to fit the trend.
 var_fit_no_spikes <- metadata(var_model_no_spikes)
 sum(var_fit_no_spikes$mean == "0") # Number of genes with mean expression = 0
-# If this is not 0, it means some dropouts were introduced by the normalization and log-transformation steps as we had excluded genes with zero expression in all cells before normalization
+# If this is not 0, it means some dropouts were introduced by the normalisation and log-transformation steps as we had excluded genes with zero expression in all cells before normalisation
 
 end_time <- Sys.time()
 end_time - start_time
@@ -111,9 +111,9 @@ head(var_model_no_spikes[order(var_model_no_spikes$bio, decreasing = TRUE),])
 ```
 
 ### 4.1.2 | Coefficient of variation
-An alternative approach to quantification uses the _squared coefficient of variation (CV2)_ of the _normalized_ expression values *prior to log-transformation*. The CV2 is a widely used metric for describing variation in non-negative data and is closely related to the dispersion parameter of the negative binomial distribution in packages like _edgeR_ and _DESeq2_. We can compute the CV2 for each gene in the dataset using the `modelGeneCV2()` function, which provides a robust implementation of the approach described by Brennecke et al. (2013).
+An alternative approach to quantification uses the _squared coefficient of variation (CV2)_ of the _normalised_ expression values *prior to log-transformation*. The CV2 is a widely used metric for describing variation in non-negative data and is closely related to the dispersion parameter of the negative binomial distribution in packages like _edgeR_ and _DESeq2_. We can compute the CV2 for each gene in the dataset using the `modelGeneCV2()` function, which provides a robust implementation of the approach described by Brennecke et al. (2013).
 
-For each gene, `modelGeneCV2()` computes the CV2 and mean of the counts after scaling them by the `size.factors`. A trend is fitted to the CV2 against the mean for all genes using `fitTrendCV2`. The fitted value for each gene is used as a proxy for the technical noise, assuming that most genes exhibit a low baseline level of variation that is not biologically interesting. The ratio of the total CV2 to the trend is used as a metric to rank interesting genes, with larger ratios being indicative of strong biological heterogeneity. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalized expression per gene), `total` (squared coefficient of variation of the normalized expression per gene), `trend` (fitted value of the trend), `ratio` (ratio of `total` to `trend`), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that `ratio<=1`).
+For each gene, `modelGeneCV2()` computes the CV2 and mean of the counts after scaling them by the `size.factors`. A trend is fitted to the CV2 against the mean for all genes using `fitTrendCV2`. The fitted value for each gene is used as a proxy for the technical noise, assuming that most genes exhibit a low baseline level of variation that is not biologically interesting. The ratio of the total CV2 to the trend is used as a metric to rank interesting genes, with larger ratios being indicative of strong biological heterogeneity. A `DataFrame` is returned where each row corresponds to a gene containing the following numeric fields: `mean` (mean normalised expression per gene), `total` (squared coefficient of variation of the normalised expression per gene), `trend` (fitted value of the trend), `ratio` (ratio of `total` to `trend`), `p.value` and `FDR` (raw and adjusted p-values for the test against the null hypothesis that `ratio<=1`).
 ```{r}
 start_time <- Sys.time() # Takes around 2s
 CV2_model_no_spikes <- modelGeneCV2(PAG_sceset_qc_norm,
@@ -124,7 +124,7 @@ CV2_model_no_spikes <- modelGeneCV2(PAG_sceset_qc_norm,
 # If block is not specified, the metadata of the DataFrame contains the output of running fitTrendCV2 on the specified features, along with the mean and cv2 used to fit the trend.
 CV2_fit_no_spikes <- metadata(CV2_model_no_spikes)
 sum(CV2_fit_no_spikes$mean == "0") # Number of genes with mean expression = 0 
-# If this is not 0, it means some dropouts were introduced by the normalization step as we had excluded genes with zero expression in all cells before normalization
+# If this is not 0, it means some dropouts were introduced by the normalisation step as we had excluded genes with zero expression in all cells before normalisation
 
 end_time <- Sys.time()
 end_time - start_time
@@ -138,8 +138,8 @@ plot(CV2_fit_no_spikes$mean,
      log = "xy",
      pch = 16, cex = 0.6, las = 1,
      main = "Mean-CV2 relationship",
-     xlab = "Mean of normalized expression",
-     ylab = "CV2 of normalized expression",
+     xlab = "Mean of normalised expression",
+     ylab = "CV2 of normalised expression",
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 ```
@@ -149,7 +149,7 @@ For each gene, we quantify the deviation from the trend in terms of the ratio of
 head(CV2_model_no_spikes[order(CV2_model_no_spikes$ratio, decreasing = TRUE),])
 ```
 
-Both the *CV2 of normalized counts* and the *variance of logcounts* are effective metrics for quantifying variation in gene expression. The CV2 tends to give higher rank to low-abundance HVGs driven by upregulation in rare subpopulations, for which the increase in variance on the raw scale is stronger than that on the log-scale. However, the variation described by the CV2 is less directly relevant to downstream procedures operating on the log-counts, and the reliance on the ratio can assign high rank to uninteresting genes with low absolute variance. We will nonetheless continue the analysis using both metrics side by side.
+Both the *CV2 of normalised counts* and the *variance of logcounts* are effective metrics for quantifying variation in gene expression. The CV2 tends to give higher rank to low-abundance HVGs driven by upregulation in rare subpopulations, for which the increase in variance on the raw scale is stronger than that on the log-scale. However, the variation described by the CV2 is less directly relevant to downstream procedures operating on the log-counts, and the reliance on the ratio can assign high rank to uninteresting genes with low absolute variance. We will nonetheless continue the analysis using both metrics side by side.
 
 ### 4.1.3 | Quantifying technical noise using spike-ins [not used]
 Strictly speaking, the use of a trend fitted to endogenous genes assumes that the expression profiles of most genes are dominated by random technical noise. In practice, all expressed genes will exhibit some non-zero level of biological variability due to events like transcriptional bursting. This suggests that our estimates of the technical component are likely to be inflated. It would be more appropriate to consider these estimates as technical noise plus “uninteresting” biological variation, under the assumption that most genes are unaffected by the relevant heterogeneity in the population.
@@ -249,8 +249,8 @@ for (i in colnames(blocked.stats)) {
        log = "xy",
        main = paste0("Batch ", i, " | ", sum(current$mean == "0"), " zero-expression genes"),
        pch = 16, cex = 0.6, las = 1,
-       xlab = "Mean of normalized expression",
-       ylab = "CV2 of normalized expression",
+       xlab = "Mean of normalised expression",
+       ylab = "CV2 of normalised expression",
        xlim = c(1e-05, 1e+06), ylim = c(0.01,50)
        )
   curfit <- metadata(current)
@@ -740,8 +740,8 @@ plot(CV2_fit_no_spikes$mean,
      log = "xy",
      pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (no block) | ", length(hvg_index_cv2), " HVGs"),
-     xlab = "Mean of normalized expression", 
-     ylab = "CV2 of normalized expression", 
+     xlab = "Mean of normalised expression", 
+     ylab = "CV2 of normalised expression", 
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 points(CV2_fit_no_spikes$mean[hvg_index_cv2], CV2_fit_no_spikes$cv2[hvg_index_cv2], col = "orange")
@@ -755,8 +755,8 @@ plot(CV2_fit_no_spikes$mean,
      log = "xy",
      pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (block) | ", length(hvg_index_cv2_block), " HVGs"),
-     xlab = "Mean of normalized expression", 
-     ylab = "CV2 of normalized expression", 
+     xlab = "Mean of normalised expression", 
+     ylab = "CV2 of normalised expression", 
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 points(CV2_fit_no_spikes$mean[hvg_index_cv2_block], CV2_fit_no_spikes$cv2[hvg_index_cv2_block], col = "orange")
@@ -803,8 +803,8 @@ plot(CV2_fit_no_spikes$mean,
      log = "xy",
      pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (no block) | ", length(hvg_index_cv2), " HVGs"),
-     xlab = "Mean of normalized expression", 
-     ylab = "CV2 of normalized expression", 
+     xlab = "Mean of normalised expression", 
+     ylab = "CV2 of normalised expression", 
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 points(CV2_fit_no_spikes$mean[hvg_index_cv2], CV2_fit_no_spikes$cv2[hvg_index_cv2], col = "orange")
@@ -818,8 +818,8 @@ plot(CV2_fit_no_spikes$mean,
      log = "xy",
      pch = 16, cex = 0.6, las = 1,
      main = paste0("Mean-CV2 relationship (block) | ", length(hvg_index_cv2_block), " HVGs"),
-     xlab = "Mean of normalized expression", 
-     ylab = "CV2 of normalized expression", 
+     xlab = "Mean of normalised expression", 
+     ylab = "CV2 of normalised expression", 
      xlim = c(1e-05, 1e+06))
 curve(CV2_fit_no_spikes$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)
 points(CV2_fit_no_spikes$mean[hvg_index_cv2_block], CV2_fit_no_spikes$cv2[hvg_index_cv2_block], col = "orange")
