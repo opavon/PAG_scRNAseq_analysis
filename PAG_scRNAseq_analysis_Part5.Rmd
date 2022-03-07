@@ -40,7 +40,7 @@ The most prominent technical covariates in single-cell data are _count depth (li
 ## Step 5.1 | Identifying confounding and technical factors
 As we have mentioned, a big source of variability in scRNA-seq data, besides bad cells, are batch effects. We want to try to identify such effects and remove them, so our analysis picks up mainly biological effects.
 
-We continue using the `PAG_sceset_qc_norm_filt` after normalization. We should thus have a `logcounts` slot in `assays`, containing the normalized and log-transformed counts:
+We continue using the `PAG_sceset_qc_norm_filt` after normalisation. We should thus have a `logcounts` slot in `assays`, containing the normalised and log-transformed counts:
 ```{r}
 # Set the directory where your data and scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
@@ -66,7 +66,7 @@ library(extrafont)
 # If starting from stored results, load saved filtered dataset from previous Step:
 options(stringsAsFactors = FALSE)
 
-PAG_sceset_qc_norm_filt <- readRDS("PAG_sceset_qc_norm_filt.rds") # Contains filtered cells and genes, log-normalized, and filtered data
+PAG_sceset_qc_norm_filt <- readRDS("PAG_sceset_qc_norm_filt.rds") # Contains filtered cells and genes, log-normalised, and filtered data
 assayNames(PAG_sceset_qc_norm_filt)
 ```
 
@@ -118,7 +118,7 @@ plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
                                        "total"
                                        ),
                          theme_size = 11
-                         ) + ggtitle("Counts log-normalized with Scran")
+                         ) + ggtitle("Counts log-normalised with Scran")
 
 ```
 
@@ -153,10 +153,17 @@ assayNames(PAG_sceset_qc_norm_filt)
 If the batch effect is successfully corrected, clusters corresponding to shared cell types or states should contain cells from multiple batches. The general recommendation is to use measured raw data for statistical testing (e.g. Differential Expression Analysis), corrected data for visual comparison of data, and reduced/feature selected data for other downstream analysis based on finding the underlying biological data manifold.
 
 ### 5.2.2 | Effectiveness of the correction
-We can use PCA to compare the effects of our normalization and batch correction. To evaluate the effectiveness of the correction we can plot the PCA output where colour corresponds to the technical replicates and shape corresponds to the individuals from which biological samples were acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed. In addition, if we plot the PCA results using the `size_by = detected` we can assess whether the count depth correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
+We can use PCA to compare the effects of our normalisation and batch correction. To evaluate the effectiveness of the correction we can plot the PCA output where colour corresponds to the technical replicates and shape corresponds to the individuals from which biological samples were acquired. Separation of biological samples and interspersed batches indicates that technical variation has been removed. In addition, if we plot the PCA results using the `size_by = detected` we can assess whether the count depth correlates with the PCs: if there is a correlation with the total features, we will see that the cells are distributed in a particular way (e.g. with small bubbles on the left and large bubbles on the right). We should not observe a clear separation of cells by batch (`batch.processing` or `mouse.id`), indicating that our batch correction step using `removeBatchEffect()` was successful.
 
 *[IMP]*: If `subset_row = NULL`, the `ntop` features with the largest variances are used instead. This literally computes the variances from the expression values without considering any mean-variance trend. Note that the value of `ntop` is ignored if `subset_row` is specified. Given that we have fitted a mean-variance trend and obtained highly variable genes from it, we will use our HVG instead of using the `ntop` option.
 ```{r}
+# We can set any visualization parameters common to all plots at the beginning like this:
+theme_args_PCA_HVG_var <- theme(plot.title = element_text(size = 12, face = "bold"), 
+                                axis.title = element_text(size = 11, face = "plain"),
+                                axis.text = element_text(size = 10, face = "plain"), 
+                                legend.text = element_text(size = 9, face = "plain"), 
+                                strip.text = element_text(size = 10, face = "plain"))
+
 # Compute PCA for each of the assay slots with the HVGs obtained with variance modelling:
 for(n in assayNames(PAG_sceset_qc_norm_filt)) {
   set.seed(1991)
@@ -172,35 +179,39 @@ PCA_HVG_var_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                      dimred = "PCA_HVG_var_counts",
                                      colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                      shape_by = "cell.type", # "mouse.id"
-                                     size_by = "detected"
-                                     ) + ggtitle("PCA using HVG (var) and raw counts")
+                                     size_by = "detected",
+                                     theme_size = 11
+                                     ) + ggtitle("Raw counts") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_var
 
 PCA_HVG_var_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "PCA_HVG_var_logcounts_raw",
                                             colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                             shape_by = "cell.type", # "mouse.id"
-                                            size_by = "detected"
-                                            ) + ggtitle("PCA using HVG (var) and log2 raw counts") 
+                                            size_by = "detected",
+                                            theme_size = 11
+                                            ) + ggtitle("Log2 raw counts") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_var
 
 PCA_HVG_var_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_var_logcounts",
                                         colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
-                                        size_by = "detected"
-                                        ) + ggtitle("PCA using HVG (var) and log-normalized counts") 
+                                        size_by = "detected",
+                                        theme_size = 11
+                                        ) + ggtitle("Log-normalised counts") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_var
 
 PCA_HVG_var_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_var_corrected",
                                         colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
-                                        size_by = "detected"
-                                        ) + ggtitle("PCA using HVG (var) and batch corrected")
+                                        size_by = "detected",
+                                        theme_size = 11
+                                        ) + ggtitle("Batch corrected") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_var
 
 # Prepare and save a composed plot
 library(patchwork)
-batch_correction_PCA_var_composed <- PCA_HVG_var_counts + PCA_HVG_var_counts + PCA_HVG_var_logcounts + PCA_HVG_var_corrected +
-  plot_annotation(title = "Comparison of effects of normalization and batch correction with PCA (var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + 
+batch_correction_PCA_var_composed <- PCA_HVG_var_counts + PCA_HVG_var_logcounts_raw + PCA_HVG_var_logcounts + PCA_HVG_var_corrected +
+  plot_annotation(title = "Effects of normalisation and batch correction in PCA using HVG (Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(guides = "collect")
 
 batch_correction_PCA_var_composed
@@ -209,13 +220,20 @@ ggsave(filename = str_c(date, "_PCA_batch_correction_var_composed.pdf"),
        plot = batch_correction_PCA_var_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
 We repeat the same operation using the genes obtained from modelling the CV2-mean trend instead:
 ```{r}
+# We can set any visualization parameters common to all plots at the beginning like this:
+theme_args_PCA_HVG_cv2 <- theme(plot.title = element_text(size = 12, face = "bold"),
+                                axis.title = element_text(size = 11, face = "plain"),
+                                axis.text = element_text(size = 10, face = "plain"), 
+                                legend.text = element_text(size = 9, face = "plain"), 
+                                strip.text = element_text(size = 10, face = "plain"))
+
 # Compute PCA for each of the assay slots with the HVGs obtained with CV2 modelling:
 for(n in assayNames(PAG_sceset_qc_norm_filt)) {
   set.seed(1992)
@@ -231,35 +249,39 @@ PCA_HVG_cv2_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                      dimred = "PCA_HVG_cv2_counts",
                                      colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                      shape_by = "cell.type", # "mouse.id"
-                                     size_by = "detected"
-                                     ) + ggtitle("PCA using HVG (cv2) and raw counts")
+                                     size_by = "detected",
+                                     theme_size = 11
+                                     ) + ggtitle("Raw counts") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_cv2
 
 PCA_HVG_cv2_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "PCA_HVG_cv2_logcounts_raw",
                                             colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                             shape_by = "cell.type", # "mouse.id"
-                                            size_by = "detected"
-                                            ) + ggtitle("PCA using HVG (cv2) and log2 raw counts") 
+                                            size_by = "detected",
+                                            theme_size = 11
+                                            ) + ggtitle("Log2 raw counts") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_cv2
 
 PCA_HVG_cv2_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_cv2_logcounts",
                                         colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
-                                        size_by = "detected"
-                                        ) + ggtitle("PCA using HVG (cv2) and log-normalized counts") 
+                                        size_by = "detected",
+                                        theme_size = 11
+                                        ) + ggtitle("Log-normalised counts") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_cv2 
 
 PCA_HVG_cv2_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_cv2_corrected",
                                         colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
                                         shape_by = "cell.type", # "mouse.id"
-                                        size_by = "detected"
-                                        ) + ggtitle("PCA using HVG (cv2) and batch corrected") 
+                                        size_by = "detected",
+                                        theme_size = 11
+                                        ) + ggtitle("Batch corrected") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_HVG_cv2
 
 # Prepare and save a composed plot
 library(patchwork)
 batch_correction_PCA_cv2_composed <- PCA_HVG_cv2_counts + PCA_HVG_cv2_logcounts_raw + PCA_HVG_cv2_logcounts + PCA_HVG_cv2_corrected +
-  plot_annotation(title = "Comparison of effects of normalization and batch correction with PCA (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + 
+  plot_annotation(title = "Effects of normalisation and batch correction in PCA using HVG (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(guides = "collect")
 
 batch_correction_PCA_cv2_composed
@@ -268,65 +290,76 @@ ggsave(filename = str_c(date, "_PCA_batch_correction_cv2_composed.pdf"),
        plot = batch_correction_PCA_cv2_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
 __Hint: try "Ctss", "Cd14", or "Cd68" as `colour_by = `. This will show how the more separated cells in the t-SNE plots are actually macrophages, with high expression levels for macrophage marker genes.__
 
-Overall, we can clearly see that the first PC in the raw data is dominated by the library size / total detected genes in each sample (which explains >90% of the variance). Once we normalize and log-transform the raw counts using _scran_, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalization show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalization and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this).
+Overall, we can clearly see that the first PC in the raw data is dominated by the `library size / total detected genes` in each sample (which explains >90% of the variance). Once we normalise and log-transform the raw counts using _scran_, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalisation show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalisation and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this).
 
-We can also look at the change in the `plotExplanatoryVariables()` output after normalization and batch correction. This function uses `getVarianceExplained` to compute the percentage of variance in gene expression that is explained by variables in the sample-level metadata, allowing for problematic factors to be quickly identified, as well as the genes that are most affected. A density plot is then created for each variable, showing the distribution of R-squared across all genes.
+We can also look at the change in the `plotExplanatoryVariables()` output after normalisation and batch correction. This function uses `getVarianceExplained` to compute the percentage of variance in gene expression that is explained by variables in the sample-level metadata, allowing for problematic factors to be quickly identified, as well as the genes that are most affected. A density plot is then created for each variable, showing the distribution of R-squared across all genes.
 ```{r}
+# We can set any visualization parameters common to all plots at the beginning like this:
+theme_args_explanatory <- theme(plot.title = element_text(size = 12, face = "bold"),
+                                axis.title = element_text(size = 11, face = "plain"),
+                                axis.text = element_text(size = 10, face = "plain"), 
+                                legend.text = element_text(size = 9, face = "plain"), 
+                                strip.text = element_text(size = 10, face = "plain"))
+
 explanatory_variables_counts <- plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
-                                                         nvars_to_plot = 17,
+                                                         nvars_to_plot = 15,
                                                          exprs_values = "counts",
                                                          variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                        "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
                                                                        "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "celltype_PAGarea",
-                                                                       "batch.processing", "batch.sequencing_round", "detected", "total")
-                                                         ) + ggtitle("Raw counts")
+                                                                       "batch.processing", "batch.sequencing_round", "detected", "total"),
+                                                         theme_size = 11
+                                                         ) + ggtitle("Raw counts") + theme_args_explanatory
 saveRDS(explanatory_variables_counts, file = str_c(path_for_figures, "explanatory_variables_counts.rds"))
 
 explanatory_variables_logcounts_raw <- plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
-                                                                nvars_to_plot = 17,
+                                                                nvars_to_plot = 15,
                                                                 exprs_values = "logcounts_raw",
                                                                 variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                               "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
                                                                               "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "celltype_PAGarea",
-                                                                              "batch.processing", "batch.sequencing_round", "detected", "total")
-                                                                ) + ggtitle("Log2 raw counts")
+                                                                              "batch.processing", "batch.sequencing_round", "detected", "total"),
+                                                                theme_size = 11
+                                                                ) + ggtitle("Log2 raw counts") + theme_args_explanatory
 saveRDS(explanatory_variables_logcounts_raw, file = str_c(path_for_figures, "explanatory_variables_logcounts_raw.rds"))
 
 
 explanatory_variables_logcounts <- plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
-                                                            nvars_to_plot = 17,
+                                                            nvars_to_plot = 15,
                                                             exprs_values = "logcounts",
                                                             variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                           "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
                                                                           "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "celltype_PAGarea",
-                                                                          "batch.processing", "batch.sequencing_round", "detected", "total")
-                                                            ) + ggtitle("Log-normalized counts")
+                                                                          "batch.processing", "batch.sequencing_round", "detected", "total"),
+                                                            theme_size = 11
+                                                            ) + ggtitle("Log-normalised counts") + theme_args_explanatory
 saveRDS(explanatory_variables_logcounts, file = str_c(path_for_figures, "explanatory_variables_logcounts.rds"))
 
 
 explanatory_variables_corrected <- plotExplanatoryVariables(PAG_sceset_qc_norm_filt,
-                                                            nvars_to_plot = 17,
+                                                            nvars_to_plot = 15,
                                                             exprs_values = "corrected",
                                                             variables = c("mouse.id", "mouse.sex", "mouse.age", "mouse.singlehousedays",
                                                                           "cell.type", "cell.fluorophore", "slice.number", "slice.depth", "time.sinceslicinghour",
                                                                           "PAG.area", "PAG.hemisphere", "PAG.PaxinosAPmanual", "celltype_PAGarea",
-                                                                          "batch.processing", "batch.sequencing_round", "detected", "total")
-                                                            ) + ggtitle("Corrected log-normalized counts")
+                                                                          "batch.processing", "batch.sequencing_round", "detected", "total"),
+                                                            theme_size = 11
+                                                            ) + ggtitle("Batch corrected") + theme_args_explanatory
 saveRDS(explanatory_variables_corrected, file = str_c(path_for_figures, "explanatory_variables_corrected.rds"))
 
 
 # Prepare and save a composed plot
 library(patchwork)
-explanatory_variables_composed <- explanatory_variables_counts + explanatory_variables_logcounts_raw + explanatory_variables_logcounts + explanatory_variables_corrected +
-  plot_annotation(title = "Explanatory variables after normalization and batch correction", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14)))
+explanatory_variables_composed <- explanatory_variables_counts / explanatory_variables_logcounts_raw / explanatory_variables_logcounts / explanatory_variables_corrected +
+  plot_annotation(title = "Explanatory variables after normalisation and batch correction", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11)))
 
 explanatory_variables_composed
 
@@ -334,12 +367,12 @@ ggsave(filename = str_c(date, "_explanatory_variables_composed.pdf"),
        plot = explanatory_variables_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 6, height = 11, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-Here we can see how after applying `removeBatchEffect()`, `batch.processing` is no longer in the top of explanatory variables.`mouse.id` (and its correlate `mouse.age`) is still the highest explanatory variable, which reflects how cells were obtained. We also see some interesting variables that reflect the biology we are interested in, namely `celltype_PAGarea`, which is a combination of `PAG.area` and `cell.type`, and `PAG.PaxinosAPmanual`. Although `batch.processing` is an important variable (and we certainly have batch effects, inherent to this type of experiments), the fact that we don't have properly balanced batches (only half of our batches are balanced) makes it hard to remove the batch effect alone leaving the biology intact, as by removing it we will also be removing some of its confounds linked to biology (such as `mouse.id` and `cell.type`). Given that in the PCA plots using HVGs from Var and CV2 modelling we observed interspread batches, we will continue to use the `corrected` assay for plotting and we will stick to the `logcounts` assay for clustering and downstream analysis. 
+Here we can see how after applying `removeBatchEffect()`, `batch.processing` is no longer in the top of explanatory variables.`mouse.id` (and its correlate `mouse.age`) is still the highest explanatory variable, which reflects how cells were obtained. We also see some interesting variables that reflect the biology we are interested in, namely `celltype_PAGarea`, which is a combination of `PAG.area` and `cell.type`, and `PAG.PaxinosAPmanual`. Although `batch.processing` is an important variable (and we certainly have batch effects, inherent to this type of experiments), the fact that we don't have properly balanced batches (only half of our batches are balanced) makes it hard to remove the batch effect alone leaving the biology intact, as by removing it we will also be removing some of its confounds linked to biology (such as `mouse.id` and `cell.type`). Given that in the PCA plots using HVGs from Var and CV2 modelling we observed interspread batches, we will continue to use the `corrected` assay for plotting and we will stick to the `logcounts` assay for clustering and downstream analysis.
 
 ## Step 5.3 | Dimensionality reduction
 Many scRNA-seq analysis procedures involve comparing cells based on their expression values across multiple genes. For example, clustering aims to identify cells with similar transcriptomic profiles by computing Euclidean distances across genes. In these applications, each individual gene represents a dimension of the data. More intuitively, if we had a scRNA-seq data set with two genes, we could make a two-dimensional plot where each axis represents the expression of one gene and each point in the plot represents a cell. This concept can be extended to data sets with thousands of genes where each cell’s expression profile defines its location in the high-dimensional expression space.
@@ -353,7 +386,7 @@ By definition, the top PCs capture the dominant factors of heterogeneity in the 
 
 When applying PCA to scRNA-seq data, our assumption is that biological processes affect multiple genes in a coordinated manner. This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behaviour of many genes. By comparison, random technical or biological noise is expected to affect each gene independently. There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs. This motivates the use of the earlier PCs in our downstream analyses, which concentrates the biological signal to simultaneously reduce computational work and remove noise. 
 
-We perform the PCA on the log-normalized expression values using the `runPCA()` function from _scater_. By default, `runPCA()` will compute the first 50 PCs and store them in the `reducedDims()` of the output SingleCellExperiment object. We can use only the top 2000 genes with the largest biological components to reduce computational work and noise, or any HVGs we have previously extracted from our data. Specifically, PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure. This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs.
+We perform the PCA on the log-normalised expression values using the `runPCA()` function from _scater_. By default, `runPCA()` will compute the first 50 PCs and store them in the `reducedDims()` of the output SingleCellExperiment object. We can use only the top 2000 genes with the largest biological components to reduce computational work and noise, or any HVGs we have previously extracted from our data. Specifically, PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure. This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs.
 
 We already performed PCA using all HVG in the previous step. We can check as follows:
 ```{r}
@@ -377,7 +410,7 @@ plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected", colour
   ggtitle("PCA using HVG (cv2) and batch corrected")
 ```
 
-### 5.3.2 | Choosing the number of PCs based on the scree plot
+### 5.3.2 | Choosing the number of PCs to keep based on the scree plot
 How many of the top PCs should we retain for downstream analyses? The choice of the number of PCs `d` is a decision that is analogous to the choice of the number of HVGs to use. Using more PCs will avoid discarding biological signal in later PCs, at the cost of retaining more noise. Most practitioners will simply set `d` to a “reasonable” but arbitrary value, typically ranging from 10 to 50. This is often satisfactory provided it is coupled with sufficient testing of alternative values to explore other perspectives of the data at a different bias-variance trade-off. Nonetheless, we will describe some more data-driven strategies to guide a suitable choice of `d`.
 
 One strategy is to look at the proportion of variance explained by each PC and keep the components before the "elbow" in the curve of a scree plot:
@@ -416,7 +449,9 @@ for(n in reducedDimNames(PAG_sceset_qc_norm_filt)[2:length(reducedDimNames(PAG_s
 
 Save the scree plots for the `logcounts` and `corrected` slots:
 ```{r}
+# Save the plots
 library(PCAtools)
+
 # HVG var logcounts
 set.seed(1991)
 chosen_slot <- reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_var_logcounts")
@@ -425,13 +460,13 @@ chosen_elbow <- PCAtools::findElbowPoint(attr(chosen_slot, "percentVar"))
 tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_var_logcounts.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Scree plot for PCA from HVG (var) using log-normalized counts", adj = 0)
+title(main = "Scree plot: PCA from HVG (Var) using log-normalised counts", adj = 0)
 abline(v = chosen_elbow, col = "red", lty = "dashed", lwd = 2)
 abline(v = 25, col = "gray80", lty = "dotted", lwd = 2)
 dev.off()
@@ -444,13 +479,13 @@ chosen_elbow <- PCAtools::findElbowPoint(attr(chosen_slot, "percentVar"))
 tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_var_corrected.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Scree plot for PCA from HVG (var) after batch correction", adj = 0)
+title(main = "Scree plot: PCA from HVG (Var) after batch correction", adj = 0)
 abline(v = chosen_elbow, col = "red", lty = "dashed", lwd = 2)
 abline(v = 25, col = "gray80", lty = "dotted", lwd = 2)
 dev.off()
@@ -463,13 +498,13 @@ chosen_elbow <- PCAtools::findElbowPoint(attr(chosen_slot, "percentVar"))
 tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_cv2_logcounts.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Scree plot for PCA from HVG (cv2) using log-normalized counts", adj = 0)
+title(main = "Scree plot: PCA from HVG (CV2) using log-normalised counts", adj = 0)
 abline(v = chosen_elbow, col = "red", lty = "dashed", lwd = 2)
 abline(v = 25, col = "gray80", lty = "dotted", lwd = 2)
 dev.off()
@@ -482,19 +517,19 @@ chosen_elbow <- PCAtools::findElbowPoint(attr(chosen_slot, "percentVar"))
 tmpCol[1:chosen_elbow] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_scree_plot_cv2_corrected.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(attr(chosen_slot, "percentVar"),
      xlab = "PC #", ylab = "Proportion of variance explained (%)",
      sub = sprintf("Calculated Elbow: %s PCs", chosen_elbow),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Scree plot for PCA from HVG (cv2) after batch correction", adj = 0)
+title(main = "Scree plot: PCA from HVG (CV2) after batch correction", adj = 0)
 abline(v = chosen_elbow, col = "red", lty = "dashed", lwd = 2)
 abline(v = 25, col = "gray80", lty = "dotted", lwd = 2)
 dev.off()
 ```
 
-Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for `d`. As we see in the scree plots using the `counts` assay, the first component explains most of the variance. After log-normalization with `scran`, that correlate is gone and we can properly assess a more appropriate elbow for our data.
+Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for `d`. As we see in the scree plots using the `counts` assay, the first component explains most of the variance. After log-normalisation with `scran`, that correlate is gone and we can properly assess a more appropriate elbow for our data.
 
 we can also print the percentage of variance explained by each component, and look at the cumulative sum throughout any selected subset of PCs:
 ```{r}
@@ -593,12 +628,12 @@ choices <- getClusteredPCs(chosen_slot)
 tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_var_logcounts.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Chosen PCs for PCA from HVG (var) using log-normalized counts", adj = 0)
+title(main = "Chosen PCs for PCA from HVG (Var) using log-normalised counts", adj = 0)
 abline(a = 1, b = 1, col = "red")
 abline(v = metadata(choices)$chosen, col = "grey80", lty = 2, lwd = 2)
 abline(v = 25, col = "aquamarine3", lty = "dotted", lwd = 2)
@@ -612,12 +647,12 @@ choices <- getClusteredPCs(chosen_slot)
 tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_var_corrected.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Chosen PCs for PCA from HVG (var) after batch correction", adj = 0)
+title(main = "Chosen PCs for PCA from HVG (Var) after batch correction", adj = 0)
 abline(a = 1, b = 1, col = "red")
 abline(v = metadata(choices)$chosen, col = "grey80", lty = 2, lwd = 2)
 abline(v = 25, col = "aquamarine3", lty = "dotted", lwd = 2)
@@ -631,12 +666,12 @@ choices <- getClusteredPCs(chosen_slot)
 tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_cv2_logcounts.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Chosen PCs for PCA from HVG (cv2) using log-normalized counts", adj = 0)
+title(main = "Chosen PCs for PCA from HVG (CV2) using log-normalised counts", adj = 0)
 abline(a = 1, b = 1, col = "red")
 abline(v = metadata(choices)$chosen, col = "grey80", lty = 2, lwd = 2)
 abline(v = 25, col = "aquamarine3", lty = "dotted", lwd = 2)
@@ -650,12 +685,12 @@ choices <- getClusteredPCs(chosen_slot)
 tmpCol[choices$n.pcs <= metadata(choices)$chosen] <- "aquamarine3"
 
 pdf(file = str_c(path_for_figures, date, "_PCA_chosen_clustered_PCs_cv2_corrected.pdf"),
-    width = 12, height = 9,
+    width = 7, height = 5, pointsize = 11,
     family = "Arial", bg = "transparent")
 plot(choices$n.pcs, choices$n.clusters, 
      xlab = "PC #", ylab = "Number of clusters", sub = sprintf("Calculated PCs to keep: %s PCs", metadata(choices)$chosen),
      col = tmpCol, type = "p", pch = 19, cex = 1.25, las = 1)
-title(main = "Chosen PCs for PCA from HVG (cv2) after batch correction", adj = 0)
+title(main = "Chosen PCs for PCA from HVG (CV2) after batch correction", adj = 0)
 abline(a = 1, b = 1, col = "red")
 abline(v = metadata(choices)$chosen, col = "grey80", lty = 2, lwd = 2)
 abline(v = 25, col = "aquamarine3", lty = "dotted", lwd = 2)
@@ -663,9 +698,9 @@ dev.off()
 ```
 
 ### 5.3.5 | Deciding on the number of PCs
-After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the scree plot becomes almost flat), whereas 10 or 15 would be a perhaps more appropriate elbow. If we look at the population structure approach, the suggested values are 12 and 14, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. In an attempt to retain a bit more of information, we will keep the first 25 PCs. 
+After exploring the different options, we will try to make a decision on how many PCs to keep from now on. Looking at the results from the `corrected` assay we can see that the elbow method suggests keeping 2 PCs when we use HVGs from Variance modelling and 50 when using HVGs from CV2 modelling. However, by looking at the plots we would say that perhaps 30 PCs would be a value after which adding more PCs doesn't seem to make much difference on the variance explained (i.e. the scree plot becomes almost flat), whereas 10-15 (Var) or 15-20 (CV2) would be a perhaps more appropriate elbow. If we look at the population structure approach, the suggested values are 12 and 14, respectively, although anything between 20 and 30 seems to output similar results. We will try to settle for a middle point in an attempt to achieve a balance between the extremes: taking more than 30 PCs makes little sense as we are probably mainly adding noise by then, whereas keeping less than 15 PCs would probably discard some potentially interesting biological information. In an attempt to retain a bit more of information, we will keep the first 25 PCs. In addition, we will compare the results from using the 25 PCs with those from using the number of PCs suggested by the population structure approach (12 PCs for the HVG Var and 14 PCs for the HVG CV2).
 
-Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new `reducedDim` slots with the subsetted or recalculated PCs. We will keep both the full set of PCs and the reduced version with the top 25 PCs in a different `reducedDim()` slot.
+Once we have chosen `d`, we could subset the PC matrix by column and use the `reducedDim() <-` command to reassign the subsetted matrix back into the `SingleCellExperiment` object. By doing this, downstream applications that use the "PCA" dimensionality reduction results will subsequently operate on the first 25 PCs only. Alternatively, we could just keep the full set of PCs, and either specify in the functions itself the number of PCs to use, or create new `reducedDim` slots with the subsetted or recalculated PCs. We will keep both the full set of PCs and the reduced version with the top 25 PCs in a different `reducedDim()` slot. We will also keep a reduced version with the number of PCs suggested by the population structure approach.
 ```{r}
 # Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-variance:
 set.seed(1991)
@@ -682,6 +717,21 @@ PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
                                   ncomponents = 25,
                                   name = "PCA_HVG_var_corrected_25")
 
+# Compute the first 12 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-variance:
+set.seed(1991)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "logcounts",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                  ncomponents = 12,
+                                  name = "PCA_HVG_var_logcounts_12")
+
+set.seed(1991)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "corrected",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
+                                  ncomponents = 12,
+                                  name = "PCA_HVG_var_corrected_12")
+
 # Compute the first 25 PCs for the logcounts and corrected slots using the HVGs from modelling the mean-cv2:
 set.seed(1992)
 PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
@@ -697,9 +747,25 @@ PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
                                   ncomponents = 25,
                                   name = "PCA_HVG_cv2_corrected_25")
 
+# Compute the first 17 PCs for the logcounts and the first 14 PCs for the corrected slots using the HVGs from modelling the mean-cv2:
+set.seed(1992)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "logcounts",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                  ncomponents = 17,
+                                  name = "PCA_HVG_cv2_logcounts_17")
+
+set.seed(1992)
+PAG_sceset_qc_norm_filt <- runPCA(PAG_sceset_qc_norm_filt,
+                                  exprs_values = "corrected",
+                                  subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
+                                  ncomponents = 14,
+                                  name = "PCA_HVG_cv2_corrected_14")
+
 reducedDimNames(PAG_sceset_qc_norm_filt)
 ncol(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_logcounts"))
 ncol(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_logcounts_25"))
+ncol(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_logcounts_17"))
 ```
 
 ## Step 5.4 | Visualization of the data after dimensionality reduction
@@ -708,7 +774,7 @@ Dimensionality reduction allows us to compress the data into 2 or 3 dimensions f
 ### 5.4.1 | Visualization with PCA
 Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components (PCs). The number of principal components is less than or equal to the number of original variables. Mathematically, the PCs correspond to the eigenvectors of the covariance matrix. The eigenvectors are sorted by eigenvalue so that the first principal component accounts for as much of the variance in the data as possible, and each succeeding component in turn has the highest variance possible under the constraint that it is orthogonal to the preceding components.
 
-We can apply PCA to visualize the relationships between cells in our dataset. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Ideally, we do this using the `logcounts` or the `corrected` slot of our `SingleCellExperiment` object. Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. *BUT* - log-transformation is not a proper normalization step and is not enough to account for different technical factors between the cells (e.g. sequencing depth). Therefore, we should not use `logcounts_raw` for our downstream analysis, but instead use the _logcounts_ slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalized by library size with `scran`. By default `scater` only uses the top 500 most variable genes to calculate the PCA, but this can be adjusted by changing the _ntop_ argument. We can also choose to use our HVGs instead, or any given list of genes we may obtain by other feature selection strategies.
+We can apply PCA to visualize the relationships between cells in our dataset. Cells with similar expression profiles should be located close together in the plot, while dissimilar cells should be far apart. Ideally, we do this using the `logcounts` or the `corrected` slot of our `SingleCellExperiment` object. Log-transformation reduces the variance on the first principal component, separates some biological effects, and makes the distribution of the expression values more normal. *BUT* - log-transformation is not a proper normalisation step and is not enough to account for different technical factors between the cells (e.g. sequencing depth). Therefore, we should NOT use `logcounts_raw` for our downstream analysis, but instead use the `logcounts` slot of the `SingleCellExperiment` object as a minimum suitable data, which is not just log-transformed, but also normalised by library size with `scran`. By default `scater` only uses the top 500 most variable genes to calculate the PCA, but this can be adjusted by changing the _ntop_ argument. We can also choose to use our HVGs instead, or any given list of genes we may obtain by other feature selection strategies.
 
 The problem with this approach is that PCA is a linear technique, i.e. only variation along a line in high-dimensional space is captured by each PC. As such, it cannot efficiently pack differences in `d` dimensions into the first 2 PCs. The linear dimensionality reduction techniques can not fully resolve the heterogeneity in single cell data: they are good at preserving the global structure of the data (connections between all the data points), but it seems that when it comes to single cell data it is more important to keep the local structure of the data (connections between neighboring points). We will look at it nonetheless, as it will become important as a preliminary step to perform clustering. We first remind ourselves of the `reducedDim` results we have already calculated and stored in our `SingleCellExperiment`:
 ```{r}
@@ -717,24 +783,61 @@ reducedDimNames(PAG_sceset_qc_norm_filt)
 
 We plot our PCA results using the `corrected` assay and use different metadata variables to visualise our results.
 ```{r}
-# Prepare PCA plots
-PCA_HVG_var_corrected_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
-                                                 by_exprs_values = "corrected", colour_by = "cell.type") + ggtitle("HVG (var)")
-PCA_HVG_var_corrected_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
-                                                by_exprs_values = "corrected", colour_by = "PAG.area") + ggtitle("HVG (var)")
-PCA_HVG_var_corrected_celltype_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
-                                                         by_exprs_values = "corrected", colour_by = "celltype_PAGarea") + ggtitle("HVG (var)")
-PCA_HVG_var_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_var_corrected",
-                                             by_exprs_values = "corrected", colour_by = "Cd68") + ggtitle("HVG (var)")
+# Set theme parameters
+theme_args_PCA_composed <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                 axis.title = element_text(size = 11, face = "plain"),
+                                 axis.text = element_text(size = 10, face = "plain"), 
+                                 legend.text = element_text(size = 9, face = "plain"), 
+                                 strip.text = element_text(size = 10, face = "plain"))
 
-PCA_HVG_cv2_corrected_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
-                                                 colour_by = "cell.type") + ggtitle("HVG (cv2)")
-PCA_HVG_cv2_corrected_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
-                                                colour_by = "PAG.area") + ggtitle("HVG (cv2)")
-PCA_HVG_cv2_corrected_celltype_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
-                                                         colour_by = "celltype_PAGarea") + ggtitle("HVG (cv2)")
-PCA_HVG_cv2_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "PCA_HVG_cv2_corrected",
-                                             by_exprs_values = "corrected", colour_by = "Cd68") + ggtitle("HVG (cv2)")
+# Prepare PCA plots using HVG from Var modelling
+PCA_HVG_var_corrected_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                 dimred = "PCA_HVG_var_corrected",
+                                                 by_exprs_values = "corrected", 
+                                                 colour_by = "cell.type",
+                                                 theme_size = 11) + ggtitle("HVG (Var)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
+
+PCA_HVG_var_corrected_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                dimred = "PCA_HVG_var_corrected",
+                                                by_exprs_values = "corrected", 
+                                                colour_by = "PAG.area",
+                                                theme_size = 11) + ggtitle("HVG (Var)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
+
+PCA_HVG_var_corrected_celltype_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                         dimred = "PCA_HVG_var_corrected",
+                                                         by_exprs_values = "corrected", 
+                                                         colour_by = "celltype_PAGarea",
+                                                         theme_size = 11) + ggtitle("HVG (Var)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
+PCA_HVG_var_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                             dimred = "PCA_HVG_var_corrected",
+                                             by_exprs_values = "corrected", 
+                                             colour_by = "Cd68",
+                                             theme_size = 11) + ggtitle("HVG (Var)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
+
+# Prepare PCA plots using HVG from CV2 modelling
+PCA_HVG_cv2_corrected_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                 dimred = "PCA_HVG_cv2_corrected",
+                                                 by_exprs_values = "corrected",
+                                                 colour_by = "cell.type",
+                                                 theme_size = 11) + ggtitle("HVG (CV2)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
+
+PCA_HVG_cv2_corrected_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                dimred = "PCA_HVG_cv2_corrected",
+                                                by_exprs_values = "corrected",
+                                                colour_by = "PAG.area",
+                                                theme_size = 11) + ggtitle("HVG (CV2)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
+
+PCA_HVG_cv2_corrected_celltype_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                         dimred = "PCA_HVG_cv2_corrected",
+                                                         by_exprs_values = "corrected",
+                                                         colour_by = "celltype_PAGarea",
+                                                         theme_size = 11) + ggtitle("HVG (CV2)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
+
+PCA_HVG_cv2_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                             dimred = "PCA_HVG_cv2_corrected",
+                                             by_exprs_values = "corrected", 
+                                             colour_by = "Cd68",
+                                             theme_size = 11) + ggtitle("HVG (CV2)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
 
 # Prepare, plot, and save a composed plot
 library(patchwork)
@@ -742,8 +845,9 @@ PCA_HVG_corrected_composed <- ((PCA_HVG_var_corrected_celltype + PCA_HVG_cv2_cor
                                  (PCA_HVG_var_corrected_PAGarea + PCA_HVG_cv2_corrected_PAGarea) / 
                                  (PCA_HVG_var_corrected_celltype_PAGarea + PCA_HVG_cv2_corrected_celltype_PAGarea) / 
                                  (PCA_HVG_var_corrected_cd68 + PCA_HVG_cv2_corrected_cd68)) +
-  plot_annotation(title = "PCA using batch corrected log-normalized counts", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14)))
+  plot_annotation(title = "PCA using batch corrected log-normalised counts", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
 
 PCA_HVG_corrected_composed
 
@@ -751,7 +855,7 @@ ggsave(filename = str_c(date, "_PCA_HVG_corrected_composed.pdf"),
        plot = PCA_HVG_corrected_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 18, units = "in", dpi = 300,
+       width = 8, height = 11, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -778,16 +882,22 @@ One of the main disadvantages of t-SNE is that it is much more computationally i
 Another issue with t-SNE is that it requires the user to be aware of additional parameters. It involves a random initialization so we need to (i) repeat the visualization several times to ensure that the results are representative and (ii) set the seed to ensure that the chosen results are reproducible. The `perplexity` is another important parameter that determines the granularity of the visualization. Low perplexities will favour resolution of finer structure, possibly to the point that the visualization is compromised by random noise. Thus, it is advisable to test different perplexity values to ensure that the choice of perplexity does not drive the interpretation of the plot. As a rule of thumb, N^1/2 shouldn't be far off the right perplexity, according to [this post by Nikolay Oskolkov](https://towardsdatascience.com/how-to-tune-hyperparameters-of-tsne-7c0596a18868). Finally, we can also increase the `eta` (learning rate) and `max_iter` (number of iterations) hyperparameters. Importantly, really large values of `max_iter` become unfeasible for big data sets, so you can increase it up to a certain point before you need to wait days for your code to run. Again, according to the same post cited above, the optimal number of iterations should provide the largest distance between the data points of ~100 units.
 
 Finally, it is tempting to interpret the t-SNE results as a “map” of single-cell identities. This is generally unwise as any such interpretation is easily misled by the size and positions of the visual clusters. Specifically, t-SNE will inflate dense clusters and compress sparse ones, such that we cannot use the size as a measure of subpopulation heterogeneity. Similarly, t-SNE is not obliged to preserve the relative locations of non-neighboring clusters, such that we cannot use their positions to determine relationships between distant clusters. Despite its shortcomings, t-SNE is a proven tool for general-purpose visualization of scRNA-seq data and remains a popular choice in many analysis pipelines. We will use it for now, but will later on compare it to UMAP and go over why the latter is a better option.
+
+```{r}
+# Check current reduced dimensions slots
+reducedDimNames(PAG_sceset_qc_norm_filt)
+```
+
 ```{r}
 # Compute tSNE with different perplexities:
 range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
 for(n in range_of_perplexities) {
-  set.seed(1992)
+  set.seed(42) # try at least 4-5 different seeds (tried 1, 42, 1991, 2020, 7541)
   PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
                                      exprs_values = "corrected",
                                      subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt,
                                      dimred = "PCA_HVG_var_corrected", 
-                                     n_dimred = 25,
+                                     n_dimred = 12, # use either 12 or 25
                                      ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
                                      perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
                                      theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
@@ -798,47 +908,74 @@ for(n in range_of_perplexities) {
   )
 }
 
+# Check current reduced dimensions slots
 reducedDimNames(PAG_sceset_qc_norm_filt)
+```
 
-tSNE_HVG_var_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_5",
-                                           colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2")
+```{r}
+# Set theme parameters
+theme_args_tSNE_var_composed <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                      axis.title = element_text(size = 11, face = "plain"),
+                                      axis.text = element_text(size = 10, face = "plain"), 
+                                      legend.text = element_text(size = 9, face = "plain"), 
+                                      strip.text = element_text(size = 10, face = "plain"))
 
-tSNE_HVG_var_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_10",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2")
+# Prepare tSNE plots with HVG from var modelling at different perplexities
+tSNE_HVG_var_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                           dimred = "tSNE_var_corrected_perplexity_5",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           theme_size = 11) + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
 
-tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_15",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_var_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_var_corrected_perplexity_10",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
 
-tSNE_HVG_var_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_20",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_var_corrected_perplexity_15",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
 
-tSNE_HVG_var_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_30",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_var_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_var_corrected_perplexity_20",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
 
-tSNE_HVG_var_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_40",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_var_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_var_corrected_perplexity_30",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
 
-tSNE_HVG_var_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_50",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_var_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_var_corrected_perplexity_40",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
+
+tSNE_HVG_var_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_var_corrected_perplexity_50",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
   
-tSNE_HVG_var_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_75",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_var_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_var_corrected_perplexity_75",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_var_composed
 
 # Prepare, plot, and save a composed plot
 library(patchwork)
 tSNE_HVG_var_corrected <- (tSNE_HVG_var_corrected_5 + tSNE_HVG_var_corrected_10 + tSNE_HVG_var_corrected_15 + tSNE_HVG_var_corrected_20 +
                              tSNE_HVG_var_corrected_30 + tSNE_HVG_var_corrected_40 +tSNE_HVG_var_corrected_50 + tSNE_HVG_var_corrected_75) +
-  plot_annotation(title = "tSNE plots at different perplexities (HVG - var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + 
+  plot_annotation(title = "tSNE plots at different perplexities (HVG - Var - 12 PCs - seed 42)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
 
 tSNE_HVG_var_corrected
 
-ggsave(filename = str_c(date, "_tSNE_HVG_var_corrected_composed.pdf"),
+ggsave(filename = str_c(date, "_tSNE_HVG_var_corrected_composed_12PC_42.pdf"),
        plot = tSNE_HVG_var_corrected,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 18, units = "in", dpi = 300,
+       width = 8, height = 11, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -848,12 +985,12 @@ We repeat the previous step using the PCA results obtained with the HVGs from CV
 # Compute tSNE with different perplexities:
 range_of_perplexities = list(5, 10, 15, 20, 30, 40, 50, 75) # N^1/2 shouldn't be far off
 for(n in range_of_perplexities) {
-  set.seed(1987)
+  set.seed(7541) # try at least 4-5 different seeds (tried 1, 42, 1991, 2020, 7541)
   PAG_sceset_qc_norm_filt <- runTSNE(PAG_sceset_qc_norm_filt,
                                      exprs_values = "corrected",
                                      subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt,
                                      dimred = "PCA_HVG_cv2_corrected", 
-                                     n_dimred = 25,
+                                     n_dimred = 25, # try 14 or 25
                                      ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
                                      perplexity = n, # Perplexity parameter (should not be bigger than 3 * perplexity < nrow(X) - 1)
                                      theta = 0.5, # Speed/accuracy trade-off (increase for less accuracy), set to 0.0 for exact TSNE (default: 0.5)
@@ -864,74 +1001,118 @@ for(n in range_of_perplexities) {
   )
 }
 
+# Check current reduced dimensions slots
 reducedDimNames(PAG_sceset_qc_norm_filt)
+```
 
-tSNE_HVG_cv2_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_5",
-                                           colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2")
+```{r}
+# Set theme parameters
+theme_args_tSNE_CV2_composed <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                      axis.title = element_text(size = 11, face = "plain"),
+                                      axis.text = element_text(size = 10, face = "plain"), 
+                                      legend.text = element_text(size = 9, face = "plain"), 
+                                      strip.text = element_text(size = 10, face = "plain"))
 
-tSNE_HVG_cv2_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_10",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2")
+# Prepare tSNE plots with HVG from CV2 modelling at different perplexities
+tSNE_HVG_cv2_corrected_5 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                           dimred = "tSNE_cv2_corrected_perplexity_5",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           theme_size = 11) + labs(title = "Perplexity = 5", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
-tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_cv2_corrected_10 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_cv2_corrected_perplexity_10",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 10", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
-tSNE_HVG_cv2_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_20",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_cv2_corrected_perplexity_15",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
-tSNE_HVG_cv2_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_30",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_cv2_corrected_20 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_cv2_corrected_perplexity_20",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 20", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
-tSNE_HVG_cv2_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_40",
-                                           colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_cv2_corrected_30 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_cv2_corrected_perplexity_30",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 30", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
-tSNE_HVG_cv2_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_50",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_cv2_corrected_40 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_cv2_corrected_perplexity_40",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           theme_size = 11) + labs(title = "Perplexity = 40", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
-tSNE_HVG_cv2_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_75",
-                                            colour_by = "PAG.area", shape_by = "cell.type") + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2")
+tSNE_HVG_cv2_corrected_50 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_cv2_corrected_perplexity_50",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 50", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
+tSNE_HVG_cv2_corrected_75 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                            dimred = "tSNE_cv2_corrected_perplexity_75",
+                                            colour_by = "PAG.area", shape_by = "cell.type", 
+                                            theme_size = 11) + labs(title = "Perplexity = 75", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_CV2_composed
 
 # Prepare, plot, and save a composed plot
 library(patchwork)
 tSNE_HVG_cv2_corrected <- (tSNE_HVG_cv2_corrected_5 + tSNE_HVG_cv2_corrected_10 + tSNE_HVG_cv2_corrected_15 + tSNE_HVG_cv2_corrected_20 +
                              tSNE_HVG_cv2_corrected_30 + tSNE_HVG_cv2_corrected_40 + tSNE_HVG_cv2_corrected_50 + tSNE_HVG_cv2_corrected_75) +
-  plot_annotation(title = "tSNE plots at different perplexities (HVG - cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) +  
+  plot_annotation(title = "tSNE plots at different perplexities (HVG - CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) +  
   plot_layout(ncol = 2, guides = "collect")
 
 tSNE_HVG_cv2_corrected
 
-ggsave(filename = str_c(date, "_tSNE_HVG_cv2_corrected_composed.pdf"),
+ggsave(filename = str_c(date, "_tSNE_HVG_cv2_corrected_composed_25PC_7541.pdf"),
        plot = tSNE_HVG_cv2_corrected,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 18, units = "in", dpi = 300,
+       width = 8, height = 11, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-From the different configurations, it seems that `tSNE_var_corrected_perplexity_15` and `tSNE_cv2_corrected_perplexity_15` achieve a representation that is not too clumped (such that you can't really distinguish anything) nor too fragmented (so that you end up with a large number of very small groups). 
+For both the HVG from Var modelling and the HVG from CV2 modelling, we tried running the tSNE at different perplexities, using different seeds, and using either the first 25 PCs or the first 12 PCs (as suggested by `getClusteredPCs` from `scran`).
+
+* When we compare the results from HVG-Var using 12 PCs and HVG-CV2 using 14 PCs, we can clearly see that using the HVG from CV2 modelling allows to better resolve the macrophage cluster, as well as better separate VGAT+ from VGluT2 neurons and even pick up some structure in terms of PAG subdivisions. The tSNEs using HVGs from Var modelling are more homogeneous and have a hard time identifying the contaminated cell (we can only see them in some seeds and at lower perplexities, whereas we can clearly spot them in most seeds and perplexities when using HVGs from CV2 modelling).
+
+* We observe a similar trend when we compare the results from HVG-Var and HVG-CV2 using the first 25 PCs. It does seem that, independently of the number of chosen PCs, selecting HVGs based on CV2 modelling provides us with tSNEs that are better at capturing the structure of our dataset.
+
+* If we focus on the tSNEs obtained from HVG-Var and compare the results from using 12 PCs or 25 PCs, we can see that using more PCs seems to capture more noise, resulting in more homogeneous tSNEs in which is harder to distinguish any structure even at perplexities of 20. Overall, it seems that when using HVG-Var, a perplexity of 15 and using 12 PCs gives better results. 
+
+* Similarly, when comparing the tSNEs obtained from HVG-CV2 using 14 PCs or 25 PCs, the results are again better when using less PCs. Pretty much any tSNE using 14PCs and HVG from CV2 modelling at perplexities 10 to 20 picks up the macrophage cluster, 2 clear clusters for VGAT neurons, and separates VGluT2 neurons by PAG subdivision.
+
+
+To summarise, from the different tSNE plots, we can conclude that we obtain the best results using the set of HVGs from CV2 modelling and using the number of PCs suggested by `getClusteredPCs` from `scran`.
+
+* If we had to choose a tSNE computed using HVG from Var modelling, we would pick the one from `tSNE_HVG_var_corrected_composed_12PC_42`, obtained using a `seed = 42`, `n_dimred = 12`, and a `perplexity = 15`.
+
+* If we had to choose a tSNE computed using HVG from CV2 modelling, we could pick the one from `tSNE_HVG_cv2_corrected_composed_14PC_42`, obtained using a `seed = 42`, `n_dimred = 14`, and a `perplexity = 15`. Although most seeds and any perplexity of 10, 15, 20 would be a good visualisation. We could also pick the one from `tSNE_HVG_cv2_corrected_composed_14PC_2020`, obtained using a `seed = 2020`, `n_dimred = 14`, and a `perplexity = 10`
+
+We will thus use the plots stored in the reduced dimensions slots `tSNE_var_corrected_perplexity_15` and `tSNE_cv2_corrected_perplexity_15`, as they achieve a representation that is not too clumped (such that you can't really distinguish anything) nor too fragmented (so that you end up with a large number of very small groups).
 
 ### 5.4.3 | UMAP (uniform manifold approximation and projection)
 The uniform manifold approximation and projection (UMAP) method (McInnes, Healy, and Melville 2018) is an alternative to t-SNE for non-linear dimensionality reduction. It is roughly similar to t-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space. However, the two methods are based on different theory, represented by differences in the various graph weighting equations, which leads to a different visualization. Importantly, a series of posts by [Nikolay Oskolkov](https://towardsdatascience.com/tagged/stats-ml-life-sciences) detail how UMAP works and why exactly it is a better option over tSNE.
 
 UMAP is a dimension reduction technique which is based on solid mathematical principles and hence very different from tSNE which is a pure Machine Learning semi-empirical algorithm. The key problem of tSNE is the use of the Kullback Leibler (KL) divergence as a cost function. UMAP uses binary cross-entropy (CE) as a cost function instead of the Kullback-Leibler (KL)-divergence like tSNE does. This makes UMAP capable of capturing the global data structure in contrast to tSNE that can only model the local structure at moderate perplexity values. In other words, the choice of cost function means that tSNE does not guarantee that points far apart in high dimensions will be preserved to be far apart in low dimensions. However, it does guarantee that points close to each other in high dimensions will remain close to each other in low dimensions (hence, it is good at preserving local structure in the data). 
 
-Optimizing the KL-divergence makes tSNE unable to preserve global distances when performing dimension reduction. At large distances, X, between points in high dimensions, the distances, Y, between points in low dimensions are not guaranteed to be large in sense of the KL penalty. In contrast, you get a huge Cross-Entropy (CE) penalty for large X in case Y is small. In other words, the fact that UMAP uses CE makes it so that at low X we still want to have low Y in order to reduce the penalty. However, at large X, the Y distance really wants to be large too, because if it is small, the CE (X, Y) penalty will be enormous. This is not the case for tSNE's KL-divergence, as it doesn not have any difference in penalty between low and high Y at large X. Therefore the smarter choice of cost function by UMAP really ensures that points far away from each other in high dimensions will remain far away in low dimensions, as the CE cost function is capable of preserving global distances as well as local distances. For more information and further comparisons between the math of UMAP and tSNE, see the posts by [Nikolay Oskolkov](https://towardsdatascience.com/tagged/stats-ml-life-sciences).
+Optimizing the KL-divergence makes tSNE unable to preserve global distances when performing dimension reduction. At large distances, X, between points in high dimensions, the distances, Y, between points in low dimensions are not guaranteed to be large in sense of the KL penalty. In contrast, you get a huge Cross-Entropy (CE) penalty for large X in case Y is small. In other words, the fact that UMAP uses CE makes it so that at low X we still want to have low Y in order to reduce the penalty. However, at large X, the Y distance really wants to be large too, because if it is small, the CE (X, Y) penalty will be enormous. This is not the case for tSNE's KL-divergence, as it does not have any difference in penalty between low and high Y at large X. Therefore the smarter choice of cost function by UMAP really ensures that points far away from each other in high dimensions will remain far away in low dimensions, as the CE cost function is capable of preserving global distances as well as local distances. For more information and further comparisons between the math of UMAP and tSNE, see the posts by [Nikolay Oskolkov](https://towardsdatascience.com/tagged/stats-ml-life-sciences).
 
-Like t-SNE, UMAP has its own suite of hyperparameters that affect the visualization. Of these, the number of neighbours (`n_neighbors`) and the minimum distance between embedded points (`min_dist`) have the greatest effect on the granularity of the output. If these values are too low, random noise will be incorrectly treated as high-resolution structure, while values that are too high will discard fine structure altogether in favour of obtaining an accurate overview of the entire dataset. Again, it is a good idea to test a range of values for these parameters to ensure that they do not compromise any conclusions drawn from a UMAP plot. We will thus repeat the approach we followed for t-SNE, and calculate different UMAP plots while trying different choices of the key hyperparameters:
+Like t-SNE, UMAP has its own suite of hyperparameters that affect the visualization. Of these, the number of neighbours (`n_neighbors`) and the minimum distance between embedded points (`min_dist`) have the greatest effect on the granularity of the output. If these values are too low, random noise will be incorrectly treated as high-resolution structure, while values that are too high will discard fine structure altogether in favour of obtaining an accurate overview of the entire dataset. Again, it is a good idea to test a range of values for these parameters to ensure that they do not compromise any conclusions drawn from a UMAP plot. We will thus repeat the approach we followed for t-SNE, and calculate different UMAP plots while trying different choices of the key hyperparameters, different seeds, and two alternative choice of PCs:
 ```{r}
+# Compute UMAP with different hyperparameters:
 range_of_neighbors = list(5, 10, 15, 20)
 range_of_min_dist = list(0.01, 0.05, 0.1, 0.2)
 
 for(j in range_of_neighbors) {
   for (k in range_of_min_dist) {
-    set.seed(42)
+    set.seed(7541) # try at least 4-5 different seeds (tried 1, 42, 1991, 2020, 7541)
     PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt,
                                        exprs_values = "corrected",
                                        subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, 
                                        dimred = "PCA_HVG_var_corrected",
-                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
+                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred, try 12 or 25                                       
                                        n_neighbors = j, # Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
                                        ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
                                        metric = "euclidean", # Other distance metrics to find nearest neighbors can be selected, such as "cosine", "manhattan", among others.
@@ -943,84 +1124,143 @@ for(j in range_of_neighbors) {
 }
 
 reducedDimNames(PAG_sceset_qc_norm_filt)
+```
+
+```{r}
+# Set theme parameters
+theme_args_UMAP_var_composed <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                      axis.title = element_text(size = 11, face = "plain"),
+                                      axis.text = element_text(size = 10, face = "plain"), 
+                                      legend.text = element_text(size = 9, face = "plain"), 
+                                      strip.text = element_text(size = 10, face = "plain"))
+
+# Prepare UMAP plots with HVG from Var modelling at different hyperparameters
 
 #### n_neighbors = 5
-UMAP_var_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.01_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.05_min_dist",
-                                                               colour_by = "PAG.area",shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.1_min_dist",
-                                                              colour_by = "PAG.area", shape_by = "cell.type"
-                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_5_neighbors_0.2_min_dist",
-                                                              colour_by = "PAG.area", shape_by = "cell.type"
-                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_5_neighbors_0.01_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_5_neighbors_0.05_min_dist",
+                                                               colour_by = "PAG.area",shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                              dimred = "UMAP_var_corrected_5_neighbors_0.1_min_dist",
+                                                              colour_by = "PAG.area", shape_by = "cell.type",
+                                                              theme_size = 11
+                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                              dimred = "UMAP_var_corrected_5_neighbors_0.2_min_dist",
+                                                              colour_by = "PAG.area", shape_by = "cell.type",
+                                                              theme_size = 11
+                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
 
 #### n_neighbors = 10
-UMAP_var_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_var_corrected_10_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_10_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_10_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
 
 #### n_neighbors = 15
-UMAP_var_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_15_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_var_corrected_15_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_15_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_15_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
 
 #### n_neighbors = 20
-UMAP_var_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_var_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_20_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_var_corrected_20_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_var_corrected_20_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_20_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
+
+UMAP_var_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_var_corrected_20_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_var_composed
 
 # Prepare and save composed plots
 library(patchwork)
 UMAP_HVG_var_corrected_neighbors_5 <- (UMAP_var_corrected_5_neighbors_0.01_min_dist + UMAP_var_corrected_5_neighbors_0.05_min_dist +
                                          UMAP_var_corrected_5_neighbors_0.1_min_dist + UMAP_var_corrected_5_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 5 neighbours at different min_dist (HVG - var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 5 neighbours at different min_dist (HVG - Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 UMAP_HVG_var_corrected_neighbors_10 <- (UMAP_var_corrected_10_neighbors_0.01_min_dist + UMAP_var_corrected_10_neighbors_0.05_min_dist +
                                          UMAP_var_corrected_10_neighbors_0.1_min_dist + UMAP_var_corrected_10_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 10 neighbours at different min_dist (HVG - var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 10 neighbours at different min_dist (HVG - Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 UMAP_HVG_var_corrected_neighbors_15 <- (UMAP_var_corrected_15_neighbors_0.01_min_dist + UMAP_var_corrected_15_neighbors_0.05_min_dist +
                                          UMAP_var_corrected_15_neighbors_0.1_min_dist + UMAP_var_corrected_15_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 15 neighbours at different min_dist (HVG - var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 15 neighbours at different min_dist (HVG - Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 UMAP_HVG_var_corrected_neighbors_20 <- (UMAP_var_corrected_20_neighbors_0.01_min_dist + UMAP_var_corrected_20_neighbors_0.05_min_dist +
                                          UMAP_var_corrected_20_neighbors_0.1_min_dist + UMAP_var_corrected_20_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 20 neighbours at different min_dist (HVG - var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 20 neighbours at different min_dist (HVG - Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 # Plot them
 UMAP_HVG_var_corrected_neighbors_5
@@ -1029,49 +1269,50 @@ UMAP_HVG_var_corrected_neighbors_15
 UMAP_HVG_var_corrected_neighbors_20
 
 # Save them
-ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_5_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_5_composed_12PC_1.pdf"),
        plot = UMAP_HVG_var_corrected_neighbors_5,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_10_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_10_composed_12PC_1.pdf"),
        plot = UMAP_HVG_var_corrected_neighbors_10,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_15_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_15_composed_12PC_1.pdf"),
        plot = UMAP_HVG_var_corrected_neighbors_15,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_20_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_var_corrected_neighbors_20_composed_12PC_1.pdf"),
        plot = UMAP_HVG_var_corrected_neighbors_20,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
 We repeat the same using the PCA results obtained from the HVGs after CV2 modelling:
 ```{r}
+# Compute UMAP with different hyperparameters:
 range_of_neighbors = list(5, 10, 15, 20) # 15 by default
 range_of_min_dist = list(0.01, 0.05, 0.1, 0.2) # 0.01 by default
 
 for(j in range_of_neighbors) {
   for (k in range_of_min_dist) {
-    set.seed(1991)
+    set.seed(42) # try at least 4-5 different seeds (tried 1, 42, 1991, 2020, 7541)
     PAG_sceset_qc_norm_filt <- runUMAP(PAG_sceset_qc_norm_filt,
                                        exprs_values = "corrected",
                                        subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_cv2_out_no_spikes_filt, 
                                        dimred = "PCA_HVG_cv2_corrected",
-                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred                                        
+                                       n_dimred = 14, # Choose the number of dimensions to use from the specificed dimred, try 14 and 25                                     
                                        n_neighbors = j, # Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
                                        ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
                                        metric = "euclidean", # Other distance metrics to find nearest neighbors can be selected, such as "cosine", "manhattan", among others.
@@ -1083,84 +1324,144 @@ for(j in range_of_neighbors) {
 }
 
 reducedDimNames(PAG_sceset_qc_norm_filt)
+```
+
+```{r}
+# Set theme parameters
+theme_args_UMAP_cv2_composed <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                      axis.title = element_text(size = 11, face = "plain"),
+                                      axis.text = element_text(size = 10, face = "plain"), 
+                                      legend.text = element_text(size = 9, face = "plain"), 
+                                      strip.text = element_text(size = 10, face = "plain"))
+
+
+# Prepare UMAP plots with HVG from CV2 modelling at different hyperparameters
 
 #### n_neighbors = 5
-UMAP_cv2_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.01_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.05_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.1_min_dist",
-                                                              colour_by = "PAG.area", shape_by = "cell.type"
-                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_5_neighbors_0.2_min_dist",
-                                                              colour_by = "PAG.area", shape_by = "cell.type"
-                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_corrected_5_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_5_neighbors_0.01_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_5_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_5_neighbors_0.05_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 5 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_5_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                              dimred = "UMAP_cv2_corrected_5_neighbors_0.1_min_dist",
+                                                              colour_by = "PAG.area", shape_by = "cell.type",
+                                                              theme_size = 11
+                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_5_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                              dimred = "UMAP_cv2_corrected_5_neighbors_0.2_min_dist",
+                                                              colour_by = "PAG.area", shape_by = "cell.type",
+                                                              theme_size = 11
+                                                              ) + labs(title = "n_neighbours = 5 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
 
 #### n_neighbors = 10
-UMAP_cv2_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_corrected_10_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_10_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_10_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_10_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_10_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_10_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 10 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
 
 #### n_neighbors = 15
-UMAP_cv2_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_corrected_15_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_15_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_cv2_corrected_15_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 15 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_15_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_15_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_15_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_15_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 15 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
 
 #### n_neighbors = 20 
-UMAP_cv2_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.05_min_dist",
-                                                                colour_by = "PAG.area", shape_by = "cell.type"
-                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.1_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_20_neighbors_0.2_min_dist",
-                                                               colour_by = "PAG.area", shape_by = "cell.type"
-                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_corrected_20_neighbors_0.01_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_cv2_corrected_20_neighbors_0.01_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_20_neighbors_0.05_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                                dimred = "UMAP_cv2_corrected_20_neighbors_0.05_min_dist",
+                                                                colour_by = "PAG.area", shape_by = "cell.type",
+                                                                theme_size = 11
+                                                                ) + labs(title = "n_neighbours = 20 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_20_neighbors_0.1_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_20_neighbors_0.1_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.1", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
+
+UMAP_cv2_corrected_20_neighbors_0.2_min_dist <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                               dimred = "UMAP_cv2_corrected_20_neighbors_0.2_min_dist",
+                                                               colour_by = "PAG.area", shape_by = "cell.type",
+                                                               theme_size = 11
+                                                               ) + labs(title = "n_neighbours = 20 | min_dist = 0.2", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_cv2_composed
 
 # Prepare and save composed plots
 library(patchwork)
 UMAP_HVG_cv2_corrected_neighbors_5 <- (UMAP_cv2_corrected_5_neighbors_0.01_min_dist + UMAP_cv2_corrected_5_neighbors_0.05_min_dist +
                                          UMAP_cv2_corrected_5_neighbors_0.1_min_dist + UMAP_cv2_corrected_5_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 5 neighbours at different min_dist (HVG - cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 5 neighbours at different min_dist (HVG - CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 UMAP_HVG_cv2_corrected_neighbors_10 <- (UMAP_cv2_corrected_10_neighbors_0.01_min_dist + UMAP_cv2_corrected_10_neighbors_0.05_min_dist +
                                          UMAP_cv2_corrected_10_neighbors_0.1_min_dist + UMAP_cv2_corrected_10_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 10 neighbours at different min_dist (HVG - cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 10 neighbours at different min_dist (HVG - CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 UMAP_HVG_cv2_corrected_neighbors_15 <- (UMAP_cv2_corrected_15_neighbors_0.01_min_dist + UMAP_cv2_corrected_15_neighbors_0.05_min_dist +
                                          UMAP_cv2_corrected_15_neighbors_0.1_min_dist + UMAP_cv2_corrected_15_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 15 neighbours at different min_dist (HVG - cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 15 neighbours at different min_dist (HVG - CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 UMAP_HVG_cv2_corrected_neighbors_20 <- (UMAP_cv2_corrected_20_neighbors_0.01_min_dist + UMAP_cv2_corrected_20_neighbors_0.05_min_dist +
                                          UMAP_cv2_corrected_20_neighbors_0.1_min_dist + UMAP_cv2_corrected_20_neighbors_0.2_min_dist) +
-  plot_annotation(title = "UMAP plots for 20 neighbours at different min_dist (HVG - cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+  plot_annotation(title = "UMAP plots for 20 neighbours at different min_dist (HVG - CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 # Plot them
 UMAP_HVG_cv2_corrected_neighbors_5
@@ -1169,100 +1470,154 @@ UMAP_HVG_cv2_corrected_neighbors_15
 UMAP_HVG_cv2_corrected_neighbors_20
 
 # Save them
-ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_5_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_5_composed_14PC_1991.pdf"),
        plot = UMAP_HVG_cv2_corrected_neighbors_5,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_10_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_10_composed_14PC_1991.pdf"),
        plot = UMAP_HVG_cv2_corrected_neighbors_10,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_15_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_15_composed_14PC_1991.pdf"),
        plot = UMAP_HVG_cv2_corrected_neighbors_15,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_20_composed.pdf"),
+ggsave(filename = str_c(date, "_UMAP_HVG_cv2_corrected_neighbors_20_composed_14PC_1991.pdf"),
        plot = UMAP_HVG_cv2_corrected_neighbors_20,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
 Compared to t-SNE, the UMAP visualization tends to have more compact visual clusters with more empty space between them. It also attempts to preserve more of the global structure than t-SNE. From a practical perspective, UMAP is much faster than t-SNE, which may be an important consideration for large datasets. UMAP also involves a series of randomization steps so setting the seed is critical. 
 
-It is arguable whether the UMAP or t-SNE visualizations are more useful or aesthetically pleasing. UMAP aims to preserve more global structure but this necessarily reduces resolution within each visual cluster. However, UMAP is unarguably much faster, and for that reason alone, it is increasingly displacing t-SNE as the method of choice for visualizing large scRNA-seq data sets.
+It is arguable whether the UMAP or t-SNE visualizations are more useful or aesthetically pleasing, with many discussions on the pros and cons of each still ongoing. UMAP aims to preserve more global structure but this necessarily reduces resolution within each visual cluster. However, UMAP is unarguably much faster, and for that reason alone, it is increasingly displacing t-SNE as the method of choice for visualizing large scRNA-seq data sets.
 
-From the different configurations, it seems that `UMAP_var_corrected_10_neighbors_0.01_min_dist`, `UMAP_cv2_corrected_10_neighbors_0.05_min_dist`, and `UMAP_cv2_corrected_15_neighbors_0.01_min_dist` achieve the best representations.
+As we did with tSNE, we compared the UMAP results from different hyperparamers (number of neighbours and min distance), seeds, and selected PCs. 
+
+* As we found in the case of tSNE, using the HVGs from CV2 modelling tends to generate UMAPs that better resolve the granularity of the dataset, consistently separating cell-types and subdivisions in a clearer way than if using HVGs from Var modelling.
+
+* When using HVGs from Var modelling, the only UMAPs we found useful were `UMAP_var_corrected_10_neighbors_0.05_min_dist` with 12 PCs and `seed = 42`, and `UMAP_var_corrected_10_neighbors_0.01_min_dist` or `UMAP_var_corrected_15_neighbors_0.01_min_dist` with 25 PCs and `seed = 7541`.
+
+* When using HVGs from CV2 modelling, we found that keeping the first 14 PCs (as suggested by `getClusteredPCs` from `scran`) usually yielded better results, although most UMAPs were better than those obtained with the HVGs from Var modelling, irrespective of hyperparameters.
+
+* Overall, using 10 or 15 neighbours and a distance of 0.01 or 0.05 tended to work best. From the many combinations we tried, we decided to go with HVGs from CV2 modelling and keep the first 14 PCs (as suggested by `getClusteredPCs` from `scran`).
+
+* Although we wouldn't choose one of the UMAPs computed using HVG from Var modelling, if we had to we would pick the one from `UMAP_var_corrected_15_neighbors_0.01_min_dist`, obtained using `seed = 7541`, `n_dimred = 25`, `n_neighbors = 15`, and `min_dist = 0.01`.
+
+* On the other hand, we could choose pretty much any UMAP computed using HVG from CV2 modelling and `n_dimred = 14`, especially those with `min_dist = 0.01 - 0.05` and `n_neighbours = 15`. We could pick the one from `UMAP_cv2_corrected_15_neighbors_0.01_min_dist`, obtained using `seed = 42`, `n_dimred = 14`, `n_neighbors = 15`, and `min_dist = 0.01`. Although `seed = 1` and `seed = 7541` also gave nice results.
 
 ### 5.4.4 | Choosing the most representative plots
-As we have seen, tSNE and UMAP offer different solutions to represent the data in low dimensions. We have explored the data using both approaches and can see that the HVGs identified using the CV2 method have actually more power in separating subsets of neurons than the HVGs obtained using the Variance. It also seems that UMAP does a better job in representing our data in low-dimensional space, and we can observe both in tSNE and UMAP plots how excitatory and inhibitory cells separate quite clearly, and also somewhat distribute according to their anatomical origin. We also very clearly observe a minor subset of neurons that separate from the two main groups, with high expression of macrophage markers, indicating that some of the cells might've been contaminated by immune cells. 
-```{r}
-# Plot the selected t-SNE
-chosen_tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_15",
-                                                   colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                   ) + labs(title = "HVG (var) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+As we have seen, tSNE and UMAP offer different solutions to represent the data in low dimensions. We have explored the data using both approaches and can see that the HVGs identified using the CV2 method have actually more power in separating subsets of neurons than the HVGs obtained using the Variance. It also seems that UMAP does a better job in representing our data in low-dimensional space, and keeping the number of PCs suggested by `scran` instead of an arbitrary 25 also improves the resulting visualisation.
 
-chosen_tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                                   colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                   ) + labs(title = "HVG (cv2) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+We can observe both in tSNE and UMAP plots how excitatory and inhibitory cells separate quite clearly, and also how excitatory neurons somewhat distribute according to their anatomical origin, whereas inhibitory neurons seem to split in two groups. We also very clearly observe a minor subset of neurons that separate from the two main groups with high expression of macrophage markers, indicating that some of the cells might've been contaminated by immune cells.
+```{r}
+# Set theme parameters
+theme_args_selected_tSNE_UMAP <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                       axis.title = element_text(size = 11, face = "plain"),
+                                       axis.text = element_text(size = 10, face = "plain"), 
+                                       legend.text = element_text(size = 9, face = "plain"), 
+                                       strip.text = element_text(size = 10, face = "plain"))
+
+# Plot the selected t-SNE
+chosen_tSNE_HVG_var_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                   dimred = "tSNE_var_corrected_perplexity_15",
+                                                   colour_by = "PAG.area", shape_by = "cell.type", 
+                                                   point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                   ) + labs(title = "HVG (Var) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2"
+                                                            ) + theme_args_selected_tSNE_UMAP
+
+chosen_tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                   dimred = "tSNE_cv2_corrected_perplexity_15",
+                                                   colour_by = "PAG.area", shape_by = "cell.type", 
+                                                   point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                   ) + labs(title = "HVG (CV2) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2"
+                                                            ) + theme_args_selected_tSNE_UMAP
 
 # Plot the selected t-SNE coloring for Cd68 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
-chosen_tSNE_HVG_var_corrected_15_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_var_corrected_perplexity_15",
-                                                   colour_by = "Cd68", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                   ) + labs(title = "HVG (var) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+chosen_tSNE_HVG_var_corrected_15_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                        dimred = "tSNE_var_corrected_perplexity_15",
+                                                        colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                        point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                        ) + labs(title = "HVG (Var) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2"
+                                                                 ) + theme_args_selected_tSNE_UMAP
 
-chosen_tSNE_HVG_cv2_corrected_15_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                                   colour_by = "Cd68", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                   ) + labs(title = "HVG (cv2) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2")
+chosen_tSNE_HVG_cv2_corrected_15_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                        dimred = "tSNE_cv2_corrected_perplexity_15",
+                                                        colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                        point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                        ) + labs(title = "HVG (CV2) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2"
+                                                                 ) + theme_args_selected_tSNE_UMAP
 
 # Plot the selected UMAP
-chosen_UMAP_var_corrected_10_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                    ) + labs(title = "HVG (var) - n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
+chosen_UMAP_var_corrected_15_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                    dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "PAG.area", shape_by = "cell.type", 
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "HVG (Var) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
+                                                             ) + theme_args_selected_tSNE_UMAP
 
-chosen_UMAP_cv2_corrected_10_0.05 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                    ) + labs(title = "HVG (cv2) - n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
+chosen_UMAP_cv2_corrected_10_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                    dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                    colour_by = "PAG.area", shape_by = "cell.type", 
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "HVG (CV2) - 10 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
+                                                             ) + theme_args_selected_tSNE_UMAP
 
-chosen_UMAP_cv2_corrected_15_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                    ) + labs(title = "HVG (cv2) - n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
+chosen_UMAP_cv2_corrected_15_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "PAG.area", shape_by = "cell.type", 
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "HVG (CV2) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
+                                                             ) + theme_args_selected_tSNE_UMAP
 
 # Plot the selected UMAP coloring for Cd68 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
-chosen_UMAP_var_corrected_10_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                                         colour_by = "Cd68", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                         ) + labs(title = "HVG (var) - n_neighbours = 10 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
+chosen_UMAP_var_corrected_15_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                         dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                                         colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                         point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                         ) + labs(title = "HVG (Var) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
+                                                                  ) + theme_args_selected_tSNE_UMAP
 
-chosen_UMAP_cv2_corrected_10_0.05_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                         colour_by = "Cd68", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                         ) + labs(title = "HVG (cv2) - n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
+chosen_UMAP_cv2_corrected_10_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                         dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                         colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                         point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                         ) + labs(title = "HVG (CV2) - 10 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
+                                                                  ) + theme_args_selected_tSNE_UMAP
 
-chosen_UMAP_cv2_corrected_15_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                         colour_by = "Cd68", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                         ) + labs(title = "HVG (cv2) - n_neighbours = 15 | min_dist = 0.01", x = "UMAP 1", y = "UMAP 2")
+chosen_UMAP_cv2_corrected_15_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                         dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                         colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                         point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                         ) + labs(title = "HVG (CV2) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
+                                                                  ) + theme_args_selected_tSNE_UMAP
 
 # Prepare and save composed plots
 library(patchwork)
 chosen_tSNE_composed <- (chosen_tSNE_HVG_var_corrected_15 + chosen_tSNE_HVG_cv2_corrected_15 +
                            chosen_tSNE_HVG_var_corrected_15_cd68 + chosen_tSNE_HVG_cv2_corrected_15_cd68) +
   plot_annotation(title = "Selected tSNE plots", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2, guides = "collect")
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
-chosen_UMAP_composed <- (chosen_UMAP_var_corrected_10_0.01 + chosen_UMAP_cv2_corrected_10_0.05 + chosen_UMAP_cv2_corrected_15_0.01 +
-                           chosen_UMAP_var_corrected_10_0.01_cd68 + chosen_UMAP_cv2_corrected_10_0.05_cd68 + chosen_UMAP_cv2_corrected_15_0.01_cd68) +
+chosen_UMAP_composed <- ((chosen_UMAP_var_corrected_15_0.01 | chosen_UMAP_var_corrected_15_0.01_cd68) / 
+                           (chosen_UMAP_cv2_corrected_10_0.01 | chosen_UMAP_cv2_corrected_10_0.01_cd68) / 
+                           (chosen_UMAP_cv2_corrected_15_0.01 | chosen_UMAP_cv2_corrected_15_0.01_cd68)) +
   plot_annotation(title = "Selected UMAP plots", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 3, guides = "collect")
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
 
 # Plot them
 chosen_tSNE_composed
@@ -1273,7 +1628,7 @@ ggsave(filename = str_c(date, "_chosen_tSNE_composed.pdf"),
        plot = chosen_tSNE_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -1281,105 +1636,197 @@ ggsave(filename = str_c(date, "_chosen_UMAP_composed.pdf"),
        plot = chosen_UMAP_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 18, height = 9, units = "in", dpi = 300,
+       width = 8, height = 10, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
 Now that we have a stable visualization of our data, we can try to explore it a bit more by using `facet_wrap` so we can separately visualize subsets of our data in the same embedding. For this, we will use one of the chosen UMAP plots using HVG from mean-cv2 modelling:
 ```{r}
+# Set theme parameters
+theme_args_selected_tSNE_UMAP <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                       axis.title = element_text(size = 11, face = "plain"),
+                                       axis.text = element_text(size = 10, face = "plain"), 
+                                       legend.text = element_text(size = 9, face = "plain"), 
+                                       strip.text = element_text(size = 10, face = "plain"))
+
 # The UMAP with the full QCed dataset:
-chosen_UMAP_cv2_corrected_10_0.05 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                    colour_by = "PAG.area", shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                    ) + labs(title = "UMAP HVG (cv2) | n_neighbours = 10 | min_dist = 0.05", x = "UMAP 1", y = "UMAP 2")
+chosen_UMAP_cv2_corrected_15_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "PAG.area", shape_by = "cell.type", 
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "UMAP HVG (CV2) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
+                                                             ) + theme_args_selected_tSNE_UMAP
 
 # Separating by `cell.type`:
-chosen_UMAP_cv2_facet_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                 colour_by = "PAG.area", point_alpha = 0.6, point_size = 2
-                                                 ) + labs(title = "Facets by cell type and coloured by PAG subdivision", x = "UMAP 1", y = "UMAP 2"
-                                                          ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+chosen_UMAP_cv2_facet_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                 dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                 colour_by = "PAG.area", 
+                                                 point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                 ) + labs(title = "Facets by cell-type | Colour by PAG subdivision", x = "UMAP 1", y = "UMAP 2"
+                                                          ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type) + theme_args_selected_tSNE_UMAP
 
 # Separating by `cell.type` and coloring by VGAT or VGlUT2 expression:
-chosen_UMAP_cv2_facet_celltype_VGAT <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                      colour_by = "log2_total_counts_VGAT",  shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                      ) + labs(title = "Facets by cell type and coloured by VGAT expression", x = "UMAP 1", y = "UMAP 2"
-                                                               ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+chosen_UMAP_cv2_facet_celltype_VGAT <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                      dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                      colour_by = "log2_total_counts_VGAT", shape_by = "cell.type", 
+                                                      point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                      ) + labs(title = "Facets by cell-type | Colour by VGAT expression", x = "UMAP 1", y = "UMAP 2"
+                                                               ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type) + theme_args_selected_tSNE_UMAP
 
-chosen_UMAP_cv2_facet_celltype_VGluT2 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                        colour_by = "log2_total_counts_VGluT2",  shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                        ) + labs(title = "Facets by cell type and coloured by VGluT2 expression", x = "UMAP 1", y = "UMAP 2"
-                                                                 ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+chosen_UMAP_cv2_facet_celltype_VGluT2 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                        dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                        colour_by = "log2_total_counts_VGluT2", shape_by = "cell.type", 
+                                                        point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                        ) + labs(title = "Facets by cell-type | Colour by VGluT2 expression", x = "UMAP 1", y = "UMAP 2"
+                                                                 ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type) + theme_args_selected_tSNE_UMAP
 
 # Separating by `cell.type` and coloring by whether a cell expresses VGAT or VGluT2 only, or a combination of both:
-chosen_UMAP_cv2_facet_celltype_VGATVGluT2 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                            colour_by = "VGAT_VGluT2_expression",  shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                            ) + labs(title = "Facets by cell type and coloured by VGAT-VGluT2 profile", x = "UMAP 1", y = "UMAP 2"
-                                                                     ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type)
+chosen_UMAP_cv2_facet_celltype_VGATVGluT2 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                            dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                            colour_by = "VGAT_VGluT2_expression", shape_by = "cell.type", 
+                                                            point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                            ) + labs(title = "Facets by cell-type | Colour by VGAT-VGluT2 profile", x = "UMAP 1", y = "UMAP 2"
+                                                                     ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type) + theme_args_selected_tSNE_UMAP
 
 # Separating by `PAG.area`:
-chosen_UMAP_cv2_facet_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                colour_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                ) + labs(title = "Facets by PAG subdivision and coloured by cell type", x = "UMAP 1", y = "UMAP 2"
-                                                         ) + facet_wrap(~PAG_sceset_qc_norm_filt$PAG.area, dir = "v")
+chosen_UMAP_cv2_facet_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                colour_by = "cell.type", 
+                                                point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                ) + labs(title = "Facets by PAG subdivision | Colour by cell-type", x = "UMAP 1", y = "UMAP 2"
+                                                         ) + facet_wrap(~PAG_sceset_qc_norm_filt$PAG.area, dir = "v") + theme_args_selected_tSNE_UMAP
 
 # Separating by whether a cell expresses VGAT or VGluT2 only, or a combination of both:
-chosen_UMAP_cv2_facet_VGATVGluT2 <- plotReducedDim(PAG_sceset_qc_norm_filt, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                   colour_by = "PAG.area",  shape_by = "cell.type", point_alpha = 0.6, point_size = 2
-                                                   ) + labs(title = "Facets by VGAT-VGluT2 profile and coloured by PAG subdivsion", x = "UMAP 1", y = "UMAP 2"
-                                                            ) + facet_wrap(~PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression, nrow = 2, drop = FALSE)
+chosen_UMAP_cv2_facet_VGATVGluT2 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                                   dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                   colour_by = "PAG.area",  shape_by = "cell.type", 
+                                                   point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                   ) + labs(title = "Facets by VGAT-VGluT2 profile | Colour by PAG subdivsion", x = "UMAP 1", y = "UMAP 2"
+                                                            ) + facet_wrap(~PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression, ncol = 2, dir = "v", drop = FALSE
+                                                                           ) + theme_args_selected_tSNE_UMAP
 
 # Prepare and save composed plots
 library(patchwork)
 chosen_UMAP_facet_celltype_composed <- (chosen_UMAP_cv2_facet_celltype / chosen_UMAP_cv2_facet_celltype_VGATVGluT2 /
                                           chosen_UMAP_cv2_facet_celltype_VGAT / chosen_UMAP_cv2_facet_celltype_VGluT2) + 
-  plot_annotation(title = NULL, tag_levels = "A", theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14)))
+  plot_annotation(title = NULL, tag_levels = "A", theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11)))
 
 # Plot them
-chosen_UMAP_cv2_corrected_10_0.05
+chosen_UMAP_cv2_corrected_15_0.01
 chosen_UMAP_cv2_facet_PAGarea
 chosen_UMAP_facet_celltype_composed
 chosen_UMAP_cv2_facet_VGATVGluT2
 
 # Save them
-ggsave(filename = str_c(date, "_chosen_UMAP_cv2_corrected_10_0.05.pdf"),
-       plot = chosen_UMAP_cv2_corrected_10_0.05,
+ggsave(filename = str_c(date, "_chosen_UMAP_cv2_corrected_15_0.01.pdf"),
+       plot = chosen_UMAP_cv2_corrected_15_0.01,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 5, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_chosen_UMAP_cv2_facet_PAGarea.pdf"),
        plot = chosen_UMAP_cv2_facet_PAGarea,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 7, height = 6, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_chosen_UMAP_facet_celltype_composed.pdf"),
        plot = chosen_UMAP_facet_celltype_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 18, units = "in", dpi = 300,
+       width = 7, height = 11, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_chosen_UMAP_cv2_facet_VGATVGluT2.pdf"),
        plot = chosen_UMAP_cv2_facet_VGATVGluT2,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 18, height = 9, units = "in", dpi = 300,
+       width = 6, height = 10, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-These visualizations are very useful and they allow us to spot different things. For instance, it seems that VGAT cells from dlPAG separate in two different clusters. Additionaly, we observe that some VGAT cells fall under the coordinates of VGluT2 cells, and by coloring by different metadata values we can see that these are the ones that actually express only VGluT2. This is interesting because the rest of cells that express both VGAT and VGluT2 seem to be correctly assigned close to their cell type identity (as expected from the transgenic line they were obtained from). Importantly, both VGAT and VGluT2 genes were excluded after QC, and are not present in the subset of HVGs used for these dimensionality reduction techniques nor for subsequent analysis steps. Also note that the levels for the `VGAT_VGluT2_expression` factor in the metadata are: `VGAT_Cre_VGAT_only`, `VGAT_Cre_VGluT2_only`, `VGAT_Cre_both`, `VGAT_Cre_neither`, `VGluT2_Cre_VGluT2_only`, `VGluT2_Cre_VGAT_only`, `VGluT2_Cre_both`, `VGluT2_Cre_neither`. However, `VGluT2_Cre_VGAT_only` and `VGluT2_Cre_neither` have no cells and are hence dropped from the plot.
-```{r}
-summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)[1:4]
-summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)[5:8]
+These visualizations are very useful and they allow us to spot different things. For instance, it seems that VGAT cells from dlPAG separate in two different clusters. Additionaly, we observe that some VGAT cells fall under the coordinates of VGluT2 cells, and by coloring by different metadata values we can see that these are the ones that actually express only VGluT2. This is interesting because the rest of cells that express both VGAT and VGluT2 seem to be correctly assigned close to their cell type identity (as expected from the transgenic line they were obtained from). Importantly, both VGAT and VGluT2 genes were excluded after QC, and are not present in the subset of HVGs used for these dimensionality reduction techniques nor for subsequent analysis steps. Also note that the levels for the `VGAT_VGluT2_expression` factor in the metadata are: `VGAT_Cre_VGAT_only`, `VGAT_Cre_VGluT2_only`, `VGAT_Cre_both`, `VGAT_Cre_neither`, `VGluT2_Cre_VGluT2_only`, `VGluT2_Cre_VGAT_only`, `VGluT2_Cre_both`, `VGluT2_Cre_neither`. In some instances, and unless we set `drop = false` if using `facet_wrap`, factors that have no cells like `VGluT2_Cre_VGAT_only` and `VGluT2_Cre_neither` are dropped from the plot.
 
-table(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)
+We can quickly summarise the number of cells assigned to each factor:
+```{r}
+summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)[1:4] # VGAT cells
+summary(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression)[5:8] # VGluT2 cells
+```
+
+We can also identify each cell and try to figure out whether they come from a specific mouse or batch:
+```{r}
 which(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression == "VGAT_Cre_VGluT2_only")
-PAG_sceset_qc_norm_filt$mouse.id[(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression == "VGAT_Cre_VGluT2_only")]
-PAG_sceset_qc_norm_filt$batch.processing[(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression == "VGAT_Cre_VGluT2_only")]
+table(PAG_sceset_qc_norm_filt$mouse.id[(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression == "VGAT_Cre_VGluT2_only")])
+table(PAG_sceset_qc_norm_filt$batch.processing[(PAG_sceset_qc_norm_filt$VGAT_VGluT2_expression == "VGAT_Cre_VGluT2_only")])
+```
+
+We can't seem to find a specific culprit, so we rule out that anything weird happened in a given experimental day, animal, or batch. Given that characterising this phenomenon (i.e. VGAT-VGluT2coexpression or lack thereof) is outside the scope of our interests and we have already excluded the genes from the dataset, we will proceed with analysis without further pursuing this. Our current guess is that this can arise from a combination of dropout effect and of our cell isolation approach, which can probably lead to aspiration cellular processes from cells in contact or wrapping our target cell. However, unless the target cell was ruptured or dead, the amount of mRNA should be small in proportion to that of the target cell.
+
+If you want to explore the expression of specific genes next to the UMAP colored by PAG subdivision, we can do something like this, using some of the following genes:
+
+Cell-type markers from Allen Institute papers: 
+
+* "Cldn5": Claudin 5, tight junction protein, endothelial marker (not present in our dataset)
+
+* "Mbp": myelin basic protein, marker of oligodendrocytes (everywhere in our dataset, probably because we aspirate myelinated processes surrounding the target cells). 
+
+* "Aqp4": aquaporin 4, astrocytic marker (not really present in our dataset). 
+
+* "Cd68", "Cc45" or "Cd14: expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages (label one of the clusters in our dataset).
+
+Some markers for Dorsal Raphe 5-HT neurons (Okaty, Sturrock, et al. eLife 2020):
+
+* "Vsx2": corresponds to the Chx10 gene and should label a subset of VGluT2 neurons in vlPAG
+
+* "Drd2" or "Pet1" (transcription factor): expressed by a subset of cells in the top lateral sides of DRN which innervate auditory processing centers and also mating, parenting, etc. - might be useful to differentiate from vlPAG cells 
+
+* "Tph2": rate limiting enzyme in serotonin synthesis
+
+* "Met" or "Slc17a8" (VGluT3)
+```{r}
+# Set theme parameters
+theme_args_expression_UMAP <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                    axis.title = element_text(size = 11, face = "plain"),
+                                    axis.text = element_text(size = 10, face = "plain"), 
+                                    legend.text = element_text(size = 9, face = "plain"), 
+                                    strip.text = element_text(size = 10, face = "plain"))
+
+gene_to_color = "Cd68"
+
+# The UMAP with the full QCed dataset, colored by PAG subdivision:
+expression_UMAP_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                          dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                          colour_by = "PAG.area", shape_by = "cell.type", 
+                                          point_alpha = 0.6, point_size = 2, theme_size = 11
+                                          ) + labs(title = "Color by PAG area", x = "UMAP 1", y = "UMAP 2"
+                                                   ) + theme_args_expression_UMAP
+
+# The UMAP with the full QCed dataset, colored by expression of specific genes:
+expression_UMAP_gene <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+                                       dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                       colour_by = gene_to_color, by_exprs_values = "corrected", shape_by = "cell.type", 
+                                       point_alpha = 0.6, point_size = 2, theme_size = 11
+                                       ) + labs(title = "Color by expression of a gene", x = "UMAP 1", y = "UMAP 2"
+                                                ) + theme_args_expression_UMAP
+
+# Separating by `PAG.area`:
+expression_UMAP_facet_PAGarea_gene <- plotReducedDim(PAG_sceset_qc_norm_filt,
+                                                     dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                     colour_by = gene_to_color, by_exprs_values = "corrected", shape_by = "cell.type",
+                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                     ) + labs(title = "Facets by PAG subdivision | Colour by cell-type", x = "UMAP 1", y = "UMAP 2"
+                                                              ) + facet_wrap(~PAG_sceset_qc_norm_filt$PAG.area, dir = "v") + theme_args_selected_tSNE_UMAP
+
+expression_UMAP_composed <- ((expression_UMAP_PAGarea / expression_UMAP_gene) | expression_UMAP_facet_PAGarea_gene) +
+  plot_annotation(title = "UMAP plots - HVG (CV2) | 15 neighbors | 0.01 dist", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
+
+expression_UMAP_composed
 ```
 
 ### 5.4.5 | Final notes on interpeting dimensionality reduction plots
