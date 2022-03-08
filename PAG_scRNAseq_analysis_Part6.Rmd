@@ -29,15 +29,15 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 ***
 
 # STEP 6 | Clustering
-We have now normalized the data, identified highly variable genes, corrected confounding factors, and applied dimensionality reduction techniques to better visualize, denoise, and summarize our data. We can now proceed to carry out analyses that are relevant to the biological questions at hand.
+We have now normalised the data, identified highly variable genes, corrected confounding factors, and applied dimensionality reduction techniques to better visualize, denoise, and summarize our data. We can now proceed to carry out analyses that are relevant to the biological questions at hand.
 
-scRNA-seq data allow de novo discovery and annotation of cell-types based on transcription profiles. Computationally, we need to identify groups of cells based on the similarities of the transcriptomes without any prior knowledge of the labels, nor the number of clusters we will end up with. This is very challenging due to the high level of noise (both technical and biological) and the large number of dimensions (i.e. genes).
+scRNA-seq data allow de novo discovery and annotation of cell-types based on gene expression profiles. Computationally, we need to identify groups of cells based on the similarities of their transcriptomes without any prior knowledge of the labels, nor the number of clusters we will end up with. This is very challenging due to the high level of noise (both technical and biological) and the large number of dimensions (i.e. genes x cells).
 
 Clustering is an unsupervised learning procedure that is used in scRNA-seq data analysis to empirically define groups of cells with similar expression profiles. This allows us to describe population heterogeneity in terms of discrete labels that are easily understood, rather than attempting to comprehend the high-dimensional manifold on which the cells truly reside. After annotation based on marker genes, the clusters can be treated as proxies for more abstract biological concepts such as cell types or states. Clustering is thus a critical step for extracting biological insights from scRNA-seq data. Some of the most popular approaches are _graph-based clustering_, _k-means clustering_, and _hierarchical clustering_.
 
 At this point, it is worth stressing the distinction between clusters and cell types. The former is an empirical construct while the latter is a biological truth (albeit a vaguely defined one). For this reason, questions like “what is the true number of clusters?” are usually meaningless. We can define as many clusters as we like, with whatever algorithm we like - each clustering will represent its own partitioning of the high-dimensional expression space, and is as “real” as any other clustering. A more relevant question is “how well do the clusters approximate the cell types?”. Unfortunately, this is difficult to answer given the context-dependent interpretation of biological truth. Some analysts will be satisfied with resolution of the major cell types; other analysts may want resolution of subtypes; and others still may require resolution of different states (e.g., metabolic activity, stress) within those subtypes. Moreover, two clusterings can be highly inconsistent yet both valid, simply partitioning the cells based on different aspects of biology.
 
-We continue using the `PAG_sceset_qc_norm_filt_corr` after normalization, filtering, and batch correction. We should thus have a `corrected` slot in `assays`, and different PCA, tSNE, and UMAP solutions in the `reducedDim` slot:
+We continue using the `PAG_sceset_qc_norm_filt_corr` after normalisation, filtering, and batch correction. We should thus have a `corrected` slot in `assays`, and different PCA, tSNE, and UMAP solutions in the `reducedDim` slot:
 ```{r}
 # Set the directory where your data and scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
@@ -67,7 +67,7 @@ library(extrafont)
 # If starting from stored results, load saved filtered dataset from previous Step:
 options(stringsAsFactors = FALSE)
 
-PAG_sceset_qc_norm_filt_corr <- readRDS("PAG_sceset_qc_norm_filt_corr.rds") # Contains filtered cells and genes, log-normalized, filtered, and corrected data
+PAG_sceset_qc_norm_filt_corr <- readRDS("PAG_sceset_qc_norm_filt_corr.rds") # Contains filtered cells and genes, log-normalised, filtered, and corrected data
 assayNames(PAG_sceset_qc_norm_filt_corr)
 reducedDimNames(PAG_sceset_qc_norm_filt_corr)
 ```
@@ -86,493 +86,836 @@ There are several considerations in the practical execution of a graph-based clu
 
 For example, we could use a code that uses the `k = 10` nearest neighbors of each cell to construct a shared nearest neighbor graph. If `type = "rank"`, two cells are connected by an edge if any of their nearest neighbors are shared, with the edge weight defined from the highest average rank of the shared neighbors (Xu and Su 2015): The weight between two nodes is `k - r/2` where `r` is the smallest sum of ranks for any shared neighboring node. For example, if one node was the closest neighbor of each of two nodes, the weight between the two latter nodes would be `k - 1`. For the purposes of this ranking, each node has a rank of zero in its own nearest-neighbor set. More shared neighbors, or shared neighbors that are close to both cells, will generally yield larger weights. The `Walktrap` method from the `igraph` package can then be used to identify communities. All calculations are performed using the top PCs to take advantage of data compression and denoising. 
 
-An alternative approach can be performed by changing the edge weighting scheme during graph construction. Setting `type = "number"` will weight edges based on the number of nearest neighbors that are shared between two cells (in other words, the weight between two nodes is simply the number of shared nearest neighbors between them). Similarly, `type = "jaccard"` will weight edges between nodes according to the Jaccard index of the two sets of neighbors. This weight can range from zero to 1, and is a monotonic transformation of the weight used by `type = "number"`. We can also disable weighting altogether by using `buildKNNGraph()`, which is occasionally useful for downstream graph operations that do not support weights. Pipelines involving `scran` default to rank-based weights followed by Walktrap clustering. In contrast, `Seurat` uses Jaccard-based weights followed by Louvain clustering. Both of these strategies work well.
+An alternative approach can be performed by changing the edge weighting scheme during graph construction. Setting `type = "number"` will weight edges based on the number of nearest neighbors that are shared between two cells (in other words, the weight between two nodes is simply the number of shared nearest neighbors between them). Similarly, `type = "jaccard"` will weight edges between nodes according to the Jaccard index of the two sets of neighbors. This weight can range from 0 to 1, and is a monotonic transformation of the weight used by `type = "number"`. We can also disable weighting altogether by using `buildKNNGraph()`, which is occasionally useful for downstream graph operations that do not support weights. Pipelines involving `scran` default to rank-based weights followed by Walktrap clustering. In contrast, `Seurat` uses Jaccard-based weights followed by Louvain clustering. Both of these strategies work well.
 
 One of the most important parameters is `k`, the number of nearest neighbors used to construct the graph. The choice of `k` controls the connectivity of the graph and the resolution of the community detection algorithms. Smaller values of `k` will generally yield smaller, finer clusters, while increasing `k` will increase the connectivity of the graph and make it more difficult to resolve different communities, thereby yielding a more inter-connected graph and broader clusters. The value of `k` can be roughly interpreted as the anticipated size of the smallest subpopulation. If a subpopulation in the data has fewer than `k+1` cells, `buildSNNGraph` will forcibly construct edges between cells in that subpopulation and cells in other subpopulations. This increases the risk that the subpopulation will not form its own cluster as it is more interconnected with the rest of the cells in the dataset. It is recommended to try different values of `k` and different weighting schemes to obtain the most informative resolution.
 
-After running two different graph-based clustering approaches with different `k` (from 5 to 15, not shown), we observe that the predominant numbers of obtained clusters is 7 or 9 for the *var_RankBased* approach, 7, 8 or 9 for the *var_JaccardLouvain* approach, 7 or 10 for *the cv2_RankBased*, and 10 or 11 for the *cv2_JaccardLouvain*. The more common results for all of them are obtained with `k = 7:10`. We therefore embedded the clustering results of each combination of PCA, HVG, and graph clustering method in both t-SNE or UMAP plots to assess the results. After inspecting all the results, we kept the best K for each approach as below: 
+We will thus run a search for different `k` in both Rank-Walktrap and Jaccard-Louvain and compare the clustering results on the different tSNEs and UMAPs, using the number of PCs suggested by `scran` and the HVGs from both Var and CV2 modelling. Commented out as only needed to run once, jump to the next steps with a preselection of `k`.
+```{r}
+# library(scran)
+# set.seed(42)
+# 
+# # Number of K to test
+# range_of_k = list(5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+# 
+# for(n_k in range_of_k) {
+#   print(paste0("Clustering results using k = ", n_k))
+#   
+#   # Compute clustering results
+#   ## Using top 12 or 25 PCs and HVGs obtained from mean-var modelling
+#   # Using HVG from Var with rank-based weights
+#   graph_var_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+#                                   k = n_k, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
+#                                   #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 12 or 25
+#                                   type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+#                                   subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
+#                                   assay.type = "logcounts",
+#                                   use.dimred = "PCA_HVG_var_logcounts_12") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+#   clusters_var_rank <- igraph::cluster_walktrap(graph_var_rank)$membership # Use `cluster_louvain` if using `type = "jaccard"`, and `cluster_walktrap` if using `type = "rank"`
+#   PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank <- factor(clusters_var_rank)
+# 
+#   # Using HVG from Var with jaccard-based weights
+#   graph_var_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+#                                      k = n_k, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
+#                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 12 or 25
+#                                      type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
+#                                      subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
+#                                      assay.type = "logcounts",
+#                                      use.dimred = "PCA_HVG_var_logcounts_12") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+#   clusters_var_jaccard <- igraph::cluster_louvain(graph_var_jaccard)$membership # Use `cluster_louvain` if using `type = "jaccard"`
+#   PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard <- factor(clusters_var_jaccard)
+# 
+#   ## Using top 17 or 25 PCs and HVGs obtained from mean-cv2 modelling
+#   # Using HVG from CV2 with rank-based weights
+#   graph_cv2_rank <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+#                                   k = n_k, # An integer scalar specifying the number of nearest neighbors to consider during graph constructio
+#                                   #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
+#                                   type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors
+#                                   subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+#                                   assay.type = "logcounts",
+#                                   use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+#   clusters_cv2_rank <- igraph::cluster_walktrap(graph_cv2_rank)$membership
+#   PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank <- factor(clusters_cv2_rank)
+# 
+#   # Using HVG from CV2 with jaccard-based weights
+#   graph_cv2_jaccard <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+#                                      k = n_k, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
+#                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
+#                                      type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors
+#                                      subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+#                                      assay.type = "logcounts",
+#                                      use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+#   clusters_cv2_jaccard <- igraph::cluster_louvain(graph_cv2_jaccard)$membership
+#   PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard <- factor(clusters_cv2_jaccard)
+# 
+#   
+#   ## Set theme parameters
+#   theme_args_tSNE_UMAP_clustering <- theme(plot.title = element_text(size = 11, face = "bold"),
+#                                            axis.title = element_text(size = 11, face = "plain"),
+#                                            axis.text = element_text(size = 10, face = "plain"), 
+#                                            legend.text = element_text(size = 9, face = "plain"), 
+#                                            strip.text = element_text(size = 10, face = "plain"))
+#   ### Using t-SNE (var) ###
+#   tSNE_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                              dimred = "tSNE_var_corrected_perplexity_15",
+#                                              colour_by = "PAG.area", shape_by = "cell.type",
+#                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                              ) + labs(title = "PAG subdivisions", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from Var with rank-based weights
+#   tSNE_var_RankWalktrap <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                              dimred = "tSNE_var_corrected_perplexity_15",
+#                                              colour_by = "SNN_clusters_var_rank", shape_by = "cell.type", text_by = "SNN_clusters_var_rank",
+#                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                              ) + labs(title = "Rank-Walktrap", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from Var with jaccard-based weights
+#   tSNE_var_JaccardLouvain <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                                 dimred = "tSNE_var_corrected_perplexity_15",
+#                                                 colour_by = "SNN_clusters_var_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_var_jaccard",
+#                                                 point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                                 ) + labs(title = "Jaccard-Louvain", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   
+#   ### Using t-SNE (cv2) ###
+#   tSNE_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                              dimred = "tSNE_cv2_corrected_perplexity_15",
+#                                              colour_by = "PAG.area", shape_by = "cell.type",
+#                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                              ) + labs(title = "PAG subdivisions", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from CV2 with rank-based weights
+#   tSNE_cv2_RankWalktrap <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                           dimred = "tSNE_cv2_corrected_perplexity_15",
+#                                           colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type",  text_by = "SNN_clusters_cv2_rank",
+#                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                           ) + labs(title = "Rank-Walktrap", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from CV2 with jaccard-based weights
+#   tSNE_cv2_JaccardLouvain <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                             dimred = "tSNE_cv2_corrected_perplexity_15",
+#                                             colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard",
+#                                             point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                             ) + labs(title = "Jaccard-Louvain", x = "t-SNE 1", y = "t-SNE 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   
+#   ### Using UMAP (var) ###
+#   UMAP_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                              dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+#                                              colour_by = "PAG.area", shape_by = "cell.type",
+#                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                              ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from Var with rank-based weights
+#   UMAP_var_RankWalktrap <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                           dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+#                                           colour_by = "SNN_clusters_var_rank", shape_by = "cell.type", text_by = "SNN_clusters_var_rank",
+#                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                           ) + labs(title = "Rank-Walktrap", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from Var with jaccard-based weights
+#   UMAP_var_JaccardLouvain <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                             dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+#                                             colour_by = "SNN_clusters_var_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_var_jaccard",
+#                                             point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                             ) + labs(title = "Jaccard-Louvain", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   
+#   ### Using UMAP (cv2) - 10_neighbors_0.01_min_dist ###
+#   UMAP_cv2_10_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                                     dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+#                                                     colour_by = "PAG.area", shape_by = "cell.type",
+#                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                                     ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from CV2 with rank-based weights
+#   UMAP_cv2_10_001_RankWalktrap <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                                  dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+#                                                  colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank",
+#                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                                  ) + labs(title = "Rank-Walktrap", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from CV2 with jaccard-based weights
+#   UMAP_cv2_10_001_JaccardLouvain <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                                    dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+#                                                    colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard",
+#                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                                    ) + labs(title = "Jaccard-Louvain", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   
+#   ### Using UMAP (CV2) - 15_neighbors_0.01_min_dist ###
+#   UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                                     dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+#                                                     colour_by = "PAG.area", shape_by = "cell.type",
+#                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                                     ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from CV2 with rank-based weights
+#   UMAP_cv2_15_001_RankWalktrap <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+#                                                  colour_by = "SNN_clusters_cv2_rank", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank",
+#                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                                  ) + labs(title = "Rank-Walktrap", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   # Using HVG from CV2 with jaccard-based weights
+#   UMAP_cv2_15_001_JaccardLouvain <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+#                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+#                                                    colour_by = "SNN_clusters_cv2_jaccard", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard",
+#                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+#                                                    ) + labs(title = "Jaccard-Louvain", x = "UMAP 1", y = "UMAP 2") + theme_args_tSNE_UMAP_clustering
+#   
+#   
+#   # Prepare and save composed plots
+#   library(patchwork)
+#   tSNE_var_SNN_clusters <- (tSNE_var_PAGsubdivisions + tSNE_var_RankWalktrap + tSNE_var_PAGsubdivisions + tSNE_var_JaccardLouvain) +
+#     plot_annotation(title = paste0("Graph-based clustering on tSNE (Var) with k = ", n_k), tag_levels = "A", 
+#                     theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + plot_layout(ncol = 2)
+#   
+#   tSNE_cv2_SNN_clusters <- (tSNE_cv2_PAGsubdivisions + tSNE_cv2_RankWalktrap + tSNE_cv2_PAGsubdivisions + tSNE_cv2_JaccardLouvain) +
+#     plot_annotation(title = paste0("Graph-based clustering on tSNE (CV2) with k = ", n_k), tag_levels = "A", 
+#                     theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + plot_layout(ncol = 2)
+#   
+#   UMAP_var_SNN_clusters <- (UMAP_var_PAGsubdivisions + UMAP_var_RankWalktrap + UMAP_var_PAGsubdivisions + UMAP_var_JaccardLouvain) +
+#     plot_annotation(title = paste0("Graph-based clustering on UMAP (Var) with k = ", n_k), tag_levels = "A", 
+#                     theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + plot_layout(ncol = 2)
+#   
+#   UMAP_cv2_10_001_SNN_clusters <- (UMAP_cv2_10_001_PAGsubdivisions + UMAP_cv2_10_001_RankWalktrap + UMAP_cv2_10_001_PAGsubdivisions + UMAP_cv2_10_001_JaccardLouvain) +
+#     plot_annotation(title = paste0("Graph-based clustering on UMAP (CV2) with k = ", n_k), tag_levels = "A", 
+#                     theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + plot_layout(ncol = 2)
+#   
+#   UMAP_cv2_15_001_SNN_clusters <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap + UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain) +
+#     plot_annotation(title = paste0("Graph-based clustering on UMAP (CV2) with k = ", n_k), tag_levels = "A", 
+#                     theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + plot_layout(ncol = 2)
+#   
+#   # Save them
+#   ggsave(filename = str_c(date, "_SNN_clusters_tSNE_var_composed_k", n_k, ".pdf"),
+#          plot = tSNE_var_SNN_clusters,
+#          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#          path = path_for_figures,
+#          width = 8, height = 7, units = "in", dpi = 300,
+#          family = "Arial", bg = "transparent"
+#          )
+#   
+#   ggsave(filename = str_c(date, "_SNN_clusters_tSNE_cv2_composed_k", n_k, ".pdf"),
+#          plot = tSNE_cv2_SNN_clusters,
+#          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#          path = path_for_figures,
+#          width = 8, height = 7, units = "in", dpi = 300,
+#          family = "Arial", bg = "transparent"
+#          )
+#   
+#   ggsave(filename = str_c(date, "_SNN_clusters_UMAP_var_composed_k", n_k, ".pdf"),
+#          plot = UMAP_var_SNN_clusters,
+#          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#          path = path_for_figures,
+#          width = 8, height = 7, units = "in", dpi = 300,
+#          family = "Arial", bg = "transparent"
+#          )
+#   
+#   ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_10_001_composed_k", n_k, ".pdf"),
+#          plot = UMAP_cv2_10_001_SNN_clusters,
+#          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#          path = path_for_figures,
+#          width = 8, height = 7, units = "in", dpi = 300,
+#          family = "Arial", bg = "transparent"
+#          )
+#   
+#   ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_15_001_composed_k", n_k, ".pdf"),
+#          plot = UMAP_cv2_15_001_SNN_clusters,
+#          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#          path = path_for_figures,
+#          width = 8, height = 7, units = "in", dpi = 300,
+#          family = "Arial", bg = "transparent"
+#          )
+# }
+```
+
+After visualizing the different clustering results embedded in our reduced dimensions we can clearly confirm two observations from the previous steps: (1) the UMAP visualizations are significantly better than the t-SNE plots for our data, and (2) using the PCs obtained from HVGs after modelling the CV2-mean trend provide more resolution than those from modelling Var-mean trend for both clustering and dimensionality reduction.
+
+An informative exercise to compare our clustering results would be to use the Macrophage-enriched cluster to see how well do the different clustering approaches pick it up. If we look at the UMAP plot and magnify the region where that cluster falls, we can count 12 cells, so in theory, any good clustering solution for our dataset should correctly identify the right amount of cells.
+```{r}
+# # Count the number of cells each clustering approach assigns to the macrophage-enriched cluster ID (check that the cluster ID is indeed the correct one by looking at the UMAP plots above):
+# paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank==0), " cells in SNN_var_rank method")
+# paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard==8), " cells in SNN_var_jaccard method")
+# paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank==6), " cells in SNN_cv2_rank method")
+# paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard==1), " cells in SNN_cv2_jaccard method")
+```
+
+After running the two different graph-based clustering approaches with different `k` (from 5 to 15), we observe that when using the HVGs from Var modelling and the top 12 PCs, neither the Rank-Walktrap nor the Jaccard-Louvain approach manage to correctly identify the 12 cells in the Cd68+ cluster at any value of `k`. This, together with the fact that both the tSNEs and UMAPs obtained with the HVG-Var yield worse visualisations than their CV2 counterparts, leads us to not proceed with this approach.
+
+When using the HVGs obtained from CV2 modelling and the top 17 PCs, we find that in most cases both the Rank-Walktrap and Jaccard-Louvain approaches successfully capture the 12 cells from the Cd68+ cluster. Most results identify between 2-4 VGAT clusters and between 4-6 VGlUT2 clusters. After overlaying the results to the UMAP visualisation, we decide to keep the results from different `k` to further analyse.
+
+For instance, when using the *Rank-Walktrap* approach `k = 5:10` finds 4 inhibitory clusters, whereas `k = 11:15` finds only 2. This suggests that there may be some substructure in the VGAT population, so if we want to investigate that we would have to pick a lower `k`. Furthermore, `k = 5:7` finds 6 VGluT2 clusters, whereas `k = 8:10` finds only 5. In addition, the VGluT2 clusters identified by `k = 11:13` are not great at discriminating lPAG from dmPAG cells, only `k = 12` would be good if we wanted to keep only 2 VGAT clusters and have slightly cleaner VGluT2 clusters. Finally, the VGluT2 cluster that we lose when using `k = 8:10` seems to be a slightly different subset of dmPAG cells, so if we would like to inspect them, we would keep a lower `k`, from which `k = 7` seems to be the best.
+
+* `k = 7`: suggests 4 VGAT clusters and 6 VGluT2 clusters. 
+
+* `k = 12`: suggests 2 VGAT clusters and 5 VGluT2 clusters. 
+
+
+On the other hand, when using the *Jaccard-Louvain* approach, we find that most results match the structure found by the UMAP visualisation. Again, different `k` offer us different levels of resolution, so we can try to keep the ones below as they may offer different insights into VGAT or VGluT2 subpopulations.
+
+* `k = 5`: suggests 4 VGAT clusters and 6 VGluT2 clusters. 
+
+* `k = 8`: suggests 4 VGAT clusters and 5 VGluT2 clusters. 
+
+* `k = 9`: suggests 3 VGAT clusters and 6 VGluT2 clusters. 
+
+* `k = 13`: suggests 2 VGAT clusters and 5 VGluT2 clusters. 
+
+We will keep the different solutions and further examine their stability and modularity. One thing is clear though, there are 3 main clusters in our dataset: VGAT neurons, VGluT2 neurons, and the small Cd68+ clusters. Furthermore, it seems that VGlUT2 neurons may have a bit more granularity, with different subpopulations that trail the different PAG subdivisions. VGAT neurons seem to be slightly more homogeneous, but we consistently find at least 2 clusters that differentiate vlPAG neurons from the rest.
 ```{r}
 library(scran)
-## Using top 25 PCs and HVGs obtained from mean-var modeling
-# Using HVG from Var with rank-based weights
-graph_var_rank_k8 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                   k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
-                                   #d = 50, # An integer scalar specifying the number of dimensions to use for the search
-                                   type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                   subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
-                                   assay.type = "logcounts",
-                                   use.dimred = "PCA_HVG_var_logcounts_25") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
-clusters_var_rank_k8 <- igraph::cluster_walktrap(graph_var_rank_k8)$membership # Use `cluster_louvain` if using `type = "jaccard"`, and `cluster_walktrap` if using `type = "rank"`
-PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank_k8 <- factor(clusters_var_rank_k8)
-table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank_k8)
+set.seed(42)
 
-# Using HVG from Var with jaccard-based weights
-graph_var_jaccard_k10 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                       k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
-                                       #d = 50, # An integer scalar specifying the number of dimensions to use for the search
-                                       type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors. Try "rank" or "jaccard"
-                                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
-                                       assay.type = "logcounts",
-                                       use.dimred = "PCA_HVG_var_logcounts_25") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
-clusters_var_jaccard_k10 <- igraph::cluster_louvain(graph_var_jaccard_k10)$membership # Use `cluster_louvain` if using `type = "jaccard"`
-PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard_k10 <- factor(clusters_var_jaccard_k10)
-table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard_k10)
-
-## Using top 25 PCs and HVGs obtained from mean-cv2 modeling
+## We will only do Graph-based clustering using the top 17 PCs and HVGs obtained from mean-cv2 modelling:
 # Using HVG from CV2 with rank-based weights
 graph_cv2_rank_k7 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
                                    k = 7, # An integer scalar specifying the number of nearest neighbors to consider during graph constructio
-                                   #d = 50, # An integer scalar specifying the number of dimensions to use for the search
+                                   #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
                                    type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors
                                    subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                    assay.type = "logcounts",
-                                   use.dimred = "PCA_HVG_cv2_logcounts_25") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+                                   use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
 clusters_cv2_rank_k7 <- igraph::cluster_walktrap(graph_cv2_rank_k7)$membership
 PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7 <- factor(clusters_cv2_rank_k7)
+print("Clustering results using Rank-Walktrap with k = 7")
 table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7)
 
+graph_cv2_rank_k12 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+                                   k = 12, # An integer scalar specifying the number of nearest neighbors to consider during graph constructio
+                                   #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
+                                   type = "rank", # A string specifying the type of weighting scheme to use for shared neighbors
+                                   subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                   assay.type = "logcounts",
+                                   use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+clusters_cv2_rank_k12 <- igraph::cluster_walktrap(graph_cv2_rank_k12)$membership
+PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k12 <- factor(clusters_cv2_rank_k12)
+print("Clustering results using Rank-Walktrap with k = 12")
+table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k12)
+
 # Using HVG from CV2 with jaccard-based weights
-graph_cv2_jaccard_k8 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                      k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
-                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search
+graph_cv2_jaccard_k5 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+                                      k = 5, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
+                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
                                       type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors
                                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
                                       assay.type = "logcounts",
-                                      use.dimred = "PCA_HVG_cv2_logcounts_25") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+                                      use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+clusters_cv2_jaccard_k5 <- igraph::cluster_louvain(graph_cv2_jaccard_k5)$membership
+PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k5 <- factor(clusters_cv2_jaccard_k5)
+print("Clustering results using Jaccard-Louvain with k = 5")
+table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k5)
+
+graph_cv2_jaccard_k8 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+                                      k = 8, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
+                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
+                                      type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors
+                                      subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                      assay.type = "logcounts",
+                                      use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
 clusters_cv2_jaccard_k8 <- igraph::cluster_louvain(graph_cv2_jaccard_k8)$membership
 PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8 <- factor(clusters_cv2_jaccard_k8)
+print("Clustering results using Jaccard-Louvain with k = 8")
 table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8)
 
-graph_cv2_jaccard_k10 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
-                                       k = 10, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
-                                       #d = 50, # An integer scalar specifying the number of dimensions to use for the search
-                                       type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors
-                                       subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
-                                       assay.type = "logcounts",
-                                       use.dimred = "PCA_HVG_cv2_logcounts_25") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
-clusters_cv2_jaccard_k10 <- igraph::cluster_louvain(graph_cv2_jaccard_k10)$membership
-PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k10 <- factor(clusters_cv2_jaccard_k10)
-table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k10)
+graph_cv2_jaccard_k9 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+                                      k = 9, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
+                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
+                                      type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors
+                                      subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                      assay.type = "logcounts",
+                                      use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+clusters_cv2_jaccard_k9 <- igraph::cluster_louvain(graph_cv2_jaccard_k9)$membership
+PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k9 <- factor(clusters_cv2_jaccard_k9)
+print("Clustering results using Jaccard-Louvain with k = 9")
+table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k9)
+
+graph_cv2_jaccard_k13 <- buildSNNGraph(PAG_sceset_qc_norm_filt_corr,
+                                      k = 13, # An integer scalar specifying the number of nearest neighbors to consider during graph construction
+                                      #d = 50, # An integer scalar specifying the number of dimensions to use for the search, try 17 or 25
+                                      type = "jaccard", # A string specifying the type of weighting scheme to use for shared neighbors
+                                      subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
+                                      assay.type = "logcounts",
+                                      use.dimred = "PCA_HVG_cv2_logcounts_17") # Use existing PCs and ignore any setting of d, subset.row and get.spikes
+clusters_cv2_jaccard_k13 <- igraph::cluster_louvain(graph_cv2_jaccard_k13)$membership
+PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k13 <- factor(clusters_cv2_jaccard_k13)
+print("Clustering results using Jaccard-Louvain with k = 13")
+table(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k13)
 ```
 
-We can then assign the cluster assignments back into our `SingleCellExperiment` object as a factor in the column metadata. This allows us to conveniently visualize the distribution of clusters in a t-SNE or UMAP plot:
+For each chosen solution, we have assigned the cluster assignments back into our `SingleCellExperiment` object as a factor in the column metadata. This allows us to conveniently visualize the distribution of clusters in a t-SNE or UMAP plot of our choice:
 ```{r}
-## Using t-SNE (var)
-tSNE_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
-                                           colour_by = "PAG.area", shape_by = "cell.type"
-                                           ) + labs(title = "t-SNE (var) - PAG subdivisions", x = "t-SNE 1", y = "t-SNE 2")
+# Set theme parameters
+theme_args_UMAP_clustering <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                    axis.title = element_text(size = 11, face = "plain"),
+                                    axis.text = element_text(size = 10, face = "plain"), 
+                                    legend.text = element_text(size = 9, face = "plain"), 
+                                    strip.text = element_text(size = 10, face = "plain"))
 
-# Using HVG from Var with rank-based weights
-tSNE_var_RankWalktrap_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
-                                           colour_by = "SNN_clusters_var_rank_k8", shape_by = "cell.type", text_by = "SNN_clusters_var_rank_k8"
-                                           ) + labs(title = "t-SNE (var) - Rank-Walktrap (k=8)", x = "t-SNE 1", y = "t-SNE 2")
-
-# Using HVG from Var with jaccard-based weights
-tSNE_var_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
-                                              colour_by = "SNN_clusters_var_jaccard_k10", shape_by = "cell.type", text_by = "SNN_clusters_var_jaccard_k10"
-                                              ) + labs(title = "t-SNE (var) - Jaccard-Louvain (k=10)", x = "t-SNE 1", y = "t-SNE 2")
-
-## Using t-SNE (cv2)
-tSNE_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                           colour_by = "PAG.area", shape_by = "cell.type"
-                                           ) + labs(title = "t-SNE (cv2) - PAG subdivisions", x = "t-SNE 1", y = "t-SNE 2")
+### Using UMAP (CV2) - 10_neighbors_0.01_min_dist ###
+UMAP_cv2_10_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                  dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                  colour_by = "PAG.area", shape_by = "cell.type",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 # Using HVG from CV2 with rank-based weights
-tSNE_cv2_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                           colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type",  text_by = "SNN_clusters_cv2_rank_k7"
-                                           ) + labs(title = "t-SNE (cv2) - Rank-Walktrap (k=7)", x = "t-SNE 1", y = "t-SNE 2")
+UMAP_cv2_10_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                  dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+
+UMAP_cv2_10_001_RankWalktrap_k12 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                  dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k12", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k12",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k=12)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 # Using HVG from CV2 with jaccard-based weights
-tSNE_cv2_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                             colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8"
-                                             ) + labs(title = "t-SNE (cv2) - Jaccard-Louvain (k=8)", x = "t-SNE 1", y = "t-SNE 2")
-tSNE_cv2_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                              colour_by = "SNN_clusters_cv2_jaccard_k10", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k10"
-                                              ) + labs(title = "t-SNE (cv2) - Jaccard-Louvain (k=10)", x = "t-SNE 1", y = "t-SNE 2")
+UMAP_cv2_10_001_JaccardLouvain_k5 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k5", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k5",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=5)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-## Using UMAP (var)
-UMAP_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                           colour_by = "PAG.area", shape_by = "cell.type"
-                                           ) + labs(title = "UMAP (var) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_10_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-# Using HVG from Var with rank-based weights
-UMAP_var_RankWalktrap_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                           colour_by = "SNN_clusters_var_rank_k8", shape_by = "cell.type", text_by = "SNN_clusters_var_rank_k8"
-                                           ) + labs(title = "UMAP (var) - Rank-Walktrap (k=8)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_10_001_JaccardLouvain_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k9", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k9",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=9)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-# Using HVG from Var with jaccard-based weights
-UMAP_var_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                              colour_by = "SNN_clusters_var_jaccard_k10", shape_by = "cell.type", text_by = "SNN_clusters_var_jaccard_k10"
-                                              ) + labs(title = "UMAP (var) - Jaccard-Louvain (k=10)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_10_001_JaccardLouvain_k13 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k13", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k13",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=13)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-## Using UMAP (cv2) - 10_neighbors_0.05_min_dist
-# Use "UMAP_cv2_corrected_10_neighbors_0.05_min_dist" or "UMAP_cv2_corrected_15_neighbors_0.01_min_dist"
-UMAP_cv2_10_005_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                  colour_by = "PAG.area", shape_by = "cell.type"
-                                                  ) + labs(title = "UMAP (cv2) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
+
+### Using UMAP (CV2) - 15_neighbors_0.01_min_dist ###
+UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "PAG.area", shape_by = "cell.type",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 # Using HVG from CV2 with rank-based weights
-UMAP_cv2_10_005_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7"
-                                                  ) + labs(title = "UMAP (cv2) - Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+
+UMAP_cv2_15_001_RankWalktrap_k12 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k12", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k12",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k=12)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 # Using HVG from CV2 with jaccard-based weights
-UMAP_cv2_10_005_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8"
-                                                    ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_10_005_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                     colour_by = "SNN_clusters_cv2_jaccard_k10", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k10"
-                                                     ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=10)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_JaccardLouvain_k5 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k5", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k5",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=5)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-## Using UMAP (cv2) - 15_neighbors_0.01_min_dist
-# Use "UMAP_cv2_corrected_10_neighbors_0.05_min_dist" or "UMAP_cv2_corrected_15_neighbors_0.01_min_dist"
-UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                  colour_by = "PAG.area", shape_by = "cell.type"
-                                                  ) + labs(title = "UMAP (cv2) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-# Using HVG from CV2 with rank-based weights
-UMAP_cv2_15_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7"
-                                                  ) + labs(title = "UMAP (cv2) - Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_JaccardLouvain_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k9", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k9",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=9)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-# Using HVG from CV2 with jaccard-based weights
-UMAP_cv2_15_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8"
-                                                    ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_JaccardLouvain_k13 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k13", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k13",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k=13)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
-UMAP_cv2_15_001_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                     colour_by = "SNN_clusters_cv2_jaccard_k10", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k10"
-                                                     ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=10)", x = "UMAP 1", y = "UMAP 2")
 
 # Prepare and save composed plots
 library(patchwork)
-tSNE_var_SNN_clusters <- (tSNE_var_PAGsubdivisions + tSNE_var_RankWalktrap_k8 + tSNE_var_PAGsubdivisions + tSNE_var_JaccardLouvain_k10) +
-  plot_annotation(title = "Graph-based clustering on tSNE (var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_cv2_10_001_SNN_clusters_RankWalktrap <- ((UMAP_cv2_10_001_PAGsubdivisions + UMAP_cv2_10_001_RankWalktrap_k7) /
+                                                (UMAP_cv2_10_001_PAGsubdivisions + UMAP_cv2_10_001_RankWalktrap_k12)) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2 - Rank)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
 
-tSNE_cv2_SNN_clusters <- (tSNE_cv2_PAGsubdivisions + tSNE_cv2_RankWalktrap_k7 + tSNE_cv2_JaccardLouvain_k8 + tSNE_cv2_JaccardLouvain_k10) +
-  plot_annotation(title = "Graph-based clustering on tSNE (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_cv2_10_001_SNN_clusters_JaccardLouvain <- ((UMAP_cv2_10_001_PAGsubdivisions + UMAP_cv2_10_001_PAGsubdivisions) /
+                                                  (UMAP_cv2_10_001_JaccardLouvain_k5 + UMAP_cv2_10_001_JaccardLouvain_k8) /
+                                                  (UMAP_cv2_10_001_JaccardLouvain_k9 + UMAP_cv2_10_001_JaccardLouvain_k13)) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2 - Jaccard)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
 
-UMAP_var_SNN_clusters <- (UMAP_var_PAGsubdivisions + UMAP_var_RankWalktrap_k8 + UMAP_var_PAGsubdivisions + UMAP_var_JaccardLouvain_k10) +
-  plot_annotation(title = "Graph-based clustering on UMAP (var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_cv2_15_001_SNN_clusters_RankWalktrap <- ((UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k7) /
+                                                (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k12)) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2 - Rank)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
 
-UMAP_cv2_10_005_SNN_clusters <- (UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_RankWalktrap_k7 + UMAP_cv2_10_005_JaccardLouvain_k8 + UMAP_cv2_10_005_JaccardLouvain_k10) +
-  plot_annotation(title = "Graph-based clustering on UMAP (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_cv2_15_001_SNN_clusters_JaccardLouvain <- ((UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_PAGsubdivisions) /
+                                                  (UMAP_cv2_15_001_JaccardLouvain_k5 + UMAP_cv2_15_001_JaccardLouvain_k8) /
+                                                  (UMAP_cv2_15_001_JaccardLouvain_k9 + UMAP_cv2_15_001_JaccardLouvain_k13)) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2 - Jaccard)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
 
-UMAP_cv2_15_001_SNN_clusters <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k7 + UMAP_cv2_15_001_JaccardLouvain_k8 + UMAP_cv2_15_001_JaccardLouvain_k10) +
-  plot_annotation(title = "Graph-based clustering on UMAP (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
 
 # Plot them
-tSNE_var_SNN_clusters
-tSNE_cv2_SNN_clusters
-UMAP_var_SNN_clusters
-UMAP_cv2_10_005_SNN_clusters
-UMAP_cv2_15_001_SNN_clusters
+UMAP_cv2_10_001_SNN_clusters_RankWalktrap
+UMAP_cv2_10_001_SNN_clusters_JaccardLouvain
+UMAP_cv2_15_001_SNN_clusters_RankWalktrap
+UMAP_cv2_15_001_SNN_clusters_JaccardLouvain
 
 # Save them
-ggsave(filename = str_c(date, "_SNN_clusters_tSNE_var_composed.pdf"),
-       plot = tSNE_var_SNN_clusters,
+ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_10_001_Rank_composed.pdf"),
+       plot = UMAP_cv2_10_001_SNN_clusters_RankWalktrap,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
-ggsave(filename = str_c(date, "_SNN_clusters_tSNE_cv2_composed.pdf"),
-       plot = tSNE_cv2_SNN_clusters,
+ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_10_001_Jaccard_composed.pdf"),
+       plot = UMAP_cv2_10_001_SNN_clusters_JaccardLouvain,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 10, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
-ggsave(filename = str_c(date, "_SNN_clusters_UMAP_var_composed.pdf"),
-       plot = UMAP_var_SNN_clusters,
+ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_15_001_Rank_composed.pdf"),
+       plot = UMAP_cv2_15_001_SNN_clusters_RankWalktrap,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
-ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_10_005_composed.pdf"),
-       plot = UMAP_cv2_10_005_SNN_clusters,
+ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_15_001_Jaccard_composed.pdf"),
+       plot = UMAP_cv2_15_001_SNN_clusters_JaccardLouvain,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-
-ggsave(filename = str_c(date, "_SNN_clusters_UMAP_cv2_15_001_composed.pdf"),
-       plot = UMAP_cv2_15_001_SNN_clusters,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 10, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-After visualizing the clustering results embedded in our reduced dimensions we can clearly confirm two observations from the previous steps: (1) the UMAP visualizations are significantly better than the t-SNE plots for our data, and (2) using the PCs obtained from HVGs after modeling the CV2-mean trend provide more resolution than those from modeling Var-mean trend for both clustering and dimensionality reduction.
-
 ### 6.1.2 | Assessing cluster separation
-When dealing with graphs, the modularity is a natural metric for evaluating the separation between communities/clusters. This is defined as the (scaled) difference between the observed total weight of edges between nodes in the same cluster and the expected total weight if edge weights were randomly distributed across all pairs of nodes. Larger modularity values indicate that there most edges occur within clusters, suggesting that the clusters are sufficiently well separated to avoid edges forming between neighboring cells in different clusters.
+When dealing with graphs, the modularity is a natural metric for evaluating the separation between communities/clusters. This is defined as the (scaled) difference between the observed total weight of edges between nodes in the same cluster and the expected total weight if edge weights were randomly distributed across all pairs of nodes. Larger modularity values indicate that most edges occur within clusters, suggesting that the clusters are sufficiently well separated to avoid edges forming between neighboring cells in different clusters.
 
 The standard approach is to report a single modularity value for a clustering on a given graph. This is useful for comparing different clusterings on the same graph - and indeed, some community detection algorithms are designed with the aim of maximizing the modularity - but it is less helpful for interpreting a given clustering. We can instead use the `clusterModularity()` function with `as.ratio = TRUE`, which returns the ratio of the observed to expected sum of weights between each pair of clusters. We use the ratio instead of the difference as the former is less dependent on the number of cells in each cluster. 
 
 A well-separated cluster should have mostly intra-cluster edges and a high modularity score on the corresponding diagonal entry, while two closely related clusters that are weakly separated will have many inter-cluster edges and a high off-diagonal score. We would usually expect to see high observed weights between cells in the same cluster with minimal weights between clusters, indicating that the clusters are well-separated. Off-diagonal entries indicate that some clusters are closely related, which is useful to know for checking that they are annotated consistently.
 ```{r}
-ratio_var_rank_k8 <- clusterModularity(graph_var_rank_k8, clusters_var_rank_k8, as.ratio = TRUE)
-ratio_var_rank_k8
-
-ratio_var_jaccard_k10 <- clusterModularity(graph_var_jaccard_k10, clusters_var_jaccard_k10, as.ratio = TRUE)
-ratio_var_jaccard_k10
-
 ratio_cv2_rank_k7 <- clusterModularity(graph_cv2_rank_k7, clusters_cv2_rank_k7, as.ratio = TRUE)
 ratio_cv2_rank_k7
+
+ratio_cv2_rank_k12 <- clusterModularity(graph_cv2_rank_k12, clusters_cv2_rank_k12, as.ratio = TRUE)
+ratio_cv2_rank_k12
+
+ratio_cv2_jaccard_k5 <- clusterModularity(graph_cv2_jaccard_k5, clusters_cv2_jaccard_k5, as.ratio = TRUE)
+ratio_cv2_jaccard_k5
 
 ratio_cv2_jaccard_k8 <- clusterModularity(graph_cv2_jaccard_k8, clusters_cv2_jaccard_k8, as.ratio = TRUE)
 ratio_cv2_jaccard_k8
 
-ratio_cv2_jaccard_k10 <- clusterModularity(graph_cv2_jaccard_k10, clusters_cv2_jaccard_k10, as.ratio = TRUE)
-ratio_cv2_jaccard_k10
+ratio_cv2_jaccard_k9 <- clusterModularity(graph_cv2_jaccard_k9, clusters_cv2_jaccard_k9, as.ratio = TRUE)
+ratio_cv2_jaccard_k9
+
+ratio_cv2_jaccard_k13 <- clusterModularity(graph_cv2_jaccard_k13, clusters_cv2_jaccard_k13, as.ratio = TRUE)
+ratio_cv2_jaccard_k13
 ```
 
-In each matrix, each row/column corresponds to a cluster, and each entry of the matrix contains the ratio of the observed to total weight of edges between cells in the respective clusters. A dataset containing well-separated clusters should contain most of the observed total weight on the diagonal entries, i.e., most edges occur between cells in the same cluster. Concentration of the weight on the diagonal indicates that most of the clusters are well-separated, while some modest off-diagonal entries represent closely related clusters with more inter-connecting edges. 
+In each matrix, each row/column corresponds to a cluster, and each entry of the matrix contains the ratio of the observed to total weight of edges between cells in the respective clusters. A dataset containing well-separated clusters should contain most of the observed total weight on the diagonal entries, meaning that most edges occur between cells in the same cluster. Concentration of the weight on the diagonal indicates that most of the clusters are well-separated, while some modest off-diagonal entries represent closely related clusters with more inter-connecting edges.
 
-When we log2 transform the values of the matrices above, we can see that althouhg all values are between 0 and 6, each matrix has a different `max` and `min` value. Given that we want to be able to visually compare the different methods and choose the one that provides the highest values in the diagonal, we can use `breaks =` in the `pheatmap()` function to ensure the color scale covers from 0 to 6 in all cases. This ensures that the colors in the different heatmaps cover the full range, and thus ensures that a matrix with a lower `max` value will have a different color than one with a higher `max` value. Otherwise the colors would be different for each plot, and not directly comparable. This will allow us to visualise the best diagonal:
+If we log2 transform the values of the matrices above, we can see that although all values are between 0 and 7, each matrix has a different `max` and `min` value. Given that we want to be able to visually compare the different methods and choose the one that provides the highest values in the diagonal, we can use `breaks =` in the `pheatmap()` function to ensure the color scale covers from 0 to 7 in all cases. This ensures that the colors in the different heatmaps cover the full range, and thus ensures that a matrix with a lower `max` value will have a different color than one with a higher `max` value. Otherwise the colors would be different for each plot, and not directly comparable. This will allow us to visualise the best diagonal:
 ```{r}
 library(pheatmap)
-cluster_modularity_var_rank_k8 <- pheatmap(log2(ratio_var_rank_k8 + 1), main = "Cluster Modularity (var) - Rank Walktrap (k=8)",
+cluster_modularity_cv2_rank_k7 <- pheatmap(log2(ratio_cv2_rank_k7 + 1), 
+                                           main = "Cluster Modularity: Rank Walktrap (k=7)", fontsize = 10,
+                                           border_color = "grey60", cellwidth = 20, cellheight = 20,
                                            cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                            color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
                                            legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
 
-cluster_modularity_var_jaccard_k10 <- pheatmap(log2(ratio_var_jaccard_k10 + 1), main = "Cluster Modularity (var) - Jaccard Louvain (k=10)",
+cluster_modularity_cv2_rank_k12 <- pheatmap(log2(ratio_cv2_rank_k12 + 1), 
+                                            main = "Cluster Modularity: Rank Walktrap (k=12)", fontsize = 10,
+                                            border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                            cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
+                                            color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
+                                            legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
+
+cluster_modularity_cv2_jaccard_k5 <- pheatmap(log2(ratio_cv2_jaccard_k5 + 1), 
+                                              main = "Cluster Modularity: Jaccard Louvain (k=5)", fontsize = 10,
+                                              border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
+                                              color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
+                                              legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
+
+cluster_modularity_cv2_jaccard_k8 <- pheatmap(log2(ratio_cv2_jaccard_k8 + 1),
+                                              main = "Cluster Modularity: Jaccard Louvain (k=8)", fontsize = 10,
+                                              border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
+                                              color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
+                                              legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
+
+cluster_modularity_cv2_jaccard_k9 <- pheatmap(log2(ratio_cv2_jaccard_k9 + 1), 
+                                              main = "Cluster Modularity: Jaccard Louvain (k=9)", fontsize = 10,
+                                              border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
+                                              color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
+                                              legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
+
+cluster_modularity_cv2_jaccard_k13 <- pheatmap(log2(ratio_cv2_jaccard_k13 + 1), 
+                                               main = "Cluster Modularity: Jaccard Louvain (k=13)", fontsize = 10,
+                                               border_color = "grey60", cellwidth = 20, cellheight = 20,
                                                cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                                color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
                                                legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
 
-cluster_modularity_cv2_rank_k7 <- pheatmap(log2(ratio_cv2_rank_k7 + 1), main = "Cluster Modularity (cv2) - Rank Walktrap (k=7)",
-                                           cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
-                                           color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
-                                           legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
-
-cluster_modularity_cv2_jaccard_k8 <- pheatmap(log2(ratio_cv2_jaccard_k8 + 1), main = "Cluster Modularity (cv2) - Jaccard Louvain (k=8)",
-                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0,
-                                              color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
-                                              legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
-
-cluster_modularity_cv2_jaccard_k10 <- pheatmap(log2(ratio_cv2_jaccard_k10 + 1), main = "Cluster Modularity (cv2) - Jaccard Louvain (k=10)",
-                                               cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0,
-                                               color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
-                                               legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
-
 # Save them
-ggsave(filename = str_c(date, "_SNN_cluster_modularity_var_rank_k8.pdf"),
-       plot = cluster_modularity_var_rank_k8,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-ggsave(filename = str_c(date, "_SNN_cluster_modularity_var_rank_k8.pdf"),
-       plot = cluster_modularity_var_rank_k8,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
 ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_rank_k7.pdf"),
        plot = cluster_modularity_cv2_rank_k7,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 5, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_cluster_modularity_cv2_jaccard_k8.pdf"),
+ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_rank_k12.pdf"),
+       plot = cluster_modularity_cv2_rank_k12,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 5, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_jaccard_k5.pdf"),
+       plot = cluster_modularity_cv2_jaccard_k5,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 5, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_jaccard_k8.pdf"),
        plot = cluster_modularity_cv2_jaccard_k8,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 5, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_cluster_modularity_cv2_jaccard_k10.pdf"),
-       plot = cluster_modularity_cv2_jaccard_k10,
+ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_jaccard_k9.pdf"),
+       plot = cluster_modularity_cv2_jaccard_k9,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 5, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_jaccard_k13.pdf"),
+       plot = cluster_modularity_cv2_jaccard_k13,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 5, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-These heatmaps are most useful when examined side by side with the clustering results embedded in the UMAP plots, as we can then assess the relationship between nearby and far apart clusters. For example, in _"Cluster Modularity (k=8) - Jaccard Louvain (cv2)"_ we can see that cluster 11 has the highest score and doesn't relate to any other, which makes sense as it is the one with macrophage markers. However, clusters 7 and 8 have relatively low diagonal scores and are related to clusters 2, 3, and 4, which makes sense as these are all VGluT2 cells sitting close to each other.
+These heatmaps are most useful when examined side by side with the clustering results embedded in the UMAP plots, as we can then assess the relationship between nearby and far apart clusters. For example, in _"Cluster Modularity (k=8) - Jaccard Louvain (cv2)"_ we can see that cluster 1 has the highest score and doesn't relate to any other, which makes sense as it is the one with macrophage markers. However, clusters 5, 6, 7, 8 have relatively low diagonal scores and are related to each other, which makes sense as these are all VGluT2 cells sitting close to each other in the UMAP.
 
 ### 6.1.3 | Evaluating cluster stability
 A desirable property of a given clustering is that it is stable to perturbations to the input data (Von Luxburg 2010). Stable clusters are logistically convenient as small changes to upstream processing will not change the conclusions; greater stability also increases the likelihood that those conclusions can be reproduced in an independent replicate study. `scran` uses bootstrapping to evaluate the stability of a clustering algorithm on a given dataset - that is, cells are sampled with replacement to create a “bootstrap replicate” dataset, and clustering is repeated on this replicate to see if the same clusters can be reproduced. 
 
-Bootstrapping is conventionally used to evaluate the precision of an estimator by applying it to an in silico-generated replicate dataset. We can use this framework to determine the stability of the clusters in the context of a scRNA-seq analysis. We sample cells with replacement from x, perform clustering with FUN and compare the new clusters to clusters. The relevant statistic is the co-assignment probability for each pair of original clusters, i.e., the probability that a randomly chosen cells from each of the two original clusters will be put in the same bootstrap cluster. High co-assignment probabilities indicate that the two original clusters were not stably separated. We might then only trust separation between two clusters if their co-assignment probability was less than some threshold, e.g., 5%. The co-assignment probability of each cluster to itself provides some measure of per-cluster stability. A probability of 1 indicates that all cells are always assigned to the same cluster across bootstrap iterations, while internal structure that encourages the formation of subclusters will lower this probability.
+Bootstrapping is conventionally used to evaluate the precision of an estimator by applying it to an in silico-generated replicate dataset. We can use this framework to determine the stability of the clusters in the context of a scRNA-seq analysis. We sample cells with replacement from `x`, perform clustering with `FUN` and compare the new clusters to clusters. The relevant statistic is the co-assignment probability for each pair of original clusters, i.e., the probability that a randomly chosen cells from each of the two original clusters will be put in the same bootstrap cluster. High co-assignment probabilities indicate that the two original clusters were not stably separated. We might then only trust separation between two clusters if their co-assignment probability was less than some threshold, e.g., 5%. The co-assignment probability of each cluster to itself provides some measure of per-cluster stability. A probability of 1 indicates that all cells are always assigned to the same cluster across bootstrap iterations, while internal structure that encourages the formation of subclusters will lower this probability.
 
 We perform bootstrapping for our choice of graph clustering approaches:
 ```{r}
-# Write functions for var approaches
-myClusterFUN_var_rank <- function(x, chosen_k) {
-  g <- buildSNNGraph(x, k = chosen_k, type = "rank",
-                     subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
-                     assay.type = "logcounts", use.dimred = "PCA_HVG_var_logcounts_25")
-  igraph::cluster_walktrap(g)$membership
-}
-
-myClusterFUN_var_jaccard <- function(x, chosen_k) {
-  g <- buildSNNGraph(x, k = chosen_k, type = "jaccard",
-                     subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt,
-                     assay.type = "logcounts", use.dimred = "PCA_HVG_var_logcounts_25")
-  igraph::cluster_louvain(g)$membership
-}
-
 # Write functions for cv2 approaches
 myClusterFUN_cv2_rank <- function(x, chosen_k) {
   g <- buildSNNGraph(x, k = chosen_k, type = "rank",
                      subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
-                     assay.type = "logcounts", use.dimred = "PCA_HVG_cv2_logcounts_25")
+                     assay.type = "logcounts", use.dimred = "PCA_HVG_cv2_logcounts_17")
   igraph::cluster_walktrap(g)$membership
 }
 
 myClusterFUN_cv2_jaccard <- function(x, chosen_k) {
   g <- buildSNNGraph(x, k = chosen_k, type = "jaccard",
                      subset.row = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt,
-                     assay.type = "logcounts", use.dimred = "PCA_HVG_cv2_logcounts_25")
+                     assay.type = "logcounts", use.dimred = "PCA_HVG_cv2_logcounts_17")
   igraph::cluster_louvain(g)$membership
 }
 
 # originals <- myClusterFUN(PAG_sceset_qc_norm_filt_corr) # Alternatively, simply input the previously computed clusters below
 
 # Run bootstraping for each chosen graph clustering solution. 
-set.seed(1714)
-start_time <- Sys.time() # Takes 2 min with 50 iterations, and 35min with a 1000 iterations
-coassign_var_rank_k8 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
-                                                          FUN = myClusterFUN_var_rank,
-                                                          clusters = clusters_var_rank_k8,
-                                                          iterations = 1000, # default is 20
-                                                          chosen_k = 8))
-dim(coassign_var_rank_k8)
-
-coassign_var_jaccard_k10 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
-                                                              FUN = myClusterFUN_var_jaccard,
-                                                              clusters = clusters_var_jaccard_k10,
-                                                              iterations = 1000, # default is 20
-                                                              chosen_k = 10))
-dim(coassign_var_jaccard_k10)
-
+set.seed(42)
+start_time <- Sys.time() # Takes around 2 min with 50 iterations, and 35min with a 1000 iterations
 coassign_cv2_rank_k7 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
                                                           FUN = myClusterFUN_cv2_rank,
                                                           clusters = clusters_cv2_rank_k7,
-                                                          iterations = 1000, # default is 20
+                                                          iterations = 1000, # default is 20, do 1000
                                                           chosen_k = 7))
 dim(coassign_cv2_rank_k7)
+
+coassign_cv2_rank_k12 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
+                                                           FUN = myClusterFUN_cv2_rank,
+                                                           clusters = clusters_cv2_rank_k12,
+                                                           iterations = 1000, # default is 20, do 1000
+                                                           chosen_k = 12))
+dim(coassign_cv2_rank_k12)
+
+coassign_cv2_jaccard_k5 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
+                                                             FUN = myClusterFUN_cv2_jaccard,
+                                                             clusters = clusters_cv2_jaccard_k5,
+                                                             iterations = 1000, # default is 20, do 1000
+                                                             chosen_k = 5))
+dim(coassign_cv2_jaccard_k5)
 
 coassign_cv2_jaccard_k8 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
                                                              FUN = myClusterFUN_cv2_jaccard,
                                                              clusters = clusters_cv2_jaccard_k8,
-                                                             iterations = 1000, # default is 20
+                                                             iterations = 1000, # default is 20, do 1000
                                                              chosen_k = 8))
 dim(coassign_cv2_jaccard_k8)
 
-coassign_cv2_jaccard_k10 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
+coassign_cv2_jaccard_k9 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
+                                                             FUN = myClusterFUN_cv2_jaccard,
+                                                             clusters = clusters_cv2_jaccard_k9,
+                                                             iterations = 1000, # default is 20, do 1000
+                                                             chosen_k = 9))
+dim(coassign_cv2_jaccard_k9)
+
+coassign_cv2_jaccard_k13 <- suppressWarnings(bootstrapCluster(PAG_sceset_qc_norm_filt_corr,
                                                               FUN = myClusterFUN_cv2_jaccard,
-                                                              clusters = clusters_cv2_jaccard_k10,
-                                                              iterations = 1000, # default is 20
-                                                              chosen_k = 10))
-dim(coassign_cv2_jaccard_k10)
+                                                              clusters = clusters_cv2_jaccard_k13,
+                                                              iterations = 1000, # default is 20, do 1000
+                                                              chosen_k = 13))
+dim(coassign_cv2_jaccard_k13)
+
 end_time <- Sys.time()
 end_time - start_time
 ```
 
 The function returns a matrix of coassignment probabilities between every pair of original clusters. Each coassignment probability between clusters X and Y represents the probability that a randomly chosen cell from X and a randomly chosen cell from Y are assigned to the same cluster in the bootstrap replicate. High co-assignment probabilities indicate that X is not stable with respect to its separation from Y, given that their cells are liable to cluster together in the replicates. Ideally, we would hope for high coassignment probabilites on the diagonal (i.e., X cells cluster with themselves) and low probabilites off the diagonal.
 ```{r}
-coassign_var_rank_k8
-coassign_var_jaccard_k10
 coassign_cv2_rank_k7
+coassign_cv2_rank_k12
+coassign_cv2_jaccard_k5
 coassign_cv2_jaccard_k8
-coassign_cv2_jaccard_k10
+coassign_cv2_jaccard_k9
+coassign_cv2_jaccard_k13
 ```
 
 If we take a look at the matrices, we can see that although all values are between 0 and 1, each matrix has a different `max` and `min` value. Given that we want to be able to visually compare the different methods and choose the one that provides the highest values in the diagonal, we can use `breaks =` in the `pheatmap()` function to ensure the color scale covers from 0 to 1. This ensures that the colors in the different heatmaps go from 0 to 1, and thus ensures that a matrix with a lower `max` value will have a different color than one with a higher `max` value. Otherwise the colors would go from `coassign_var_rank_k8[which.min(coassign_var_rank_k8)]` to `coassign_var_rank_k8[which.max(coassign_var_rank_k8)]` and will be different for each plot, so not directly comparable. This will allow us to visualise the best diagonal:
 ```{r}
-cluster_stability_var_rank_k8 <- pheatmap(coassign_var_rank_k8, main = "Cluster Stability (var) - Rank Walktrap (k=8)",
-                                          cluster_rows = FALSE, cluster_cols = FALSE, angle_col = 0,
+library(pheatmap)
+cluster_stability_cv2_rank_k7 <- pheatmap(coassign_cv2_rank_k7,
+                                          main = "Cluster Stability: Rank Walktrap (k=7)", fontsize = 10,
+                                          border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                          cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                           color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                           legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
-cluster_stability_var_jaccard_k10 <- pheatmap(coassign_var_jaccard_k10, main = "Cluster Stability (var) - Jaccard Louvain (k=10)",
-                                              cluster_rows = FALSE, cluster_cols = FALSE, angle_col = 0,
-                                              color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
-                                              legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100)) 
+cluster_stability_cv2_rank_k12 <- pheatmap(coassign_cv2_rank_k12, 
+                                           main = "Cluster Stability: Rank Walktrap (k=12)", fontsize = 10,
+                                           border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                           cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
+                                           color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
+                                           legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
-cluster_stability_cv2_rank_k7 <- pheatmap(coassign_cv2_rank_k7, main = "Cluster Stability (cv2) - Rank Walktrap (k=7)",
-                                          cluster_rows = FALSE, cluster_cols = FALSE, angle_col = 0,
-                                          color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
-                                          legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
-
-cluster_stability_cv2_jaccard_k8 <- pheatmap(coassign_cv2_jaccard_k8, main = "Cluster Stability (cv2) - Jaccard Louvain (k=8)",
-                                             cluster_rows = FALSE, cluster_cols = FALSE, angle_col = 0,
+cluster_stability_cv2_jaccard_k5 <- pheatmap(coassign_cv2_jaccard_k5, 
+                                             main = "Cluster Stability: Jaccard Louvain (k=5)", fontsize = 10,
+                                             border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                             cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                              color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                              legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
-cluster_stability_cv2_jaccard_k10 <- pheatmap(coassign_cv2_jaccard_k10, main = "Cluster Stability (cv2) - Jaccard Louvain (k=10)",
-                                              cluster_rows = FALSE, cluster_cols = FALSE, angle_col = 0,
+cluster_stability_cv2_jaccard_k8 <- pheatmap(coassign_cv2_jaccard_k8,
+                                             main = "Cluster Stability: Jaccard Louvain (k=8)", fontsize = 10,
+                                             border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                             cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
+                                             color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
+                                             legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
+
+cluster_stability_cv2_jaccard_k9 <- pheatmap(coassign_cv2_jaccard_k9, 
+                                             main = "Cluster Stability: Jaccard Louvain (k=9)", fontsize = 10,
+                                             border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                             cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
+                                             color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
+                                             legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
+
+cluster_stability_cv2_jaccard_k13 <- pheatmap(coassign_cv2_jaccard_k13, 
+                                              main = "Cluster Stability: Jaccard Louvain (k=13)", fontsize = 10,
+                                              border_color = "grey60", cellwidth = 20, cellheight = 20,
+                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                               color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                               legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
 # Save them
-ggsave(filename = str_c(date, "_SNN_cluster_stability_var_rank_k8.pdf"),
-       plot = cluster_stability_var_rank_k8,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-ggsave(filename = str_c(date, "_SNN_cluster_stability_var_jaccard_k10.pdf"),
-       plot = cluster_stability_var_jaccard_k10,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
 ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_rank_k7.pdf"),
        plot = cluster_stability_cv2_rank_k7,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 5, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_rank_k12.pdf"),
+       plot = cluster_stability_cv2_rank_k12,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 5, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_jaccard_k5.pdf"),
+       plot = cluster_stability_cv2_jaccard_k5,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 5, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_jaccard_k8.pdf"),
        plot = cluster_stability_cv2_jaccard_k8,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 5, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_jaccard_k10.pdf"),
-       plot = cluster_stability_cv2_jaccard_k10,
+ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_jaccard_k9.pdf"),
+       plot = cluster_stability_cv2_jaccard_k9,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 5, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_SNN_cluster_stability_cv2_jaccard_k13.pdf"),
+       plot = cluster_stability_cv2_jaccard_k13,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 5, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-Bootstrapping is a general approach for evaluating cluster stability that is compatible with any clustering algorithm. The coassignment probability is also more informative than a single per-cluster stability measure as the former considers the relationships between clusters, e.g., unstable separation between X and Y does not penalize the stability of separation between X and another cluster Z. Of course, one should take these probabilities with a grain of salt, as bootstrapping only considers the effect of sampling noise and ignores other factors that affect reproducibility in an independent study (e.g., batch effects, donor variation). In addition, it is possible for a poor separation to be highly stable, so highly stable cluster may not necessarily represent some distinct subpopulation.
+Bootstrapping is a general approach for evaluating cluster stability that is compatible with any clustering algorithm. The coassignment probability is also more informative than a single per-cluster stability measure as the former considers the relationships between clusters, e.g., unstable separation between X and Y does not penalize the stability of separation between X and another cluster Z. Of course, one should take these probabilities with a grain of salt, as bootstrapping only considers the effect of sampling noise and ignores other factors that affect reproducibility in an independent study (e.g., batch effects, donor variation). In addition, it is possible for a poor separation to be highly stable, so a highly stable cluster may not necessarily represent some distinct subpopulation.
 
 ### 6.1.4 | Double-check you have stored your clustering results
 ```{r}
-summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_rank_k8)
-summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_var_jaccard_k10)
 summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7)
+summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k12)
+summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k5)
 summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8)
-summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k10)
+summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k9)
+summary(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k13)
 ```
 
 ## Step 6.2 | k-means clustering
@@ -861,7 +1204,7 @@ ggsave(filename = str_c(date, "_kmeans_clusters_UMAP_cv2_10_005_composed.pdf"),
        )
 ```
 
-As we can see when looking at both the tree and the embedding of the k-means clusters on the UMAP, using PCs from mean-var modeling doesn't generate a tree that reflects the origin of the cells (i.e. excitatory or inhibitory cells), whereas we do see that in the results obtained with PCs from mean-cv2 modeling. Overall we seem to obtain similar clusters to those we obtained from the graph-clustering approach, at least for the cv2 scenario.
+As we can see when looking at both the tree and the embedding of the k-means clusters on the UMAP, using PCs from mean-var modelling doesn't generate a tree that reflects the origin of the cells (i.e. excitatory or inhibitory cells), whereas we do see that in the results obtained with PCs from mean-cv2 modelling. Overall we seem to obtain similar clusters to those we obtained from the graph-clustering approach, at least for the cv2 scenario.
 
 ## Step 6.3 | Hierarchical clustering
 Hierarchical clustering aims to generate a dendrogram containing a hierarchy of samples. This is most commonly done by greedily agglomerating samples into clusters, then agglomerating those clusters into larger clusters, and so on until all samples belong to a single cluster. Variants of hierarchical clustering methods primarily differ in how they choose to perform the agglomerations. For example, complete linkage aims to merge clusters with the smallest maximum distance between their elements, while Ward’s method aims to minimize the increase in within-cluster variance.
