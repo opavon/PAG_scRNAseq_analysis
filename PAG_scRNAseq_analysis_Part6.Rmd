@@ -933,52 +933,61 @@ That said, k-means clustering is still one of the best approaches for sample-bas
 We could first try to obtain a “reasonable” choice of `k` by computing the _gap statistic_ using methods from the `cluster` package. This is the log-ratio of the expected to observed within-cluster sum of squares, where the expected value is computed by randomly distributing cells within the minimum bounding box of the original data. A larger gap statistic represents a lower observed sum of squares - and thus better clustering - compared to a population with no structure. Ideally, we would choose the `k` that maximizes the gap statistic, but this is often unhelpful as the tendency of k-means to favour spherical clusters drives a large `k` to capture different cluster shapes. Instead, we choose the most parsimonious `k` beyond which the increases in the gap statistic are considered insignificant (when the curve is reaching saturation).
 ```{r}
 library(cluster)
-set.seed(1714)
+set.seed(1991)
 
 # Using PCA from HVG_var_logcounts
-gaps_var <- clusGap(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_25"), kmeans, K.max = 20)
+gaps_var <- clusGap(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_12"), kmeans, K.max = 20)
 best_k_var <- maxSE(gaps_var$Tab[,"gap"], gaps_var$Tab[,"SE.sim"])
 best_k_var
 
 plot(gaps_var$Tab[,"gap"], xlab = "Number of clusters", ylab = "Gap statistic", las = 1,
-     main = "Reasonable K for HVG (var)", sub = sprintf("Suggested value of K: %s", best_k_var))
+     main = "Reasonable K for HVG (Var)", sub = sprintf("Suggested value of K: %s", best_k_var))
 abline(v = best_k_var, col = "red")
+abline(v = 8, col = "aquamarine3", lty = "dotted", lwd = 2)
 
 # Using PCA from HVG_cv2_logcounts
-gaps_cv2 <- clusGap(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_25"), kmeans, K.max = 20)
+gaps_cv2 <- clusGap(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_17"), kmeans, K.max = 20)
 best_k_cv2 <- maxSE(gaps_cv2$Tab[,"gap"], gaps_cv2$Tab[,"SE.sim"])
 best_k_cv2
 
 plot(gaps_cv2$Tab[,"gap"], xlab = "Number of clusters", ylab = "Gap statistic", las = 1,
-     main = "Reasonable K for HVG (cv2)", sub = sprintf("Suggested value of K: %s", best_k_cv2))
+     main = "Reasonable K for HVG (CV2)", sub = sprintf("Suggested value of K: %s", best_k_cv2))
 abline(v = best_k_cv2, col = "red")
 abline(v = 10, col = "aquamarine3", lty = "dotted", lwd = 2)
 
+# Combine and save the plots
 pdf(file = str_c(path_for_figures, date, "_kmeans_gap_statistic.pdf"),
-    width = 12, height = 18,
+    width = 6, height = 9,
     family = "Arial", bg = "transparent")
 par(mfrow = c(2,1))
 plot(gaps_var$Tab[,"gap"], xlab = "Number of clusters", ylab = "Gap statistic", las = 1,
-     main = "Reasonable K for HVG (var)", sub = sprintf("Suggested value of K: %s", best_k_var))
+     main = "Reasonable K for K-means clustering using HVG (Var)", sub = sprintf("Suggested value of K: %s", best_k_var))
 abline(v = best_k_var, col = "red")
+abline(v = 8, col = "aquamarine3", lty = "dotted", lwd = 2)
 plot(gaps_cv2$Tab[,"gap"], xlab = "Number of clusters", ylab = "Gap statistic", las = 1,
-     main = "Reasonable K for HVG (cv2)", sub = sprintf("Suggested value of K: %s", best_k_cv2))
+     main = "Reasonable K for K-means clustering using HVG (CV2)", sub = sprintf("Suggested value of K: %s", best_k_cv2))
 abline(v = best_k_cv2, col = "red")
 abline(v = 10, col = "aquamarine3", lty = "dotted", lwd = 2)
 dev.off()
 ```
 
-It is a good idea to run this with different seeds to verify that the results are stable. For the CV2 scenario, we can see that the suggested `k = 1` seems to be an artifact, and a value around `k = 10` or `k = 13` would perhaps be a better choice.
+It is a good idea to run this with different seeds to verify that the results are stable. In both cases, we can see that the suggested `k = 1` seems to be an artifact, and a value around `k = 8` or `k = 10` would perhaps be a better choice.
 
 ### 6.2.2 | Implementation of k-means clustering
-Once we have a `k` to start with, we can perform k-means clustering with `k` values around the computed one before selecting one resulting in the desired resolution. Base R provides the `kmeans()` function that does as its name suggests. We call this on our top PCs to obtain a clustering for a specified number of clusters in the `centers =` argument, after setting the random seed to ensure that the results are reproducible. In general, the k-means clusters correspond to the visual clusters on a previously obtained t-SNE or UMAP plot, although there will be some divergences at least partially due to the fact that t-SNE and UMAP are graph-based and so will naturally agree more with a graph-based clustering strategy.
+Once we have a potential `k` to start with, we can perform k-means clustering with `k` values around the computed one before selecting one resulting in the desired resolution. Base R provides the `kmeans()` function that does as its name suggests. We call this on our top PCs to obtain a clustering for a specified number of clusters in the `centers =` argument, after setting the random seed to ensure that the results are reproducible. In general, the k-means clusters correspond to the visual clusters on a previously obtained t-SNE or UMAP plot, although there will be some divergences at least partially due to the fact that t-SNE and UMAP are graph-based and so will naturally agree more with a graph-based clustering strategy.
 ```{r}
-set.seed(1714)
+set.seed(1991)
 
-cluster_kmeans_var <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_25"), centers = 8, iter.max = 50, nstart = 5)
+cluster_kmeans_var <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_12"), 
+                             centers = 8, # either the number of clusters, say k, or a set of initial (distinct) cluster centres.
+                             iter.max = 50, # the maximum number of iterations allowed.
+                             nstart = 5) # if centers is a number, how many random sets should be chosen?
 PAG_sceset_qc_norm_filt_corr$kmeans_clusters_var <- factor(cluster_kmeans_var$cluster)
 
-cluster_kmeans_cv2 <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_25"), centers = 10, iter.max = 50, nstart = 5)
+cluster_kmeans_cv2 <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_17"), 
+                             centers = 10, # either the number of clusters, say k, or a set of initial (distinct) cluster centres.
+                             iter.max = 50, # the maximum number of iterations allowed.
+                             nstart = 5) # if centers is a number, how many random sets should be chosen?
 PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2 <- factor(cluster_kmeans_cv2$cluster)
 
 table(cluster_kmeans_var$cluster)
@@ -987,61 +996,58 @@ table(cluster_kmeans_cv2$cluster)
 
 We can now visualize the clustering results on our preferred reduced dimensionality plot:
 ```{r}
-# t-SNE using PCA from HVG_var_logcounts
-tSNE_var_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
-                                  colour_by = "kmeans_clusters_var", shape_by = "cell.type", text_by = "kmeans_clusters_var"
-                                  ) + labs(title = "tSNE (var) - K-means (centers=8)", x = "t-SNE 1", y = "t-SNE 2")
-
-# t-SNE using PCA from HVG_cv2_logcounts
-tSNE_cv2_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                  colour_by = "kmeans_clusters_cv2", shape_by = "cell.type", text_by = "kmeans_clusters_cv2"
-                                  ) + labs(title = "tSNE (cv2) - K-means (centers=10)", x = "t-SNE 1", y = "t-SNE 2")
+# Set theme parameters
+theme_args_kmeans <- theme(plot.title = element_text(size = 11, face = "bold"),
+                           axis.title = element_text(size = 11, face = "plain"),
+                           axis.text = element_text(size = 10, face = "plain"), 
+                           legend.text = element_text(size = 9, face = "plain"), 
+                           strip.text = element_text(size = 10, face = "plain"))
 
 # UMAP using PCA from HVG_var_logcounts
-UMAP_var_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist", 
-                                  colour_by = "kmeans_clusters_var", shape_by = "cell.type", text_by = "kmeans_clusters_var"
-                                  ) + labs(title = "UMAP (var) - K-means (centers=8)", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                           dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+                                           ) + labs(title = "HVG (Var)", x = "UMAP 1", y = "UMAP 2"
+                                                    ) + theme_args_kmeans
+
+UMAP_var_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                  dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                  colour_by = "kmeans_clusters_var", shape_by = "cell.type", text_by = "kmeans_clusters_var",
+                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                  ) + labs(title = "K-means (centers = 8)", x = "UMAP 1", y = "UMAP 2") + theme_args_kmeans
 
 # UMAP using PCA from HVG_cv2_logcounts
-UMAP_cv2_10_005_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                         colour_by = "kmeans_clusters_cv2", shape_by = "cell.type", text_by = "kmeans_clusters_cv2"
-                                         )  + labs(title = "UMAP (cv2) - K-means (centers=10)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                           dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+                                           ) + labs(title = "HVG (CV2)", x = "UMAP 1", y = "UMAP 2"
+                                                    ) + theme_args_kmeans
 
-UMAP_cv2_15_001_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                         colour_by = "kmeans_clusters_cv2", shape_by = "cell.type", text_by = "kmeans_clusters_cv2"
-                                         )  + labs(title = "UMAP (cv2) - K-means (centers=10)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                  colour_by = "kmeans_clusters_cv2", shape_by = "cell.type", text_by = "kmeans_clusters_cv2",
+                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                  ) + labs(title = "K-means (centers = 10)", x = "UMAP 1", y = "UMAP 2") + theme_args_kmeans
 
 # Prepare composed plots
 library(patchwork)
-tSNE_kmeans_clusters <- (tSNE_var_PAGsubdivisions + tSNE_var_kmeans +
-                           tSNE_cv2_PAGsubdivisions + tSNE_cv2_kmeans) +
-  plot_annotation(title = "K-means clustering on tSNE", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
-
 UMAP_kmeans_clusters <- (UMAP_var_PAGsubdivisions + UMAP_var_kmeans +
-                           UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_kmeans +
-                           UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_kmeans) +
+                           UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans) +
   plot_annotation(title = "K-means clustering on UMAP", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 # Plot them
-tSNE_kmeans_clusters
 UMAP_kmeans_clusters
 
 # Save them
-ggsave(filename = str_c(date, "_kmeans_tSNE_clusters_composed.pdf"),
-       plot = tSNE_kmeans_clusters,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-
 ggsave(filename = str_c(date, "_kmeans_UMAP_clusters_composed.pdf"),
        plot = UMAP_kmeans_clusters,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 18, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -1049,12 +1055,14 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_clusters_composed.pdf"),
 ### 6.2.3 | Overclustering
 A more practical use of k-means is to deliberately set `k` to a large value to achieve overclustering. This will forcibly partition cells inside broad clusters that do not have well-defined internal structure. For example, we might be interested in the change in expression from one “side” of a cluster to the other, but the lack of any clear separation within the cluster makes it difficult to separate with graph-based methods, even at the highest resolution. k-means has no such problems and will readily split these broad clusters for greater resolution, though obviously one must be prepared for the additional work involved in interpreting a greater number of clusters.
 ```{r}
-set.seed(1714)
+set.seed(1991)
 
-overcluster_kmeans_var <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_25"), centers = 20, iter.max = 50, nstart = 5)
+overcluster_kmeans_var <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_12"), 
+                                 centers = 20, iter.max = 50, nstart = 5)
 PAG_sceset_qc_norm_filt_corr$kmeans_overcluster_var <- factor(overcluster_kmeans_var$cluster)
 
-overcluster_kmeans_cv2 <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_25"), centers = 20, iter.max = 50, nstart = 5)
+overcluster_kmeans_cv2 <- kmeans(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_17"), 
+                                 centers = 20, iter.max = 50, nstart = 5)
 PAG_sceset_qc_norm_filt_corr$kmeans_overcluster_cv2 <- factor(overcluster_kmeans_cv2$cluster)
 
 table(overcluster_kmeans_var$cluster)
@@ -1062,61 +1070,58 @@ table(overcluster_kmeans_cv2$cluster)
 ```
 
 ```{r}
-# t-SNE using PCA from HVG_var_logcounts
-tSNE_var_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_var_corrected_perplexity_15",
-                                              colour_by = "kmeans_overcluster_var", shape_by = "cell.type", text_by = "kmeans_overcluster_var"
-                                              ) + labs(title = "tSNE (var) - K-means (centers=20)", x = "t-SNE 1", y = "t-SNE 2")
-
-# t-SNE using PCA from HVG_cv2_logcounts
-tSNE_cv2_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "tSNE_cv2_corrected_perplexity_15",
-                                              colour_by = "kmeans_overcluster_cv2", shape_by = "cell.type", text_by = "kmeans_overcluster_cv2"
-                                              ) + labs(title = "tSNE (cv2) - K-means (centers=20)", x = "t-SNE 1", y = "t-SNE 2")
+# Set theme parameters
+theme_args_kmeans <- theme(plot.title = element_text(size = 11, face = "bold"),
+                           axis.title = element_text(size = 11, face = "plain"),
+                           axis.text = element_text(size = 10, face = "plain"), 
+                           legend.text = element_text(size = 9, face = "plain"), 
+                           strip.text = element_text(size = 10, face = "plain"))
 
 # UMAP using PCA from HVG_var_logcounts
-UMAP_var_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                              colour_by = "kmeans_overcluster_var", shape_by = "cell.type", text_by = "kmeans_overcluster_var"
-                                              ) + labs(title = "UMAP (var) - K-means (centers=20)", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                           dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+                                           ) + labs(title = "HVG (Var)", x = "UMAP 1", y = "UMAP 2"
+                                                    ) + theme_args_kmeans
+
+UMAP_var_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                              dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                              colour_by = "kmeans_overcluster_var", shape_by = "cell.type", text_by = "kmeans_overcluster_var",
+                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+                                              ) + labs(title = "K-means (centers = 20)", x = "UMAP 1", y = "UMAP 2") + theme_args_kmeans
 
 # UMAP using PCA from HVG_cv2_logcounts
-UMAP_cv2_10_005_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                     colour_by = "kmeans_overcluster_cv2", shape_by = "cell.type", text_by = "kmeans_overcluster_cv2"
-                                                     )  + labs(title = "UMAP (cv2) - K-means (centers=20)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                           dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+                                           ) + labs(title = "HVG (CV2)", x = "UMAP 1", y = "UMAP 2"
+                                                    ) + theme_args_kmeans
 
-UMAP_cv2_15_001_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                    colour_by = "kmeans_overcluster_cv2", shape_by = "cell.type", text_by = "kmeans_overcluster_cv2"
-                                                    )  + labs(title = "UMAP (cv2) - K-means (centers=20)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                              dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                              colour_by = "kmeans_overcluster_cv2", shape_by = "cell.type", text_by = "kmeans_overcluster_cv2",
+                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+                                              ) + labs(title = "K-means (centers = 20)", x = "UMAP 1", y = "UMAP 2") + theme_args_kmeans
 
 # Prepare composed plots
 library(patchwork)
-tSNE_kmeans_overclusters <- (tSNE_var_PAGsubdivisions + tSNE_var_kmeans_overcluster +
-                               tSNE_cv2_PAGsubdivisions + tSNE_cv2_kmeans_overcluster) +
-  plot_annotation(title = "K-means overclustering on tSNE", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
-
 UMAP_kmeans_overclusters <- (UMAP_var_PAGsubdivisions + UMAP_var_kmeans_overcluster +
-                               UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_kmeans_overcluster +
-                               UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_kmeans_overcluster) +
+                               UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans_overcluster) +
   plot_annotation(title = "K-means overclustering on UMAP", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 # Plot them
-tSNE_kmeans_overclusters
 UMAP_kmeans_overclusters
 
 # Save them
-ggsave(filename = str_c(date, "_kmeans_tSNE_overclusters_composed.pdf"),
-       plot = tSNE_kmeans_overclusters,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-
 ggsave(filename = str_c(date, "_kmeans_UMAP_overclusters_composed.pdf"),
        plot = UMAP_kmeans_overclusters,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 18, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -1162,49 +1167,68 @@ cent_tree_overcluster_kmeans_cv2 <- as.dendrogram(hclust(dist(overcluster_kmeans
 
 # Plot kmeans clusters dendrogram
 par(mfrow = c(1,2), las = 1)
-plot(cent_tree_cluster_kmeans_var, main = "K-means Dendrogram (var)", xlab = "k = 8", ylab = "Height", sub = "")
-plot(cent_tree_overcluster_kmeans_var, main = "K-means Dendrogram (var)", xlab = "k = 20", ylab = "Height", sub = "")
-
-# Plot clustering results on UMAP
-library(patchwork)
-UMAP_cv2_10_005_kmeans_composed <- (UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_kmeans +
-                                      UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_kmeans_overcluster) +
-  plot_annotation(title = "K-means clusters on UMAP", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+plot(cent_tree_cluster_kmeans_var, main = "K-means Dendrogram (Var)", xlab = "k = 8", ylab = "Height", sub = "")
+plot(cent_tree_overcluster_kmeans_var, main = "K-means Dendrogram (Var)", xlab = "k = 20", ylab = "Height", sub = "")
 
 # Plot kmeans overclusters dendrogram
 par(mfrow = c(1,2), las = 1)
-plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k = 10", ylab = "Height", sub = "")
-plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k = 20", ylab = "Height", sub = "")
+plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (CV2)", xlab = "k = 10", ylab = "Height", sub = "")
+plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (CV2)", xlab = "k = 20", ylab = "Height", sub = "")
 
 
-## Save plots
+# Prepare composed plots
+library(patchwork)
+UMAP_kmeans_var_composed <- (UMAP_var_PAGsubdivisions + UMAP_var_kmeans +
+                               UMAP_var_PAGsubdivisions + UMAP_var_kmeans_overcluster) +
+  plot_annotation(title = "K-means clusters on UMAP (Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+
+UMAP_kmeans_cv2_composed <- (UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans +
+                               UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans_overcluster) +
+  plot_annotation(title = "K-means clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+
+# Plot them
+UMAP_kmeans_var_composed
+UMAP_kmeans_cv2_composed
+
+# Save plots
 pdf(file = str_c(path_for_figures, date, "_kmeans_dendrogram_var.pdf"),
-    width = 12, height = 9,
+    width = 5, height = 8,
     family = "Arial", bg = "transparent")
-par(mfrow = c(1,2), las = 1)
-plot(cent_tree_cluster_kmeans_var, main = "K-means Dendrogram (var)", xlab = "k = 8", ylab = "Height", sub = "")
-plot(cent_tree_overcluster_kmeans_var, main = "K-means Dendrogram (var)", xlab = "k = 20", ylab = "Height", sub = "")
+par(mfrow = c(2,1), las = 1)
+plot(cent_tree_cluster_kmeans_var, main = "K-means Dendrogram (Var)", xlab = "k = 8", ylab = "Height", sub = "")
+plot(cent_tree_overcluster_kmeans_var, main = "K-means Dendrogram (Var)", xlab = "k = 20", ylab = "Height", sub = "")
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_kmeans_dendrogram_cv2.pdf"),
-    width = 12, height = 9,
+    width = 6, height = 8,
     family = "Arial", bg = "transparent")
-par(mfrow = c(1,2), las = 1)
-plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k = 10", ylab = "Height", sub = "")
-plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k = 20", ylab = "Height", sub = "")
+par(mfrow = c(2,1), las = 1)
+plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (CV)", xlab = "k = 10", ylab = "Height", sub = "")
+plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (CV2)", xlab = "k = 20", ylab = "Height", sub = "")
 dev.off()
 
-ggsave(filename = str_c(date, "_kmeans_clusters_UMAP_cv2_10_005_composed.pdf"),
-       plot = UMAP_cv2_10_005_kmeans_composed,
+ggsave(filename = str_c(date, "_kmeans_UMAP_var_clusters_composed.pdf"),
+       plot = UMAP_kmeans_var_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 7, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_kmeans_UMAP_cv2_clusters_composed.pdf"),
+       plot = UMAP_kmeans_cv2_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 7, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-As we can see when looking at both the tree and the embedding of the k-means clusters on the UMAP, using PCs from mean-var modelling doesn't generate a tree that reflects the origin of the cells (i.e. excitatory or inhibitory cells), whereas we do see that in the results obtained with PCs from mean-cv2 modelling. Overall we seem to obtain similar clusters to those we obtained from the graph-clustering approach, at least for the cv2 scenario.
+As we can see when looking at both the tree and the embedding of the k-means clusters on the UMAP, using PCs from mean-var modelling doesn't generate a tree that reflects the origin of the cells (i.e. excitatory or inhibitory cells), whereas we do see that in the results obtained with PCs from mean-cv2 modelling (it even separates the Cd68+ cluster in an entirely different branch). Overall we seem to obtain similar clusters to those we obtained from the graph-clustering approach, at least for the cv2 scenario.
 
 ## Step 6.3 | Hierarchical clustering
 Hierarchical clustering aims to generate a dendrogram containing a hierarchy of samples. This is most commonly done by greedily agglomerating samples into clusters, then agglomerating those clusters into larger clusters, and so on until all samples belong to a single cluster. Variants of hierarchical clustering methods primarily differ in how they choose to perform the agglomerations. For example, complete linkage aims to merge clusters with the smallest maximum distance between their elements, while Ward’s method aims to minimize the increase in within-cluster variance.
