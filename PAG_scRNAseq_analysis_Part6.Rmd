@@ -1034,7 +1034,8 @@ UMAP_cv2_kmeans <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
 # Prepare composed plots
 library(patchwork)
 UMAP_kmeans_clusters <- (UMAP_var_PAGsubdivisions + UMAP_var_kmeans +
-                           UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans) +
+                           UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans +
+                           plot_spacer() + plot_spacer()) +
   plot_annotation(title = "K-means clustering on UMAP", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
@@ -1047,7 +1048,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_clusters_composed.pdf"),
        plot = UMAP_kmeans_clusters,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 8, height = 7, units = "in", dpi = 300,
+       width = 8, height = 9, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -1108,7 +1109,8 @@ UMAP_cv2_kmeans_overcluster <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
 # Prepare composed plots
 library(patchwork)
 UMAP_kmeans_overclusters <- (UMAP_var_PAGsubdivisions + UMAP_var_kmeans_overcluster +
-                               UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans_overcluster) +
+                               UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans_overcluster +
+                               plot_spacer() + plot_spacer()) +
   plot_annotation(title = "K-means overclustering on UMAP", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
@@ -1121,7 +1123,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_overclusters_composed.pdf"),
        plot = UMAP_kmeans_overclusters,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 8, height = 7, units = "in", dpi = 300,
+       width = 8, height = 10, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -1179,13 +1181,15 @@ plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (CV2)", xlab =
 # Prepare composed plots
 library(patchwork)
 UMAP_kmeans_var_composed <- (UMAP_var_PAGsubdivisions + UMAP_var_kmeans +
-                               UMAP_var_PAGsubdivisions + UMAP_var_kmeans_overcluster) +
+                               UMAP_var_PAGsubdivisions + UMAP_var_kmeans_overcluster +
+                               plot_spacer() + plot_spacer()) +
   plot_annotation(title = "K-means clusters on UMAP (Var)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
 
 UMAP_kmeans_cv2_composed <- (UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans +
-                               UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans_overcluster) +
+                               UMAP_cv2_PAGsubdivisions + UMAP_cv2_kmeans_overcluster +
+                               plot_spacer() + plot_spacer()) +
   plot_annotation(title = "K-means clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
@@ -1204,10 +1208,10 @@ plot(cent_tree_overcluster_kmeans_var, main = "K-means Dendrogram (Var)", xlab =
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_kmeans_dendrogram_cv2.pdf"),
-    width = 6, height = 8,
+    width = 5, height = 8,
     family = "Arial", bg = "transparent")
 par(mfrow = c(2,1), las = 1)
-plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (CV)", xlab = "k = 10", ylab = "Height", sub = "")
+plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (CV2)", xlab = "k = 10", ylab = "Height", sub = "")
 plot(cent_tree_overcluster_kmeans_cv2, main = "K-means Dendrogram (CV2)", xlab = "k = 20", ylab = "Height", sub = "")
 dev.off()
 
@@ -1215,7 +1219,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_var_clusters_composed.pdf"),
        plot = UMAP_kmeans_var_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 8, height = 7, units = "in", dpi = 300,
+       width = 8, height = 9, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
@@ -1223,7 +1227,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_cv2_clusters_composed.pdf"),
        plot = UMAP_kmeans_cv2_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 8, height = 7, units = "in", dpi = 300,
+       width = 8, height = 9, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -1248,7 +1252,7 @@ colours_celltype_PAGarea <- c(`dmpag_VGAT` = "red", `dlpag_VGAT` = "coral2", `lp
 
 ## Using PCA from HVG_var_logcounts
 # Making a distance matrix
-PAG_dist_var <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_25"), 
+PAG_dist_var <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_var_logcounts_12"), 
                      method = "euclidean" # Usual distance between the two vectors (2 norm aka L_2), sqrt(sum((x_i - y_i)^2)).
                      ) # Alternative distance, "manhattan" -> Absolute distance between the two vectors (1 norm aka L_1).
 # Building a tree
@@ -1258,16 +1262,15 @@ PAG_tree_var <- hclust(PAG_dist_var, method = "ward.D2") # Agglomeration method 
 # Making a prettier dendrogram
 PAG_tree_var$labels <- seq_along(PAG_tree_var$labels)
 PAG_dend_var <- as.dendrogram(PAG_tree_var, hang = 0.1)
-combined_fac_var <- paste0(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea)
-labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", ylab = "Height", las = 1)
+labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[PAG_sceset_qc_norm_filt_corr$celltype_PAGarea][order.dendrogram(PAG_dend_var)]
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", ylab = "Height", las = 1)
 legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 
 
 ## Using PCA from HVG_cv2_logcounts
 # Making a distance matrix
-PAG_dist_cv2 <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_25"), 
+PAG_dist_cv2 <- dist(reducedDim(PAG_sceset_qc_norm_filt_corr, "PCA_HVG_cv2_logcounts_17"), 
                      method = "euclidean" # Usual distance between the two vectors (2 norm aka L_2), sqrt(sum((x_i - y_i)^2)).
                      ) # Alternative distance, "manhattan" -> Absolute distance between the two vectors (1 norm aka L_1).
 # Building a tree
@@ -1277,31 +1280,32 @@ PAG_tree_cv2 <- hclust(PAG_dist_cv2, "ward.D2")
 # Making a prettier dendrogram
 PAG_tree_cv2$labels <- seq_along(PAG_tree_cv2$labels)
 PAG_dend_cv2 <- as.dendrogram(PAG_tree_cv2, hang = 0.1)
-combined_fac_cv2 <- paste0(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea)
-labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_cv2][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", ylab = "Height", las = 1)
+labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[PAG_sceset_qc_norm_filt_corr$celltype_PAGarea][order.dendrogram(PAG_dend_cv2)]
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", ylab = "Height", las = 1)
 legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 
 ## Save plots
-pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_var.pdf"),
-    width = 12, height = 9,
+pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_hclust_var.pdf"),
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", ylab = "Height", las = 1)
 legend("topright", col =colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 dev.off()
 
-pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cv2.pdf"),
-    width = 12, height = 9,
+pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_hclust_cv2.pdf"),
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", ylab = "Height", las = 1)
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", ylab = "Height", las = 1)
 legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
 dev.off()
 ```
+
+Again, we can see how using HVG from CV2 modelling successfully separates exctitatory from inhibitory neurons, whereas the branching from the Var modelling is not as clean.
 
 ### 6.3.2 | Cutting the tree
 To obtain explicit clusters, we can “cut” the tree by removing internal branches such that every subtree represents a distinct cluster. This is most simply done by removing internal branches above a certain height of the tree, as performed by the `cutree()` function. We can instead use the `dynamicTreeCut` package, which uses the shape of the branches to obtain a more suitable partitioning for complex dendrograms. Greater control of the empirical clusters can be obtained by manually specifying cutHeight in `cutreeDynamic`. We can also set `minClusterSize` to a lower value than the default of 20, to avoid spurious aggregation of distant small clusters.
@@ -1318,41 +1322,41 @@ cluster_colours_20 <- c(`1` = "#1F77B4", `2` = "#AEC7E8", `3` = "#FF7F0E", `4` =
                         `11` = "#8C564B", `12` = "#C49C94", `13` = "#E377C2", `14` = "#F7B6D2", `15` = "#7F7F7F", 
                         `16` = "#C7C7C7", `17` = "#BCBD22", `18` = "#DBDB8D", `19` = "#17BECF", `20` = "#9EDAE5")
 
-# From var scenario
+# From Var scenario
 PAG_clust_var_cutreeDynamic <- cutreeDynamic(PAG_tree_var, distM = as.matrix(PAG_dist_var),
                                              minClusterSize = 15, # Default minimum cluster size is 20. minClusterSize needs to be turned down for small datasets
                                              deepSplit = 0.1) # Controls the resolution of the partitioning. The higher the value, the more and smaller clusters will be produced.
 table(PAG_clust_var_cutreeDynamic)
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutreeDynamic)))
 
-# From cv2 scenario
+# From CV2 scenario
 PAG_clust_cv2_cutreeDynamic <- cutreeDynamic(PAG_tree_cv2, distM = as.matrix(PAG_dist_cv2),
                                              minClusterSize = 15, # Default minimum cluster size is 20. minClusterSize needs to be turned down for small datasets
                                              deepSplit = 0.1) # Controls the resolution of the partitioning. The higher the value, the more and smaller clusters will be produced.
 table(PAG_clust_cv2_cutreeDynamic)
 labels_colors(PAG_dend_cv2) <- cluster_colours_20[PAG_clust_cv2_cutreeDynamic][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutreeDynamic)))
 
 ## Save plots
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutreeDynamic_var.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutreeDynamic)))
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutreeDynamic_cv2.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- cluster_colours_20[PAG_clust_cv2_cutreeDynamic][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutreeDynamic)))
 dev.off()
@@ -1366,7 +1370,7 @@ PAG_clust_var_cutree_k <- cutree(PAG_tree_var, # Use either "k" or "h"
                                  #h = 290) # height where the tree should be cut
 table(PAG_clust_var_cutree_k)
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_k][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using k=8", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Tree Cut using k = 8", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_k)))
@@ -1377,7 +1381,7 @@ PAG_clust_var_cutree_h <- cutree(PAG_tree_var, # Use either "k" or "h"
                                  h = 290) # height where the tree should be cut
 table(PAG_clust_var_cutree_h)
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_h][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using h=290", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Tree Cut using h=290", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_h)))
@@ -1385,62 +1389,62 @@ legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
 # From cv2 scenario using k
 PAG_clust_cv2_cutree_k <- cutree(PAG_tree_cv2, # Use either "k" or "h"
                                  k = 10) # number of clusters the tree should be cut into
-                                 #h = 235) # height where the tree should be cut
+                                 #h = 230) # height where the tree should be cut
 table(PAG_clust_cv2_cutree_k)
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_k][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using k=10", ylab = "Height", las = 1)
-abline(h = 235, col = "red")
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Tree Cut using k = 10", ylab = "Height", las = 1)
+abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_k)))
 
 # From cv2 scenario using h
 PAG_clust_cv2_cutree_h <- cutree(PAG_tree_cv2, # Use either "k" or "h"
                                  #k = 10) # number of clusters the tree should be cut into
-                                 h = 235) # height where the tree should be cut
+                                 h = 225) # height where the tree should be cut
 table(PAG_clust_cv2_cutree_h)
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_h][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using h=235", ylab = "Height", las = 1)
-abline(h = 235, col = "red")
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Tree Cut using h = 225", ylab = "Height", las = 1)
+abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_h)))
 
 ## Save plots
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_k_var.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_k][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using k=8", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Tree Cut using k = 8", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_k)))
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_h_var.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_h][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using h=290", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Tree Cut using h = 290", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_h)))
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_k_cv2.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_k][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using k=10", ylab = "Height", las = 1)
-abline(h = 235, col = "red")
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Tree Cut using k = 10", ylab = "Height", las = 1)
+abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_k)))
 dev.off()
 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_cutree_h_cv2.pdf"),
-    width = 12, height = 9,
+    width = 8, height = 6,
     family = "Arial", bg = "transparent")
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_h][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using h=235", ylab = "Height", las = 1)
-abline(h = 235, col = "red")
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Tree Cut using h = 225", ylab = "Height", las = 1)
+abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_h)))
 dev.off()
@@ -1464,130 +1468,144 @@ PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_h <- factor(PAG_clust_cv2_cutre
 
 We can now visualize the cluster assignments for all cells on any of the `reducedDim` slots we previously computed (e.g. tSNE or UMAP). Adjacent cells are generally assigned to the same cluster, and the clustering results generally correspond well to the grouping of cells on a t-SNE or UMAP plot.
 ```{r}
+# Set theme parameters
+theme_args_hierarchical <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                 axis.title = element_text(size = 11, face = "plain"),
+                                 axis.text = element_text(size = 10, face = "plain"), 
+                                 legend.text = element_text(size = 9, face = "plain"), 
+                                 strip.text = element_text(size = 10, face = "plain"))
+
 # UMAP using PCA from HVG_var_logcounts
-UMAP_var_cutreedynamic <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                         colour_by = "cutreedynamic_clusters_var", shape_by = "cell.type", text_by = "cutreedynamic_clusters_var"
-                                         ) + labs(title = "UMAP (var) - Dynamic Tree Cut", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                           dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+                                           ) + labs(title = "HVG (Var)", x = "UMAP 1", y = "UMAP 2"
+                                                    ) + theme_args_hierarchical
 
-UMAP_var_cutree_k <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                    colour_by = "cutree_clusters_var_k", shape_by = "cell.type", text_by = "cutree_clusters_var_k"
-                                    ) + labs(title = "UMAP (var) - Tree Cut (k=8)", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_cutreedynamic <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                         dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                         colour_by = "cutreedynamic_clusters_var", shape_by = "cell.type", text_by = "cutreedynamic_clusters_var",
+                                         point_alpha = 0.6, point_size = 2, theme_size = 11
+                                         ) + labs(title = "Dynamic Tree Cut", x = "UMAP 1", y = "UMAP 2") + theme_args_hierarchical
 
-UMAP_var_cutree_h <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_var_corrected_10_neighbors_0.01_min_dist",
-                                    colour_by = "cutree_clusters_var_h", shape_by = "cell.type", text_by = "cutree_clusters_var_h"
-                                    ) + labs(title = "UMAP (var) - Tree Cut (h=290)", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_cutree_k <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                    dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                    colour_by = "cutree_clusters_var_k", shape_by = "cell.type", text_by = "cutree_clusters_var_k",
+                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                    ) + labs(title = "Tree Cut (k = 8)", x = "UMAP 1", y = "UMAP 2") + theme_args_hierarchical
 
-# UMAP_10_005 using PCA from HVG_cv2_logcounts
-UMAP_cv2_10_005_cutreedynamic <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                colour_by = "cutreedynamic_clusters_cv2", shape_by = "cell.type", text_by = "cutreedynamic_clusters_cv2"
-                                                )  + labs(title = "UMAP (cv2) - Dynamic Tree Cut", x = "UMAP 1", y = "UMAP 2")
+UMAP_var_cutree_h <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                    dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+                                    colour_by = "cutree_clusters_var_h", shape_by = "cell.type", text_by = "cutree_clusters_var_h",
+                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                    ) + labs(title = "Tree Cut (h = 290)", x = "UMAP 1", y = "UMAP 2") + theme_args_hierarchical
 
-UMAP_cv2_10_005_cutree_k <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                           colour_by = "cutree_clusters_cv2_k", shape_by = "cell.type", text_by = "cutree_clusters_cv2_k"
-                                           )  + labs(title = "UMAP (cv2) - Tree Cut (k=10)", x = "UMAP 1", y = "UMAP 2")
 
-UMAP_cv2_10_005_cutree_h <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                           colour_by = "cutree_clusters_cv2_h", shape_by = "cell.type", text_by = "cutree_clusters_cv2_h"
-                                           )  + labs(title = "UMAP (cv2) - Tree Cut (h=235)", x = "UMAP 1", y = "UMAP 2")
+# UMAP using PCA from HVG_cv2_logcounts
+UMAP_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                           dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+                                           ) + labs(title = "HVG (CV2)", x = "UMAP 1", y = "UMAP 2"
+                                                    ) + theme_args_hierarchical
 
-# UMAP_15_001 using PCA from HVG_cv2_logcounts
-UMAP_cv2_15_001_cutreedynamic <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                colour_by = "cutreedynamic_clusters_cv2", shape_by = "cell.type", text_by = "cutreedynamic_clusters_cv2"
-                                                )  + labs(title = "UMAP (cv2) -  Dynamic Tree Cut", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_cutreedynamic <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                         dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                         colour_by = "cutreedynamic_clusters_cv2", shape_by = "cell.type", text_by = "cutreedynamic_clusters_cv2", 
+                                         point_alpha = 0.6, point_size = 2, theme_size = 11
+                                         )  + labs(title = "Dynamic Tree Cut", x = "UMAP 1", y = "UMAP 2") + theme_args_hierarchical
 
-UMAP_cv2_15_001_cutree_k <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                           colour_by = "cutree_clusters_cv2_k", shape_by = "cell.type", text_by = "cutree_clusters_cv2_k"
-                                           )  + labs(title = "UMAP (cv2) - Tree Cut (k=10)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_cutree_k <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                    colour_by = "cutree_clusters_cv2_k", shape_by = "cell.type", text_by = "cutree_clusters_cv2_k", 
+                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                    )  + labs(title = "Tree Cut (k = 10)", x = "UMAP 1", y = "UMAP 2") + theme_args_hierarchical
 
-UMAP_cv2_15_001_cutree_h <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                           colour_by = "cutree_clusters_cv2_h", shape_by = "cell.type", text_by = "cutree_clusters_cv2_h"
-                                           )  + labs(title = "UMAP (cv2) - Tree Cut (h=235)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_cutree_h <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                    colour_by = "cutree_clusters_cv2_h", shape_by = "cell.type", text_by = "cutree_clusters_cv2_h", 
+                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                    )  + labs(title = "Tree Cut (h = 235)", x = "UMAP 1", y = "UMAP 2") + theme_args_hierarchical
 
 # Prepare composed plots
 library(patchwork)
-UMAP_var_hierarchical_clusters <- (UMAP_var_PAGsubdivisions + UMAP_var_cutreedynamic + UMAP_var_cutree_k + UMAP_var_cutree_h) +
-  plot_annotation(title = "Hierarchical clustering on UMAP (var)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_hierarchical_var_composed <- (UMAP_var_PAGsubdivisions + UMAP_var_cutreedynamic + UMAP_var_cutree_k + UMAP_var_cutree_h + plot_spacer() + plot_spacer()) +
+  plot_annotation(title = "Hierarchical clustering on UMAP (Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
-UMAP_cv2_10_005_hierarchical_clusters <- (UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_cutreedynamic + UMAP_cv2_10_005_cutree_k + UMAP_cv2_10_005_cutree_h) +
-  plot_annotation(title = "Hierarchical clustering on UMAP (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
-
-UMAP_cv2_15_001_hierarchical_clusters <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_cutreedynamic + UMAP_cv2_15_001_cutree_k + UMAP_cv2_15_001_cutree_h) +
-  plot_annotation(title = "Hierarchical clustering on UMAP (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
-
+UMAP_hierarchical_cv2_composed <- (UMAP_cv2_PAGsubdivisions + UMAP_cv2_cutreedynamic + UMAP_cv2_cutree_k + UMAP_cv2_cutree_h + plot_spacer() + plot_spacer()) +
+  plot_annotation(title = "Hierarchical clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
 
 # Plot them
 par(mfrow = c(2,2))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutreeDynamic)))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_k][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using k=8", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Tree Cut using k = 8", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_k)))
 labels_colors(PAG_dend_cv2) <- cluster_colours_20[PAG_clust_cv2_cutreeDynamic][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutreeDynamic)))
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_k][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using k=10", ylab = "Height", las = 1)
-abline(h = 235, col = "red")
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Tree Cut using k = 10", ylab = "Height", las = 1)
+abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_k)))
 
-UMAP_var_hierarchical_clusters
-UMAP_cv2_10_005_hierarchical_clusters
-UMAP_cv2_15_001_hierarchical_clusters
+UMAP_hierarchical_var_composed
+UMAP_hierarchical_cv2_composed
 
 # Save them
 ggsave(filename = str_c(date, "_hierarchical_UMAP_var_clusters_composed.pdf"),
-       plot = UMAP_var_hierarchical_clusters,
+       plot = UMAP_hierarchical_var_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 9, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
-ggsave(filename = str_c(date, "_hierarchical_UMAP_cv2_10_005_clusters_composed.pdf"),
-       plot = UMAP_cv2_10_005_hierarchical_clusters,
+ggsave(filename = str_c(date, "_hierarchical_UMAP_cv2_clusters_composed.pdf"),
+       plot = UMAP_hierarchical_cv2_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 9, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
-ggsave(filename = str_c(date, "_hierarchical_UMAP_cv2_15_001_clusters_composed.pdf"),
-       plot = UMAP_cv2_15_001_hierarchical_clusters,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-
-pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrograms.pdf"),
-    width = 12, height = 9,
+pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_composed_var.pdf"),
+    width = 5, height = 8,
     family = "Arial", bg = "transparent")
-par(mfrow = c(2,2))
+par(mfrow = c(2,1))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutreeDynamic)))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_k][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using k=8", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Tree Cut using k = 8", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_k)))
+
+pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_composed_cv2.pdf"),
+    width = 5, height = 8,
+    family = "Arial", bg = "transparent")
+par(mfrow = c(2,1))
 labels_colors(PAG_dend_cv2) <- cluster_colours_20[PAG_clust_cv2_cutreeDynamic][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutreeDynamic)))
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_k][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using k=10", ylab = "Height", las = 1)
-abline(h = 235, col = "red")
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Tree Cut using k = 10", ylab = "Height", las = 1)
+abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_k)))
 dev.off()
@@ -1626,7 +1644,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr,
 
 Looking at the heatmap from the HVG_cv2 scenario we can see that one of the clusters is very highly enriched with genes corresponding to immune cells. These cells might actually be a group of cells contaminated with platelets or macrophages and are also picked up by the other clustering approaches and clearly visible in both t-SNE and UMAP plots. Marker genes for macrophages include Ctss, C1qa, CD14, CD16, CD64, CD68, CD71 and CCR5.
 
-We can also notice that in the HVG_var scenario, the dendrogram first splits away a subset of VGluT2 cells, and only the scecond split is between VGAT and the remaining VGluT2 cells. This does not happen with the HVG_cv2 scenario, where the first split is actually VGAT and VGlUT2. This is yet another reason (together with the results from t-SNE and UMAP, and the other clustering approaches) to select HVGs using the mean-cv2 trend instead of the mean-var trend.
+We can also notice that in the HVG_var scenario, the dendrogram first splits away a subset of VGluT2 cells, and only the second split is between VGAT and the remaining VGluT2 cells. This does not happen with the HVG_cv2 scenario, where the first split is actually VGAT and VGlUT2. This is yet another reason (together with the results from t-SNE and UMAP, and the other clustering approaches) to select HVGs using the mean-cv2 trend instead of the mean-var trend.
 
 ### 6.3.4 | Assessing cluster separation
 We can check the separation of the clusters by using the silhouette width. For each cell, we compute the average distance to cells in each other cluster. We then compute the minimum of these average distances across all clusters, as well as the average distance to cells in the same cluster. The silhouette width for each cell is defined as the difference between these two values divided by their maximum. Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in different clusters. Conversely, cells with negative widths are closer to other clusters than to other cells in the cluster to which it was assigned.
@@ -1639,40 +1657,46 @@ library(cluster)
 sil_var_cutreeDynamic <- silhouette(PAG_clust_var_cutreeDynamic, dist = PAG_dist_var)
 sil_cols_var_cutreeDynamic <- cluster_colours_10[ifelse(sil_var_cutreeDynamic[,3] > 0, sil_var_cutreeDynamic[,1], sil_var_cutreeDynamic[,2])]
 sil_cols_var_cutreeDynamic <- sil_cols_var_cutreeDynamic[order(-sil_var_cutreeDynamic[,1], sil_var_cutreeDynamic[,3])]
-plot(sil_var_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut):", length(unique(PAG_clust_var_cutreeDynamic)), "clusters"),
+plot(sil_var_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut - Var):", length(unique(PAG_clust_var_cutreeDynamic)), "clusters"),
      border = sil_cols_var_cutreeDynamic, col = sil_cols_var_cutreeDynamic, do.col.sort = FALSE)
 
 sil_cv2_cutreeDynamic <- silhouette(PAG_clust_cv2_cutreeDynamic, dist = PAG_dist_cv2)
 sil_cols_cv2_cutreeDynamic <- cluster_colours_20[ifelse(sil_cv2_cutreeDynamic[,3] > 0, sil_cv2_cutreeDynamic[,1], sil_cv2_cutreeDynamic[,2])]
 sil_cols_cv2_cutreeDynamic <- sil_cols_cv2_cutreeDynamic[order(-sil_cv2_cutreeDynamic[,1], sil_cv2_cutreeDynamic[,3])]
-plot(sil_cv2_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut):", length(unique(PAG_clust_var_cutreeDynamic)), "clusters"),
+plot(sil_cv2_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut - CV2):", length(unique(PAG_clust_cv2_cutreeDynamic)), "clusters"),
      border = sil_cols_cv2_cutreeDynamic, col = sil_cols_cv2_cutreeDynamic, do.col.sort = FALSE)
 
 # Cutree
 sil_var_cutree <- silhouette(PAG_clust_var_cutree_k, dist = PAG_dist_var)
 sil_cols_var_cutree <- cluster_colours_10[ifelse(sil_var_cutree[,3] > 0, sil_var_cutree[,1], sil_var_cutree[,2])]
 sil_cols_var_cutree <- sil_cols_var_cutree[order(-sil_var_cutree[,1], sil_var_cutree[,3])]
-plot(sil_var_cutree, main = paste("Silhouette from Hierarchical (Cutree):", length(unique(PAG_clust_var_cutree_k)), "clusters"),
+plot(sil_var_cutree, main = paste("Silhouette from Hierarchical (Cutree - Var):", length(unique(PAG_clust_var_cutree_k)), "clusters"),
      border = sil_cols_var_cutree, col = sil_cols_var_cutree, do.col.sort = FALSE)
 
 sil_cv2_cutree <- silhouette(PAG_clust_cv2_cutree_k, dist = PAG_dist_cv2)
 sil_cols_cv2_cutree <- cluster_colours_10[ifelse(sil_cv2_cutree[,3] > 0, sil_cv2_cutree[,1], sil_cv2_cutree[,2])]
 sil_cols_cv2_cutree <- sil_cols_cv2_cutree[order(-sil_cv2_cutree[,1], sil_cv2_cutree[,3])]
-plot(sil_cv2_cutree, main = paste("Silhouette from Hierarchical (Cutree):", length(unique(PAG_clust_cv2_cutree_k)), "clusters"),
+plot(sil_cv2_cutree, main = paste("Silhouette from Hierarchical (Cutree - CV2):", length(unique(PAG_clust_cv2_cutree_k)), "clusters"),
      border = sil_cols_cv2_cutree, col = sil_cols_cv2_cutree, do.col.sort = FALSE)
 
 # Save plots:
-pdf(file = str_c(path_for_figures, date, "_hierarchical_silhouettes.pdf"),
-    width = 16, height = 12,
+pdf(file = str_c(path_for_figures, date, "_hierarchical_silhouettes_cutreeDynamic.pdf"),
+    width = 8, height = 11,
     family = "Arial", bg = "transparent")
-par(mfrow = c(2,2))
-plot(sil_var_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut):", length(unique(PAG_clust_var_cutreeDynamic)), "clusters"),
+par(mfrow = c(2,1))
+plot(sil_var_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut - Var):", length(unique(PAG_clust_var_cutreeDynamic)), "clusters"),
      border = sil_cols_var_cutreeDynamic, col = sil_cols_var_cutreeDynamic, do.col.sort = FALSE)
-plot(sil_cv2_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut):", length(unique(PAG_clust_var_cutreeDynamic)), "clusters"),
+plot(sil_cv2_cutreeDynamic, main = paste("Silhouette from Hierarchical (Dynamic Tree Cut - CV2):", length(unique(PAG_clust_cv2_cutreeDynamic)), "clusters"),
      border = sil_cols_cv2_cutreeDynamic, col = sil_cols_cv2_cutreeDynamic, do.col.sort = FALSE)
-plot(sil_var_cutree, main = paste("Silhouette from Hierarchical (Cutree):", length(unique(PAG_clust_var_cutree_k)), "clusters"),
+dev.off()
+
+pdf(file = str_c(path_for_figures, date, "_hierarchical_silhouettes_cutree.pdf"),
+    width = 8, height = 11,
+    family = "Arial", bg = "transparent")
+par(mfrow = c(2,1))
+plot(sil_var_cutree, main = paste("Silhouette from Hierarchical (Cutree - Var):", length(unique(PAG_clust_var_cutree_k)), "clusters"),
      border = sil_cols_var_cutree, col = sil_cols_var_cutree, do.col.sort = FALSE)
-plot(sil_cv2_cutree, main = paste("Silhouette from Hierarchical (Cutree):", length(unique(PAG_clust_cv2_cutree_k)), "clusters"),
+plot(sil_cv2_cutree, main = paste("Silhouette from Hierarchical (Cutree - CV2):", length(unique(PAG_clust_cv2_cutree_k)), "clusters"),
      border = sil_cols_cv2_cutree, col = sil_cols_cv2_cutree, do.col.sort = FALSE)
 dev.off()
 ```
@@ -1705,7 +1729,7 @@ for (k in 2:15) {
     sil <- silhouette(example_clusters, dist = PAG_dist_var)
     sil_cols_var <- cluster_colors[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
     sil_cols_var <- sil_cols_var[order(-sil[,1], sil[,3])]
-    plot(sil, main = paste(length(unique(example_clusters)), "clusters (var)"), border = sil_cols_var, col = sil_cols_var, do.col.sort = FALSE)
+    plot(sil, main = paste(length(unique(example_clusters)), "Clusters (Var)"), border = sil_cols_var, col = sil_cols_var, do.col.sort = FALSE)
 }
 
 for (k in 2:15) { 
@@ -1714,7 +1738,7 @@ for (k in 2:15) {
     sil <- silhouette(example_clusters, dist = PAG_dist_cv2)
     sil_cols_cv2 <- cluster_colors[ifelse(sil[,3] > 0, sil[,1], sil[,2])]
     sil_cols_cv2 <- sil_cols_cv2[order(-sil[,1], sil[,3])]
-    plot(sil, main = paste(length(unique(example_clusters)), "clusters (cv2)"), border = sil_cols_cv2, col = sil_cols_cv2, do.col.sort = FALSE)
+    plot(sil, main = paste(length(unique(example_clusters)), "Clusters (CV2)"), border = sil_cols_cv2, col = sil_cols_cv2, do.col.sort = FALSE)
 }
 ```
 
