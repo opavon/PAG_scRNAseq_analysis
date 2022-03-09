@@ -343,7 +343,7 @@ An informative exercise to compare our clustering results would be to use the Ma
 
 After running the two different graph-based clustering approaches with different `k` (from 5 to 15), we observe that when using the HVGs from Var modelling and the top 12 PCs, neither the Rank-Walktrap nor the Jaccard-Louvain approach manage to correctly identify the 12 cells in the Cd68+ cluster at any value of `k`. This, together with the fact that both the tSNEs and UMAPs obtained with the HVG-Var yield worse visualisations than their CV2 counterparts, leads us to not proceed with this approach.
 
-When using the HVGs obtained from CV2 modelling and the top 17 PCs, we find that in most cases both the Rank-Walktrap and Jaccard-Louvain approaches successfully capture the 12 cells from the Cd68+ cluster. Most results identify between 2-4 VGAT clusters and between 4-6 VGlUT2 clusters. After overlaying the results to the UMAP visualisation, we decide to keep the results from different `k` to further analyse.
+When using the HVGs obtained from CV2 modelling and the top 17 PCs, we find that in most cases both the Rank-Walktrap and Jaccard-Louvain approaches successfully capture the 12 cells from the Cd68+ cluster. Most results identify between 2-4 VGAT clusters and between 4-6 VGluT2 clusters. After overlaying the results to the UMAP visualisation, we decide to keep the results from different `k` to further analyse.
 
 For instance, when using the *Rank-Walktrap* approach `k = 5:10` finds 4 inhibitory clusters, whereas `k = 11:15` finds only 2. This suggests that there may be some substructure in the VGAT population, so if we want to investigate that we would have to pick a lower `k`. Furthermore, `k = 5:7` finds 6 VGluT2 clusters, whereas `k = 8:10` finds only 5. In addition, the VGluT2 clusters identified by `k = 11:13` are not great at discriminating lPAG from dmPAG cells, only `k = 12` would be good if we wanted to keep only 2 VGAT clusters and have slightly cleaner VGluT2 clusters. Finally, the VGluT2 cluster that we lose when using `k = 8:10` seems to be a slightly different subset of dmPAG cells, so if we would like to inspect them, we would keep a lower `k`, from which `k = 7` seems to be the best.
 
@@ -362,7 +362,7 @@ On the other hand, when using the *Jaccard-Louvain* approach, we find that most 
 
 * `k = 13`: suggests 2 VGAT clusters and 5 VGluT2 clusters. 
 
-We will keep the different solutions and further examine their stability and modularity. One thing is clear though, there are 3 main clusters in our dataset: VGAT neurons, VGluT2 neurons, and the small Cd68+ clusters. Furthermore, it seems that VGlUT2 neurons may have a bit more granularity, with different subpopulations that trail the different PAG subdivisions. VGAT neurons seem to be slightly more homogeneous, but we consistently find at least 2 clusters that differentiate vlPAG neurons from the rest.
+We will keep the different solutions and further examine their stability and modularity. One thing is clear though, there are 3 main clusters in our dataset: VGAT neurons, VGluT2 neurons, and the small Cd68+ clusters. Furthermore, it seems that VGluT2 neurons may have a bit more granularity, with different subpopulations that trail the different PAG subdivisions. VGAT neurons seem to be slightly more homogeneous, but we consistently find at least 2 clusters that differentiate vlPAG neurons from the rest.
 ```{r}
 library(scran)
 set.seed(42)
@@ -464,38 +464,38 @@ UMAP_cv2_10_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
                                                   dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
                                                   colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7",
                                                   point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                  ) + labs(title = "Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                  ) + labs(title = "Rank-Walktrap (k = 7)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_10_001_RankWalktrap_k12 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                   dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
                                                   colour_by = "SNN_clusters_cv2_rank_k12", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k12",
                                                   point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                  ) + labs(title = "Rank-Walktrap (k=12)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                  ) + labs(title = "Rank-Walktrap (k = 12)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 # Using HVG from CV2 with jaccard-based weights
 UMAP_cv2_10_001_JaccardLouvain_k5 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k5", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k5",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=5)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 5)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_10_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_10_001_JaccardLouvain_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k9", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k9",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=9)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 9)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_10_001_JaccardLouvain_k13 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k13", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k13",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=13)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 13)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 
 ### Using UMAP (CV2) - 15_neighbors_0.01_min_dist ###
@@ -510,38 +510,38 @@ UMAP_cv2_15_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
                                                   dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                   colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7",
                                                   point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                  ) + labs(title = "Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                  ) + labs(title = "Rank-Walktrap (k = 7)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_15_001_RankWalktrap_k12 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                   dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                   colour_by = "SNN_clusters_cv2_rank_k12", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k12",
                                                   point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                  ) + labs(title = "Rank-Walktrap (k=12)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                  ) + labs(title = "Rank-Walktrap (k = 12)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 # Using HVG from CV2 with jaccard-based weights
 UMAP_cv2_15_001_JaccardLouvain_k5 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k5", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k5",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=5)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 5)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_15_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_15_001_JaccardLouvain_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k9", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k9",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=9)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 9)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 UMAP_cv2_15_001_JaccardLouvain_k13 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                                                     dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                     colour_by = "SNN_clusters_cv2_jaccard_k13", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k13",
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
-                                                    ) + labs(title = "Jaccard-Louvain (k=13)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
+                                                    ) + labs(title = "Jaccard-Louvain (k = 13)", x = "UMAP 1", y = "UMAP 2") + theme_args_UMAP_clustering
 
 
 # Prepare and save composed plots
@@ -645,42 +645,42 @@ If we log2 transform the values of the matrices above, we can see that although 
 ```{r}
 library(pheatmap)
 cluster_modularity_cv2_rank_k7 <- pheatmap(log2(ratio_cv2_rank_k7 + 1), 
-                                           main = "Cluster Modularity: Rank Walktrap (k=7)", fontsize = 10,
+                                           main = "Cluster Modularity: Rank-Walktrap (k = 7)", fontsize = 10,
                                            border_color = "grey60", cellwidth = 20, cellheight = 20,
                                            cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                            color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
                                            legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
 
 cluster_modularity_cv2_rank_k12 <- pheatmap(log2(ratio_cv2_rank_k12 + 1), 
-                                            main = "Cluster Modularity: Rank Walktrap (k=12)", fontsize = 10,
+                                            main = "Cluster Modularity: Rank-Walktrap (k = 12)", fontsize = 10,
                                             border_color = "grey60", cellwidth = 20, cellheight = 20,
                                             cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                             color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
                                             legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
 
 cluster_modularity_cv2_jaccard_k5 <- pheatmap(log2(ratio_cv2_jaccard_k5 + 1), 
-                                              main = "Cluster Modularity: Jaccard Louvain (k=5)", fontsize = 10,
+                                              main = "Cluster Modularity: Jaccard-Louvain (k = 5)", fontsize = 10,
                                               border_color = "grey60", cellwidth = 20, cellheight = 20,
                                               cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                               color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
                                               legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
 
 cluster_modularity_cv2_jaccard_k8 <- pheatmap(log2(ratio_cv2_jaccard_k8 + 1),
-                                              main = "Cluster Modularity: Jaccard Louvain (k=8)", fontsize = 10,
+                                              main = "Cluster Modularity: Jaccard-Louvain (k = 8)", fontsize = 10,
                                               border_color = "grey60", cellwidth = 20, cellheight = 20,
                                               cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                               color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
                                               legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
 
 cluster_modularity_cv2_jaccard_k9 <- pheatmap(log2(ratio_cv2_jaccard_k9 + 1), 
-                                              main = "Cluster Modularity: Jaccard Louvain (k=9)", fontsize = 10,
+                                              main = "Cluster Modularity: Jaccard-Louvain (k = 9)", fontsize = 10,
                                               border_color = "grey60", cellwidth = 20, cellheight = 20,
                                               cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                               color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
                                               legend_breaks = c(0, 1, 2, 3, 4, 5, 6), breaks = seq(0, 6, length = 100))
 
 cluster_modularity_cv2_jaccard_k13 <- pheatmap(log2(ratio_cv2_jaccard_k13 + 1), 
-                                               main = "Cluster Modularity: Jaccard Louvain (k=13)", fontsize = 10,
+                                               main = "Cluster Modularity: Jaccard-Louvain (k = 13)", fontsize = 10,
                                                border_color = "grey60", cellwidth = 20, cellheight = 20,
                                                cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                                color = rev(viridis::magma(100)), # color = colorRampPalette(c("white", "blue"))(100) or color = rev(viridis::magma(100))
@@ -731,7 +731,7 @@ ggsave(filename = str_c(date, "_SNN_cluster_modularity_cv2_jaccard_k13.pdf"),
        )
 ```
 
-These heatmaps are most useful when examined side by side with the clustering results embedded in the UMAP plots, as we can then assess the relationship between nearby and far apart clusters. For example, in _"Cluster Modularity (k=8) - Jaccard Louvain (cv2)"_ we can see that cluster 1 has the highest score and doesn't relate to any other, which makes sense as it is the one with macrophage markers. However, clusters 5, 6, 7, 8 have relatively low diagonal scores and are related to each other, which makes sense as these are all VGluT2 cells sitting close to each other in the UMAP.
+These heatmaps are most useful when examined side by side with the clustering results embedded in the UMAP plots, as we can then assess the relationship between nearby and far apart clusters. For example, in _"Cluster Modularity (k = 8) - Jaccard Louvain (cv2)"_ we can see that cluster 1 has the highest score and doesn't relate to any other, which makes sense as it is the one with macrophage markers. However, clusters 5, 6, 7, 8 have relatively low diagonal scores and are related to each other, which makes sense as these are all VGluT2 cells sitting close to each other in the UMAP.
 
 ### 6.1.3 | Evaluating cluster stability
 A desirable property of a given clustering is that it is stable to perturbations to the input data (Von Luxburg 2010). Stable clusters are logistically convenient as small changes to upstream processing will not change the conclusions; greater stability also increases the likelihood that those conclusions can be reproduced in an independent replicate study. `scran` uses bootstrapping to evaluate the stability of a clustering algorithm on a given dataset - that is, cells are sampled with replacement to create a “bootstrap replicate” dataset, and clustering is repeated on this replicate to see if the same clusters can be reproduced. 
@@ -820,42 +820,42 @@ If we take a look at the matrices, we can see that although all values are betwe
 ```{r}
 library(pheatmap)
 cluster_stability_cv2_rank_k7 <- pheatmap(coassign_cv2_rank_k7,
-                                          main = "Cluster Stability: Rank Walktrap (k=7)", fontsize = 10,
+                                          main = "Cluster Stability: Rank-Walktrap (k = 7)", fontsize = 10,
                                           border_color = "grey60", cellwidth = 20, cellheight = 20,
                                           cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                           color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                           legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
 cluster_stability_cv2_rank_k12 <- pheatmap(coassign_cv2_rank_k12, 
-                                           main = "Cluster Stability: Rank Walktrap (k=12)", fontsize = 10,
+                                           main = "Cluster Stability: Rank-Walktrap (k = 12)", fontsize = 10,
                                            border_color = "grey60", cellwidth = 20, cellheight = 20,
                                            cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                            color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                            legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
 cluster_stability_cv2_jaccard_k5 <- pheatmap(coassign_cv2_jaccard_k5, 
-                                             main = "Cluster Stability: Jaccard Louvain (k=5)", fontsize = 10,
+                                             main = "Cluster Stability: Jaccard-Louvain (k = 5)", fontsize = 10,
                                              border_color = "grey60", cellwidth = 20, cellheight = 20,
                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                              color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                              legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
 cluster_stability_cv2_jaccard_k8 <- pheatmap(coassign_cv2_jaccard_k8,
-                                             main = "Cluster Stability: Jaccard Louvain (k=8)", fontsize = 10,
+                                             main = "Cluster Stability: Jaccard-Louvain (k = 8)", fontsize = 10,
                                              border_color = "grey60", cellwidth = 20, cellheight = 20,
                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                              color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                              legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
 cluster_stability_cv2_jaccard_k9 <- pheatmap(coassign_cv2_jaccard_k9, 
-                                             main = "Cluster Stability: Jaccard Louvain (k=9)", fontsize = 10,
+                                             main = "Cluster Stability: Jaccard-Louvain (k = 9)", fontsize = 10,
                                              border_color = "grey60", cellwidth = 20, cellheight = 20,
                                              cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                              color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
                                              legend_breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), breaks = seq(0, 1, length = 100))
 
 cluster_stability_cv2_jaccard_k13 <- pheatmap(coassign_cv2_jaccard_k13, 
-                                              main = "Cluster Stability: Jaccard Louvain (k=13)", fontsize = 10,
+                                              main = "Cluster Stability: Jaccard-Louvain (k = 13)", fontsize = 10,
                                               border_color = "grey60", cellwidth = 20, cellheight = 20,
                                               cluster_cols = FALSE, cluster_rows = FALSE, angle_col = 0, 
                                               color = rev(viridis::magma(100)), # colorRampPalette(c("white", "blue"))(100)
@@ -1123,7 +1123,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_overclusters_composed.pdf"),
        plot = UMAP_kmeans_overclusters,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 8, height = 10, units = "in", dpi = 300,
+       width = 8, height = 9, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
@@ -1289,7 +1289,7 @@ legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = 
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_hclust_var.pdf"),
     width = 8, height = 6,
     family = "Arial", bg = "transparent")
-labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
+labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[PAG_sceset_qc_norm_filt_corr$celltype_PAGarea][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", ylab = "Height", las = 1)
 legend("topright", col =colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
@@ -1298,7 +1298,7 @@ dev.off()
 pdf(file = str_c(path_for_figures, date, "_hierarchical_dendrogram_hclust_cv2.pdf"),
     width = 8, height = 6,
     family = "Arial", bg = "transparent")
-labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
+labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[PAG_sceset_qc_norm_filt_corr$celltype_PAGarea][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", ylab = "Height", las = 1)
 legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
@@ -1362,7 +1362,7 @@ legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
 dev.off()
 ```
 
-We can compare this to the `cutree()` function:
+We can compare this to the `cutree()` function, using either a set number of `k` or cutting the tree at a specific height after looking at the dendrogram:
 ```{r}
 # From var scenario using k
 PAG_clust_var_cutree_k <- cutree(PAG_tree_var, # Use either "k" or "h"
@@ -1480,7 +1480,7 @@ UMAP_var_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
                                            dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
                                            colour_by = "PAG.area", shape_by = "cell.type", 
                                            point_alpha = 0.6, point_size = 2, theme_size = 11
-                                           ) + labs(title = "HVG (Var)", x = "UMAP 1", y = "UMAP 2"
+                                           ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2"
                                                     ) + theme_args_hierarchical
 
 UMAP_var_cutreedynamic <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
@@ -1507,7 +1507,7 @@ UMAP_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
                                            dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                            colour_by = "PAG.area", shape_by = "cell.type", 
                                            point_alpha = 0.6, point_size = 2, theme_size = 11
-                                           ) + labs(title = "HVG (CV2)", x = "UMAP 1", y = "UMAP 2"
+                                           ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2"
                                                     ) + theme_args_hierarchical
 
 UMAP_cv2_cutreedynamic <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
@@ -1540,8 +1540,8 @@ UMAP_hierarchical_cv2_composed <- (UMAP_cv2_PAGsubdivisions + UMAP_cv2_cutreedyn
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
 
-# Plot them
-par(mfrow = c(2,2))
+# Plot Var dendrograms
+par(mfrow = c(2,1))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
 plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
@@ -1551,6 +1551,9 @@ plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub =
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_k)))
+
+# Plot CV2 dendrograms
+par(mfrow = c(2,1))
 labels_colors(PAG_dend_cv2) <- cluster_colours_20[PAG_clust_cv2_cutreeDynamic][order.dendrogram(PAG_dend_cv2)]
 plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
@@ -1561,6 +1564,7 @@ abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_k)))
 
+# Plot Composed UMAPs
 UMAP_hierarchical_var_composed
 UMAP_hierarchical_cv2_composed
 
@@ -1611,7 +1615,7 @@ legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
 dev.off()
 ```
 
-We can examine the distribution of cells in each cluster with respect to known factors. For instance, we can compare the cluster identities to batch to check the clustering is not driven by batch effects. We can also compare to any other interesting metadata to see what can be driving the clusters such as `cell.type` or `PAG.area`.
+We can examine the distribution of cells in each cluster with respect to known factors using `table`. For instance, we can compare the cluster identities to batch to check the clustering is not driven by batch effects. We can also compare to any other interesting metadata to see what can be driving the clusters such as `cell.type` or `PAG.area`.
 ```{r}
 # HVG_var
 table(Cluster = PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k, Batch = PAG_sceset_qc_norm_filt_corr$batch.processing)
@@ -1633,18 +1637,18 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr,
             features = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_var_out_no_spikes_block_filt[1:200],
             cluster_cols = PAG_tree_var, colour_columns_by = c("cutree_clusters_var_k", "PAG.area", "cell.type"),
             cluster_rows = FALSE, center = TRUE, symmetric = TRUE,
-            main = "Heatmap (var) - Tree Cut")
+            main = "Heatmap (Var) - Tree Cut")
 
 plotHeatmap(PAG_sceset_qc_norm_filt_corr, 
             features = metadata(PAG_sceset_qc_norm_filt_corr)$hvg_cv2_out_no_spikes_filt[1:200],
             cluster_cols = PAG_tree_cv2, colour_columns_by = c("cutree_clusters_cv2_k", "PAG.area", "cell.type"),
             cluster_rows = FALSE, center = TRUE, symmetric = TRUE,
-            main = "Heatmap (cv2) - Tree Cut")
+            main = "Heatmap (CV2) - Tree Cut")
 ```
 
 Looking at the heatmap from the HVG_cv2 scenario we can see that one of the clusters is very highly enriched with genes corresponding to immune cells. These cells might actually be a group of cells contaminated with platelets or macrophages and are also picked up by the other clustering approaches and clearly visible in both t-SNE and UMAP plots. Marker genes for macrophages include Ctss, C1qa, CD14, CD16, CD64, CD68, CD71 and CCR5.
 
-We can also notice that in the HVG_var scenario, the dendrogram first splits away a subset of VGluT2 cells, and only the second split is between VGAT and the remaining VGluT2 cells. This does not happen with the HVG_cv2 scenario, where the first split is actually VGAT and VGlUT2. This is yet another reason (together with the results from t-SNE and UMAP, and the other clustering approaches) to select HVGs using the mean-cv2 trend instead of the mean-var trend.
+We can also notice that in the HVG_var scenario, the dendrogram first splits away a subset of VGluT2 cells, and only the second split is between VGAT and the remaining VGluT2 cells. This does not happen with the HVG_cv2 scenario, where the first split is actually VGAT and VGluT2. This is yet another reason (together with the results from t-SNE and UMAP, and the other clustering approaches) to select HVGs using the mean-cv2 trend instead of the mean-var trend.
 
 ### 6.3.4 | Assessing cluster separation
 We can check the separation of the clusters by using the silhouette width. For each cell, we compute the average distance to cells in each other cluster. We then compute the minimum of these average distances across all clusters, as well as the average distance to cells in the same cluster. The silhouette width for each cell is defined as the difference between these two values divided by their maximum. Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in different clusters. Conversely, cells with negative widths are closer to other clusters than to other cells in the cluster to which it was assigned.
@@ -1745,9 +1749,9 @@ for (k in 2:15) {
 We can see that the values of `k` we selected are already quite good and, again, that following the CV2 scenario provides better results for the clustering.
 
 ## Step 6.4 | Consensus clustering with SC3
-Single-Cell Consensus Clustering (SC3) is a tool for unsupervised clustering of scRNA-seq data. SC3 achieves high accuracy and robustness by consistently integrating different clustering solutions through a consensus approach. An interactive graphical implementation makes SC3 accessible to a wide audience of users. In addition, SC3 also aids biological interpretation by identifying marker genes, differentially expressed genes and outlier cells. A manuscript describing  SC3 in details is published in Nature Methods.
+Single-Cell Consensus Clustering (SC3) is a tool for unsupervised clustering of scRNA-seq data. SC3 achieves high accuracy and robustness by consistently integrating different clustering solutions through a consensus approach. An interactive graphical implementation makes SC3 accessible to a wide audience of users. In addition, SC3 also aids biological interpretation by identifying marker genes, differentially expressed genes and outlier cells. A manuscript describing  SC3 in details is published in Nature Methods (Kiselev et. al., Nature Methods 2017).
 
-The advantage of the SC3 is that it can directly ingest a `SingleCellExperiment` object, and it has a function that can estimate a number of clusters for us. SC3 is a purely clustering tool and it does not provide functions for the sequencing quality control (QC) or normalisation. On the contrary, it is expected that these preprocessing steps are performed by a user in advance. SC3 requires both `counts` and `logcounts` slots to exist in the input `SingleCellExperiment` object. The `counts` slot is used for gene filtering, which is based on gene dropout rates. The `logcounts` slot, which is supposed to contain both normalised and log-transformed expression matrix, is used in the main clustering algorithm.  Additionally, if spike-ins are defined via `isSpike function`, SC3 will automatically remove them before doing clustering.
+The advantage of the SC3 is that it can directly ingest a `SingleCellExperiment` object, and it has a function that can estimate a number of clusters for us. SC3 is a purely clustering tool and it does not provide functions for the sequencing quality control (QC) or normalisation. On the contrary, it is expected that these pre-processing steps are performed by a user in advance. SC3 requires both `counts` and `logcounts` slots to exist in the input `SingleCellExperiment` object. The `counts` slot is used for gene filtering, which is based on gene dropout rates. The `logcounts` slot, which is supposed to contain both normalised and log-transformed expression matrix, is used in the main clustering algorithm. Additionally, if spike-ins are defined via `isSpike function`, SC3 will automatically remove them before doing clustering.
 
 ### 6.4.1 | Prepare SingleCellExperiment object for SC3
 SC3 requires a `feature_symbol` column of the `rowData` slot of the input `SingleCellExperiment` object to contain preferable feature names (genes/transcript) which will be used in the future visualisations. 
@@ -1801,14 +1805,14 @@ str(metadata(PAG_sceset_qc_norm_filt_corr)$sc3)
 We are now ready to perform the clustering itself. The method `sc3_calc_dists` calculates distances between the cells and creates and populates the `distances` slot, which contains a list of distance matrices corresponding to Euclidean, Pearson and Spearman distances.
 ```{r}
 PAG_sceset_qc_norm_filt_corr <- sc3_calc_dists(PAG_sceset_qc_norm_filt_corr)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances)
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances) # names of the distances calculated
 ```
 
 Next, the method `sc3_calc_transfs` calculates the transformations of the distance matrices contained in the distances item of the `sc3` slot, and creates and populates the `transformations` slot, which contains a list of transformations of the distance matrices corresponding to PCA and graph Laplacian transformations. It also removes the previously calculated `distances` item from the `sc3` slot:
 ```{r}
 PAG_sceset_qc_norm_filt_corr <- sc3_calc_transfs(PAG_sceset_qc_norm_filt_corr)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$transformations)
-metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$transformations) # names of the transformations calculated
+metadata(PAG_sceset_qc_norm_filt_corr)$sc3$distances # distances should have been removed
 ```
 
 ### 6.4.4 | K-means
@@ -1816,7 +1820,7 @@ We use the `sce_kmeans` method to perform k-means on the transformed distance ma
 ```{r}
 start_time <- Sys.time() # Takes around 5 min
 PAG_sceset_qc_norm_filt_corr <- sc3_kmeans(PAG_sceset_qc_norm_filt_corr, ks = 2:15)
-head(names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans))
+head(names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans)) # calculates k-means for each type of distance transformation and each choice of k
 tail(names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans))
 end_time <- Sys.time()
 end_time - start_time
@@ -1826,9 +1830,9 @@ end_time - start_time
 In this step `SC3` provides a clustering solution. When calculating consensus for each value of `k`, `SC3` averages the clustering results of `kmeans` using a consensus approach. The method `sc3_calc_consens` calculates consensus matrices based on the clustering solutions contained in the `kmeans` item of the `sc3` slot, and it then creates and populates the `consensus` item, which for each value of `k` it contains a consensus matrix, an `hclust` object corresponding to hierarchical clustering of the consensus matrix, and the Silhouette indices of the clusters. It also removes the previously calculated `kmeans` item from the `sc3` slot.
 ```{r}
 PAG_sceset_qc_norm_filt_corr <- sc3_calc_consens(PAG_sceset_qc_norm_filt_corr)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus)
-names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus$`1`)
-metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus) # check all the consensus slots (should be one per k)
+names(metadata(PAG_sceset_qc_norm_filt_corr)$sc3$consensus$`5`) # check what is in one of the consensus slots for a particular k
+metadata(PAG_sceset_qc_norm_filt_corr)$sc3$kmeans # this should be empty now
 ```
 
 ### 6.4.6 | Calculate biology
@@ -1861,77 +1865,136 @@ To run an interactive `Shiny` session (which will open a website to explore our 
 
 SC3 writes all its results obtained for cells to the `colData` slot of the `SingleCellExperiment` object by adding additional columns to it, and all its results obtained for features (genes/transcripts) to the `rowData` slot. This slot also contains all other cell features calculated by the scater package either automatically during the `SingleCellExperiment` object creation or during the `calculateQCMetrics` call. We can identify and access the SC3 results using the "sc3_" prefix. We can use these results from the clustering to highlight the clusters in any PCA/tSNE/UMAP plot, as we have done before:
 ```{r}
+# Set theme parameters
+theme_args_sc3 <- theme(plot.title = element_text(size = 11, face = "bold"),
+                        axis.title = element_text(size = 11, face = "plain"),
+                        axis.text = element_text(size = 10, face = "plain"), 
+                        legend.text = element_text(size = 9, face = "plain"), 
+                        strip.text = element_text(size = 10, face = "plain"))
+
+# UMAP using PCA from HVG_cv2_logcounts
+UMAP_cv2_10neighbors_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                       dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                                       colour_by = "PAG.area", shape_by = "cell.type", 
+                                                       point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                       ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2"
+                                                                ) + theme_args_sc3
+
+UMAP_cv2_15neighbors_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                                       dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                       colour_by = "PAG.area", shape_by = "cell.type", 
+                                                       point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                       ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2"
+                                                                ) + theme_args_sc3
+
+# Generate and color a UMAP plot for each solution of K
+library(patchwork)
 range_of_k <- 2:15
+
 for(chosen_k in range_of_k) {
-  UMAP_cv2_10_005_sc3 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                        colour_by = paste0("sc3_", chosen_k, "_clusters"), shape_by = "cell.type",
-                                        text_by = paste0("sc3_", chosen_k, "_clusters"))  + labs(title = sprintf("UMAP (cv2) - SC3 (k=%s)", chosen_k), x = "UMAP 1", y = "UMAP 2")
+  UMAP_cv2_10neighbours_sc3 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                              dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
+                                              colour_by = paste0("sc3_", chosen_k, "_clusters"), shape_by = "cell.type", text_by = paste0("sc3_", chosen_k, "_clusters"),
+                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+                                              )  + labs(title = sprintf("SC3 (k = %s)", chosen_k), x = "UMAP 1", y = "UMAP 2") + theme_args_sc3
   
-  UMAP_cv2_15_001_sc3 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                        colour_by = paste0("sc3_", chosen_k, "_clusters"), shape_by = "cell.type",
-                                        text_by = paste0("sc3_", chosen_k, "_clusters"))  + labs(title = sprintf("UMAP (cv2) - SC3 (k=%s)", chosen_k), x = "UMAP 1", y = "UMAP 2")
+  UMAP_cv2_15_neighbors_sc3 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                              dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                              colour_by = paste0("sc3_", chosen_k, "_clusters"), shape_by = "cell.type", text_by = paste0("sc3_", chosen_k, "_clusters"),
+                                              point_alpha = 0.6, point_size = 2, theme_size = 11
+                                              )  + labs(title = sprintf("SC3 (k = %s)", chosen_k), x = "UMAP 1", y = "UMAP 2") + theme_args_sc3
   
-  multiplot(UMAP_cv2_10_005_PAGsubdivisions, UMAP_cv2_15_001_PAGsubdivisions, UMAP_cv2_10_005_sc3, UMAP_cv2_15_001_sc3, cols = 2)
+  # Prepare composed plots
+  UMAP_sc3_range_k <- ((UMAP_cv2_10neighbors_PAGsubdivisions + UMAP_cv2_10neighbours_sc3) /
+                       (UMAP_cv2_15neighbors_PAGsubdivisions + UMAP_cv2_15_neighbors_sc3)) +
+    plot_annotation(title = sprintf("SC3 clustering (k = %s) on UMAP (CV2)", chosen_k), tag_levels = "A", 
+                    theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+    plot_layout(guides = "collect")
+
+  # Plot them
+  plot(UMAP_sc3_range_k)
 }
 ```
 
-After we have explored the results for the different range of `k`, we can then replicate the relevant plots to summarise our results. From the UMAP embeddings above we can conclude that `k=7` or `k=9` seem to be best.
+After we have explored the results for the different range of `k`, we can then replicate the relevant plots to summarise our results. 
+
+* `k=2` correctly separates excitatory and inhibitory cells. The next cluster to appear is the vlPAG inhibitory cells (`k=3`), followed by the lPAG & vlPAG excitatory cells (`k=4`).
+
+* `k=5:8` start further subdividing excitatory cells and the Cd68+ cluster, although these clusters are not very well defined.
+
+* `k=9`, which was the suggested `k` by SC3, does offer the best clustering of excitatory cells and captures the Cd68+ cluster, and finds 4 inhibitory clusters, although they are a bit too close to each other in the UMAP. 
+
+* `k=10` misses the Cd68+ cluster, but splits excitatory and inhibitory cells into better defined clusters.
+
+* Most of `k=11:15` again miss the Cd68+ cluster or seem to overcluster either excitatory or inhibitory neurons.
+
+From the UMAP embeddings above we can conclude that `k=2:4` or `k=9` seem to be best, or at least can provide some information about clusters we can identify in the UMAP.
 ```{r}
-## SC3 Clusters (k = 7)
-UMAP_cv2_10_005_sc3_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                         colour_by = "sc3_7_clusters", shape_by = "cell.type", text_by = "sc3_7_clusters"
-                                         )  + labs(title = "UMAP (cv2) - SC3 (k=7)", x = "UMAP 1", y = "UMAP 2")
-  
-UMAP_cv2_15_001_sc3_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                         colour_by = "sc3_7_clusters", shape_by = "cell.type", text_by = "sc3_7_clusters"
-                                         )  + labs(title = "UMAP (cv2) - SC3 (k=7)", x = "UMAP 1", y = "UMAP 2")
+# Set theme parameters
+theme_args_sc3 <- theme(plot.title = element_text(size = 11, face = "bold"),
+                        axis.title = element_text(size = 11, face = "plain"),
+                        axis.text = element_text(size = 10, face = "plain"), 
+                        legend.text = element_text(size = 9, face = "plain"), 
+                        strip.text = element_text(size = 10, face = "plain"))
 
-## SC3 Clusters (k = 9)
-UMAP_cv2_10_005_sc3_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                         colour_by = "sc3_9_clusters", shape_by = "cell.type", text_by = "sc3_9_clusters"
-                                         )  + labs(title = "UMAP (cv2) - SC3 (k=9)", x = "UMAP 1", y = "UMAP 2")
-  
-UMAP_cv2_15_001_sc3_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                         colour_by = "sc3_9_clusters", shape_by = "cell.type", text_by = "sc3_9_clusters"
-                                         )  + labs(title = "UMAP (cv2) - SC3 (k=9)", x = "UMAP 1", y = "UMAP 2")
+# UMAP using PCA from HVG_cv2_logcounts
+UMAP_cv2_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+                                           dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                           colour_by = "PAG.area", shape_by = "cell.type", 
+                                           point_alpha = 0.6, point_size = 2, theme_size = 11
+                                           ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2"
+                                                    ) + theme_args_sc3
 
-# Prepare composed plots
+# SC3 Clusters (k = 2:4 and k = 9)
+UMAP_cv2_sc3_k2 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                  colour_by = "sc3_2_clusters", shape_by = "cell.type", text_by = "sc3_2_clusters",
+                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                  )  + labs(title = "SC3 (k = 2)", x = "UMAP 1", y = "UMAP 2") + theme_args_sc3
+
+UMAP_cv2_sc3_k3 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                  colour_by = "sc3_3_clusters", shape_by = "cell.type", text_by = "sc3_3_clusters",
+                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                  )  + labs(title = "SC3 (k = 3)", x = "UMAP 1", y = "UMAP 2") + theme_args_sc3
+
+UMAP_cv2_sc3_k4 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                  colour_by = "sc3_4_clusters", shape_by = "cell.type", text_by = "sc3_4_clusters",
+                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                  )  + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2") + theme_args_sc3
+
+UMAP_cv2_sc3_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr,
+                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                  colour_by = "sc3_9_clusters", shape_by = "cell.type", text_by = "sc3_9_clusters",
+                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                  )  + labs(title = "SC3 (k = 9)", x = "UMAP 1", y = "UMAP 2") + theme_args_sc3
+  
+# Prepare composed plot
 library(patchwork)
-UMAP_sc3_k7_clusters <- (UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_sc3_k7 +
-                           UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_sc3_k7) +
-  plot_annotation(title = "SC3 clustering on UMAP", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_sc3_clusters <- ((UMAP_cv2_PAGsubdivisions + UMAP_cv2_sc3_k2) /
+                      (UMAP_cv2_sc3_k3 + UMAP_cv2_sc3_k4) /
+                      (UMAP_cv2_sc3_k9 + UMAP_cv2_PAGsubdivisions)) +
+  plot_annotation(title = "SC3 clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(guides = "collect")
 
-UMAP_sc3_k9_clusters <- (UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_sc3_k9 +
-                           UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_sc3_k9) +
-  plot_annotation(title = "SC3 clustering on UMAP", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+# Plot
+UMAP_sc3_clusters
 
-# Plot them
-UMAP_sc3_k7_clusters
-UMAP_sc3_k9_clusters
-
-# Save them
-ggsave(filename = str_c(date, "_sc3_UMAP_clusters_k7_composed.pdf"),
-       plot = UMAP_sc3_k7_clusters,
+# Save
+ggsave(filename = str_c(date, "_sc3_UMAP_clusters_composed.pdf"),
+       plot = UMAP_sc3_clusters,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
-       family = "Arial", bg = "transparent"
-       )
-
-ggsave(filename = str_c(date, "_sc3_UMAP_clusters_k9_composed.pdf"),
-       plot = UMAP_sc3_k9_clusters,
-       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 10, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-In addition to the UMAP embeddings, we can use the following SC3 output plots to explore our results in a bit more depths:
+In addition to the UMAP embeddings, we can use the following SC3 output plots to explore our results in a bit more depth:
 
-* The _Consensus Matrix_ is a NxN matrix, where N is the number of cells. It represents similarity between the cells based on the averaging of clustering results from all combinations of clustering parameters. Similarity 0 (blue) means that the two cells are always assigned to different clusters. In contrast, similarity 1 (red) means that the two cells are always assigned to the same cluster. The consensus matrix is clustered by hierarchical clustering and has a diagonal-block structure. Intuitively, the perfect clustering is achieved when all diagonal blocks are completely red and all off-diagonal elements are completely blue. 
+* The _Consensus Matrix_ is a NxN matrix, where N is the number of cells. It represents similarity between the cells based on the averaging of clustering results from all combinations of clustering parameters. A similarity of 0 (blue) means that the two cells are always assigned to different clusters. In contrast, a similarity 1 (red) means that the two cells are always assigned to the same cluster. The consensus matrix is clustered by hierarchical clustering and has a diagonal-block structure. Intuitively, the perfect clustering is achieved when all diagonal blocks are completely red and all off-diagonal elements are completely blue.
 
 * The _Silhouette_ is a quantitative measure of the diagonality of the consensus matrix. An average silhouette width (shown at the bottom left of the silhouette plot) varies from 0 to 1, where 1 represents a perfectly block-diagonal consensus matrix and 0 represents a situation where there is no block-diagonal structure. The best clustering is achieved when the average silhouette width is close to 1.
 
@@ -1943,8 +2006,8 @@ In addition to the UMAP embeddings, we can use the following SC3 output plots to
 
 * A list of _Marker genes_: To find marker genes, for each gene a binary classifier is constructed based on the mean cluster expression values. The classifier prediction is then calculated using the gene expression ranks. The area under the receiver operating characteristic (ROC) curve is used to quantify the accuracy of the prediction. A p-value is assigned to each gene by using the Wilcoxon signed rank test. The genes with the area under the ROC curve (AUROC) > 0.85 and with the p-value < 0.01 are defined as marker genes and the top 10 marker genes of each cluster are visualized in this panel. The AUROC and the p-value thresholds can be changed using the slider and radio buttons below.
 ```{r}
-# Save the plots adjusting their size so they don't get cropped
-best_k <- list(7, 9) # Set the chosen K for the following plots
+# Save the plots adjusting their size so they don't get cropped and fit in an A4 page
+best_k <- list(2, 3, 4, 9) # Set the chosen K for the following plots
 for(chosen_k in best_k) {
   # Consensus Matrix
   consensus <- sc3_plot_consensus(PAG_sceset_qc_norm_filt_corr, k = chosen_k,
@@ -1954,20 +2017,20 @@ for(chosen_k in best_k) {
          plot = consensus,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
-         width = 12, height = 9, units = "in", dpi = 300,
+         width = 8, height = 6, units = "in", dpi = 300,
          family = "Arial", bg = "transparent"
          )
   
-  # Silhouette plot
-  silhouette <- sc3_plot_silhouette(PAG_sceset_qc_norm_filt_corr, k = chosen_k)
-  silhouette
-  ggsave(filename = str_c(date, "_sc3_silhouette_k", chosen_k, ".pdf"), 
-         plot = silhouette,
-         device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-         path = path_for_figures,
-         width = 12, height = 9, units = "in", dpi = 300,
-         family = "Arial", bg = "transparent"
-         )
+  # # Silhouette plot # does not seem to work
+  # silhouette <- sc3_plot_silhouette(PAG_sceset_qc_norm_filt_corr, k = chosen_k)
+  # silhouette
+  # ggsave(filename = str_c(date, "_sc3_silhouette_k", chosen_k, ".pdf"), 
+  #        plot = silhouette,
+  #        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+  #        path = path_for_figures,
+  #        width = 7, height = 5, units = "in", dpi = 300,
+  #        family = "Arial", bg = "transparent"
+  #        )
   
   # Stability index
   cluster_stability <- sc3_plot_cluster_stability(PAG_sceset_qc_norm_filt_corr, k = chosen_k)
@@ -1976,7 +2039,7 @@ for(chosen_k in best_k) {
          plot = cluster_stability,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
-         width = 12, height = 9, units = "in", dpi = 300,
+         width = 7, height = 5, units = "in", dpi = 300,
          family = "Arial", bg = "transparent"
          )
 
@@ -1988,7 +2051,7 @@ for(chosen_k in best_k) {
          plot = expression_panel,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
-         width = 12, height = 18, units = "in", dpi = 300,
+         width = 8, height = 10, units = "in", dpi = 300,
          family = "Arial", bg = "transparent"
          )
 
@@ -2001,7 +2064,7 @@ for(chosen_k in best_k) {
          plot = DE_genes,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
-         width = 12, height = 18, units = "in", dpi = 300,
+         width = 8, height = 10, units = "in", dpi = 300,
          family = "Arial", bg = "transparent"
          )
 
@@ -2014,7 +2077,7 @@ for(chosen_k in best_k) {
          plot = markers,
          device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
          path = path_for_figures,
-         width = 12, height = 18, units = "in", dpi = 300,
+         width = 8, height = 10, units = "in", dpi = 300,
          family = "Arial", bg = "transparent"
          )
 }
@@ -2027,125 +2090,281 @@ SC3 allows us to export the results into an Excel file:
 ```
 
 ## Step 6.5 | Compare clustering results and choose approach
-As a final step, we can plot the chosen clustering solutions side by side so we can compare them and make a final decision regarding which cluster IDs to use for differential expression:
+As a final step, we can plot the chosen clustering solutions side by side so we can compare them and make a final decision regarding which cluster IDs to use for differential expression analysis. The following code assumes all the previous sections in this notebook have been run:
 ```{r}
+## UMAP colored by PAG subdivision
+UMAP_cv2_15_001_PAGsubdivisions
+
+
 ## Graph-based Clustering
-tSNE_var_SNN_clusters
-tSNE_cv2_SNN_clusters
-UMAP_var_SNN_clusters
-UMAP_cv2_10_005_SNN_clusters
-UMAP_cv2_15_001_SNN_clusters
+# UMAP_cv2_15_001_RankWalktrap_k7
+# UMAP_cv2_15_001_RankWalktrap_k12
+# UMAP_cv2_15_001_JaccardLouvain_k5
+# UMAP_cv2_15_001_JaccardLouvain_k8
+# UMAP_cv2_15_001_JaccardLouvain_k9
+# UMAP_cv2_15_001_JaccardLouvain_k13
+UMAP_cv2_15_001_SNN_clusters_RankWalktrap # composed plots
+UMAP_cv2_15_001_SNN_clusters_JaccardLouvain # composed plots
+
 
 ## K-means Clustering
-# UMAPs and t-SNE embeddings
-tSNE_kmeans_clusters
-UMAP_kmeans_clusters
+# UMAP embeddings
+# UMAP_var_PAGsubdivisions
+# UMAP_var_kmeans
+# UMAP_cv2_PAGsubdivisions
+# UMAP_cv2_kmeans
+UMAP_kmeans_clusters # composed plots
+
 # Dendrograms
-par(mfrow = c(1,2))
-plot(cent_tree_cluster_kmeans_var, main = "K-means Dendrogram (var)", xlab = "k = 8", ylab = "Height", sub = "", las = 1)
-plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (cv2)", xlab = "k = 10", ylab = "Height", sub = "", las = 1)
+par(mfrow = c(2,1))
+plot(cent_tree_cluster_kmeans_var, main = "K-means Dendrogram (Var)", xlab = "k = 8", ylab = "Height", sub = "", las = 1)
+plot(cent_tree_cluster_kmeans_cv2, main = "K-means Dendrogram (CV2)", xlab = "k = 10", ylab = "Height", sub = "", las = 1)
+
 
 ## Hierarchical Clustering
 # Dendrograms (cell type)
-par(mfrow = c(1,2))
-labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", ylab = "Height", las = 1)
+par(mfrow = c(2,1))
+labels_colors(PAG_dend_var) <- colours_celltype_PAGarea[PAG_sceset_qc_norm_filt_corr$celltype_PAGarea][order.dendrogram(PAG_dend_var)]
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", ylab = "Height", las = 1)
 legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
-labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[combined_fac_var][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", ylab = "Height", las = 1)
+labels_colors(PAG_dend_cv2) <- colours_celltype_PAGarea[PAG_sceset_qc_norm_filt_corr$celltype_PAGarea][order.dendrogram(PAG_dend_cv2)]
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", ylab = "Height", las = 1)
 legend("topright", col = colours_celltype_PAGarea, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(PAG_sceset_qc_norm_filt_corr$celltype_PAGarea))
-par(mfrow = c(2,2))
-# Dendrograms (var and cv2)
+
+# Dendrograms (Var)
+par(mfrow = c(2,1))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutreeDynamic][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutreeDynamic)))
 labels_colors(PAG_dend_var) <- cluster_colours_10[PAG_clust_var_cutree_k][order.dendrogram(PAG_dend_var)]
-plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (var)", sub = "Tree Cut using k=8", ylab = "Height", las = 1)
+plot(PAG_dend_var, main = "Dendrogram from hierarchical clustering (Var)", sub = "Tree Cut using k = 8", ylab = "Height", las = 1)
 abline(h = 290, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_var_cutree_k)))
+
+# Dendrograms (CV2)
+par(mfrow = c(2,1))
 labels_colors(PAG_dend_cv2) <- cluster_colours_20[PAG_clust_cv2_cutreeDynamic][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Dynamic Tree Cut", ylab = "Height", las = 1)
 legend("topright", col = cluster_colours_20, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutreeDynamic)))
 labels_colors(PAG_dend_cv2) <- cluster_colours_10[PAG_clust_cv2_cutree_k][order.dendrogram(PAG_dend_cv2)]
-plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (cv2)", sub = "Tree Cut using k=10", ylab = "Height", las = 1)
-abline(h = 235, col = "red")
+plot(PAG_dend_cv2, main = "Dendrogram from hierarchical clustering (CV2)", sub = "Tree Cut using k = 10", ylab = "Height", las = 1)
+abline(h = 225, col = "red")
 legend("topright", col = cluster_colours_10, pch = 19, cex = 0.75,  bty = "n",
        legend = levels(factor(PAG_clust_cv2_cutree_k)))
+
+UMAP_hierarchical_var_composed <- (UMAP_var_PAGsubdivisions + UMAP_var_cutreedynamic + UMAP_var_cutree_k + UMAP_var_cutree_h + plot_spacer() + plot_spacer()) +
+  plot_annotation(title = "Hierarchical clustering on UMAP (Var)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+
+UMAP_hierarchical_cv2_composed <- (UMAP_cv2_PAGsubdivisions + UMAP_cv2_cutreedynamic + UMAP_cv2_cutree_k + UMAP_cv2_cutree_h + plot_spacer() + plot_spacer()) +
+  plot_annotation(title = "Hierarchical clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+
 # UMAPs and t-SNE embeddings
-UMAP_var_hierarchical_clusters
-UMAP_cv2_10_005_hierarchical_clusters
-UMAP_cv2_15_001_hierarchical_clusters
+# UMAP_var_PAGsubdivisions
+# UMAP_var_cutreedynamic
+# UMAP_var_cutree_k
+# UMAP_var_cutree_h
+# UMAP_cv2_PAGsubdivisions
+# UMAP_cv2_cutreedynamic
+# UMAP_cv2_cutree_k
+# UMAP_cv2_cutree_h
+UMAP_hierarchical_var_composed # composed plots
+UMAP_hierarchical_cv2_composed # composed plots
+
 
 ## SC3 Consensus Clustering
-UMAP_sc3_k7_clusters
-UMAP_sc3_k9_clusters
+# UMAP_cv2_PAGsubdivisions
+# UMAP_cv2_sc3_k2
+# UMAP_cv2_sc3_k3
+# UMAP_cv2_sc3_k4
+# UMAP_cv2_sc3_k9
+UMAP_sc3_clusters # composed plots
 ```
 
-After looking at all the outcomes side by side, we can see that following the path from mean-cv2 modelling provides better resolution than following the path from mean-variance modelling. This is very clear if we look at the results from (1) Graph-based clustering, where we get 2 subclusters of inhibitory neurons in UMAP-var, whereas we get 4 subclusters of inhibitory neurons in the UMAP-cv2, and from (2) hierarchical clustering, where the first split of the dendrogram for HVG-var is a subcluster of excitatory neurons (and only the second split separates the remaining excitatory and inhibitory neurons), whereas the first split of the dendrogram for HVG-cv2 successfully separates excitatory and inhibitory neurons. Thus, we can conclude that the best analysis path stems from using the results from mean-cv2 modelling.
+After looking at all the outcomes side by side, we can see that following the path from mean-cv2 modelling provides better resolution than following the path from mean-variance modelling. This is very clear if we look at the results from (1) Graph-based clustering, where we get 2 subclusters of inhibitory neurons in UMAP-var, whereas we get 4 subclusters of inhibitory neurons in the UMAP-cv2, from (2) k-means clustering, where the first split of the dendrogram for HVG-Var is a subcluster of excitatory neurons (and only the second split separates the remaining excitatory and inhibitory neurons), whereas the first split for HVG-CV2 is the Cd68+ cluster, and then correctly separates excitatory and inhibitory neurons, and from (3) hierarchical clustering, where the first split of the dendrogram for HVG-Var is a subcluster of excitatory neurons (and only the second split separates the remaining excitatory and inhibitory neurons), whereas the first split of the dendrogram for HVG-CV2 successfully separates excitatory and inhibitory neurons. Thus, we can conclude that the best analysis path stems from using the results from mean-cv2 modelling.
 
 Another informative exercise to compare our clustering results would be to use the Macrophage-enriched cluster to see how well do the different clustering approaches pick it up. If we look at the UMAP plot and magnify the region where that cluster falls, we can count 12 cells, so in theory, any good clustering solution for our dataset should correctly identify the right amount of cells.
 ```{r}
-# Count the number of cells each clustering approach assigns to the macrophage-enriched cluster ID (check that the cluster ID is indeed the correct one by looking at the UMAP plots above):
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7==8), " cells in SNN_rank_k7 method")
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8==11), " cells in SNN_louvain_k8 method")
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k10==9), " cells in SNN_louvain_k10 method")
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==7), " cells in kmeans method")
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5), " cells in hierarchical method")
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$sc3_7_clusters==7), " cells in SC3_k7 method")
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$sc3_9_clusters==5), " cells in SC3_k9 method")
-
-# Use the which() function to get the indices of the cells assigned to the macrophage-enriched cluster:
-which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7==8)
-which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8==11)
-which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k10==9)
-which(PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==7)
-which(PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5)
-which(PAG_sceset_qc_norm_filt_corr$sc3_9_clusters==5)
-which(PAG_sceset_qc_norm_filt_corr$sc3_7_clusters==7)
-
 # Localise and zoom in on the macrophage-enriched cluster
-UMAP_cv2_15_001_JaccardLouvain_k8
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+UMAP_cv2_15_001_PAGsubdivisions
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                colour_by = "Cd68", text_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type"
-               ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_15_001_PAGsubdivisions + xlim(-4.16,-4) + ylim(-7.47,-7.32)
-
-# For each clustering approach, plot only the cells assigned to the macrophage-enriched cluster:
-plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7==8], dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8==11], dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k10==9], dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=10)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==7], dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type") + labs(title = "UMAP (cv2) - kmeans", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5], dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Hierarchical (k=10)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$sc3_7_clusters==7], dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type") + labs(title = "UMAP (cv2) - SC3 (k=7)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$sc3_9_clusters==5], dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type") + labs(title = "UMAP (cv2) - SC3 (k=9)", x = "UMAP 1", y = "UMAP 2")
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_PAGsubdivisions + xlim(-6.17,-5.95) + ylim(9.05,9.3) # Zoom in, there should be 12 cells
 ```
 
-We can see that this is indeed true for our Graph-based and Hierarchical clustering approaches, as they assign the same 12 cells to the macrophage-enriched cluster. However, looking at the results of the K-means and SC3 (which is also k-means based) clustering we can see that they both assign extra cells to the macrophage-enriched cluster. From this we can conclude that K-means clustering doesn't do as good job as Graph-based or Hierarchical clustering for our dataset, and we will continue investigating the results of the latter two.
+For each clustering approach, we can plot only the Cd68+ cluster and see how many cells appear:
 ```{r}
-# Plot UMAPs without `text_by`:
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "SNN_clusters_cv2_jaccard_k10", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=10)", x = "UMAP 1", y = "UMAP 2")
-plotReducedDim(PAG_sceset_qc_norm_filt_corr, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "cutree_clusters_cv2_k", shape_by = "cell.type") + labs(title = "UMAP (cv2) - Hierarchical (k=10)", x = "UMAP 1", y = "UMAP 2")
+# For each clustering approach, plot only the cells assigned to the macrophage-enriched cluster:
+# Graph-based
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7==8], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Rank-Walktrap (k = 7)", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k12==7], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Rank-Walktrap (k = 12)", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k5==10], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 5)", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8==1], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k9==3], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 9)", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k13==7], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 13)", x = "UMAP 1", y = "UMAP 2")
+
+# K-means
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$kmeans_clusters_var==8], 
+               dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (Var) - K-means (center = 8)", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==9], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - K-means (centers = 10)", x = "UMAP 1", y = "UMAP 2")
+
+# Hierarchical
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_var==9], 
+               dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (Var) - Dynamic Tree Cut", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k==2], 
+               dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (Var) - Tree Cut (k = 8)", x = "UMAP 1", y = "UMAP 2")
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Tree Cut (k = 10)", x = "UMAP 1", y = "UMAP 2")
+
+# SC3
+plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$sc3_9_clusters==5], 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - SC3 (k = 9)", x = "UMAP 1", y = "UMAP 2")
 ```
 
-Finally, we can visually inspect the degree of agreement between the clustering assignments and the UMAP embedding of the cluster IDs. In the plots above, we can see that the best representation is the one obtained from Graph-based clustering with the Jaccard-Louvain approach, as it is apparent from the cleanest separation of inhibitory subclusters and the main excitatory subclusters. Thus, we will focus on the results obtained from Graph-based clustering with the Jaccard-Louvain approach for our Differential Expression analysis.
+We can count the number of cells each clustering approach assigns to the macrophage-enriched cluster ID (check that the cluster ID is indeed the correct one by looking at the UMAP plots above):
+```{r}
+# Graph-based
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7==8), " cells in SNN_var_rank_k7 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k12==7), " cells in SNN_var_rank_k12 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k5==10), " cells in SNN_cv2_jaccard_k5 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8==1), " cells in SNN_cv2_jaccard_k8 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k9==3), " cells in SNN_cv2_jaccard_k9 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k13==7), " cells in SNN_cv2_jaccard_k13 method")
+# K-means
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$kmeans_clusters_var==8), " cells in kmeans_var_k8 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==9), " cells in kmeans_cv2_k10 method")
+# Hierarchical
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_var==9), " cells in hierarchical cutreedynamic_clusters_var method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_cv2==0), " cells in hierarchical cutreedynamic_clusters_cv2 method") # does not find Cd68+ cluster
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k==2), " cells in hierarchical cutree_clusters_var_k method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5), " cells in hierarchical cutree_clusters_cv2_k method")
+# SC3
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$sc3_9_clusters==5), " cells in SC3_k9 method")
+```
+
+We can also use the `which()` function to get the indices of the cells assigned to the macrophage-enriched cluster:
+```{r}
+# Graph-based
+which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7==8)
+which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k12==7)
+which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k5==10)
+which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8==1)
+which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k9==3)
+which(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k13==7)
+# K-means
+which(PAG_sceset_qc_norm_filt_corr$kmeans_clusters_var==8)
+which(PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==9)
+# Hierarchical
+which(PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_var==9)
+which(PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_cv2==0)
+which(PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k==2)
+which(PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5)
+# SC3
+which(PAG_sceset_qc_norm_filt_corr$sc3_9_clusters==5)
+```
+
+We can see that our choice of Graph-based clustering approaches successfully assign the right number of cells to this cluster. From the k-means approaches, only the one using HVG-CV2 achieves this, with the HVG-Var approach assigning too many cells to it. Using hierarchical clustering gives different results, with Dynamic Tree Cut failing to identify the cluster either with HVG-Var or HVG-CV2, and with Cut Tree successfully capturing the cluster only in the HVG-CV2 scenario. Finally, SC3 also fails to correctly classify the right number of cells to this cluster. From this we can conclude that K-means clustering doesn't do as good job as Graph-based or Hierarchical clustering for our dataset.
+
+As a last check, we can visually inspect the degree of agreement between the clustering assignments and the UMAP embedding of the cluster IDs.
+```{r}
+library(patchwork)
+
+# Graph-based clustering
+UMAP_SNN_RankWalktrap_k7_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k7) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_SNN_RankWalktrap_k7_final_composed
+
+UMAP_SNN_RankWalktrap_k12_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k12) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_SNN_RankWalktrap_k12_final_composed
+
+UMAP_SNN_JaccardLouvain_k5_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k5) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_SNN_JaccardLouvain_k5_final_composed
+
+UMAP_SNN_JaccardLouvain_k8_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k8) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_SNN_JaccardLouvain_k8_final_composed
+
+UMAP_SNN_JaccardLouvain_k9_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k9) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_SNN_JaccardLouvain_k9_final_composed
+
+UMAP_SNN_JaccardLouvain_k13_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k13) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_SNN_JaccardLouvain_k13_final_composed
+
+
+# K-means clustering
+UMAP_kmeans_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_kmeans) +
+  plot_annotation(title = "K-means clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_kmeans_final_composed
+
+
+# Hierarchical clustering
+UMAP_hierarchical_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_cutree_k) +
+  plot_annotation(title = "Hierarchical clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2) + theme(legend.position="none")
+UMAP_hierarchical_final_composed
+```
+
+In the plots above, we can see that the best representation is the one obtained from Graph-based clustering with the Jaccard-Louvain (`k = 9`) approach, as it is apparent from the cleanest separation of inhibitory subclusters and the main excitatory subclusters. The clusters obtained with both the K-means and the hierarchical clustering approach do not match well with the UMAP representation of the data. Although this could just be due to working with different metrics, the graph-based clustering approach has consistently generated good results at different parameters, whereas the rest have been erratic and inconsistent. Thus, we will focus on the results obtained from Graph-based clustering with the Jaccard-Louvain approach for our Differential Expression analysis. We will still keep different values of `k`, as this will allow us to ask questions and investigate the structure of our dataset at different resolution.
 
 ## Step 6.6 | Save the SingleCellExperiment object
 ```{r}
