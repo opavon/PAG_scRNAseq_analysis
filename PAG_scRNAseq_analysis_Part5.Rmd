@@ -1666,7 +1666,7 @@ chosen_UMAP_cv2_facet_celltype <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                  ) + labs(title = "Facets by cell-type | Colour by PAG subdivision", x = "UMAP 1", y = "UMAP 2"
                                                           ) + facet_wrap(~PAG_sceset_qc_norm_filt$cell.type) + theme_args_selected_tSNE_UMAP
 
-# Separating by `cell.type` and coloring by VGAT or VGlUT2 expression:
+# Separating by `cell.type` and coloring by VGAT or VGluT2 expression:
 chosen_UMAP_cv2_facet_celltype_VGAT <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                                       dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
                                                       colour_by = "log2_total_counts_VGAT", shape_by = "cell.type", 
