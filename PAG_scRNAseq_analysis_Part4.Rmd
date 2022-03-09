@@ -704,6 +704,8 @@ write.csv(hvg_cv2_out_no_spikes_block_filt, file = str_c(path_for_figures, "PAG_
 
 And we finally plot the modelled trend with the selected HVGs colored:
 ```{r}
+options(scipen = 10) # default is 0. Doing this prevents having scientific notation in these plots
+
 # Identify selected HVGs from mean-var modelling without blocking
 hvg_index_var <- which(names(var_fit_no_spikes$mean) %in% rownames(hvg_var_out_no_spikes_filt))
 
