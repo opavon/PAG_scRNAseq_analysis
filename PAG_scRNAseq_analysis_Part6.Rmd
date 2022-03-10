@@ -2314,37 +2314,37 @@ library(patchwork)
 UMAP_SNN_RankWalktrap_k7_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k7) +
   plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_SNN_RankWalktrap_k7_final_composed
 
 UMAP_SNN_RankWalktrap_k12_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k12) +
   plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_SNN_RankWalktrap_k12_final_composed
 
 UMAP_SNN_JaccardLouvain_k5_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k5) +
   plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_SNN_JaccardLouvain_k5_final_composed
 
 UMAP_SNN_JaccardLouvain_k8_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k8) +
   plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_SNN_JaccardLouvain_k8_final_composed
 
 UMAP_SNN_JaccardLouvain_k9_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k9) +
   plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_SNN_JaccardLouvain_k9_final_composed
 
 UMAP_SNN_JaccardLouvain_k13_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k13) +
   plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_SNN_JaccardLouvain_k13_final_composed
 
 
@@ -2352,7 +2352,7 @@ UMAP_SNN_JaccardLouvain_k13_final_composed
 UMAP_kmeans_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_kmeans) +
   plot_annotation(title = "K-means clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_kmeans_final_composed
 
 
@@ -2360,8 +2360,74 @@ UMAP_kmeans_final_composed
 UMAP_hierarchical_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_cutree_k) +
   plot_annotation(title = "Hierarchical clustering on UMAP (CV2)", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
-  plot_layout(ncol = 2) + theme(legend.position="none")
+  plot_layout(ncol = 2, guides = "collect")
 UMAP_hierarchical_final_composed
+
+
+# Save them all
+ggsave(filename = str_c(date, "_UMAP_final_SNN_rank_k7_clusters_composed.pdf"),
+       plot = UMAP_SNN_RankWalktrap_k7_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_final_SNN_rank_k12_clusters_composed.pdf"),
+       plot = UMAP_SNN_RankWalktrap_k12_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k5_clusters_composed.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k5_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k8_clusters_composed.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k8_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k9_clusters_composed.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k9_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k13_clusters_composed.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k13_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_final_kmeans_clusters_composed.pdf"),
+       plot = UMAP_kmeans_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_final_hierarchical_clusters_composed.pdf"),
+       plot = UMAP_hierarchical_final_composed ,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
 ```
 
 In the plots above, we can see that the best representation is the one obtained from Graph-based clustering with the Jaccard-Louvain (`k = 9`) approach, as it is apparent from the cleanest separation of inhibitory subclusters and the main excitatory subclusters. The clusters obtained with both the K-means and the hierarchical clustering approach do not match well with the UMAP representation of the data. Although this could just be due to working with different metrics, the graph-based clustering approach has consistently generated good results at different parameters, whereas the rest have been erratic and inconsistent. Thus, we will focus on the results obtained from Graph-based clustering with the Jaccard-Louvain approach for our Differential Expression analysis. We will still keep different values of `k`, as this will allow us to ask questions and investigate the structure of our dataset at different resolution.
