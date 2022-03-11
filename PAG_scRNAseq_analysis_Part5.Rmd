@@ -177,7 +177,7 @@ for(n in assayNames(PAG_sceset_qc_norm_filt)) {
 
 PCA_HVG_var_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                      dimred = "PCA_HVG_var_counts",
-                                     colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                     colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                      shape_by = "cell.type", # "mouse.id"
                                      size_by = "detected",
                                      theme_size = 11
@@ -185,7 +185,7 @@ PCA_HVG_var_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 PCA_HVG_var_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "PCA_HVG_var_logcounts_raw",
-                                            colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                            colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                             shape_by = "cell.type", # "mouse.id"
                                             size_by = "detected",
                                             theme_size = 11
@@ -193,7 +193,7 @@ PCA_HVG_var_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 PCA_HVG_var_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_var_logcounts",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected",
                                         theme_size = 11
@@ -201,7 +201,7 @@ PCA_HVG_var_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 PCA_HVG_var_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_var_corrected",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected",
                                         theme_size = 11
@@ -247,7 +247,7 @@ for(n in assayNames(PAG_sceset_qc_norm_filt)) {
 
 PCA_HVG_cv2_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                      dimred = "PCA_HVG_cv2_counts",
-                                     colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                     colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                      shape_by = "cell.type", # "mouse.id"
                                      size_by = "detected",
                                      theme_size = 11
@@ -255,7 +255,7 @@ PCA_HVG_cv2_counts <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 PCA_HVG_cv2_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                             dimred = "PCA_HVG_cv2_logcounts_raw",
-                                            colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                            colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                             shape_by = "cell.type", # "mouse.id"
                                             size_by = "detected",
                                             theme_size = 11
@@ -263,7 +263,7 @@ PCA_HVG_cv2_logcounts_raw <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 PCA_HVG_cv2_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_cv2_logcounts",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected",
                                         theme_size = 11
@@ -271,7 +271,7 @@ PCA_HVG_cv2_logcounts <- plotReducedDim(PAG_sceset_qc_norm_filt,
 
 PCA_HVG_cv2_corrected <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                         dimred = "PCA_HVG_cv2_corrected",
-                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd68"
+                                        colour_by = "batch.processing", # "batch.processing", "PAG.area", "Cd33"
                                         shape_by = "cell.type", # "mouse.id"
                                         size_by = "detected",
                                         theme_size = 11
@@ -295,9 +295,9 @@ ggsave(filename = str_c(date, "_PCA_batch_correction_cv2_composed.pdf"),
        )
 ```
 
-__Hint: try "Ctss", "Cd14", or "Cd68" as `colour_by = `. This will show how the more separated cells in the t-SNE plots are actually macrophages, with high expression levels for macrophage marker genes.__
+__Hint: try "Cd33", "Plaur", "Cxcl16", or "Cd68" as `colour_by = `. This will show how the more separated cells in the t-SNE plots are actually enriched for macrophage and immune response markers.__
 
-Overall, we can clearly see that the first PC in the raw data is dominated by the `library size / total detected genes` in each sample (which explains >90% of the variance). Once we normalise and log-transform the raw counts using _scran_, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalisation show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalisation and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd68"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this).
+Overall, we can clearly see that the first PC in the raw data is dominated by the `library size / total detected genes` in each sample (which explains >90% of the variance). Once we normalise and log-transform the raw counts using _scran_, we can see that this no longer dominates the initial PCs (variance explained is down to 3%). If we choose to show `size_by = "detected"`, we can also see that the plots prior to normalisation show this pattern where the cells are distributed in a particular way (e.g. with small bubbles on one side and large bubbles on the opposite side). This effect is largely abolished after normalisation and batch correction. Interestingly, we can already see how PCA consistently separates excitatory and inhibitory cells. For the plots using the HVGs from the CV2 trend, we can also see a small group of cells further apart from the rest: if we set `colour_by = "Cd33"` we see that they show high expression levels for this macrophage marker gene. Lastly, if we `colour_by = "batch.processing"`, we observe that most batches are interspersed in the CV2 scenario, whereas in the Var case this is clearer for the batch corrected scenario (we see a couple of purple batches that separate a tiny bit, although it still correlates with number of detected genes too, so it is hard to tell for sure from this).
 
 We can also look at the change in the `plotExplanatoryVariables()` output after normalisation and batch correction. This function uses `getVarianceExplained` to compute the percentage of variance in gene expression that is explained by variables in the sample-level metadata, allowing for problematic factors to be quickly identified, as well as the genes that are most affected. A density plot is then created for each variable, showing the distribution of R-squared across all genes.
 ```{r}
@@ -808,10 +808,10 @@ PCA_HVG_var_corrected_celltype_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt
                                                          by_exprs_values = "corrected", 
                                                          colour_by = "celltype_PAGarea",
                                                          theme_size = 11) + ggtitle("HVG (Var)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
-PCA_HVG_var_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+PCA_HVG_var_corrected_cd33 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                              dimred = "PCA_HVG_var_corrected",
                                              by_exprs_values = "corrected", 
-                                             colour_by = "Cd68",
+                                             colour_by = "Cd33",
                                              theme_size = 11) + ggtitle("HVG (Var)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
 
 # Prepare PCA plots using HVG from CV2 modelling
@@ -833,10 +833,10 @@ PCA_HVG_cv2_corrected_celltype_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt
                                                          colour_by = "celltype_PAGarea",
                                                          theme_size = 11) + ggtitle("HVG (CV2)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
 
-PCA_HVG_cv2_corrected_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+PCA_HVG_cv2_corrected_cd33 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                              dimred = "PCA_HVG_cv2_corrected",
                                              by_exprs_values = "corrected", 
-                                             colour_by = "Cd68",
+                                             colour_by = "Cd33",
                                              theme_size = 11) + ggtitle("HVG (CV2)") + xlab("PC 1") + ylab("PC 2") + theme_args_PCA_composed
 
 # Prepare, plot, and save a composed plot
@@ -844,7 +844,7 @@ library(patchwork)
 PCA_HVG_corrected_composed <- ((PCA_HVG_var_corrected_celltype + PCA_HVG_cv2_corrected_celltype) / 
                                  (PCA_HVG_var_corrected_PAGarea + PCA_HVG_cv2_corrected_PAGarea) / 
                                  (PCA_HVG_var_corrected_celltype_PAGarea + PCA_HVG_cv2_corrected_celltype_PAGarea) / 
-                                 (PCA_HVG_var_corrected_cd68 + PCA_HVG_cv2_corrected_cd68)) +
+                                 (PCA_HVG_var_corrected_cd33 + PCA_HVG_cv2_corrected_cd33)) +
   plot_annotation(title = "PCA using batch corrected log-normalised counts", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(guides = "collect")
@@ -1545,17 +1545,17 @@ chosen_tSNE_HVG_cv2_corrected_15 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                    ) + labs(title = "HVG (CV2) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2"
                                                             ) + theme_args_selected_tSNE_UMAP
 
-# Plot the selected t-SNE coloring for Cd68 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
-chosen_tSNE_HVG_var_corrected_15_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+# Plot the selected t-SNE coloring for Cd33 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
+chosen_tSNE_HVG_var_corrected_15_cd33 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                                         dimred = "tSNE_var_corrected_perplexity_15",
-                                                        colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                        colour_by = "Cd33", by_exprs_values = "corrected", shape_by = "cell.type", 
                                                         point_alpha = 0.6, point_size = 2, theme_size = 11
                                                         ) + labs(title = "HVG (Var) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2"
                                                                  ) + theme_args_selected_tSNE_UMAP
 
-chosen_tSNE_HVG_cv2_corrected_15_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+chosen_tSNE_HVG_cv2_corrected_15_cd33 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                                         dimred = "tSNE_cv2_corrected_perplexity_15",
-                                                        colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                        colour_by = "Cd33", by_exprs_values = "corrected", shape_by = "cell.type", 
                                                         point_alpha = 0.6, point_size = 2, theme_size = 11
                                                         ) + labs(title = "HVG (CV2) - Perplexity = 15", x = "t-SNE 1", y = "t-SNE 2"
                                                                  ) + theme_args_selected_tSNE_UMAP
@@ -1582,24 +1582,24 @@ chosen_UMAP_cv2_corrected_15_0.01 <- plotReducedDim(PAG_sceset_qc_norm_filt,
                                                     ) + labs(title = "HVG (CV2) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
                                                              ) + theme_args_selected_tSNE_UMAP
 
-# Plot the selected UMAP coloring for Cd68 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
-chosen_UMAP_var_corrected_15_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+# Plot the selected UMAP coloring for Cd33 expression (highly expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages)
+chosen_UMAP_var_corrected_15_0.01_cd33 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                                          dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
-                                                         colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                         colour_by = "Cd33", by_exprs_values = "corrected", shape_by = "cell.type", 
                                                          point_alpha = 0.6, point_size = 2, theme_size = 11
                                                          ) + labs(title = "HVG (Var) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
                                                                   ) + theme_args_selected_tSNE_UMAP
 
-chosen_UMAP_cv2_corrected_10_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+chosen_UMAP_cv2_corrected_10_0.01_cd33 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                                          dimred = "UMAP_cv2_corrected_10_neighbors_0.01_min_dist",
-                                                         colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                         colour_by = "Cd33", by_exprs_values = "corrected", shape_by = "cell.type", 
                                                          point_alpha = 0.6, point_size = 2, theme_size = 11
                                                          ) + labs(title = "HVG (CV2) - 10 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
                                                                   ) + theme_args_selected_tSNE_UMAP
 
-chosen_UMAP_cv2_corrected_15_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
+chosen_UMAP_cv2_corrected_15_0.01_cd33 <- plotReducedDim(PAG_sceset_qc_norm_filt, 
                                                          dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                         colour_by = "Cd68", by_exprs_values = "corrected", shape_by = "cell.type", 
+                                                         colour_by = "Cd33", by_exprs_values = "corrected", shape_by = "cell.type", 
                                                          point_alpha = 0.6, point_size = 2, theme_size = 11
                                                          ) + labs(title = "HVG (CV2) - 15 neighbors | 0.01 dist", x = "UMAP 1", y = "UMAP 2"
                                                                   ) + theme_args_selected_tSNE_UMAP
@@ -1607,14 +1607,14 @@ chosen_UMAP_cv2_corrected_15_0.01_cd68 <- plotReducedDim(PAG_sceset_qc_norm_filt
 # Prepare and save composed plots
 library(patchwork)
 chosen_tSNE_composed <- (chosen_tSNE_HVG_var_corrected_15 + chosen_tSNE_HVG_cv2_corrected_15 +
-                           chosen_tSNE_HVG_var_corrected_15_cd68 + chosen_tSNE_HVG_cv2_corrected_15_cd68) +
+                           chosen_tSNE_HVG_var_corrected_15_cd33 + chosen_tSNE_HVG_cv2_corrected_15_cd33) +
   plot_annotation(title = "Selected tSNE plots", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
 
-chosen_UMAP_composed <- ((chosen_UMAP_var_corrected_15_0.01 | chosen_UMAP_var_corrected_15_0.01_cd68) / 
-                           (chosen_UMAP_cv2_corrected_10_0.01 | chosen_UMAP_cv2_corrected_10_0.01_cd68) / 
-                           (chosen_UMAP_cv2_corrected_15_0.01 | chosen_UMAP_cv2_corrected_15_0.01_cd68)) +
+chosen_UMAP_composed <- ((chosen_UMAP_var_corrected_15_0.01 | chosen_UMAP_var_corrected_15_0.01_cd33) / 
+                           (chosen_UMAP_cv2_corrected_10_0.01 | chosen_UMAP_cv2_corrected_10_0.01_cd33) / 
+                           (chosen_UMAP_cv2_corrected_15_0.01 | chosen_UMAP_cv2_corrected_15_0.01_cd33)) +
   plot_annotation(title = "Selected UMAP plots", tag_levels = "A", 
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(guides = "collect")
@@ -1776,7 +1776,7 @@ Cell-type markers from Allen Institute papers:
 
 * "Aqp4": aquaporin 4, astrocytic marker (not really present in our dataset). 
 
-* "Cd68", "Cc45" or "Cd14: expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages (label one of the clusters in our dataset).
+* "Cd68", "Cd33", "Plaur" or "Cxcl16": expressed by cells in the monocyte lineage, by circulating macrophages, and by tissue macrophages (label one of the clusters in our dataset).
 
 Some markers for Dorsal Raphe 5-HT neurons (Okaty, Sturrock, et al. eLife 2020):
 
@@ -1795,7 +1795,7 @@ theme_args_expression_UMAP <- theme(plot.title = element_text(size = 11, face = 
                                     legend.text = element_text(size = 9, face = "plain"), 
                                     strip.text = element_text(size = 10, face = "plain"))
 
-gene_to_color = "Cd68"
+gene_to_color = "Cd33"
 
 # The UMAP with the full QCed dataset, colored by PAG subdivision:
 expression_UMAP_PAGarea <- plotReducedDim(PAG_sceset_qc_norm_filt,

@@ -341,9 +341,9 @@ An informative exercise to compare our clustering results would be to use the Ma
 # paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard==1), " cells in SNN_cv2_jaccard method")
 ```
 
-After running the two different graph-based clustering approaches with different `k` (from 5 to 15), we observe that when using the HVGs from Var modelling and the top 12 PCs, neither the Rank-Walktrap nor the Jaccard-Louvain approach manage to correctly identify the 12 cells in the Cd68+ cluster at any value of `k`. This, together with the fact that both the tSNEs and UMAPs obtained with the HVG-Var yield worse visualisations than their CV2 counterparts, leads us to not proceed with this approach.
+After running the two different graph-based clustering approaches with different `k` (from 5 to 15), we observe that when using the HVGs from Var modelling and the top 12 PCs, neither the Rank-Walktrap nor the Jaccard-Louvain approach manage to correctly identify the 12 cells in the Cd33+ cluster at any value of `k`. This, together with the fact that both the tSNEs and UMAPs obtained with the HVG-Var yield worse visualisations than their CV2 counterparts, leads us to not proceed with this approach.
 
-When using the HVGs obtained from CV2 modelling and the top 17 PCs, we find that in most cases both the Rank-Walktrap and Jaccard-Louvain approaches successfully capture the 12 cells from the Cd68+ cluster. Most results identify between 2-4 VGAT clusters and between 4-6 VGluT2 clusters. After overlaying the results to the UMAP visualisation, we decide to keep the results from different `k` to further analyse.
+When using the HVGs obtained from CV2 modelling and the top 17 PCs, we find that in most cases both the Rank-Walktrap and Jaccard-Louvain approaches successfully capture the 12 cells from the Cd33+ cluster. Most results identify between 2-4 VGAT clusters and between 4-6 VGluT2 clusters. After overlaying the results to the UMAP visualisation, we decide to keep the results from different `k` to further analyse.
 
 For instance, when using the *Rank-Walktrap* approach `k = 5:10` finds 4 inhibitory clusters, whereas `k = 11:15` finds only 2. This suggests that there may be some substructure in the VGAT population, so if we want to investigate that we would have to pick a lower `k`. Furthermore, `k = 5:7` finds 6 VGluT2 clusters, whereas `k = 8:10` finds only 5. In addition, the VGluT2 clusters identified by `k = 11:13` are not great at discriminating lPAG from dmPAG cells, only `k = 12` would be good if we wanted to keep only 2 VGAT clusters and have slightly cleaner VGluT2 clusters. Finally, the VGluT2 cluster that we lose when using `k = 8:10` seems to be a slightly different subset of dmPAG cells, so if we would like to inspect them, we would keep a lower `k`, from which `k = 7` seems to be the best.
 
@@ -362,7 +362,7 @@ On the other hand, when using the *Jaccard-Louvain* approach, we find that most 
 
 * `k = 13`: suggests 2 VGAT clusters and 5 VGluT2 clusters. 
 
-We will keep the different solutions and further examine their stability and modularity. One thing is clear though, there are 3 main clusters in our dataset: VGAT neurons, VGluT2 neurons, and the small Cd68+ clusters. Furthermore, it seems that VGluT2 neurons may have a bit more granularity, with different subpopulations that trail the different PAG subdivisions. VGAT neurons seem to be slightly more homogeneous, but we consistently find at least 2 clusters that differentiate vlPAG neurons from the rest.
+We will keep the different solutions and further examine their stability and modularity. One thing is clear though, there are 3 main clusters in our dataset: VGAT neurons, VGluT2 neurons, and the small Cd33+ clusters. Furthermore, it seems that VGluT2 neurons may have a bit more granularity, with different subpopulations that trail the different PAG subdivisions. VGAT neurons seem to be slightly more homogeneous, but we consistently find at least 2 clusters that differentiate vlPAG neurons from the rest.
 ```{r}
 library(scran)
 set.seed(42)
@@ -1232,7 +1232,7 @@ ggsave(filename = str_c(date, "_kmeans_UMAP_cv2_clusters_composed.pdf"),
        )
 ```
 
-As we can see when looking at both the tree and the embedding of the k-means clusters on the UMAP, using PCs from mean-var modelling doesn't generate a tree that reflects the origin of the cells (i.e. excitatory or inhibitory cells), whereas we do see that in the results obtained with PCs from mean-cv2 modelling (it even separates the Cd68+ cluster in an entirely different branch). Overall we seem to obtain similar clusters to those we obtained from the graph-clustering approach, at least for the cv2 scenario.
+As we can see when looking at both the tree and the embedding of the k-means clusters on the UMAP, using PCs from mean-var modelling doesn't generate a tree that reflects the origin of the cells (i.e. excitatory or inhibitory cells), whereas we do see that in the results obtained with PCs from mean-cv2 modelling (it even separates the Cd33+ cluster in an entirely different branch). Overall we seem to obtain similar clusters to those we obtained from the graph-clustering approach, at least for the cv2 scenario.
 
 ## Step 6.3 | Hierarchical clustering
 Hierarchical clustering aims to generate a dendrogram containing a hierarchy of samples. This is most commonly done by greedily agglomerating samples into clusters, then agglomerating those clusters into larger clusters, and so on until all samples belong to a single cluster. Variants of hierarchical clustering methods primarily differ in how they choose to perform the agglomerations. For example, complete linkage aims to merge clusters with the smallest maximum distance between their elements, while Ward’s method aims to minimize the increase in within-cluster variance.
@@ -1920,13 +1920,13 @@ After we have explored the results for the different range of `k`, we can then r
 
 * `k=2` correctly separates excitatory and inhibitory cells. The next cluster to appear is the vlPAG inhibitory cells (`k=3`), followed by the lPAG & vlPAG excitatory cells (`k=4`).
 
-* `k=5:8` start further subdividing excitatory cells and the Cd68+ cluster, although these clusters are not very well defined.
+* `k=5:8` start further subdividing excitatory cells and the Cd33+ cluster, although these clusters are not very well defined.
 
-* `k=9`, which was the suggested `k` by SC3, does offer the best clustering of excitatory cells and captures the Cd68+ cluster, and finds 4 inhibitory clusters, although they are a bit too close to each other in the UMAP. 
+* `k=9`, which was the suggested `k` by SC3, does offer the best clustering of excitatory cells and captures the Cd33+ cluster, and finds 4 inhibitory clusters, although they are a bit too close to each other in the UMAP. 
 
-* `k=10` misses the Cd68+ cluster, but splits excitatory and inhibitory cells into better defined clusters.
+* `k=10` misses the Cd33+ cluster, but splits excitatory and inhibitory cells into better defined clusters.
 
-* Most of `k=11:15` again miss the Cd68+ cluster or seem to overcluster either excitatory or inhibitory neurons.
+* Most of `k=11:15` again miss the Cd33+ cluster or seem to overcluster either excitatory or inhibitory neurons.
 
 From the UMAP embeddings above we can conclude that `k=2:4` or `k=9` seem to be best, or at least can provide some information about clusters we can identify in the UMAP.
 ```{r}
@@ -2189,7 +2189,7 @@ UMAP_hierarchical_cv2_composed # composed plots
 UMAP_sc3_clusters # composed plots
 ```
 
-After looking at all the outcomes side by side, we can see that following the path from mean-cv2 modelling provides better resolution than following the path from mean-variance modelling. This is very clear if we look at the results from (1) Graph-based clustering, where we get 2 subclusters of inhibitory neurons in UMAP-var, whereas we get 4 subclusters of inhibitory neurons in the UMAP-cv2, from (2) k-means clustering, where the first split of the dendrogram for HVG-Var is a subcluster of excitatory neurons (and only the second split separates the remaining excitatory and inhibitory neurons), whereas the first split for HVG-CV2 is the Cd68+ cluster, and then correctly separates excitatory and inhibitory neurons, and from (3) hierarchical clustering, where the first split of the dendrogram for HVG-Var is a subcluster of excitatory neurons (and only the second split separates the remaining excitatory and inhibitory neurons), whereas the first split of the dendrogram for HVG-CV2 successfully separates excitatory and inhibitory neurons. Thus, we can conclude that the best analysis path stems from using the results from mean-cv2 modelling.
+After looking at all the outcomes side by side, we can see that following the path from mean-cv2 modelling provides better resolution than following the path from mean-variance modelling. This is very clear if we look at the results from (1) Graph-based clustering, where we get 2 subclusters of inhibitory neurons in UMAP-var, whereas we get 4 subclusters of inhibitory neurons in the UMAP-cv2, from (2) k-means clustering, where the first split of the dendrogram for HVG-Var is a subcluster of excitatory neurons (and only the second split separates the remaining excitatory and inhibitory neurons), whereas the first split for HVG-CV2 is the Cd33+ cluster, and then correctly separates excitatory and inhibitory neurons, and from (3) hierarchical clustering, where the first split of the dendrogram for HVG-Var is a subcluster of excitatory neurons (and only the second split separates the remaining excitatory and inhibitory neurons), whereas the first split of the dendrogram for HVG-CV2 successfully separates excitatory and inhibitory neurons. Thus, we can conclude that the best analysis path stems from using the results from mean-cv2 modelling.
 
 Another informative exercise to compare our clustering results would be to use the Macrophage-enriched cluster to see how well do the different clustering approaches pick it up. If we look at the UMAP plot and magnify the region where that cluster falls, we can count 12 cells, so in theory, any good clustering solution for our dataset should correctly identify the right amount of cells.
 ```{r}
@@ -2197,68 +2197,100 @@ Another informative exercise to compare our clustering results would be to use t
 UMAP_cv2_15_001_PAGsubdivisions
 plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", text_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type"
+               colour_by = "Cd33", text_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
 UMAP_cv2_15_001_PAGsubdivisions + xlim(-6.17,-5.95) + ylim(9.05,9.3) # Zoom in, there should be 12 cells
 ```
 
-For each clustering approach, we can plot only the Cd68+ cluster and see how many cells appear:
+We can use several markers to highlight that this cluster is enriched for immune response markers:
+
+* "Cd33": Siglec-3 is a transmembrane receptor expressed on cells of myeloid lineage and plays a role in maintaining immune cells (monocytes) in a resting state.
+
+* "Plaur": encodes CD87, which acts as a receptor for urokinase plasminogen activator and is part of the plasminogen activation system invovled in inflammation and wound healing.
+
+* "Cxcl16": C-X-C Motif Chemokine Ligand 16 acts as a scavenger receptor on macrophages and induces a strong chemotactic response.
+
+* "Cd68": encodes a glycoprotein that is highly expressed by human monocytes and tissue macrophage. Could play a role in phagocytic activities of tissue macrophages, allowing homing of macrophage subsets to particular sites
+
+```{r}
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd68", text_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cd33", text_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Plaur", text_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Cxcl16", text_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type"
+               ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
+```
+
+For each clustering approach, we can plot only the macrophage enriched cluster and see how many cells appear. 
 ```{r}
 # For each clustering approach, plot only the cells assigned to the macrophage-enriched cluster:
 # Graph-based
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k7==8], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Rank-Walktrap (k = 7)", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_rank_k12==7], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Rank-Walktrap (k = 12)", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k5==10], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 5)", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k8==1], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k9==3], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 9)", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$SNN_clusters_cv2_jaccard_k13==7], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Jaccard-Louvain (k = 13)", x = "UMAP 1", y = "UMAP 2")
 
 # K-means
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$kmeans_clusters_var==8], 
                dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (Var) - K-means (center = 8)", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==9], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - K-means (centers = 10)", x = "UMAP 1", y = "UMAP 2")
 
 # Hierarchical
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_var==9], 
                dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (Var) - Dynamic Tree Cut", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k==2], 
                dimred = "UMAP_var_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (Var) - Tree Cut (k = 8)", x = "UMAP 1", y = "UMAP 2")
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - Tree Cut (k = 10)", x = "UMAP 1", y = "UMAP 2")
 
 # SC3
 plotReducedDim(PAG_sceset_qc_norm_filt_corr[, PAG_sceset_qc_norm_filt_corr$sc3_9_clusters==5], 
                dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-               colour_by = "Cd68", shape_by = "cell.type"
+               colour_by = "Cd33", shape_by = "cell.type"
                ) + labs(title = "UMAP (CV2) - SC3 (k = 9)", x = "UMAP 1", y = "UMAP 2")
 ```
 
@@ -2276,7 +2308,7 @@ paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$kmeans_cluste
 paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$kmeans_clusters_cv2==9), " cells in kmeans_cv2_k10 method")
 # Hierarchical
 paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_var==9), " cells in hierarchical cutreedynamic_clusters_var method")
-paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_cv2==0), " cells in hierarchical cutreedynamic_clusters_cv2 method") # does not find Cd68+ cluster
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutreedynamic_clusters_cv2==0), " cells in hierarchical cutreedynamic_clusters_cv2 method") # does not find Cd33+ cluster
 paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutree_clusters_var_k==2), " cells in hierarchical cutree_clusters_var_k method")
 paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr$cutree_clusters_cv2_k==5), " cells in hierarchical cutree_clusters_cv2_k method")
 # SC3
