@@ -29,9 +29,9 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 ***
 
 # STEP 7 | Differential Expression Analysis
-One of the most common types of analyses when working with bulk RNA-seq data is to identify differentially expressed genes. By comparing the genes that change between two conditions, e.g. mutant and wild-type or stimulated and unstimulated, it is possible to characterize the molecular mechanisms underlying the change. Several different methods, e.g. `DESeq2` and `edgeR`, have been developed for bulk RNA-seq. 
+One of the most common types of analyses when working with bulk RNA-seq data is to identify differentially expressed genes. By comparing the genes that change between two conditions, e.g. mutant and wild-type or stimulated and unstimulated, it is possible to characterize the molecular mechanisms underlying the change. Several methods, e.g. `DESeq2` and `edgeR`, have been developed for bulk RNA-seq. 
 
-In scRNA-seq we usually do not have a defined set of experimental conditions. Instead, we can identify the cell groups by using an unsupervised clustering approach. Once the groups have been identified one can find differentially expressed genes either by comparing the differences in variance between the groups (like the Kruskal-Wallis test implemented in `SC3`), or by comparing gene expression between clusters in a pairwise manner. In our case, in addition to clusters we have experimental conditions we can test, namely the cell type or PAG subdivision from where the cells were collected, which allow us to follow both differential expression analysis approaches.
+In scRNA-seq we usually do not have a defined set of experimental conditions. Instead, we can identify the cell groups by using an unsupervised clustering approach. Once the groups have been identified one can find differentially expressed genes either by comparing the differences in variance between the groups (like the Kruskal-Wallis test implemented in `SC3`), or by comparing gene expression between clusters in a pairwise manner. In our case, in addition to clusters we have experimental conditions we can test, namely the cell type or PAG subdivision from where the cells were collected, which makes it possible for us to follow either approach.
 
 We continue using the `PAG_sceset_qc_norm_filt_corr_clust` after normalisation, filtering, batch correction, and clustering. We should thus have a `corrected` slot in `assays`:
 ```{r}
@@ -69,13 +69,6 @@ assayNames(PAG_sceset_qc_norm_filt_corr_clust)
 reducedDimNames(PAG_sceset_qc_norm_filt_corr_clust)
 ```
 
-```{r}
-#groups <- as.data.frame(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k8)
-#rownames(groups) <- PAG_sceset_qc_norm_filt_corr_clust$cell.id
-#write.csv(groups, file = str_c(path_for_figures, "SNN_clusters/", "cluster_ids.csv"), quote = FALSE, row.names = TRUE)
-```
-
-
 We first check we have the relevant metadata, making sure the key annotations are `factor`:
 ```{r}
 # Check you have the relevant metadata as factors:
@@ -90,90 +83,173 @@ levels(PAG_sceset_qc_norm_filt_corr_clust$celltype_PAGarea)
 ## Step 7.0 | Recap of clustering results
 To remind ourselves about which clustering results we have available, we can look at the names of the `colData` slot:
 ```{r}
-names(colData(PAG_sceset_qc_norm_filt_corr_clust))
+names(colData(PAG_sceset_qc_norm_filt_corr_clust)[grep("cluster", names(colData(PAG_sceset_qc_norm_filt_corr_clust)))])
+```
+
+If we wanted to export the cluster IDs of each cell in our dataset for a particuler clustering approach, we could do it as follows:
+```{r}
+#groups <- as.data.frame(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k5)
+#rownames(groups) <- PAG_sceset_qc_norm_filt_corr_clust$cell.id
+#groups
+#write.csv(groups, file = str_c(path_for_figures, "SNN_clusters/", "cluster_ids.csv"), quote = FALSE, row.names = TRUE)
 ```
 
 We can also replot the results of our chosen clustering solution before we attempt to find marker genes:
 ```{r}
-## Graph-based Clustering
-# Using UMAP (cv2) - 10_neighbors_0.05_min_dist
-UMAP_cv2_10_005_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                  colour_by = "PAG.area", shape_by = "cell.type"
-                                                  ) + labs(title = "UMAP (cv2) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
+# Set theme parameters
+theme_args_SNN_clustering <- theme(plot.title = element_text(size = 11, face = "bold"),
+                                   axis.title = element_text(size = 11, face = "plain"),
+                                   axis.text = element_text(size = 10, face = "plain"), 
+                                   legend.text = element_text(size = 9, face = "plain"), 
+                                   strip.text = element_text(size = 10, face = "plain"))
 
-UMAP_cv2_10_005_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7"
-                                                  ) + labs(title = "UMAP (cv2) - Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2")
 
-UMAP_cv2_10_005_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8"
-                                                    ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2")
-UMAP_cv2_10_005_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_10_neighbors_0.05_min_dist",
-                                                     colour_by = "SNN_clusters_cv2_jaccard_k10", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k10"
-                                                     ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=10)", x = "UMAP 1", y = "UMAP 2")
+### Using UMAP (CV2) - 15_neighbors_0.01_min_dist ###
+UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "PAG.area", shape_by = "cell.type",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
 
-# Using UMAP (cv2) - 15_neighbors_0.01_min_dist
-UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                  colour_by = "PAG.area", shape_by = "cell.type"
-                                                  ) + labs(title = "UMAP (cv2) - PAG subdivisions", x = "UMAP 1", y = "UMAP 2")
+# Using HVG from CV2 with rank-based weights
+UMAP_cv2_15_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k = 7)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
 
-UMAP_cv2_15_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7"
-                                                  ) + labs(title = "UMAP (cv2) - Rank-Walktrap (k=7)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_RankWalktrap_k12 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k12", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k12",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k = 12)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
 
-UMAP_cv2_15_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8"
-                                                    ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=8)", x = "UMAP 1", y = "UMAP 2")
+# Using HVG from CV2 with jaccard-based weights
+UMAP_cv2_15_001_JaccardLouvain_k5 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k5", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k5",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 5)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
 
-UMAP_cv2_15_001_JaccardLouvain_k10 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
-                                                     colour_by = "SNN_clusters_cv2_jaccard_k10", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k10"
-                                                     ) + labs(title = "UMAP (cv2) - Jaccard-Louvain (k=10)", x = "UMAP 1", y = "UMAP 2")
+UMAP_cv2_15_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
 
-# Prepare composed plots
+UMAP_cv2_15_001_JaccardLouvain_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k9", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k9",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 9)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
+
+UMAP_cv2_15_001_JaccardLouvain_k13 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k13", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k13",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 13)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
+
+# Prepare and save composed plots
 library(patchwork)
-UMAP_cv2_10_005_SNN_clusters <- (UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_RankWalktrap_k7 + UMAP_cv2_10_005_JaccardLouvain_k8 + UMAP_cv2_10_005_JaccardLouvain_k10) +
-  plot_annotation(title = "Graph-based clustering on UMAP (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
 
-UMAP_cv2_15_001_SNN_clusters <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k7 + UMAP_cv2_15_001_JaccardLouvain_k8 + UMAP_cv2_15_001_JaccardLouvain_k10) +
-  plot_annotation(title = "Graph-based clustering on UMAP (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_SNN_RankWalktrap_k7 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k7) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_RankWalktrap_k7
 
-UMAP_cv2_SNN_clusters_PAGsubdivisions_JaccardLouvain_k8 <- (UMAP_cv2_10_005_PAGsubdivisions + UMAP_cv2_10_005_JaccardLouvain_k8 + 
-                                                              UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k8) +
-  plot_annotation(title = "Graph-based clustering on UMAP (cv2)", tag_levels = "A", 
-                  theme = theme(plot.title = element_text(size = 18), plot.tag = element_text(size = 14))) + plot_layout(ncol = 2)
+UMAP_SNN_RankWalktrap_k12 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k12) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_RankWalktrap_k12
 
-# Plot them
-UMAP_cv2_10_005_SNN_clusters
-UMAP_cv2_15_001_SNN_clusters
-UMAP_cv2_SNN_clusters_PAGsubdivisions_JaccardLouvain_k8
-UMAP_cv2_10_005_PAGsubdivisions
-UMAP_cv2_10_005_JaccardLouvain_k8
-UMAP_cv2_15_001_PAGsubdivisions
-UMAP_cv2_15_001_JaccardLouvain_k8
+UMAP_SNN_JaccardLouvain_k5 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k5) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k5
 
-ggsave(filename = str_c(date, "_UMAP_cv2_15_001_PAGsubdivisions.pdf"),
-       plot = UMAP_cv2_15_001_PAGsubdivisions,
+UMAP_SNN_JaccardLouvain_k8 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k8) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k8
+
+UMAP_SNN_JaccardLouvain_k9 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k9) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k9
+
+UMAP_SNN_JaccardLouvain_k13 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k13) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k13
+
+ggsave(filename = str_c(date, "_UMAP_SNN_rank_k7_clusters.pdf"),
+       plot = UMAP_SNN_RankWalktrap_k7,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 
-ggsave(filename = str_c(date, "_UMAP_cv2_15_001_JaccardLouvain_k8.pdf"),
-       plot = UMAP_cv2_15_001_JaccardLouvain_k8,
+ggsave(filename = str_c(date, "_UMAP_SNN_rank_k12_clusters.pdf"),
+       plot = UMAP_SNN_RankWalktrap_k12,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
-       width = 12, height = 9, units = "in", dpi = 300,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k5_clusters.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k5,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k8_clusters.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k8,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k9_clusters.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k9,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k13_clusters.pdf"),
+       plot = UMAP_SNN_JaccardLouvain_k13,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
-Remove the cells assigned to the macrophage-enriched cluster so that they don't affect the following group comparisons:
+Before we begin with the differential expression analysis, we will remove the cells assigned to the macrophage-enriched cluster from the dataset so that they don't affect the results. As we saw in the previous section, there should be 12 cells with high levels of expression for macrophage and immune response markers like "Cd33", "Plaur", "Cxcl16", or "Cd68".
 ```{r}
-# Create a new SingleCellExperiment object by subsetting to leave out the cells from a specific cluster:
-PAG_sceset_qc_norm_filt_corr_clust_de <- PAG_sceset_qc_norm_filt_corr_clust[, PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k8!=11]
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_rank_k7==8), " cells in SNN_var_rank_k7 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_rank_k12==7), " cells in SNN_var_rank_k12 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k5==10), " cells in SNN_cv2_jaccard_k5 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k8==1), " cells in SNN_cv2_jaccard_k8 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k9==3), " cells in SNN_cv2_jaccard_k9 method")
+paste0("Macrophage cluster has ", sum(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k13==7), " cells in SNN_cv2_jaccard_k13 method")
+```
+
+```{r}
+# Create a new SingleCellExperiment object by subsetting to leave out the cells from the macrophage-enriched cluster:
+PAG_sceset_qc_norm_filt_corr_clust_de <- PAG_sceset_qc_norm_filt_corr_clust[, PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k5!=10]
 dim(PAG_sceset_qc_norm_filt_corr_clust)
 dim(PAG_sceset_qc_norm_filt_corr_clust_de)
 ```
@@ -2924,4 +3000,15 @@ colnames(interesting.voom)
 head(interesting.voom[,1:3])
 ```
 
-By default, we do not use custom DE methods to perform marker detection, for several reasons. Many of these methods rely on empirical Bayes shrinkage to share information across genes in the presence of limited replication. However, this is unnecessary when there are large numbers of “replicate” cells in each group. These methods also make stronger assumptions about the data (e.g., equal variances for linear models, the distribution of variances during empirical Bayes) that are more likely to be violated in noisy scRNA-seq contexts. From a practical perspective, they require more work to set up and take more time to run. Nonetheless, some custom methods (e.g., MAST) may provide a useful point of difference from the simpler tests, in which case they can be converted into a marker detection scheme as described above
+By default, we do not use custom DE methods to perform marker detection, for several reasons. Many of these methods rely on empirical Bayes shrinkage to share information across genes in the presence of limited replication. However, this is unnecessary when there are large numbers of “replicate” cells in each group. These methods also make stronger assumptions about the data (e.g., equal variances for linear models, the distribution of variances during empirical Bayes) that are more likely to be violated in noisy scRNA-seq contexts. From a practical perspective, they require more work to set up and take more time to run. Nonetheless, some custom methods (e.g., MAST) may provide a useful point of difference from the simpler tests, in which case they can be converted into a marker detection scheme as described above.
+
+## Step 7.END | Save the SingleCellExperiment object
+```{r}
+# UPDATE
+# saveRDS(PAG_sceset_qc_norm_filt_corr, file = "PAG_sceset_qc_norm_filt_corr_clust.rds")
+print("Part 7 - Done!")
+```
+
+```{r}
+sessionInfo()
+```
