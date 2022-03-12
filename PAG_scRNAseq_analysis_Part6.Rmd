@@ -2398,7 +2398,7 @@ UMAP_hierarchical_final_composed
 
 # Save them all
 ggsave(filename = str_c(date, "_UMAP_final_SNN_rank_k7_clusters_composed.pdf"),
-       plot = UMAP_SNN_RankWalktrap_k7_final_composed ,
+       plot = UMAP_SNN_RankWalktrap_k7_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -2406,7 +2406,7 @@ ggsave(filename = str_c(date, "_UMAP_final_SNN_rank_k7_clusters_composed.pdf"),
        )
 
 ggsave(filename = str_c(date, "_UMAP_final_SNN_rank_k12_clusters_composed.pdf"),
-       plot = UMAP_SNN_RankWalktrap_k12_final_composed ,
+       plot = UMAP_SNN_RankWalktrap_k12_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -2414,7 +2414,7 @@ ggsave(filename = str_c(date, "_UMAP_final_SNN_rank_k12_clusters_composed.pdf"),
        )
 
 ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k5_clusters_composed.pdf"),
-       plot = UMAP_SNN_JaccardLouvain_k5_final_composed ,
+       plot = UMAP_SNN_JaccardLouvain_k5_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -2422,7 +2422,7 @@ ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k5_clusters_composed.pdf"
        )
 
 ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k8_clusters_composed.pdf"),
-       plot = UMAP_SNN_JaccardLouvain_k8_final_composed ,
+       plot = UMAP_SNN_JaccardLouvain_k8_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -2430,7 +2430,7 @@ ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k8_clusters_composed.pdf"
        )
 
 ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k9_clusters_composed.pdf"),
-       plot = UMAP_SNN_JaccardLouvain_k9_final_composed ,
+       plot = UMAP_SNN_JaccardLouvain_k9_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -2438,7 +2438,7 @@ ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k9_clusters_composed.pdf"
        )
 
 ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k13_clusters_composed.pdf"),
-       plot = UMAP_SNN_JaccardLouvain_k13_final_composed ,
+       plot = UMAP_SNN_JaccardLouvain_k13_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -2446,7 +2446,7 @@ ggsave(filename = str_c(date, "_UMAP_final_SNN_jaccard_k13_clusters_composed.pdf
        )
 
 ggsave(filename = str_c(date, "_UMAP_final_kmeans_clusters_composed.pdf"),
-       plot = UMAP_kmeans_final_composed ,
+       plot = UMAP_kmeans_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -2454,7 +2454,7 @@ ggsave(filename = str_c(date, "_UMAP_final_kmeans_clusters_composed.pdf"),
        )
 
 ggsave(filename = str_c(date, "_UMAP_final_hierarchical_clusters_composed.pdf"),
-       plot = UMAP_hierarchical_final_composed ,
+       plot = UMAP_hierarchical_final_composed,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
