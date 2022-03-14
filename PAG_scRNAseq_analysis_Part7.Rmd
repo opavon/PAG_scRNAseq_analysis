@@ -357,113 +357,115 @@ After reading about the different options we have for DE analysis, we will be us
 
 The next two chunks of code will be the main blocks of our DE analysis. They will allow us to set the main paramteres for the `findMarkers()` function and fine tune the comparisons we want to make. Before we proceed with the different analysis sections, let us take a look at the main parameters we will need for our call to `findMarkers()` and reset them to their default values:
 ```{r}
-library(scran)
-# Parameters defaults:
-groups <- NULL # clustering results or group for each cell.
-
-test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
-comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
-direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
-lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
-
-block <- NULL # factor specifying the blocking level for each cell.
-design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
-restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
-exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
-print("Parameters back to default values")
+# library(scran)
+# # Parameters defaults:
+# groups <- NULL # clustering results or group for each cell.
+# 
+# test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+# comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+# direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+# lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+# 
+# block <- NULL # factor specifying the blocking level for each cell.
+# design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+# restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+# exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+# print("Parameters back to default values")
 ```
 
 Finally, the following code allows us to run the main analysis using `findMarkers()` and adapt it to each comparison. We can run the following chunk of code several times, changing the parameters for the `test.type`, `pval.type`, `direction`, `lfc`, and others to extract the results of the comparison we want into a .csv file. It also allows us to assign the results to separate variables so we can plot them later on.
 ```{r}
-# Set the groups to be compared (cluster IDs or metadata slot of interest):
-groups <- PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k5
-
-# Set the string to be added to the filename when saving the results:
-results_name <- "SNN_clusters_cv2_jaccard_k5_" # one of "SNN_clusters_cv2_jaccard_k5_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
-
-# Create a variable with the tests you want to run:
-desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
-desired_comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
-desired_directions <- c("up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
-
-# Initialise an empty `data.frame` to populate with a summary of marker genes:
-SNN_clusters_marker_set_summary <- data.frame()
-
-# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
-for (test_choice in desired_tests){
-  test <- test_choice
-  for (comparison_choice in desired_comparisons){
-    comparisons <- comparison_choice
-    for (direction_choice in desired_directions){
-      direction <- direction_choice
-      
-      # Set the remaining parameters:
-      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
-      block <- PAG_sceset_qc_norm_filt_corr_clust$mouse.sex # factor specifying the blocking level for each cell. Try PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex
-      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
-      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
-      exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
-      
-      # Run findMarkers:
-      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust,
-                                  groups = groups,
-                                  test.type = test,
-                                  pval.type = comparisons,
-                                  direction = direction,
-                                  lfc = lfc,
-                                  assay.type = "logcounts",
-                                  block = block,
-                                  restrict = restrict,
-                                  exclude = exclude)
-      
-      # Save results:
-      saveRDS(marker_genes, file = str_c(path_for_figures, "SNN_clusters/", results_name, "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
-      
-      # Create a variable with a value for each group name to iterate through:
-      range_of_groups <- 1:paste(length(levels(groups)))
-      
-      # Create and export a separate table of results for each group:
-      for (chosen_group in range_of_groups) {
-        # Compose name of variable where results will be assigned to:
-        marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
-        
-        # Assign results of marker genes for current group to a temp variable:
-        temp_marker_set <- marker_genes[[chosen_group]]
-        
-        #print(marker_set) # Print variable name of current group
-        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
-        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
-        
-        # Assign the results to the created variable:
-        assign(marker_set, temp_marker_set) # Assign the results to the created variable
-        
-        # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
-        # Populate the summary data.frame:        
-        SNN_clusters_marker_set_summary = rbind(SNN_clusters_marker_set_summary,
-                                                data.frame(marker_set = marker_set,
-                                                           group = levels(groups)[chosen_group],
-                                                           test = test,
-                                                           comparisons = comparisons,
-                                                           direction = direction,
-                                                           genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
-                                                           genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
-                                                           genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
-      }
-    }
-  }
-}
-
-# Check out the summary: 
-SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="t",]
-SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="wilcox",]
-SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="binom",]
+# # Set the groups to be compared (cluster IDs or metadata slot of interest):
+# groups <- PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k5
+# 
+# # Set the string to be added to the filename when saving the results:
+# results_name <- "SNN_clusters_cv2_jaccard_k5_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+# 
+# # Create a variable with the tests you want to run:
+# desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+# desired_comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+# desired_directions <- c("up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+# 
+# # Initialise an empty `data.frame` to populate with a summary of marker genes:
+# SNN_clusters_marker_set_summary <- data.frame()
+# 
+# # Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+# for (test_choice in desired_tests){
+#   test <- test_choice
+#   for (comparison_choice in desired_comparisons){
+#     comparisons <- comparison_choice
+#     for (direction_choice in desired_directions){
+#       direction <- direction_choice
+#       
+#       # Set the remaining parameters:
+#       lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+#       block <- PAG_sceset_qc_norm_filt_corr_clust$mouse.sex # factor specifying the blocking level for each cell. Try PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex
+#       design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+#       restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+#       exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+#       
+#       # Run findMarkers:
+#       marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust,
+#                                   groups = groups,
+#                                   test.type = test,
+#                                   pval.type = comparisons,
+#                                   direction = direction,
+#                                   lfc = lfc,
+#                                   assay.type = "logcounts",
+#                                   block = block,
+#                                   restrict = restrict,
+#                                   exclude = exclude)
+#       
+#       # Save results:
+#       saveRDS(marker_genes, file = str_c(path_for_figures, "SNN_clusters/", results_name, 
+#                                          "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+#       
+#       # Create a variable with a value for each group name to iterate through:
+#       range_of_groups <- 1:paste(length(levels(groups)))
+#       
+#       # Create and export a separate table of results for each group:
+#       for (chosen_group in range_of_groups) {
+#         # Compose name of variable where results will be assigned to:
+#         marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+#         
+#         # Assign results of marker genes for current group to a temp variable:
+#         temp_marker_set <- marker_genes[[chosen_group]]
+#         
+#         #print(marker_set) # Print variable name of current group
+#         #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+#         #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+#         
+#         # Assign the results to the created variable:
+#         assign(marker_set, temp_marker_set) # Assign the results to the created variable
+#         
+#         # Export the results to a .csv file:
+#         write.csv(temp_marker_set, file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
+#                                                 results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+#         # Populate the summary data.frame:        
+#         SNN_clusters_marker_set_summary = rbind(SNN_clusters_marker_set_summary,
+#                                                 data.frame(marker_set = marker_set,
+#                                                            group = levels(groups)[chosen_group],
+#                                                            test = test,
+#                                                            comparisons = comparisons,
+#                                                            direction = direction,
+#                                                            genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+#                                                            genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+#                                                            genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+#       }
+#     }
+#   }
+# }
+# 
+# # Check out the summary: 
+# SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="t",]
+# SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="wilcox",]
+# SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="binom",]
 ```
 
 If we were to run the previous chunk using the default parameters (the three types of test, the three possible types of comparison, and the three possible directions for testing log-fold changes of gene expression) on our graph-based clustering results (which resulted in 11 clusters), we would get 297 files. By removing the direction `any` (which is the same as having "up" and "down" separately) we can reduce it to 198. We can do this for exploratory analysis if we want to compare the output of each type of test. Otherwise, once we have decided on the type of test and the type of comparisons we want to make, we can reduce the output to 22 files (if we have 11 clusters).
 
 ## Step 7.2 | Identifying marker genes between excitatory and inhibitory cells
-Once we have performed pairwise comparisons between the identified clusters, we can move on to perform comparisons according to our experimental design. For this, we will continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
+A main advantage of our experimental design is that we know in advance the type of cell we are sequencing. We can thus take advantage of our metadata to perform comparisons between excitatory and inhibitory cells. For this, we will continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster, to ensure they do not mask any biological results:
 ```{r}
 dim(PAG_sceset_qc_norm_filt_corr_clust)
 dim(PAG_sceset_qc_norm_filt_corr_clust_de)
@@ -487,13 +489,13 @@ exclude <- NULL # the levels of groups for which NOT to perform pairwise compari
 print("Parameters back to default values")
 ```
 
-For the `cell.type` comparisons, we only need to iterate through the different statistical tests. The fact that we only have two groups (VGAT and VGluT2 cells) means that all options in `pval.type` will yield the same results, and `direction = "up"` in one `cell.type` will be equivalent to `direction = "down"` in the other `cell.type` and viceversa, so by setting `direction = "up"` we will already obtain all the results we want.
+For the `cell.type` comparisons, the fact that we only have two groups (VGAT and VGluT2 cells) means that all options in `pval.type` will yield the same results, and `direction = "up"` in one `cell.type` will be equivalent to `direction = "down"` in the other `cell.type` and viceversa, so by setting `direction = "up"` we will already obtain all the results we want. We will be using the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
 ```{r}
 # Set the groups to be compared (cluster IDs or metadata slot of interest):
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de$cell.type
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "celltype_" # one of "SNN_clusters_cv2_jaccard_k5_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "cell_type_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -527,7 +529,8 @@ for (test_choice in desired_tests){
                               exclude = exclude)
   
   # Save results:
-  saveRDS(marker_genes, file = str_c(path_for_figures, "cell_type/", results_name, "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+  saveRDS(marker_genes, file = str_c(path_for_figures, "cell_type/", results_name, 
+                                     "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
   
   # Create a variable with a value for each group name to iterate through:
   range_of_groups <- 1:paste(length(levels(groups)))
@@ -548,7 +551,8 @@ for (test_choice in desired_tests){
     assign(marker_set, temp_marker_set)
     
     # Export the results to a .csv file:
-    write.csv(temp_marker_set, file = str_c(path_for_figures, "cell_type/", "PAG_DE_results_", results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+    write.csv(temp_marker_set, file = str_c(path_for_figures, "cell_type/", "PAG_DE_results_", 
+                                            results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
     
     # Populate the summary data.frame:
     celltype_marker_set_summary = rbind(celltype_marker_set_summary,
@@ -565,6 +569,11 @@ for (test_choice in desired_tests){
 
 # Check out the summary: 
 celltype_marker_set_summary
+```
+
+```{r}
+# Take a look at the results from one fo the comparisons
+marker_set_VGAT_wilcox_all_up
 ```
 
 Once we have obtained the results for each comparison, we can take a quick look at the top DE genes and filter them according the our custom list of genes we appended to the metadata in the begining of the pipeline.
@@ -618,10 +627,881 @@ VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust
 ```
 
 ## Step 7.3 | Identifying marker genes between cell-type and PAG subdivisions
+To find interesting genes across PAG subdivisions while accounting for cell-type, we can make use of the combined metadata factor `celltype_PAGarea`, in which each cell will be grouped according to both their type and their PAG area. For this, we continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
+```{r}
+dim(PAG_sceset_qc_norm_filt_corr_clust)
+dim(PAG_sceset_qc_norm_filt_corr_clust_de)
+```
+
+To make sure we don't carry any variables from previous runs, we reset all the parameters to their default values:
+```{r}
+library(scran)
+# Parameters defaults:
+groups <- NULL # clustering results or group for each cell.
+
+test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+
+block <- NULL # factor specifying the blocking level for each cell.
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
+```
+
+For the `celltype_PAGarea` comparisons, we are up to eight groups (dmPAG, dlPAG, lPAG, vlPAG and VGAT and VGluT2 cells for each of those subdivisions). In this case, we are only interested in the genes specific to each group, so we will set `pval.type=all`. However, after seeing `all` results in nearly no potential markers, we could add `pval.type=some` to the mix (although by doing that we would mainly be getting the cell-type specific markers back in). We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
+```{r}
+# Set the groups to be compared (cluster IDs or metadata slot of interest):
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea
+
+# Set the string to be added to the filename when saving the results:
+results_name <- "celltype_PAGarea_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+
+# Create a variable with the tests you want to run:
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_comparisons <- c("all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+desired_directions <- c("up") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+
+# Initialise an empty data.frame to populate with a summary of marker genes:
+celltype_PAGarea_marker_set_summary <- data.frame()
+
+# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+for (test_choice in desired_tests){
+  test <- test_choice
+  for (comparison_choice in desired_comparisons){
+    comparisons <- comparison_choice
+    for (direction_choice in desired_directions){
+      direction <- direction_choice
+      
+      # Set the remaining parameters:
+      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+      block <- PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex # factor specifying the blocking level for each cell.
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+      exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+      
+      # Run findMarkers:  
+      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                  groups = groups,
+                                  test.type = test,
+                                  pval.type = comparisons,
+                                  direction = direction,
+                                  lfc = lfc,
+                                  assay.type = "logcounts",
+                                  block = block,
+                                  restrict = restrict,
+                                  exclude = exclude)
+      
+      # Save results:
+      saveRDS(marker_genes, file = str_c(path_for_figures, "celltype_PAGarea/", results_name,
+                                         "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      
+      # Create a variable with a value for each group name to iterate through:
+      range_of_groups <- 1:paste(length(levels(groups)))
+      
+      # Create and export a separate table of results for each group:
+      for (chosen_group in range_of_groups) {
+        # Compose name of variable where results will be assigned to:
+        marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        
+        # Assign results of marker genes for current group to a temp variable:
+        temp_marker_set <- marker_genes[[chosen_group]] # Assign results of marker genes for current group to a temp variable
+        
+        #print(marker_set) # Print variable name of current group
+        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+
+        # Assign the results to the created variable:
+        assign(marker_set, temp_marker_set)
+        
+        # Export the results to a .csv file:
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "celltype_PAGarea/", "PAG_DE_results_", 
+                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        
+        # Populate the summary data.frame:
+        celltype_PAGarea_marker_set_summary = rbind(celltype_PAGarea_marker_set_summary,
+                                                    data.frame(marker_set = marker_set,
+                                                               group = levels(groups)[chosen_group],
+                                                               test = test,
+                                                               comparisons = comparisons,
+                                                               direction = direction,
+                                                               genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+                                                               genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+                                                               genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+        }
+    }
+  }
+}
+
+# Check out the summary: 
+celltype_PAGarea_marker_set_summary
+```
+
+```{r}
+# Take a look at the results from one fo the comparisons
+marker_set_VGluT2_vlpag_wilcox_some_up
+```
+
+For `pval.type=all`, we found no marker genes for any of the groups that passed the false discovery rate threshold of <0.05. This suggests that if we want to find genes that are differentially expressed across PAG subdivision we can either look at the results from `pval.type=some` or repeat the analysis following one of two approaches:
+
+* We could compare PAG subdivisions by using the metadata factor `PAG.area` and ignoring the `cell.type`, which would provide us with marker genes to target specific subdivisions.
+
+* Alternatively we could first subset the dataset by `cell.type` so that we are left with excitatory cells and inhibitory cells separately, and then re-run the comparisons by using the metadata factor `PAG.area`.
+
+### 7.3.1 | Marker genes for PAG subdivisions
+We will now follow the first of the two approaches delineated above and perform pairwise comparisons to identify marker genes for PAG subdivisions. For this, we continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
+```{r}
+dim(PAG_sceset_qc_norm_filt_corr_clust)
+dim(PAG_sceset_qc_norm_filt_corr_clust_de)
+```
+
+As always, to make sure we don't carry any variables from previous runs, we reset all the parameters to their default values:
+```{r}
+library(scran)
+# Parameters defaults:
+groups <- NULL # clustering results or group for each cell.
+
+test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+
+block <- NULL # factor specifying the blocking level for each cell.
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
+```
+
+For the `PAG.area` comparisons, we have four groups (dmPAG, dlPAG, lPAG, vlPAG). In this case, we are mainly interested in the genes specific to each group, so we will set `pval.type=all`. Again, after seeing `all` results in very few potential markers, we could add `pval.type=some` to the mix. We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
+```{r}
+# Set the groups to be compared (cluster IDs or metadata slot of interest):
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area
+
+# Set the string to be added to the filename when saving the results:
+results_name <- "PAG_subdivision_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+
+# Create a variable with the tests you want to run:
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_comparisons <- c("some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+desired_directions <- c("up") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+
+# Initialise an empty data.frame to populate with a summary of marker genes:
+PAGarea_marker_set_summary <- data.frame()
+
+# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+for (test_choice in desired_tests){
+  test <- test_choice
+  for (comparison_choice in desired_comparisons){
+    comparisons <- comparison_choice
+    for (direction_choice in desired_directions){
+      direction <- direction_choice
+      
+      # Set the remaining parameters:
+      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+      block <- PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex # factor specifying the blocking level for each cell.
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+      exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+      
+      # Run findMarkers:  
+      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                  groups = groups,
+                                  test.type = test,
+                                  pval.type = comparisons,
+                                  direction = direction,
+                                  lfc = lfc,
+                                  assay.type = "logcounts",
+                                  block = block,
+                                  restrict = restrict,
+                                  exclude = exclude)
+      
+      # Save results:
+      saveRDS(marker_genes, file = str_c(path_for_figures, "PAG_subdivision/", results_name,
+                                         "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      
+      # Create a variable with a value for each group name to iterate through:
+      range_of_groups <- 1:paste(length(levels(groups)))
+      
+      # Create and export a separate table of results for each group:
+      for (chosen_group in range_of_groups) {
+        # Compose name of variable where results will be assigned to:
+        marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        
+        # Assign results of marker genes for current group to a temp variable:
+        temp_marker_set <- marker_genes[[chosen_group]] # Assign results of marker genes for current group to a temp variable
+        
+        #print(marker_set) # Print variable name of current group
+        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+
+        # Assign the results to the created variable:
+        assign(marker_set, temp_marker_set)
+        
+        # Export the results to a .csv file:
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_",
+                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        
+        # Populate the summary data.frame:
+        PAGarea_marker_set_summary = rbind(PAGarea_marker_set_summary,
+                                           data.frame(marker_set = marker_set,
+                                                      group = levels(groups)[chosen_group],
+                                                      test = test,
+                                                      comparisons = comparisons,
+                                                      direction = direction,
+                                                      genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+                                                      genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+                                                      genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+      }
+    }
+  }
+}
+
+# Check out the summary: 
+PAGarea_marker_set_summary
+```
+
+As we can see, even when looking only at the differences between PAG subdivisions without paying attention to the cell-type we still don't find many potential marker genes. Interestingly though, we can see there are less genes for dmPAG, dlPAG, and lPAG compared to vlPAG. Given that we are using `pval.type=all` this may be a hint that vlPAG is more different from all the other subdivisions than what dm/dl/l are between themselves. To test this, we could repeat the analysis by pooling the metadata factors from dm/dl/l into a single one and compare dorsal PAG vs vlPAG.
+```{r}
+# Take a look at the results from one fo the comparisons
+marker_set_lpag_wilcox_some_up
+```
+
+Once we have obtained the results for each comparison, we can take a quick look at the top DE genes and filter them according the our custom list of genes we appended to the metadata in the begining of the pipeline. __Hint: only Transcription Factors have some results.__
+```{r}
+# Set the FDR threshold you want to look at.
+fdr_threshold <- 0.01 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+dmpag_de_genes <- rownames(marker_set_dmpag_wilcox_all_up[marker_set_dmpag_wilcox_all_up$FDR<fdr_threshold, ])
+dlpag_de_genes <- rownames(marker_set_dlpag_wilcox_all_up[marker_set_dlpag_wilcox_all_up$FDR<fdr_threshold, ])
+lpag_de_genes <- rownames(marker_set_lpag_wilcox_all_up[marker_set_lpag_wilcox_all_up$FDR<fdr_threshold, ])
+vlpag_de_genes <- rownames(marker_set_vlpag_wilcox_all_up[marker_set_vlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# cat("--- Ion Channels ---\n")
+# cat("--- dmPAG cells\n")
+# dmpag_de_genes[dmpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+# cat("--- dlPAG cells\n")
+# dlpag_de_genes[dlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+# cat("--- lPAG cells\n")
+# lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+# cat("--- vlPAG cells\n")
+# vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+# 
+# cat("\n\n--- Neuromodulators and Neuropeptides ---\n")
+# cat("--- dmPAG cells\n")
+# dmpag_de_genes[dmpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+# cat("--- dlPAG cells\n")
+# dlpag_de_genes[dlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+# cat("--- lPAG cells\n")
+# lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+# cat("--- vlPAG cells\n")
+# vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+# 
+# cat("\n\n--- Monoamines ---\n")
+# cat("--- dmPAG cells\n")
+# dmpag_de_genes[dmpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+# cat("--- dlPAG cells\n")
+# dlpag_de_genes[dlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+# cat("--- lPAG cells\n")
+# lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+# cat("--- vlPAG cells\n")
+# vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+# 
+# cat("\n\n--- Neurotransmitters ---\n")
+# cat("--- dmPAG cells\n")
+# dmpag_de_genes[dmpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+# cat("--- dlPAG cells\n")
+# dlpag_de_genes[dlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+# cat("--- lPAG cells\n")
+# lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+# cat("--- vlPAG cells\n")
+# vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+# 
+# cat("\n\n--- Transporters ---\n")
+# cat("--- dmPAG cells\n")
+# dmpag_de_genes[dmpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+# cat("--- dlPAG cells\n")
+# dlpag_de_genes[dlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+# cat("--- lPAG cells\n")
+# lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+# cat("--- vlPAG cells\n")
+# vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+
+cat("\n\n--- Transcription Factors ---\n")
+cat("--- dmPAG cells\n")
+dmpag_de_genes[dmpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+cat("--- dlPAG cells\n")
+dlpag_de_genes[dlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+cat("--- lPAG cells\n")
+lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+cat("--- vlPAG cells\n")
+vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+```
+
+### 7.3.2 | Marker genes for PAG subdivisions within cell type
+We can repeat the same strategy used for `PAG.area`, but this time using only either VGAT+ or VGluT2+ neurons. This will test for differences across subdivisions within a particular cell type, thus highlighting genes relevant to either inhibitory or excitatory neurons, which will be less stringent than taking all the groups together.
+
+#### Marker genes for PAG subdivisions in VGAT+ neurons
+To make sure we don't carry any variables from previous runs, we reset all the parameters to their default values:
+```{r}
+library(scran)
+# Parameters defaults:
+groups <- NULL # clustering results or group for each cell.
+
+test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+
+block <- NULL # factor specifying the blocking level for each cell.
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
+```
+
+For the `PAG.area` comparisons within VGAT+ neurons, we are back to having four groups (dmPAG, dlPAG, lPAG, vlPAG). Given that we are still mainly interested in the genes specific to each group, we will set `pval.type=all`. Again, after seeing `all` results in very few potential markers, we could add `pval.type=some` to the mix. We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
+```{r}
+# Set the groups to be compared (cluster IDs or metadata slot of interest):
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGAT"]$PAG.area
+
+# Set the string to be added to the filename when saving the results:
+results_name <- "PAG_subdivision_vgat_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+
+# Create a variable with the tests you want to run:
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_comparisons <- c("some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+desired_directions <- c("up") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+
+# Initialise an empty data.frame to populate with a summary of marker genes:
+PAGarea_VGAT_marker_set_summary <- data.frame()
+
+# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+for (test_choice in desired_tests){
+  test <- test_choice
+  for (comparison_choice in desired_comparisons){
+    comparisons <- comparison_choice
+    for (direction_choice in desired_directions){
+      direction <- direction_choice
+      
+      # Set the remaining parameters:
+      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+      block <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGAT"]$mouse.sex # factor specifying the blocking level for each cell.
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+      exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+      
+      # Run findMarkers:  
+      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGAT"],
+                                  groups = groups,
+                                  test.type = test,
+                                  pval.type = comparisons,
+                                  direction = direction,
+                                  lfc = lfc,
+                                  assay.type = "logcounts",
+                                  block = block,
+                                  restrict = restrict,
+                                  exclude = exclude)
+      
+      # Save results:
+      saveRDS(marker_genes, file = str_c(path_for_figures, "PAG_subdivision/", results_name, 
+                                         "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      
+      # Create a variable with a value for each group name to iterate through:
+      range_of_groups <- 1:paste(length(levels(groups)))
+      
+      # Create and export a separate table of results for each group:
+      for (chosen_group in range_of_groups) {
+        # Compose name of variable where results will be assigned to:
+        marker_set <- str_c("marker_set_VGAT_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        
+        # Assign results of marker genes for current group to a temp variable:
+        temp_marker_set <- marker_genes[[chosen_group]] # Assign results of marker genes for current group to a temp variable
+        
+        #print(marker_set) # Print variable name of current group
+        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+
+        # Assign the results to the created variable:
+        assign(marker_set, temp_marker_set)
+        
+        # Export the results to a .csv file:
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_", 
+                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        
+        # Populate the summary data.frame:
+        PAGarea_VGAT_marker_set_summary = rbind(PAGarea_VGAT_marker_set_summary,
+                                                data.frame(marker_set = marker_set,
+                                                           group = levels(groups)[chosen_group],
+                                                           test = test,
+                                                           comparisons = comparisons,
+                                                           direction = direction,
+                                                           genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+                                                           genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+                                                           genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+        }
+    }
+  }
+}
+
+# Check out the summary: 
+PAGarea_VGAT_marker_set_summary
+```
+
+Again, even when looking only at the differences between PAG subdivisions within VGAT+ neurons we only find some potential markers in vlPAG neurons, again hinting at the possibility that vlPAG is more different from all the other subdivisions than what dm/dl/l are between themselves. To test this, we could repeat the analysis by pooling the metadata factors from dm/dl/l into a single one and compare dorsal PAG vs vlPAG.
+```{r}
+# Take a look at the results from one fo the comparisons
+marker_set_vlpag_wilcox_all_up
+```
+
+#### Marker genes for PAG subdivision in VGluT2+ neurons
+To make sure we don't carry any variables from previous runs, we reset all the parameters to their default values:
+```{r}
+library(scran)
+# Parameters defaults:
+groups <- NULL # clustering results or group for each cell.
+
+test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+
+block <- NULL # factor specifying the blocking level for each cell.
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
+```
+
+For the `PAG.area` comparisons within VGluT2+ neurons, we again have four groups (dmPAG, dlPAG, lPAG, vlPAG). Given that we are still mainly interested in the genes specific to each group, we will set `pval.type=all`. Again, after seeing `all` results in very few potential markers, we could add `pval.type=some` to the mix. We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
+```{r}
+# Set the groups to be compared (cluster IDs or metadata slot of interest):
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGluT2"]$PAG.area
+
+# Set the string to be added to the filename when saving the results:
+results_name <- "PAG_subdivision_vglut2_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+
+# Create a variable with the tests you want to run:
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_comparisons <- c("some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+desired_directions <- c("up") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+
+# Initialise an empty data.frame to populate with a summary of marker genes:
+PAGarea_VGluT2_marker_set_summary <- data.frame()
+
+# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+for (test_choice in desired_tests){
+  test <- test_choice
+  for (comparison_choice in desired_comparisons){
+    comparisons <- comparison_choice
+    for (direction_choice in desired_directions){
+      direction <- direction_choice
+      
+      # Set the remaining parameters:
+      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+      block <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGluT2"]$mouse.sex # factor specifying the blocking level for each cell.
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+      exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+      
+      # Run findMarkers:  
+      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGluT2"],
+                                  groups = groups,
+                                  test.type = test,
+                                  pval.type = comparisons,
+                                  direction = direction,
+                                  lfc = lfc,
+                                  assay.type = "logcounts",
+                                  block = block,
+                                  restrict = restrict,
+                                  exclude = exclude)
+      
+      # Save results:
+      saveRDS(marker_genes, file = str_c(path_for_figures, "PAG_subdivision/", results_name,
+                                         "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      
+      # Create a variable with a value for each group name to iterate through:
+      range_of_groups <- 1:paste(length(levels(groups)))
+      
+      # Create and export a separate table of results for each group:
+      for (chosen_group in range_of_groups) {
+        # Compose name of variable where results will be assigned to:
+        marker_set <- str_c("marker_set_VGluT2_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        
+        # Assign results of marker genes for current group to a temp variable:
+        temp_marker_set <- marker_genes[[chosen_group]] # Assign results of marker genes for current group to a temp variable
+        
+        #print(marker_set) # Print variable name of current group
+        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+
+        # Assign the results to the created variable:
+        assign(marker_set, temp_marker_set)
+        
+        # Export the results to a .csv file:
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_", 
+                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        
+        # Populate the summary data.frame:
+        PAGarea_VGluT2_marker_set_summary = rbind(PAGarea_VGluT2_marker_set_summary,
+                                                  data.frame(marker_set = marker_set,
+                                                             group = levels(groups)[chosen_group],
+                                                             test = test,
+                                                             comparisons = comparisons,
+                                                             direction = direction,
+                                                             genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+                                                             genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+                                                             genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+        }
+    }
+  }
+}
+
+# Check out the summary: 
+PAGarea_VGluT2_marker_set_summary
+```
+
+Even though we are still looking only at the differences between PAG subdivisions within VGluT2+ neurons, in this case we seem to have slightly more potential markers between dmPAG and dlPAG neurons, and nearly none for lPAG and vlPAG. We don't seem to find a clear structure according to PAG subdivision, so we will move on to examining the results from the clustering.
+```{r}
+# Take a look at the results from one fo the comparisons
+marker_set_vlpag_wilcox_all_up
+```
 
 ## Step 7.4 | Identifying marker genes between clusters
+For the `cluster.ID` comparisons, the number of groups will depend on the parameters we chose. We will run the pairwise comparisons both for a low value of `k` (e.g. `k=5`, which resulted in 11 clusters) and for a higher value of `k` (e.g. `k = 13`, which resulted in 8 clusters). Given that we are still mainly interested in the genes specific to each group, we will set `pval.type=all`. Again, after seeing `all` results in very few potential markers, we will add `some` to the mix. We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
+
+### 7.4.1 | Marker genes for SNN clusters (k = 5)
+We can refresh the clustering results using `k = 5`:
+```{r}
+UMAP_SNN_JaccardLouvain_k5
+```
+
+```{r}
+library(scran)
+# Parameters defaults:
+groups <- NULL # clustering results or group for each cell.
+
+test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+
+block <- NULL # factor specifying the blocking level for each cell.
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
+```
+
+```{r}
+# Set the groups to be compared (cluster IDs or metadata slot of interest):
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$SNN_clusters_cv2_jaccard_k5
+
+# Set the string to be added to the filename when saving the results:
+results_name <- "SNN_clusters_cv2_jaccard_k5_" # one of "SNN_clusters_cv2_jaccard_k13_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+
+# Create a variable with the tests you want to run:
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_comparisons <- c("some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+desired_directions <- c("up") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+
+# Initialise an empty `data.frame` to populate with a summary of marker genes:
+SNN_clusters_k5_marker_set_summary <- data.frame()
+
+# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+for (test_choice in desired_tests){
+  test <- test_choice
+  for (comparison_choice in desired_comparisons){
+    comparisons <- comparison_choice
+    for (direction_choice in desired_directions){
+      direction <- direction_choice
+      
+      # Set the remaining parameters:
+      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+      block <- PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex # factor specifying the blocking level for each cell. Try PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+      exclude <- 10 # the levels of groups for which NOT to perform pairwise comparisons.
+      
+      # Run findMarkers:
+      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                  groups = groups,
+                                  test.type = test,
+                                  pval.type = comparisons,
+                                  direction = direction,
+                                  lfc = lfc,
+                                  assay.type = "logcounts",
+                                  block = block,
+                                  restrict = restrict,
+                                  exclude = exclude)
+      
+      # Save results:
+      saveRDS(marker_genes, file = str_c(path_for_figures, "SNN_clusters/", results_name, 
+                                         "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      
+      # Create a variable with a value for each group name to iterate through:
+      range_of_groups <- 1:paste(length(levels(groups))-1) # subtract 1 to account for the exclusion of the macrophage-enriched cluster
+      
+      # Create and export a separate table of results for each group:
+      for (chosen_group in range_of_groups) {
+        # Compose name of variable where results will be assigned to:
+        marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        
+        # Assign results of marker genes for current group to a temp variable:
+        temp_marker_set <- marker_genes[[chosen_group]]
+        
+        #print(marker_set) # Print variable name of current group
+        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+        
+        # Assign the results to the created variable:
+        assign(marker_set, temp_marker_set) # Assign the results to the created variable
+        
+        # Export the results to a .csv file:
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
+                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        # Populate the summary data.frame:        
+        SNN_clusters_k5_marker_set_summary = rbind(SNN_clusters_k5_marker_set_summary,
+                                                   data.frame(marker_set = marker_set,
+                                                              group = levels(groups)[chosen_group],
+                                                              test = test,
+                                                              comparisons = comparisons,
+                                                              direction = direction,
+                                                              genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+                                                              genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+                                                              genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+      }
+    }
+  }
+}
+
+# Check out the summary: 
+SNN_clusters_k5_marker_set_summary
+```
+
+### 7.4.2 | Marker genes for SNN clusters (k = 13)
+We can refresh the clustering results using `k = 13`:
+```{r}
+UMAP_SNN_JaccardLouvain_k13
+```
+
+```{r}
+library(scran)
+# Parameters defaults:
+groups <- NULL # clustering results or group for each cell.
+
+test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+
+block <- NULL # factor specifying the blocking level for each cell.
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
+```
+
+```{r}
+# Set the groups to be compared (cluster IDs or metadata slot of interest):
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$SNN_clusters_cv2_jaccard_k13
+
+# Set the string to be added to the filename when saving the results:
+results_name <- "SNN_clusters_cv2_jaccard_k13_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+
+# Create a variable with the tests you want to run:
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_comparisons <- c("some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+desired_directions <- c("up") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+
+# Initialise an empty `data.frame` to populate with a summary of marker genes:
+SNN_clusters_k13_marker_set_summary <- data.frame()
+
+# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+for (test_choice in desired_tests){
+  test <- test_choice
+  for (comparison_choice in desired_comparisons){
+    comparisons <- comparison_choice
+    for (direction_choice in desired_directions){
+      direction <- direction_choice
+      
+      # Set the remaining parameters:
+      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+      block <- PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex # factor specifying the blocking level for each cell. Try PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+      exclude <- 7 # the levels of groups for which NOT to perform pairwise comparisons.
+      
+      # Run findMarkers:
+      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                  groups = groups,
+                                  test.type = test,
+                                  pval.type = comparisons,
+                                  direction = direction,
+                                  lfc = lfc,
+                                  assay.type = "logcounts",
+                                  block = block,
+                                  restrict = restrict,
+                                  exclude = exclude)
+      
+      # Save results:
+      saveRDS(marker_genes, file = str_c(path_for_figures, "SNN_clusters/", results_name, 
+                                         "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      
+      # Create a variable with a value for each group name to iterate through:
+      range_of_groups <- 1:paste(length(levels(groups))-1) # subtract 1 to account for the exclusion of the macrophage-enriched cluster
+      
+      # Create and export a separate table of results for each group:
+      for (chosen_group in range_of_groups) {
+        # Compose name of variable where results will be assigned to:
+        marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        
+        # Assign results of marker genes for current group to a temp variable:
+        temp_marker_set <- marker_genes[[chosen_group]]
+        
+        #print(marker_set) # Print variable name of current group
+        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+        
+        # Assign the results to the created variable:
+        assign(marker_set, temp_marker_set) # Assign the results to the created variable
+        
+        # Export the results to a .csv file:
+        write.csv(temp_marker_set, file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
+                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        # Populate the summary data.frame:        
+        SNN_clusters_k13_marker_set_summary = rbind(SNN_clusters_k13_marker_set_summary,
+                                                   data.frame(marker_set = marker_set,
+                                                              group = levels(groups)[chosen_group],
+                                                              test = test,
+                                                              comparisons = comparisons,
+                                                              direction = direction,
+                                                              genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+                                                              genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+                                                              genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+      }
+    }
+  }
+}
+
+# Check out the summary: 
+SNN_clusters_k13_marker_set_summary
+```
 
 ## Step 7.5 | Visualising results from differential expression analysis
+
+```{r}
+library(pheatmap)
+best_set_up_all_clusters_cluster_4 <- marker_set_up_all_clusters_cluster_4[1:30,]
+best_set_up_all_clusters_cluster_4_names <- rownames(best_set_up_all_clusters_cluster_4)
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
+            features = best_set_up_all_clusters_cluster_4_names, # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k10), 
+            # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix.
+            # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = TRUE, cluster_cols = FALSE,
+            main = "Heatmap for Cluster 4 marker genes (t-test | all | up)")
+```
+
+```{r}
+library(pheatmap)
+best_set_wilcox_up_all_clusters_cluster_4 <- marker_set_wilcox_up_all_clusters_cluster_4[marker_set_wilcox_up_all_clusters_cluster_4$Top <= 6,]
+#best_set_wilcox_up_all_clusters_cluster_4
+AUCs_wilcox_up <- as.matrix(best_set_wilcox_up_all_clusters_cluster_4[,-(1:3)]) # leave only the columns containing logFC values for each comparison
+#AUCs_wilcox_up
+colnames(AUCs_wilcox_up) <- sub("AUC.", "", colnames(AUCs_wilcox_up)) # Remove "AUC." from the colnames, to leave the cluster number alone
+#AUCs_wilcox_up
+
+# Plot the AUCs - will plot one column for each comparison, and the top marker genes for the selected group should have a high value for each comparison
+pheatmap(AUCs_wilcox_up, breaks = seq(0, 1, length.out = 21), color = viridis::viridis(21),
+         main = "Heatmap for Cluster 4 AUCs (wilcoxon | all | up)")
+
+# Alternative plot - will plot expression of the marker genes
+best_set_wilcox_up_all_clusters_cluster_4_names <- rownames(best_set_wilcox_up_all_clusters_cluster_4)
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
+            features = best_set_wilcox_up_all_clusters_cluster_4_names, # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k10), 
+            # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix.
+            # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "PAG.area"), # how the columns should be annotated with colours.
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = TRUE, cluster_cols = FALSE,
+             main = "Heatmap for Cluster 4 marker genes (wilcoxon | all | up)")
+```
+
+https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2018/SingleCell/practical/crukBioinfoSummerSchoolJuly2018_scRnaSeqCellPopId_practical_run.html#19_clustering_cells_into_putative_subpopulations
+```{r}
+# select some top genes:
+top.markers <- rownames(marker.set)[marker.set$Top <= 10]
+
+# have matrix to annotate sample with cluster and sample:
+tmpData <- logcounts(nz.sce)[top.markers,]
+# concat sample and barcode names to make unique name across the whole data set
+tmpCellNames <- paste(colData(nz.sce)$Sample, colData(nz.sce)$Barcode, sep="_")
+# use these to namecolumn of matrix the show as heatmap:
+colnames(tmpData) <- tmpCellNames # colData(nz.sce)$Barcode                    
+
+# columns annotation with cell name:
+mat_col <- data.frame(cluster = nz.sce$cluster, sample = nz.sce$Sample)
+rownames(mat_col) <- colnames(tmpData)
+rownames(mat_col) <- tmpCellNames # colData(nz.sce)$Barcode
+
+# Prepare colours for clusters:
+colourCount = length(unique(nz.sce$cluster))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+mat_colors <- list(group = getPalette(colourCount))
+names(mat_colors$group) <- unique(nz.sce$cluster)
+
+# plot heatmap:
+pheatmap(tmpData,
+         border_color      = NA,
+         show_colnames     = FALSE,
+         show_rownames     = FALSE,
+         drop_levels       = TRUE,
+         annotation_col    = mat_col,
+         annotation_colors = mat_colors
+         )
+
+# One can sort both the gene and sample dendrograms to improve the heatmap.
+
+library(dendsort)
+
+mat <- tmpData
+mat_cluster_cols <- hclust(dist(t(mat)))
+
+sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
+
+mat_cluster_cols <- sort_hclust(mat_cluster_cols)
+#plot(mat_cluster_cols, main = "Sorted Dendrogram", xlab = "", sub = "")
+
+mat_cluster_rows <- sort_hclust(hclust(dist(mat)))
+
+pheatmap(tmpData,
+         border_color      = NA,
+         show_colnames     = FALSE,
+         show_rownames     = FALSE,
+         drop_levels       = TRUE,
+         annotation_col    = mat_col,
+         annotation_colors = mat_colors,
+         cluster_cols      = mat_cluster_cols,
+         cluster_rows      = mat_cluster_rows
+         )
+```
 
 ## Step 7.6 | Save the SingleCellExperiment object
 ```{r}
