@@ -741,7 +741,7 @@ celltype_PAGarea_marker_set_summary
 
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_VGluT2_vlpag_wilcox_some_up
+marker_set_VGluT2_dlpag_wilcox_all_up
 ```
 
 For `pval.type=all`, we found no marker genes for any of the groups that passed the false discovery rate threshold of <0.05. This suggests that if we want to find genes that are differentially expressed across PAG subdivision we can either look at the results from `pval.type=some` or repeat the analysis following one of two approaches:
@@ -866,7 +866,7 @@ PAGarea_marker_set_summary
 As we can see, even when looking only at the differences between PAG subdivisions without paying attention to the cell-type we still don't find many potential marker genes. Interestingly though, we can see there are less genes for dmPAG, dlPAG, and lPAG compared to vlPAG. Given that we are using `pval.type=all` this may be a hint that vlPAG is more different from all the other subdivisions than what dm/dl/l are between themselves. To test this, we could repeat the analysis by pooling the metadata factors from dm/dl/l into a single one and compare dorsal PAG vs vlPAG.
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_lpag_wilcox_some_up
+marker_set_dlpag_wilcox_all_up
 ```
 
 Once we have obtained the results for each comparison, we can take a quick look at the top DE genes and filter them according the our custom list of genes we appended to the metadata in the begining of the pipeline. __Hint: only Transcription Factors have some results.__
@@ -1015,7 +1015,7 @@ for (test_choice in desired_tests){
       # Create and export a separate table of results for each group:
       for (chosen_group in range_of_groups) {
         # Compose name of variable where results will be assigned to:
-        marker_set <- str_c("marker_set_VGAT_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        marker_set <- str_c("marker_set_vgat_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
         
         # Assign results of marker genes for current group to a temp variable:
         temp_marker_set <- marker_genes[[chosen_group]] # Assign results of marker genes for current group to a temp variable
@@ -1053,7 +1053,7 @@ PAGarea_VGAT_marker_set_summary
 Again, even when looking only at the differences between PAG subdivisions within VGAT+ neurons we only find some potential markers in vlPAG neurons, again hinting at the possibility that vlPAG is more different from all the other subdivisions than what dm/dl/l are between themselves. To test this, we could repeat the analysis by pooling the metadata factors from dm/dl/l into a single one and compare dorsal PAG vs vlPAG.
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_vlpag_wilcox_all_up
+marker_set_vgat_vlpag_wilcox_all_up
 ```
 
 #### Marker genes for PAG subdivision in VGluT2+ neurons
@@ -1128,7 +1128,7 @@ for (test_choice in desired_tests){
       # Create and export a separate table of results for each group:
       for (chosen_group in range_of_groups) {
         # Compose name of variable where results will be assigned to:
-        marker_set <- str_c("marker_set_VGluT2_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        marker_set <- str_c("marker_set_vglut2_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
         
         # Assign results of marker genes for current group to a temp variable:
         temp_marker_set <- marker_genes[[chosen_group]] # Assign results of marker genes for current group to a temp variable
@@ -1166,7 +1166,7 @@ PAGarea_VGluT2_marker_set_summary
 Even though we are still looking only at the differences between PAG subdivisions within VGluT2+ neurons, in this case we seem to have slightly more potential markers between dmPAG and dlPAG neurons, and nearly none for lPAG and vlPAG. We don't seem to find a clear structure according to PAG subdivision, so we will move on to examining the results from the clustering.
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_vlpag_wilcox_all_up
+marker_set_vglut2_dlpag_wilcox_all_up
 ```
 
 ## Step 7.4 | Identifying marker genes between clusters
@@ -1247,7 +1247,7 @@ for (test_choice in desired_tests){
       # Create and export a separate table of results for each group:
       for (chosen_group in range_of_groups) {
         # Compose name of variable where results will be assigned to:
-        marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        marker_set <- str_c("marker_set_SNN_k5_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
         
         # Assign results of marker genes for current group to a temp variable:
         temp_marker_set <- marker_genes[[chosen_group]]
@@ -1279,6 +1279,11 @@ for (test_choice in desired_tests){
 
 # Check out the summary: 
 SNN_clusters_k5_marker_set_summary
+```
+
+```{r}
+# Take a look at the results from one fo the comparisons
+marker_set_SNN_k5_5_wilcox_some_up
 ```
 
 ### 7.4.2 | Marker genes for SNN clusters (k = 13)
@@ -1356,7 +1361,7 @@ for (test_choice in desired_tests){
       # Create and export a separate table of results for each group:
       for (chosen_group in range_of_groups) {
         # Compose name of variable where results will be assigned to:
-        marker_set <- str_c("marker_set_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        marker_set <- str_c("marker_set_SNN_k13_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
         
         # Assign results of marker genes for current group to a temp variable:
         temp_marker_set <- marker_genes[[chosen_group]]
@@ -1388,6 +1393,11 @@ for (test_choice in desired_tests){
 
 # Check out the summary: 
 SNN_clusters_k13_marker_set_summary
+```
+
+```{r}
+# Take a look at the results from one fo the comparisons
+marker_set_SNN_k13_3_wilcox_all_up
 ```
 
 ## Step 7.5 | Visualising results from differential expression analysis
