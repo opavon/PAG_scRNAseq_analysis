@@ -296,7 +296,7 @@ Large studies may contain factors of variation that are known and not interestin
 
 For each gene, each pairwise comparison between clusters is performed separately in each level of the blocking factor. The function will then combine p-values from different blocking levels using Stouffer’s Z method to obtain a single p-value per pairwise comparison. (These p-values are further combined across comparisons to obtain a single p-value per gene, using either Simes’s method or an intersection-union test depending on the value of` pval.type=`.) This approach favours genes that exhibit consistent DE in the same direction in each plate.
 
-The `block=` argument works with all tests shown above and is robust to difference in the log-fold changes or variance between batches. However, it assumes that each pair of clusters is present in at least one batch. In scenarios where cells from two clusters never co-occur in the same batch, the comparison will be impossible and NAs will be reported in the output. 
+The `block=` argument works with all tests shown above and is robust to difference in the log-fold changes or variance between batches. However, it assumes that each pair of clusters is present in at least one batch. In scenarios where cells from two clusters never co-occur in the same batch, the comparison will be impossible and NAs will be reported in the output.
 
 _Using the `design=` argument_
 Another approach is to define a design matrix containing the batch of origin as the sole factor. `findMarkers()` will then fit a linear model to the log-expression values, similar to the use of `limma` for bulk RNA sequencing data (Ritchie et al. 2015). This handles situations where multiple batches contain unique clusters, as comparisons can be implicitly performed via shared cell types in each batch. There is also a slight increase in power when information is shared across clusters for variance estimation.
@@ -347,9 +347,15 @@ One consequence of the DE analysis strategy is that markers are defined relative
 Alternatively, marker detection can be performed by treating gene expression as a predictor variable for cluster assignment. For a pair of clusters, we can find genes that discriminate between them by performing inference with a logistic model where the outcome for each cell is whether it was assigned to the first cluster and the lone predictor is the expression of each gene. Treating the cluster assignment as the dependent variable is more philosophically pleasing in some sense, as the clusters are indeed defined from the expression data rather than being known in advance. (Note that this does not solve the data snooping problem.) In practice, this approach effectively does the same task as a Wilcoxon rank sum test in terms of quantifying separation between clusters. Logistic models have the advantage in that they can easily be extended to block on multiple nuisance variables, though this is not typically necessary in most use cases. Even more complex strategies use machine learning methods to determine which features contribute most to successful cluster classification, but this is probably unnecessary for routine analyses.
 
 ### 7.1.9 | Our approach
+After reading about the different options we have for DE analysis, we will be using Wilcoxon rank sum test to find marker genes for the following situations:
 
+* `cell.type`: we are interested in the gene expression differences between excitatory and inhibitory neurons, as they can tell us about the molecular toolkit available to each type and help us generate hypothesis to test their physiological function. Given that we used transgenic lines to target each cell type, we can use the relevant metadata slot to define the groups we will be comparing.
 
-We first take a look at the main parameters we will need for our call to `findMarkers()` and reset them to their default values:
+* `celltype_PAGarea`: we are also interested in the differences between the different PAG subdivisions. Each PAG subdivision has been involved in regulating or driving different behaviours. It would be interesting to know whether the cell types in each subdivision can be modulated via similar or different neurotransmitter and neuromodulatory pathways. We can investigate this by using the compound metadata factor we created by combining `cell.type` and `PAG.area`.
+
+* `cluster.ID`: finally, we are also interested in finding marker genes for the clusters we identified using the clustering approach of our choice. 
+
+The next two chunks of code will be the main blocks of our DE analysis. They will allow us to set the main paramteres for the `findMarkers()` function and fine tune the comparisons we want to make. Before we proceed with the different analysis sections, let us take a look at the main parameters we will need for our call to `findMarkers()` and reset them to their default values:
 ```{r}
 library(scran)
 # Parameters defaults:
@@ -361,25 +367,26 @@ direction <- c("any", "up", "down") # the direction of log-fold changes to be co
 lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
 
 block <- NULL # factor specifying the blocking level for each cell.
-design <- NULL # numeric matrix with blocking terms for uninteresting factors (not be confounded with groups).
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
 restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
 exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
 ```
 
-We can run the following chunk of code several times, changing the parameters for the `test.type`, `pval.type`, `direction`, `lfc`, and others to extract the results of the comparison we want into a .csv file. We also assign the results to separate variables so we can plot them later on.
+Finally, the following code allows us to run the main analysis using `findMarkers()` and adapt it to each comparison. We can run the following chunk of code several times, changing the parameters for the `test.type`, `pval.type`, `direction`, `lfc`, and others to extract the results of the comparison we want into a .csv file. It also allows us to assign the results to separate variables so we can plot them later on.
 ```{r}
 # Set the groups to be compared (cluster IDs or metadata slot of interest):
-groups <- PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k8
+groups <- PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k5
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "SNN_clusters_cv2_jaccard_k8_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "SNN_clusters_cv2_jaccard_k5_" # one of "SNN_clusters_cv2_jaccard_k5_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
 desired_comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
 desired_directions <- c("up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
 
-# Initialise an empty data.frame to populate with a summary of marker genes:
+# Initialise an empty `data.frame` to populate with a summary of marker genes:
 SNN_clusters_marker_set_summary <- data.frame()
 
 # Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
@@ -392,8 +399,8 @@ for (test_choice in desired_tests){
       
       # Set the remaining parameters:
       lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
-      block <- PAG_sceset_qc_norm_filt_corr_clust$mouse.sex # factor specifying the blocking level for each cell.
-      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not be confounded with groups).
+      block <- PAG_sceset_qc_norm_filt_corr_clust$mouse.sex # factor specifying the blocking level for each cell. Try PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
       restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
       exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
       
@@ -439,6 +446,7 @@ for (test_choice in desired_tests){
                                                            test = test,
                                                            comparisons = comparisons,
                                                            direction = direction,
+                                                           genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
                                                            genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
                                                            genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
       }
@@ -452,7 +460,7 @@ SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="wilcox",]
 SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="binom",]
 ```
 
-If you do all loops you get 297 files. Remove direction "any" as it is the same as having "up" and "down" separately to get 198.
+If we were to run the previous chunk using the default parameters (the three types of test, the three possible types of comparison, and the three possible directions for testing log-fold changes of gene expression) on our graph-based clustering results (which resulted in 11 clusters), we would get 297 files. By removing the direction `any` (which is the same as having "up" and "down" separately) we can reduce it to 198. We can do this for exploratory analysis if we want to compare the output of each type of test. Otherwise, once we have decided on the type of test and the type of comparisons we want to make, we can reduce the output to 22 files (if we have 11 clusters).
 
 ## Step 7.2 | Identifying marker genes between excitatory and inhibitory cells
 Once we have performed pairwise comparisons between the identified clusters, we can move on to perform comparisons according to our experimental design. For this, we will continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
@@ -473,10 +481,10 @@ direction <- c("any", "up", "down") # the direction of log-fold changes to be co
 lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
 
 block <- NULL # factor specifying the blocking level for each cell.
-design <- NULL # numeric matrix with blocking terms for uninteresting factors (not be confounded with groups).
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
 restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
 exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
-print("Parameters back to default")
+print("Parameters back to default values")
 ```
 
 For the `cell.type` comparisons, we only need to iterate through the different statistical tests. The fact that we only have two groups (VGAT and VGluT2 cells) means that all options in `pval.type` will yield the same results, and `direction = "up"` in one `cell.type` will be equivalent to `direction = "down"` in the other `cell.type` and viceversa, so by setting `direction = "up"` we will already obtain all the results we want.
@@ -485,10 +493,10 @@ For the `cell.type` comparisons, we only need to iterate through the different s
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de$cell.type
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "celltype_" # one of "SNN_clusters_cv2_jaccard_k8_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "celltype_" # one of "SNN_clusters_cv2_jaccard_k5_", "celltype_", "PAGarea_", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
-desired_tests <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
 
 # Initialise an empty data.frame to populate with a summary of marker genes:
 celltype_marker_set_summary <- data.frame()
@@ -501,8 +509,8 @@ for (test_choice in desired_tests){
   comparisons <- "all" # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
   direction <- "up" # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
   lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
-  block <- PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex # factor specifying the blocking level for each cell.
-  design <- NULL # numeric matrix with blocking terms for uninteresting factors (not be confounded with groups).
+  block <- PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex # factor specifying the blocking level for each cell. Try PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex
+  design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
   restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
   exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
   
@@ -549,6 +557,7 @@ for (test_choice in desired_tests){
                                                    test = test,
                                                    comparisons = comparisons,
                                                    direction = direction,
+                                                   genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
                                                    genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
                                                    genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
     }
@@ -558,11 +567,18 @@ for (test_choice in desired_tests){
 celltype_marker_set_summary
 ```
 
+Once we have obtained the results for each comparison, we can take a quick look at the top DE genes and filter them according the our custom list of genes we appended to the metadata in the begining of the pipeline.
 ```{r}
-#names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
+# Take a look at the gene lists we have in the metadata
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
+```
 
-VGAT_de_genes <- rownames(marker_set_VGAT_wilcox_all_up[marker_set_VGAT_wilcox_all_up$FDR<0.1, ]) 
-VGluT2_de_genes <- rownames(marker_set_VGluT2_wilcox_all_up[marker_set_VGluT2_wilcox_all_up$FDR<0.1, ]) 
+```{r}
+# Set the FDR threshold you want to look at.
+fdr_threshold <- 0.01 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGAT_de_genes <- rownames(marker_set_VGAT_wilcox_all_up[marker_set_VGAT_wilcox_all_up$FDR<fdr_threshold, ])
+VGluT2_de_genes <- rownames(marker_set_VGluT2_wilcox_all_up[marker_set_VGluT2_wilcox_all_up$FDR<fdr_threshold, ])
 
 cat("--- Ion Channels ---\n")
 cat("--- VGAT cells\n")
