@@ -1512,7 +1512,7 @@ plotPCA(PAG_sceset_qc, colour_by = "pcaReduce")
 
 # STEP 7 | Differential Expression Analysis
 ## Step 7.1 (old) | Identifying marker genes between subpopulations
-### 7.1.1 | Identify cluster-specific marker genes
+### 7.1a.1 | Identify cluster-specific marker genes
 We first take a look at the main parameters we will need for our call to `findMarkers()` and reset them to their default values:
 ```{r}
 library(scran)
@@ -1618,7 +1618,7 @@ SNN_clusters_marker_set_summary[SNN_clusters_marker_set_summary$test=="binom",]
 
 If you do all loops you get 297 files. Remove direction "any" as it is the same as having "up" and "down" separately to get 198.
 
-### 7.1.2 | Marker genes for cell type
+### 7.1a.2 | Marker genes for cell type
 Once we have performed pairwise comparisons between the identified clusters, we can move on to perform comparisons according to our experimental design. For this, we will continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
 ```{r}
 dim(PAG_sceset_qc_norm_filt_corr_clust)
@@ -1752,7 +1752,7 @@ VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)
 VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
 ```
 
-### 7.1.3 | Marker genes for cell type within PAG subdivision
+### 7.1a.3 | Marker genes for cell type within PAG subdivision
 _We can repeat the same strategy used for `PAG.area`, but this time using only either VGAT+ or VGluT2+ neurons. This will test for differences across subdivisions within a particular cell type, thus highlighting genes relevant to either inhibitory or excitatory neurons, which will be less stringent than taking all the groups together._
 
 #### Marker genes for cell type in dmPAG neurons
@@ -2147,7 +2147,7 @@ for (test_choice in desired_tests){
 celltype_vlpag_marker_set_summary
 ```
 
-### 7.1.4 | Marker genes for PAG subdivisions
+### 7.1a.4 | Marker genes for PAG subdivisions
 We will now perform pairwise comparisons to identify marker genes for PAG subdivisions. For this, we continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
 ```{r}
 dim(PAG_sceset_qc_norm_filt_corr_clust)
@@ -2304,7 +2304,7 @@ lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)
 vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
 ```
 
-### 7.1.5 | Marker genes for PAG subdivision within cell type
+### 7.1a.5 | Marker genes for PAG subdivision within cell type
 We can repeat the same strategy used for `PAG.area`, but this time using only either VGAT+ or VGluT2+ neurons. This will test for differences across subdivisions within a particular cell type, thus highlighting genes relevant to either inhibitory or excitatory neurons, which will be less stringent than taking all the groups together.
 
 #### Marker genes for PAG subdivision in VGAT+ neurons
@@ -2517,7 +2517,7 @@ PAGarea_VGluT2_marker_set_summary[PAGarea_VGluT2_marker_set_summary$test=="wilco
 PAGarea_VGluT2_marker_set_summary[PAGarea_VGluT2_marker_set_summary$test=="binom",]
 ```
 
-### 7.1.6 | Marker genes for celltype_PAGarea
+### 7.1a.6 | Marker genes for celltype_PAGarea
 We will now perform pairwise comparisons to identify marker genes for `celltype_PAGarea`. For this, we continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
 ```{r}
 dim(PAG_sceset_qc_norm_filt_corr_clust)
@@ -2628,11 +2628,11 @@ celltype_PAGarea_marker_set_summary[celltype_PAGarea_marker_set_summary$test=="w
 celltype_PAGarea_marker_set_summary[celltype_PAGarea_marker_set_summary$test=="binom",]
 ```
 
-### 7.1.7 | Marker genes for PAG AP axis
+### 7.1a.7 | Marker genes for PAG AP axis
 
-### 7.1.8 | Marker genes for cell type along AP axis
+### 7.1a.8 | Marker genes for cell type along AP axis
 
-### 7.1.9 | Marker genes for cell type according to VGAT or VGluT2 expression
+### 7.1a.9 | Marker genes for cell type according to VGAT or VGluT2 expression
 
 ### 0.0.0 | TO ADD - HEATMAPS - Tricks and comments
 ```{r}
@@ -2715,7 +2715,7 @@ pheatmap(tmpData,
          )
 ```
 
-### 7.1.1 | Using pairwise t-tests
+### 7.1b.1 | Using pairwise t-tests
 The Welch t-test is a statistical method that allows us to test for differences in expression between clusters. It is quickly computed and has good statistical properties for large numbers of cells (Soneson and Robinson 2018). The `findMarkers()` function from the `scran` package provides a convenience wrapper for marker gene identification between groups of cells, based on running `pairwiseTTests` or related functions and passing the result to `combineMarkers()`. We can use the `findMarkers()` function to perform pairwise comparisons between clusters for each gene (the function performs Welch t-tests on the normalised log-expression values for every gene and between every pair of clusters), which returns a list of `DataFrame`s containing ranked candidate markers for each cluster. The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters. Importantly, besides looking at the clustering results, we can also apply this approach to identify genes driving differences between other factors of our metadata, such as `cell.type` or `PAG.area`.
 
 The choice of `pval.type` determines whether the highly ranked genes are those that are DE between the current group and: (1) any other group ("any"), (2) all other groups ("all"), or (3) some other groups ("some"). The result is a named list of `DataFrame`s, each of which contains a sorted marker gene list for the corresponding group. In each `DataFrame`, the top genes are chosen to enable separation of that group from all other groups. Log-fold changes are reported as differences in average x between groups (usually in base 2, depending on the transformation applied to x).
@@ -2804,7 +2804,7 @@ Each `DataFrame` also contains several other statistics that may be of interest.
 
 We intentionally use pairwise comparisons between clusters rather than comparing each cluster to the average of all other cells. The latter approach is sensitive to the population composition, potentially resulting in substantially different sets of markers when cell type abundances change in different contexts. In the worst case, the presence of a single dominant subpopulation will drive the selection of top markers for every other cluster, pushing out useful genes that can resolve the various minor subpopulations. Moreover, pairwise comparisons naturally provide more information to interpret of the utility of a marker, e.g., by providing log-fold changes to indicate which clusters are distinguished by each gene.
 
-### 7.1.2 | Using the log-fold change
+### 7.1b.2 | Using the log-fold change
 The previous `findMarkers()` call considers both up- and downregulated genes to be potential markers. However, downregulated genes are less appealing as markers as it is more difficult to interpret and experimentally validate an absence of expression. To focus on up-regulated markers, we can instead perform a one-sided t-test to identify genes that are upregulated in each cluster compared to the others. This is achieved by setting `direction = "up"` in the `findMarkers()` call.
 ```{r}
 marker_genes_up <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust,
@@ -2947,7 +2947,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
 
 These two settings yield a more focused set of candidate marker genes that are upregulated in cluster X. This increased stringency, however, is not without cost. If only upregulated genes are requested from `findMarkers()`, any cluster defined by downregulation of a marker gene will not contain that gene among the top set of features in its `DataFrame`. This is occasionally relevant for subtypes or other states that are distinguished by high versus low expression of particular genes. Similarly, setting an excessively high log-fold change threshold may discard otherwise useful genes. For example, a gene upregulated in a small proportion of cells of a cluster will have a small log-fold change but can still be an effective marker if the focus is on specificity rather than sensitivity.
 
-### 7.1.3 | Finding cluster-specific markers
+### 7.1b.3 | Finding cluster-specific markers
 By default, `findMarkers()` will give a high ranking to genes that are differentially expressed in any pairwise comparison. This is because a gene only needs a very low p-value in a single pairwise comparison to achieve a low `Top` value. A more stringent approach would only consider genes that are differentially expressed in all pairwise comparisons involving the cluster of interest. To achieve this, we set `pval.type="all"` in `findMarkers()` to use an intersection-union test (Berger and Hsu 1996) where the combined p-value for each gene is the maximum of the p-values from all pairwise comparisons. A gene will only achieve a low combined p-value if it is strongly DE in all comparisons to other clusters. Combined with `direction="up"`, this can be used to identify unique markers for each cluster. However, this is sensitive to overclustering, as unique marker genes will no longer exist if a cluster is split into two smaller subclusters.
 
 This strategy will only report genes that are highly specific to the cluster of interest. When it works, it can be highly effective as it generates a small focused set of candidate markers. However, any gene that is expressed at the same level in two or more clusters will simply not be detected. This is likely to discard many interesting genes, especially if the clusters are finely resolved with weak separation (such as different clusters within a cell type). To give a concrete example, consider a mixed population of CD4+-only, CD8+-only, double-positive and double-negative T cells. With `pval.type="all"`, neither Cd4 or Cd8 would be detected as subpopulation-specific markers because each gene is expressed in two subpopulations. In comparison, `pval.type="any"` will detect both of these genes as they will be DE between at least one pair of subpopulations.
@@ -3906,7 +3906,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
             main = "Heatmap for vlPAG_VGluT2 marker genes (t-test | all | up)")
 ```
 
-### 7.1.4 | Using the Wilcoxon rank sum test
+### 7.1b.4 | Using the Wilcoxon rank sum test
 The Wilcoxon rank sum test (also known as the Wilcoxon-Mann-Whitney test, or WMW test) is another widely used method for pairwise comparisons between groups of observations. Its strength lies in the fact that it directly assesses separation between the expression distributions of different clusters. The WMW test statistic is proportional to the area-under-the-curve (AUC), i.e., the concordance probability, which is the probability of a random cell from one cluster having higher expression than a random cell from another cluster. In a pairwise comparison, AUCs of 1 or 0 indicate that the two clusters have perfectly separated expression distributions. Thus, the WMW test directly addresses the most desirable property of a candidate marker gene, while the t-test only does so indirectly via the difference in the means and the intra-group variance.
 
 We can perform WMW tests using the `findMarkers()` function, setting `test="wilcox"`. This returns a list of `DataFrames` containing ranked candidate markers for each cluster. The `direction=`, `lfc=` and `pval.type=` arguments can be specified and have the same interpretation as described for t-tests. Again, to explore the results in more detail, we can focus on the `DataFrame` for group X. The interpretation of `Top` is the same as described for t-tests, and Simes’s method is again used to combine p-values across pairwise comparisons. If we want more focused sets, we can also change `pval.type=` as previously described.
@@ -4030,7 +4030,7 @@ gridExtra::grid.arrange(plotExpression(subset, x="cell type", features=u.alpha.t
 
 The main disadvantage of the WMW test is that the AUCs are much slower to compute compared to t-statistics. This may be inconvenient for interactive analyses involving multiple iterations of marker detection. We can mitigate this to some extent by parallelizing these calculations using the `BPPARAM=` argument in `findMarkers()`.
 
-### 7.1.5 | Using the binomial test
+### 7.1b.5 | Using the binomial test
 The binomial test *identifies genes that differ in the proportion of expressing cells between clusters*. This represents a much more stringent definition of marker genes compared to the other methods, as differences in expression between clusters are effectively ignored if both distributions of expression values are not near zero. The premise is that genes are more likely to contribute to important biological decisions if they were active in one cluster and silent in another, compared to more subtle “tuning” effects from changing the expression of an active gene. From a practical perspective, a binary measure of presence/absence is easier to validate.
 
 We can perform pairwise binomial tests between clusters using the `findMarkers()` function with `test="binom"`. This returns a list of `DataFrames` containing marker statistics for each cluster such as the `Top` rank and its p-value. Here, the effect size is reported as the log-fold change in this proportion between each pair of clusters. Large positive log-fold changes indicate that the gene is more frequently expressed in one cluster compared to the other. We can focus on genes that are upregulated in each cluster compared to the others by setting `direction="up"`.
@@ -4106,7 +4106,7 @@ top_VGluT2_genes <- head(rownames(marker_set_binom_all_up_VGluT2))
 plotExpression(PAG_sceset_qc_norm_filt_corr_clust_de, x = "cell.type", features = top_VGluT2_genes)
 ```
 
-### 7.1.6 | Using custom DE methods
+### 7.1b.6 | Using custom DE methods
 It is also possible to perform marker gene detection based on precomputed DE statistics, which allows us to take advantage of more sophisticated tests in dedicated DE analysis packages in the Bioconductor ecosystem. To demonstrate, consider the `voom()` approach from the limma package (Law et al. 2014). We first process our `SingleCellExperiment` to obtain a `fit` object as shown below.
 ```{r}
 library(limma)
