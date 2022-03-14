@@ -4106,7 +4106,6 @@ top_VGluT2_genes <- head(rownames(marker_set_binom_all_up_VGluT2))
 plotExpression(PAG_sceset_qc_norm_filt_corr_clust_de, x = "cell.type", features = top_VGluT2_genes)
 ```
 
-
 ### 7.1.6 | Using custom DE methods
 It is also possible to perform marker gene detection based on precomputed DE statistics, which allows us to take advantage of more sophisticated tests in dedicated DE analysis packages in the Bioconductor ecosystem. To demonstrate, consider the `voom()` approach from the limma package (Law et al. 2014). We first process our `SingleCellExperiment` to obtain a `fit` object as shown below.
 ```{r}
