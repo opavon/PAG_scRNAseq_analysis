@@ -2634,87 +2634,6 @@ celltype_PAGarea_marker_set_summary[celltype_PAGarea_marker_set_summary$test=="b
 
 ### 7.1a.9 | Marker genes for cell type according to VGAT or VGluT2 expression
 
-### 0.0.0 | TO ADD - HEATMAPS - Tricks and comments
-```{r}
-library(pheatmap)
-best_set_up_all_clusters_cluster_4 <- marker_set_up_all_clusters_cluster_4[1:30,]
-best_set_up_all_clusters_cluster_4_names <- rownames(best_set_up_all_clusters_cluster_4)
-plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
-            features = best_set_up_all_clusters_cluster_4_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k10), 
-            # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
-            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
-            center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
-            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix.
-            # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
-            symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
-            color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
-            show_rownames = TRUE, show_colnames = FALSE,
-            cluster_rows = TRUE, cluster_cols = FALSE,
-            main = "Heatmap for Cluster 4 marker genes (t-test | all | up)")
-```
-
-https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2018/SingleCell/practical/crukBioinfoSummerSchoolJuly2018_scRnaSeqCellPopId_practical_run.html#19_clustering_cells_into_putative_subpopulations
-```{r}
-# select some top genes:
-top.markers <- rownames(marker.set)[marker.set$Top <= 10]
-
-# have matrix to annotate sample with cluster and sample:
-tmpData <- logcounts(nz.sce)[top.markers,]
-# concat sample and barcode names to make unique name across the whole data set
-tmpCellNames <- paste(colData(nz.sce)$Sample, colData(nz.sce)$Barcode, sep="_")
-# use these to namecolumn of matrix the show as heatmap:
-colnames(tmpData) <- tmpCellNames # colData(nz.sce)$Barcode                    
-
-# columns annotation with cell name:
-mat_col <- data.frame(cluster = nz.sce$cluster, sample = nz.sce$Sample)
-rownames(mat_col) <- colnames(tmpData)
-rownames(mat_col) <- tmpCellNames # colData(nz.sce)$Barcode
-
-# Prepare colours for clusters:
-colourCount = length(unique(nz.sce$cluster))
-getPalette = colorRampPalette(brewer.pal(9, "Set1"))
-
-mat_colors <- list(group = getPalette(colourCount))
-names(mat_colors$group) <- unique(nz.sce$cluster)
-
-# plot heatmap:
-pheatmap(tmpData,
-         border_color      = NA,
-         show_colnames     = FALSE,
-         show_rownames     = FALSE,
-         drop_levels       = TRUE,
-         annotation_col    = mat_col,
-         annotation_colors = mat_colors
-         )
-
-# One can sort both the gene and sample dendrograms to improve the heatmap.
-
-library(dendsort)
-
-mat <- tmpData
-mat_cluster_cols <- hclust(dist(t(mat)))
-
-sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
-
-mat_cluster_cols <- sort_hclust(mat_cluster_cols)
-#plot(mat_cluster_cols, main = "Sorted Dendrogram", xlab = "", sub = "")
-
-mat_cluster_rows <- sort_hclust(hclust(dist(mat)))
-
-pheatmap(tmpData,
-         border_color      = NA,
-         show_colnames     = FALSE,
-         show_rownames     = FALSE,
-         drop_levels       = TRUE,
-         annotation_col    = mat_col,
-         annotation_colors = mat_colors,
-         cluster_cols      = mat_cluster_cols,
-         cluster_rows      = mat_cluster_rows
-         )
-```
-
 ### 7.1b.1 | Using pairwise t-tests
 The Welch t-test is a statistical method that allows us to test for differences in expression between clusters. It is quickly computed and has good statistical properties for large numbers of cells (Soneson and Robinson 2018). The `findMarkers()` function from the `scran` package provides a convenience wrapper for marker gene identification between groups of cells, based on running `pairwiseTTests` or related functions and passing the result to `combineMarkers()`. We can use the `findMarkers()` function to perform pairwise comparisons between clusters for each gene (the function performs Welch t-tests on the normalised log-expression values for every gene and between every pair of clusters), which returns a list of `DataFrame`s containing ranked candidate markers for each cluster. The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters. Importantly, besides looking at the clustering results, we can also apply this approach to identify genes driving differences between other factors of our metadata, such as `cell.type` or `PAG.area`.
 
@@ -5105,6 +5024,459 @@ Note this step takes a considerable amount of time unless multiple cores are use
 
 ## Step 7.7 | BPSC [not yet implemented]
 BPSC uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we’ve already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group (“control”) and can include other factors such as batches in the model.
+
+# STEP 9 | Gene Set Enrichment Analysis
+Gene set enrichment analysis is a popular approach for prioritising the biological processes perturbed in genomic datasets. It allows researchers to efficiently extract biological insights from long lists of differentially expressed genes by interrogating them at a systems level. The Bioconductor project hosts over 80 software packages capable of gene set analysis. Most of these packages search for enriched signatures amongst differentially regulated genes to reveal higher level biological themes that may be missed when focusing only on evidence from individual genes. 
+
+* Gene Ontology (GO) is a controlled vocabulary to assign the following to a gene: Biological Processes, Cellular Components, Molecular Functions.
+
+* Gene set enrichment analysis allows for a more comprehensive investigation of the function of the markers genes previously identified, and can be performed using `kegga` or `goana` from _limma_.
+
+## Step 9.0 | Cell type annotation [from OSCA]
+The most challenging task in scRNA-seq data analysis is arguably the interpretation of the results. Obtaining clusters of cells is fairly straightforward, but it is more difficult to determine what biological state is represented by each of those clusters. Doing so requires us to bridge the gap between the current dataset and prior biological knowledge, and the latter is not always available in a consistent and quantitative manner. Indeed, even the concept of a “cell type” is not clearly defined, with most practitioners possessing a “I’ll know it when I see it” intuition that is not amenable to computational analysis. As such, interpretation of scRNA-seq data is often manual and a common bottleneck in the analysis workflow.
+
+To expedite this step, we can use various computational approaches that exploit prior information to assign meaning to an uncharacterized scRNA-seq dataset. The most obvious sources of prior information are the curated gene sets associated with particular biological processes, e.g., from the Gene Ontology (GO) or the Kyoto Encyclopedia of Genes and Genomes (KEGG) collections. Alternatively, we can directly compare our expression profiles to published reference datasets where each sample or cell has already been annotated with its putative biological state by domain experts. Here, we will demonstrate both approaches with several different scRNA-seq datasets.
+
+### Assigning cell labels from reference data
+A conceptually straightforward annotation approach is to compare the single-cell expression profiles with previously annotated reference datasets. Labels can then be assigned to each cell in our uncharacterized test dataset based on the most similar reference sample(s), for some definition of “similar”. This is a standard classification challenge that can be tackled by standard machine learning techniques such as random forests and support vector machines. Any published and labelled RNA-seq dataset (bulk or single-cell) can be used as a reference, though its reliability depends greatly on the expertise of the original authors who assigned the labels in the first place.
+
+In this section, we will demonstrate the use of the `SingleR` method (Aran et al. 2019) for cell type annotation. This method assigns labels to cells based on the reference samples with the highest Spearman rank correlations, and thus can be considered a rank-based variant of k-nearest-neighbor classification. To reduce noise, `SingleR` identifies marker genes between pairs of labels and computes the correlation using only those markers. It also performs a fine-tuning step for each cell where calculation of the correlations is repeated with just the marker genes for the top-scoring labels. This aims to resolve any ambiguity between those labels by removing noise from irrelevant markers for other labels.
+
+`SingleR` contains a number of built-in reference datasets, mostly assembled from bulk RNA-seq or microarray data of sorted cell types. These built-in references are often good enough for most applications, provided that they contain the cell types that are expected in the test population. We label our dataset using the `SingleR()` function with the main cell type labels in the reference. This returns a `DataFrame` where each row corresponds to a cell in the test dataset and contains its label assignments. Alternatively, we could use the labels in `ref$label.fine`, which provide more resolution at the cost of speed and increased ambiguity in the assignments.
+```{r}
+library(SingleR)
+ref <- BlueprintEncodeData()
+pred <- SingleR(test=sce.pbmc, ref=ref, labels=ref$label.main)
+table(pred$labels)
+```
+
+We inspect the results using a heatmap of the per-cell and label scores. Ideally, each cell should exhibit a high score in one label relative to all of the others, indicating that the assignment to that label was unambiguous. 
+```{r}
+plotScoreHeatmap(pred)
+```
+
+`SingleR()` will attempt to prune out low-quality assignments by marking them as `NA`. This is done based on the difference _Δmed_ of the assigned label’s score from the median score within each cell. Small _Δmed_ values indicate that the cell assignment was so uncertain that the reported label is not much better than the bulk of other labels in the reference. We set a minimum threshold on the acceptable _Δmed_ using an outlier-based approach for each label, where labels with _Δmed_ that are substantially lower than the majority of values for a given label are marked as `NA`. If necessary, more control over the pruning can be achieved by supplying custom parameters to the `pruneScores()` function.
+```{r}
+sum(is.na(pred$pruned.labels))
+plotScoreDistribution(pred)
+
+```
+
+We compare the assignments with the clustering results to determine the identity of each cluster. Ideally, clusters and labels would have a 1:1 relationship, though some nesting is likely depending on the resolution of the clustering algorithm.
+```{r}
+tab <- table(Assigned=pred$pruned.labels, Cluster=sce.pbmc$cluster)
+
+# Adding a pseudo-count of 10 to avoid strong color jumps with just 1 cell.
+library(pheatmap)
+pheatmap(log2(tab+10), color=colorRampPalette(c("white", "blue"))(101))
+```
+
+This episode highlights some of the differences between reference-based annotation and unsupervised clustering. The former explicitly focuses on aspects of the data that are known to be interesting, simplifying the process of biological interpretation. However, the cost is that the downstream analysis is restricted by the diversity and resolution of the available labels. We suggest applying both strategies and, if major disagreements are present between reference label and cluster assignments, using those discrepancies as the basis for further investigation to discover novel effects.
+
+### Assigning cluster labels from markers
+Yet another strategy for annotation is to perform a gene set enrichment analysis on the marker genes defining each cluster. This identifies the pathways and processes that are (relatively) active in each cluster based on upregulation of the associated genes compared to other clusters. We demonstrate on the mouse mammary dataset from Bach et al. (2017), using markers that are identified by `findMarkers()` as being upregulated at a log-fold change threshold of 1.
+
+We can use gene sets defined by the Gene Ontology (GO) project, which describe a comprehensive range of biological processes and functions. We define our subset of relevant marker genes at a FDR of 5% and apply the `goana()` function from the `limma` package. This performs a hypergeometric test to identify GO terms that are overrepresented in our marker subset. (The log-fold change threshold mentioned above is useful here, as it avoids including an excessive number of genes from the overpowered nature of per-cell DE comparisons.)
+```{r}
+markers.mam <- findMarkers(sce.mam, sce.mam$cluster, direction="up", lfc=1)
+
+chosen <- "2"
+cur.markers <- markers.mam[[chosen]]
+is.de <- cur.markers$FDR <= 0.05 
+summary(is.de)
+
+# goana() requires Entrez IDs, some of which map to multiple
+# symbols - hence the unique() in the call below.
+library(org.Mm.eg.db)
+entrez.ids <- mapIds(org.Mm.eg.db, keys=rownames(cur.markers), 
+    column="ENTREZID", keytype="SYMBOL")
+
+library(limma)
+go.out <- goana(unique(entrez.ids[is.de]), species="Mm", 
+    universe=unique(entrez.ids))
+
+# Only keeping biological process terms that are not overly general.
+go.out <- go.out[order(go.out$P.DE),]
+go.useful <- go.out[go.out$Ont=="BP" & go.out$N <= 200,]
+head(go.useful, 20)
+
+plotExpression(sce.mam, features=c("Csn2", "Csn3"), x="cluster", colour_by="cluster")
+```
+
+Further inspection of interesting GO terms is achieved by extracting the relevant genes. This is usually desirable to confirm that the interpretation of the annotated biological process is appropriate. Many terms have overlapping gene sets, so a term may only be highly ranked because it shares genes with a more relevant term that represents the active pathway.
+```{r}
+# Extract symbols for each GO term; done once.
+tab <- select(org.Mm.eg.db, keytype="SYMBOL", 
+    keys=rownames(sce.mam), columns="GOALL")
+by.go <- split(tab[,1], tab[,2])
+
+# Identify genes associated with an interesting term.
+adhesion <- unique(by.go[["GO:0022408"]])
+head(cur.markers[rownames(cur.markers) %in% adhesion,1:4], 10)
+```
+
+Gene set testing of marker lists is a reliable approach for determining if pathways are up- or down-regulated between clusters. As the top marker genes are simply DEGs, we can directly apply well-established procedures for testing gene enrichment in DEG lists (see https://bioconductor.org/packages/release/BiocViews.html#___GeneSetEnrichment for relevant packages). This contrasts with the AUCell approach where scores are not easily comparable across cells. The downside is that all conclusions are made relative to the other clusters, making it more difficult to determine cell identity if an “outgroup” is not present in the same study.
+
+## Step 9.1 | EGSEA: Easy and efficient ensemble gene set testing
+_The following was created following the [EGSEA123 workflow](https://bioconductor.org/packages/release/workflows/html/EGSEA123.html)._
+
+EGSEA, which stands for Ensemble of Gene Set Enrichment Analyses (Alhamdoosh et al. 2017) combines the results from multiple gene set testing algorithms to arrive at a consensus gene set ranking to identify biological themes and pathways perturbed in an experiment. EGSEA can extend limma-based differential expression analyses for RNA-seq and microarray data. Following data normalization and set-up of an appropriate linear model for differential expression analysis, EGSEA builds gene signature specific indexes that link a wide range of mouse or human gene set collections to the gene expression data being investigated. EGSEA is then configured and the ensemble enrichment analysis run, returning an object that can be queried using several S4 methods for ranking gene sets and visualizing results via heatmaps, KEGG pathway views, GO graphs, scatter plots and bar plots. Finally, an HTML report that combines these displays can fast-track the sharing of results with collaborators, and thus expedite downstream biological validation. 
+
+We follow from the results obtained with the RNAseq123 Workflow from the previous step _(Step 10.4 | RNAseq123 Workflow)_. The EGSEA algorithm makes use of the voom object (`PAG_limma_set_voom`), a design matrix (`PAG_limma_design`) and an optional contrasts matrix (`PAG_limma_contrasts_matrix`). The design matrix describes how the samples in the experiment relate to the coefficients estimated by the linear model (Smyth 2004). The contrasts matrix then compares two or more of these coefficients to allow relative assessment of differential expression.
+```{r}
+PAG_limma_set_voom
+PAG_limma_design
+PAG_limma_contrasts_matrix
+```
+
+### 9.1.1 | Exploring, selecting and indexing gene set collections
+The package `EGSEAdata` includes more than 25,000 gene sets organized in collections depending on their database sources. EGSEA uses Entrez Gene identifiers and alternate gene identifiers must be first converted into Entrez IDs. Summary information about the gene set collections available in EGSEAdata can be displayed as follows:
+```{r}
+library(EGSEAdata)
+egsea.data("mouse")
+```
+
+We can obtain help on any of the collections using the standard R help (`?`) command, for instance `?Mm.c2` will return more information on the mouse version of the `c2` collection from `MSigDB`. The above information can be returned as a list:
+```{r}
+info = egsea.data("mouse", returnInfo = TRUE)
+names(info)
+info$msigdb$info$collections
+```
+
+This information will be useful to select the collections we are interested in using. Once we have made our choice, we build an index for each gene set collection using the EGSEA indexing functions to link the genes in the different gene set collections to the rows of our RNA-seq gene expression matrix.
+
+The _EGSEA_ package has four indexing functions that utilize the gene set collections of _EGSEAdata_. They map the Entrez gene IDs of the input dataset into the gene sets of each collection and create an index for each collection. These fucntions also extract annotation information from EGSEAdata for each gene set to be displayed within the EGSEA HTML report. These functions are as follow:
+
+* `buildKEGGIdx` builds an index for the _KEGG_ pathways collection and loads gene set annotation.
+* `buildMSigDBIdx` builds indexes for the _MSigDB_ gene set collections and loads gene set annotation.
+* `buildGeneSetDBIdx` builds indexes for the _GeneSetDB_ collections and loads gene set annotation.
+* `buildIdx` is one-step method to build indexes for collections selected from the _KEGG_, _MSigDB_ and _GeneSetDB_ databases.
+
+These four functions take a vector of Entrez Gene IDs and the species name and return an object (or list of objects) of class `GSCollectionIndex`. To use the` GSCollectionIndex` objects with the other _EGSEA_ functions, the order of input ids vector should match that of the row names of the count matrix or the `voom` object.
+
+* In the EGSEA123 workflow, the KEGG pathways, c2 (curated gene sets) and c5 (Gene Ontology gene sets) collections from the MSigDB database are selected to highlight the capabilities of the EGSEA package. Indexes for the c2 and c5 collections from MSigDB and for the KEGG pathways are built using the `buildIdx` function which relies on Entrez gene IDs as its key. In the EGSEAdata gene set collections, Entrez IDs are used as they are widely adopted by the different source databases and tend to be more consistent and robust since there is one identifier per gene in a gene set. It is also relatively easy to convert other gene IDs into Entrez IDs.
+```{r}
+library(EGSEA)
+gs_annots = buildIdx(entrezIDs=PAG_limma_set_voom$genes$ENTREZID, 
+                     species="mouse", 
+                     msigdb.gsets=c("c2", "c5"), go.part = TRUE)
+names(gs_annots)
+
+# To run the EGSEA analysis with all the gene set collections that are avilable in the EGSEAdata package, use the buildIdx function to create the gene set indexes as follows:
+# gs_annots = buildIdx(entrezIDs = rownames(v$E), species = "mouse", gsdb.gsets = "all")
+# names(gs_annots)
+```
+
+To obtain additional information on the gene set collection indexes, including the total number of gene sets, the version number and date of last revision, the methods `summary`, `show` and `getSetByName` (or `getSetByID`) can be invoked on an object of class `GSCollectionIndex`, which stores all of the relevant gene set information, as follows:
+```{r}
+class(gs_annots$c2)
+summary(gs_annots$c2)
+show(gs_annots$c2)
+
+s = getSetByName(gs_annots$c2, "SMID_BREAST_CANCER_LUMINAL_A_DN")
+class(s)
+names(s)
+names(s$SMID_BREAST_CANCER_LUMINAL_A_DN)
+```
+
+Objects of class `GSCollectionIndex` store for each gene set the Entrez gene IDs in the slot original, the indexes in the slot `idx` and additional annotation for each set in the slot `anno`.
+```{r}
+slotNames(gs_annots$c2)
+```
+
+Other EGSEA functions such as `buildCustomIdx`, `buildGMTIdx`, `buildKEGGIdx`, `buildMSigDBIdx` and `buildGeneSetDBIdx` can be also used to build gene set collection indexes. The functions `buildCustomIdx` and `buildGMTIdx` were written to allow users to run EGSEA on gene set collections that may have been curated within a lab or downloaded from public databases and allow use of gene identifiers other than Entrez IDs. Example databases include, ENCODE Gene Set Hub (available from https://sourceforge.net/projects/encodegenesethub/), which is a growing resource of gene sets derived from high quality ENCODE profiling experiments encompassing hundreds of DNase hypersensitivity, histone modification and transcription factor binding experiments (Ziemann et al. 2017). Other resources include `PathwayCommons` (http://www.pathwaycommons.org/) (Cerami et al. 2011) or the `KEGGREST` (Tenenbaum 2017) package that provides access to up-to-date KEGG pathways across many species.
+
+### 9.1.2 | Configuring EGSEA
+Before an EGSEA test is carried out, a few parameters need to be specified. First, a mapping between Entrez IDs and Gene Symbols is created for use by the visualization procedures. This mapping can be extracted from the `genes` _data.frame_ of the `voom` object as follows:
+```{r}
+colnames(PAG_limma_set_voom$genes)
+symbolsMap = PAG_limma_set_voom$genes[, c(1, 2)]
+colnames(symbolsMap) = c("FeatureID", "Symbols")
+symbolsMap[, "Symbols"] = as.character(symbolsMap[, "Symbols"])
+```
+
+Another important parameter in EGSEA is the list of base GSE methods (`baseMethods` in the code below), which determines the individual algorithms that are used in the ensemble testing. The supported base methods can be listed using the function  egsea.base as follows:
+```{r}
+egsea.base()
+```
+
+The _plage_, _zscore_ and _ssgsea_ algorithms are available in the GSVA package and _camera_, _fry_ and _roast_ are implemented in the `limma` package (Ritchie et al. 2015). The _ora_ method is implemented using the `phyper` function from the `stats` package (R Core Team 2017), which estimates the hypergeometric distribution for a 2x2 contingency table. The remaining algorithms are implemented in Bioconductor packages of the same name. A wrapper function is provided for each individual GSE method to utilize this existing R code and create a universal interface for all methods.
+
+We next select the base methods of the EGSEA analysis. In the workflow, eleven base methods are selected for our EGSEA analysis: _camera, safe, gage, padog, plage, zscore, gsva, ssgsea, globaltest, ora_ and _fry_. _Fry_ is a fast approximation of _roast_ that assumes equal gene-wise variances across samples to produce similar p-values to a _roast_ analysis run with an infinite number of rotations, and is selected here to save time.
+```{r}
+baseMethods = egsea.base()[-2] # try this? [-c(2, 12)]
+baseMethods
+```
+
+Although, different combinations of base methods might produce different results, it has been found via simulation that including more methods gives better performance (Alhamdoosh et al. 2017).
+
+Since each base method generates different p-values, EGSEA supports six different methods from the `metap` package (Dewey 2017) for combining individual p-values (`Wilkinson` (Wilkinson 1954) is default), which can be listed as follows:
+```{r}
+egsea.combine()
+```
+
+Finally, the sorting of EGSEA results plays an essential role in identifying relevant gene sets. Any of EGSEA's combined scores or the rankings from individual base methods can be used for sorting the results. The possible values of this argument can be seen as follows:
+```{r}
+egsea.sort()
+```
+
+Although `p.adj` is the default option for sorting EGSEA results for convenience, we recommend the use of either `med.rank` or `vote.rank` because they efficiently utilize the rankings of individual methods and tend to produce fewer false positives (Alhamdoosh et al. 2017).
+
+### 9.1.3 | Ensemble testing with EGSEA
+We next perform the EGSEA analysis by using the `egsea` function:
+```{r}
+# set report = TRUE and add report.dir = "./il13-egsea-report" to generate HTML report
+# set display.top = 20 to display more gene sets. It takes longer time to run.
+
+gsa = egsea(voom.results=PAG_limma_set_voom, 
+            contrasts=PAG_limma_contrasts_matrix, 
+            gs.annots=gs_annots, symbolsMap=symbolsMap,
+            baseGSEAs=baseMethods, sort.by="med.rank",
+            num.threads = 2, report = FALSE)
+```
+
+In situations where the design matrix includes an intercept, a vector of integers that specify the columns of the design matrix to test using EGSEA can be passed to the contrasts argument. If this parameter is NULL, all pairwise comparisons based on `PAG_limma_set_voom$targets$group` are created, assuming that `group` is the primary factor in the design matrix. Likewise, all the coefficients of the primary factor are used if the design matrix has an intercept.
+
+EGSEA is implemented with parallel computing features enabled using the `parallel` package (R Core Team 2017) at both the method-level and experimental contrast-level. The running time of the EGSEA test depends on the base methods selected and whether report generation is enabled or not. The latter significantly increases the run time, particularly if the argument `display.top` is assigned a large value (> 20) and/or a large number of gene set collections are selected. EGSEA reporting functionality generates set-level plots for the top gene sets as well as collection-level plots.
+
+The EGSEA package also has a function named `egsea.cnt`, that can perform the EGSEA test using an RNA-seq count matrix rather than a voom object, a function named `egsea.ora`, that can perform over-representation analysis with EGSEA reporting capabilities using only a vector of gene IDs, and the `egsea.ma` function that can perform EGSEA testing using a microarray expression matrix.
+
+The output of the functions `egsea`, `egsea.cnt`, `egsea.ora` and `egsea.ma` is an S4 object of class `EGSEAResults`. Several S4 methods can be invoked to query this object. For example, an overview of the EGSEA analysis can be displayed using the `show` method, which displays the number of genes and samples that were included in the analysis, the experimental contrasts, base GSE methods, the method used to combine the p-values derived from different GSE algorithms, the sorting statistic used and the size of each gene set collection. Note that the gene set collections are identified using the labels that appear in parentheses (e.g. c2) in the output of _show_.
+```{r}
+show(gsa)
+```
+
+### 9.1.4 | Reporting EGSEA results
+A summary of the top 10 gene sets in each collection for each contrast in addition to the EGSEA comparative analysis can be displayed using the S4 method `summary`:
+```{r}
+summary(gsa)
+```
+
+EGSEA's comparative analysis allows researchers to estimate the significance of a gene set across multiple experimental contrasts. This analysis helps in the identification of biological processes that are perturbed in multiple experimental conditions simultaneously.
+
+Another way of exploring the EGSEA results is to retrieve the top ranked N sets in each collection and contrast using the method `topSets`. For example, the top 10 gene sets in the c2 collection for the comparative analysis can be retrieved as follows:
+```{r}
+topSets(gsa, gs.label="c2", contrast = "comparison", names.only=TRUE)
+```
+
+The gene sets are ordered based on their `med.rank` score as selected when `egsea` was invoked above. When the argument `names.only` is set to `FALSE`, additional information is displayed for each gene set including gene set annotation, the EGSEA scores and the individual rankings by each base method.
+
+`topSets` can be used to search for gene sets of interest based on different EGSEA scores as well as the rankings of individual methods. 
+```{r}
+t = topSets(gsa, contrast = "comparison",
+            names.only=FALSE, number = Inf, verbose = FALSE) # number = 10 for top 10 gene sets
+
+t[grep("LIM_", rownames(t)), c("p.adj", "Rank", "med.rank", "vote.rank")] 
+# Replace "LIM_" for your gene set of interst
+```
+
+Similarly, we can find the top 10 pathways in the _KEGG_ collection from the ensemble analysis for a particular comparison and the comparative analysis as follows:
+```{r}
+topSets(gsa, gs.label="kegg", contrast="BasalvsLP", sort.by="med.rank")
+topSets(gsa, gs.label="kegg", contrast="comparison", sort.by="med.rank")
+```
+
+### 9.1.5 | Visualizing results at the gene set level
+When using `plotHeatmap`, the `gene.set` value must match the name returned from the `topSets` method. The rows of the heatmap represent the genes in the set and the columns represent the experimental contrasts. The heatmap colour-scale ranges from down-regulated (blue) to up-regulated (red) while the row labels (Gene symbols) are coloured in green when the genes are statistically significant in the DE analysis (i.e. FDR <= 0.05 in at least one contrast). Heatmaps can be generated for individual comparisons by changing the contrast argument of `plotHeatmap`. The `plotHeatmap` method also generates a CSV file that includes the DE analysis results from `limma::topTable` for all expressed genes in the selected gene set and for each contrast (in the case of  contrast = "comparison").
+```{r}
+plotHeatmap(gsa, gene.set="LIM_MAMMARY_STEM_CELL_UP", gs.label="c2",
+            contrast = "comparison", file.name = "hm_cmp_LIM_MAMMARY_STEM_CELL_UP", format="png")
+plotHeatmap(gsa, gene.set="LIM_MAMMARY_STEM_CELL_DN", gs.label="c2",
+            contrast = "comparison", file.name = "hm_cmp_LIM_MAMMARY_STEM_CELL_DN", format="png")
+```
+
+In addition to heatmaps, pathway maps can be generated for the KEGG gene sets using the `plotPathway` method which uses functionality from the `pathview` package (Luo and Brouwer 2013). Pathway components are coloured based on the gene-specific log-fold-changes as calculated in the limma DE analysis.
+```{r}
+plotPathway(gsa, gene.set = "Vascular smooth muscle contraction", 
+            contrast = "BasalvsLP", gs.label = "kegg", 
+            file.name = "Vascular_smooth_muscle_contraction")
+
+plotPathway(gsa, gene.set = "Vascular smooth muscle contraction", 
+            contrast = "comparison", gs.label = "kegg", 
+            file.name = "Vascular_smooth_muscle_contraction_cmp")
+```
+
+### 9.1.6 | Visualizing results at the experiment level
+Since EGSEA combines the results from multiple gene set testing methods, it can be interesting to compare how different base methods rank a given gene set collection for a selected contrast. The `plotMethods` command generates a multi-dimensional scaling (MDS) plot for the ranking of gene sets across all the base methods used. Methods that rank gene sets similarly will appear closer together in this plot and we see that certain methods consistently cluster together across different gene set collections. The clustering of methods does not necessarily follow the style of null hypothesis tested though (i.e. self-contained versus competitive).
+```{r}
+plotMethods(gsa, gs.label = "c2", contrast = "BasalvsLP", 
+            file.name = "mds_c2_BasalvsLP", format="png")
+plotMethods(gsa, gs.label = "c5BP", contrast = "BasalvsLP", 
+            file.name = "mds_c5_BasalvsLP", format="png")
+```
+
+The significance of each gene set in a given collection for a selected contrast can be visualized using EGSEA's `plotSummary` method. The summary plot visualizes the gene sets as bubbles based on the -log10(p-value) (X-axis) and the average absolute log fold-change of the set genes (Y-axis). The sets that appear towards the top-right corner of this plot are most likely to be biologically relevant. EGSEA generates two types of summary plots: the directional summary plot, which colours the bubbles based on the regulation direction of the gene set (the direction of the majority of genes), and the ranking summary plot, which colours the bubbles based on the gene set ranking in a given collection (according to the `sort.by` argument). The bubble size is based on the EGSEA significance score in the former plot and the gene set size in the latter. The blue colour labels on the ranking plot represents gene sets that do not appear in the top 10 gene sets that are selected based on the `sort.by` argument while their EGSEA significance scores are among the top 5 in the entire collection. This is used to identify gene sets with high significance scores that were not captured by the `sort.by` score. The gene set IDs and more information about each set can be found in the EGSEA HTML report generated later.
+```{r}
+plotSummary(gsa, gs.label = 3, contrast = 3, 
+            file.name = "summary_kegg_LPvsML", format="png")
+```
+
+By default, `plotSummary` uses a gene set's `p.adj` score for the X-axis. This behaviour can be easily modified by assigning any of the available `sort.by` scores into the parameter `x.axis`, for example, `med.rank` can be used to create an EGSEA summary plot:
+```{r}
+plotSummary(gsa, gs.label = 1, contrast = 3, 
+            file.name = "summary_c2_LPvsML", 
+            x.axis = "med.rank", format="png")
+```
+
+The summary plot tends to become very cluttered when the size of the gene set collection is very large. The parameter `x.cutoff` can be used to focus in on the significant gene sets rather than plotting the entire gene set collection,:
+```{r}
+plotSummary(gsa, gs.label = 1, contrast = 3, 
+            file.name = "summary_sig_c2_LPvsML", 
+            x.axis = "med.rank", x.cutoff=300, format="png")
+```
+
+Comparative summary plots can be also generated to compare the significance of gene sets between two contrasts:
+```{r}
+plotSummary(gsa, gs.label = "kegg", contrast = c(1,2), 
+            file.name = "summary_kegg_1vs2", format="png")
+```
+
+The `plotSummary` method has two useful parameters: (i) `use.names` that can be used to display gene set names instead of gene set IDs and (ii) `interactive` that can be used to generate an interactive version of this plot.
+
+The c5 collection of `MSigDB` and the Gene Ontology collection of `GeneSetDB` contain Gene Ontology (GO) terms. These collections are meant to be non-redundant, containing only a small subset of the entire GO and visualizing how these terms are related to each other can be informative. EGSEA utilizes functionality from the `topGO` package (Alexa and Rahnenfuhrer 2016) to generate GO graphs for the significant biological processes (BPs), cellular compartments (CCs) and molecular functions (MFs). The `plotGOGraph` method can generate such a display as follows:
+```{r}
+plotGOGraph(gsa, gs.label="c5BP", contrast = 1, file.name="BasalvsLP-c5BP-top-", format="png")
+plotGOGraph(gsa, gs.label="c5CC", contrast = 1, file.name="BasalvsLP-c5CC-top-", format="png")
+```
+
+The GO graphs are coloured based on the values of the argument `sort.by`, which in this instance was taken as `med.rank` by default since this was selected when EGSEA was invoked. The top five most significant GO terms are highlighted by default in each GO category (MF, CC or BP). More terms can be displayed by changing the value of the parameter `noSig`. However, this might generate very complicated and unresolved graphs. The colour of the nodes vary between red (most significant) and yellow (least significant). The values of the `sort.by` scoring function are scaled between 0 and 1 to generate these graphs.
+
+Another way to visualize results at the experiment level is via a summary bar plot. The method `plotBars` can be used to generate a bar plot for the top N gene sets in an individual collection for a particular contrast or from a comparative analysis across multiple contrasts.
+```{r}
+plotBars(gsa, gs.label = "c2", contrast="comparison", file.name="comparison-c2-bars", format="png")
+```
+
+The colour of each bar is based on the regulation direction of the gene sets, i.e., red for up-regulated, blue for down-regulated and purple for neutral regulation (in the case of comparative analysis of experimental contrasts that have show opposite behaviours). By default, the -log10(p.adj) values are plotted for the top 20 gene sets selected and ordered based on the `sort.by` parameter. The parameters `bar.vals`, `number` and `sort.by` of `plotBars` can be changed to customize the bar plot.
+
+When changes over multiple conditions are of interest, a summary heatmap can be a useful visualization. The method `plotSummaryHeatmaps` generates a heatmap of the top N gene sets in the comparative analysis across all experimental conditions. By default, 20 gene sets are selected based on the `sort.by` parameter and the values plotted are the average log-fold changes at the set level for the genes regulated in the same direction as the set regulation direction, i.e. `avg.logfc.dir`. The parameters `number`, `sort.by` and `hm.vals` of the `plotSummaryHeatmaps` can be used to customize the summary heatmap. Additionally, the parameter `show.vals` can be used to display the values of a specific EGSEA score on the heatmap cells. 
+```{r}
+plotSummaryHeatmap(gsa, gs.label="c2", hm.vals = "avg.logfc.dir",
+                   file.name="summary_heatmaps_c2", format="png")
+plotSummaryHeatmap(gsa, gs.label="kegg", hm.vals = "avg.logfc.dir",
+                   file.name="summary_heatmaps_kegg", format="png")
+```
+
+The heatmap view at both the gene set and summary level and the summary level bar plots are useful summaries to include in publications to highlight the gene set testing results. The top differentially expressed genes from each contrast can be accessed from the `EGSEAResults` object using the `limmaTopTable` method.
+```{r}
+t = limmaTopTable(gsa, contrast=1)
+head(t)
+```
+
+### 9.1.7 | Creating an HTML report of the results
+To generate an EGSEA HTML report you can either set `report=TRUE` when you invoke `egsea` or use the S4 method `generateReport` as follows:
+```{r}
+generateReport(gsa, number = 20, report.dir="./mam-rnaseq-egsea-report")
+```
+
+The HTML report is a convenient means of organising all of the results generated up to now, from the individual tables to the gene set level heatmap, pathway maps and summary level plots. It can easily be shared with collaborators to allow them to explore their results more fully. Interactive tables of results via the `DT` package (https://CRAN.R-project.org/package=DT) and summary plots from `plotly` (https://CRAN.R-project.org/package=plotly) are integrated into the report using `htmlwidgets` (https://CRAN.R-project.org/package=htmlwidgets) and can be added by setting `interactive = TRUE` in the command above. This option significantly increases both the run time and size of the final report due to the large number of gene sets in most collections.
+
+## Step 9.2 | bigSCale 2
+[bigSCale2](https://github.com/iaconogi/bigSCale2) is a complete framework for the analysis and visualization of single cell data. It allows to cluster, phenotype, perform pseudotime analysis, infer gene regulatory networks and reduce large datasets in smaller datasets with higher quality.
+
+_bigSCale2_ works with the `SingleCellExperiment` class. This class is a container meant to store in an organized way single cell data. bigScale2 requires two elements to be present in the single cell class: the counts `counts()` and the gene names `rownames()`. The counts must be raw counts, and the genes must not be filtered, aside from removing the genes with all zero values.
+
+### 9.3.1 | Running bigSCale2
+```{r}
+library(bigSCale)
+PAG_bigSCale2 <- SingleCellExperiment(assays = list(counts = as.matrix(PAG_data)))
+PAG_bigSCale2
+```
+
+bigSCale2 can be run with one single command, and we can set `speed.preset="slow"` for maximum accuracy. Once we've run this, the results are stored in the `SingleCellExperiment` object.
+```{r}
+PAG_bigSCale2 <- bigscale(PAG_bigSCale2, speed.preset = "slow", clustering = "recursive") 
+PAG_bigSCale2 <- bigscale(PAG_bigSCale2, speed.preset = "fast")
+# Or run it step by step
+# sce=preProcess(sce)
+# sce = storeNormalized(sce) # stores normalized data
+# sce=setModel(sce) # computes the numerical model
+# sce = storeTransformed(sce) # stores transformed expression data (needed for some plots)
+# viewModel(sce)
+# sce = setODgenes(sce,min_ODscore=2.33) 
+# viewODgenes(sce)
+# sce=setDistances(sce)
+# sce=storeTsne(sce)
+# sce=setClusters(sce)
+# sce=storePseudo(sce)
+# sce=computeMarkers(sce,speed.preset='slow')
+# sce=setMarkers(sce,cutoff=3)
+# sce=restoreData(sce)
+```
+
+### 9.3.2 | Visualising the results
+Plot the clusters and signatures of coexpressed genes:
+
+* The dendrogram represents how the cells are phenotypically organized and clustered.
+* Colored bars representing the clusters, the library size (meant as a proxy to transcriptome size/complexity) and the pseudotime of the cells. An additional color bar is displayed for any user custom `colData()` (for example, sample batches, conditions and so on ...). For custom user `colData`, the color codes are automatically chosen upen the type of data (numeric or factor).
+* The clustered signatures of coexpressed genes alogside their size. Here, all the genes differentially expressed are organized in signatures of co-expressed genes.
+```{r}
+viewSignatures(PAG_bigSCale2)
+```
+
+Inspect the markers of a specific cluster: this plot is the same as before, but instead of the signatures of coexpressed genes we see the markers of the selected cluster stratified by level of specificity (see Iacono et al. 2018). Shortly, markers of level 1 are the most specific to a given cluster (only found in that cluster), whereas level 2 are shared between the chosen cluster and at most another cluster, level 3 are shared between the chosen cluster and at most two other clusters, and so on.
+```{r}
+viewSignatures(PAG_bigSCale2, selected.cluster=2) 
+```
+
+Barplot of selected genes to plot gene expression at single cell level with colored clusters:
+```{r}
+viewGeneBarPlot(PAG_bigSCale2, gene.list = c('Aqp4','Olig1','Thy1'))
+```
+
+Violin plots of a selected gene:
+```{r}
+viewGeneViolin(PAG_bigSCale2, 'Aqp4')
+```
+
+t-SNE and UMAP plots
+```{r}
+viewReduced(PAG_bigSCale2) # to see t-SNE with clusters
+viewReduced(PAG_bigSCale2, color.by = 'Stmn2') # to see t-SNE with gene expression
+```
+If you want to color the cell according to some custom annotation you can pass a `factor` variable in place of a gene name. If you want to visualize a UMAP plot, first compute the UMAP data with `PAG_bigSCale2 = storeUMAP(PAG_bigSCale2)` and then `viewReduced(PAG_bigSCale2, method = 'UMAP')`.
+
+Browsing markers: To have a look at the markers found by bigSCale2 we retrive `Mlist` from the single cell object. `Mlist` is a 2 dimensional list containing for each cluster the markers of the different levels. Let's inspect the markers of level 1 (most specific) of cluster 4. We will take advantage of the package `DT` for interactive visualization. Running the next command line we will see the markers specific to cluster 4 sorted from the highest (most significant) to the lowest (less significant) Zscore.
+```{r}
+Mlist = getMarkers(PAG_bigSCale2)
+DT::datatable(Mlist[[4,1]]) # Level 1 Markers of cluster 4
+DT::datatable(Mlist[[4,5]]) # Level 5 Markers of cluster 4
+```
+
+We can also look at co-expressed genes:
+```{r}
+Signatures = getSignatures(PAG_bigSCale2)
+DT::datatable(Signatures[[1]])
+```
+
+Superclustering: highly accurate recursive clustering which directly individautes the sub-types of a dataset. It can be activated by using the option `clustering='recursive'` when running bigSCale.
+
+### 9.3.3 | Gene Regulatory Networks
+bigSCale2 allows to infer the putative gene regulatory network (GRN) from any single cell dataset. Networks are automatically generated by retaining only the most significant correlations. By default, the parameter `quantile.p=0.998` retains only the top 0.2% correlations. 
+```{r}
+# define gene.names and subset vgat and vglut2 cells
+
+results.vgat = compute.network(expr.data = PAG_bigSCale2$VGAT, gene.names = gene.names, clustering = 'recursive')
+results.vglut2 = compute.network(expr.data = PAG_bigSCale2$VGluT2, gene.names = gene.names, clustering = 'recursive')
+```
+
+We can have a look at the networks:
+```{r}
+results.vgat$graph
+results.vglut2$graph
+```
+
+bigSCale2 has already calculated the gene (node) centralities and stored them in the output list. Centralities are a measure of the importance of a gene in the regulatory netowork. The following will plot a table with the four centralities for each gene. Genes with high `betweenness` are important information bottlenecks.
+```{r}
+DT::datatable(results.vgat$centrality)
+DT::datatable(results.vgat$correlations) # check the correlations between a gene of interest and the rest of the trancriptome
+```
+
+We can also compare changes in node centralities between both conditions. The input of `compare.centrality()` is a list whose elements are the previously calculated centralities. We also provide the complete names of the conditions which will be used to annotate the output. The output of `compare.centrality()` is a list of `data.frames`. Each `data.frame` stores the genes ranked for their change in one given centrality (`degree`, `betweenness`, `closeness`, `pagerank` in order).
+```{r}
+comparison = compare.centrality(list(results.vgat$centrality, results.vglut2$centrality),
+                                c('VGAT','VGluT2'))
+DT::datatable(comparison$betweenness)
+```
 
 # STEP 10 | Seurat
 [Seurat](https://satijalab.org/seurat/) is an R package designed for QC, analysis, and exploration of single-cell RNA-seq data. Seurat aims to enable users to identify and interpret sources of heterogeneity from single-cell transcriptomic measurements, and to integrate diverse types of single-cell data. For more info see Butler et al. 2018 and Stuart, Butler et al. 2018. The following code has been adapted from the [Guided Clustering Tutorial](https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html).
