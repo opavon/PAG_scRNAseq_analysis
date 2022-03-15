@@ -245,6 +245,113 @@ UMAP_SC3_k4
 
 ## Step 8.2 | Visualising results from differential expression analysis
 ```{r}
+# Set the directory where your data and scripts are:
+setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
+
+# Set the path to save figures from this Part:
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part8_datavis/"
+date <- Sys.Date()
+date <- gsub("-", "_", date)
+
+# Load packages:
+library(tidyverse)
+library(SingleCellExperiment)
+library(scater)
+library(scran)
+library(ggplot2)
+library(pheatmap)
+library(DESeq2)
+library(edgeR)
+library(limma)
+library(monocle)
+library(MAST)
+library(ROCR)
+library(patchwork)
+library(extrafont)
+```
+
+To visualise the results from differential expression analysis and marker genes, we load the `PAG_sceset_qc_norm_filt_corr_clust_de` after normalisation, filtering, batch correction, clustering, and DE analysis. We should thus have a `corrected` slot in `assays`:
+```{r}
+# If starting from stored results, load saved filtered dataset from previous Step:
+options(stringsAsFactors = FALSE)
+
+PAG_sceset_qc_norm_filt_corr_clust_de <- readRDS("PAG_sceset_qc_norm_filt_corr_clust_de.rds") # Contains filtered cells and genes, log-normalised, filtered, corrected, clustered data, and marker genes
+assayNames(PAG_sceset_qc_norm_filt_corr_clust_de)
+reducedDimNames(PAG_sceset_qc_norm_filt_corr_clust_de)
+```
+
+We can take a look at the lists of genes we have stored in the `metadata`, including the outputs from the different `findMarkers()` approaches:
+```{r}
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
+```
+
+We can define our color palettes as follows:
+```{r}
+# Colours PAG
+colours_celltype_PAGarea <- c(`dmpag_VGAT` = "red", `dlpag_VGAT` = "coral2", `lpag_VGAT` = "salmon", `vlpag_VGAT` = "darksalmon",
+                              `dmpag_VGluT2` = "cornflowerblue", `dlpag_VGluT2` = "cyan3", `lpag_VGluT2` = "aquamarine3", `vlpag_VGluT2` = "cadetblue3")
+
+colours_celltype <- c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255))
+
+color_vgat <- "#FF8080"
+color_vglut2 <-"#0F99B2"
+
+# Heatmap palettes
+heatmap_viridis <- rev(viridis::magma(100))
+heatmap_blue <- colorRampPalette(c("white", "blue"))(100)
+heatmap_VGAT <- colorRampPalette(c("white", "#FF8080"))(100)
+heatmap_VGluT2 <- colorRampPalette(c("white", "#0F99B2"))(100)
+
+# Clustering colours:
+cluster_colours_10 <- c(`1` = "#729ECE", `2` = "#FF9E4A", `3` = "#67BF5C", `4` = "#ED665D", `5` = "#AD8BC9",
+                        `6` = "#A8786E", `7` = "#ED97CA", `8` = "#A2A2A2", `9` = "#CDCC5D", `10` = "#6DCCDA")
+
+cluster_colours_20 <- c(`1` = "#1F77B4", `2` = "#AEC7E8", `3` = "#FF7F0E", `4` = "#FFBB78", `5` = "#2CA02C",
+                        `6` = "#98DF8A", `7` = "#D62728", `8` = "#FF9896", `9` = "#9467BD", `10` = "#C5B0D5",
+                        `11` = "#8C564B", `12` = "#C49C94", `13` = "#E377C2", `14` = "#F7B6D2", `15` = "#7F7F7F", 
+                        `16` = "#C7C7C7", `17` = "#BCBD22", `18` = "#DBDB8D", `19` = "#17BECF", `20` = "#9EDAE5")
+
+cluster_colors <- scater:::.get_palette("tableau10medium") # hidden scater colours
+
+
+# Scater palettes:
+tableau20 <- c("#1F77B4", "#AEC7E8", "#FF7F0E", "#FFBB78", "#2CA02C",
+              "#98DF8A", "#D62728", "#FF9896", "#9467BD", "#C5B0D5",
+              "#8C564B", "#C49C94", "#E377C2", "#F7B6D2", "#7F7F7F",
+              "#C7C7C7", "#BCBD22", "#DBDB8D", "#17BECF", "#9EDAE5")
+
+tableau10medium <- c("#729ECE", "#FF9E4A", "#67BF5C", "#ED665D",
+                    "#AD8BC9", "#A8786E", "#ED97CA", "#A2A2A2",
+                    "#CDCC5D", "#6DCCDA")
+
+colorblind10 <- c("#006BA4", "#FF800E", "#ABABAB", "#595959",
+                 "#5F9ED1", "#C85200", "#898989", "#A2C8EC",
+                 "#FFBC79", "#CFCFCF")
+
+trafficlight <- c("#B10318", "#DBA13A", "#309343", "#D82526",
+                 "#FFC156", "#69B764", "#F26C64", "#FFDD71",
+                 "#9FCD99")
+
+purplegray12 <- c("#7B66D2", "#A699E8", "#DC5FBD", "#FFC0DA",
+                 "#5F5A41", "#B4B19B", "#995688", "#D898BA",
+                 "#AB6AD5", "#D098EE", "#8B7C6E", "#DBD4C5")
+
+bluered12 <- c("#2C69B0", "#B5C8E2", "#F02720", "#FFB6B0", "#AC613C",
+              "#E9C39B", "#6BA3D6", "#B5DFFD", "#AC8763", "#DDC9B4",
+              "#BD0A36", "#F4737A")
+
+greenorange12 <- c("#32A251", "#ACD98D", "#FF7F0F", "#FFB977",
+                  "#3CB7CC", "#98D9E4", "#B85A0D", "#FFD94A",
+                  "#39737C", "#86B4A9", "#82853B", "#CCC94D")
+
+cyclic <-c("#1F83B4", "#1696AC", "#18A188", "#29A03C", "#54A338",
+           "#82A93F", "#ADB828", "#D8BD35", "#FFBD4C", "#FFB022",
+           "#FF9C0E", "#FF810E", "#E75727", "#D23E4E", "#C94D8C",
+           "#C04AA7", "#B446B3", "#9658B1", "#8061B4", "#6F63BB")
+```
+
+### Heatmaps
+```{r}
 library(pheatmap)
 library(RColorBrewer)
 library(viridis)
@@ -295,67 +402,6 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
             main = "Marker genes for SC3 Cluster 4 (wilcoxon | all | up)")
 ```
 
-```{r}
-# Colours PAG
-colours_celltype_PAGarea <- c(`dmpag_VGAT` = "red", `dlpag_VGAT` = "coral2", `lpag_VGAT` = "salmon", `vlpag_VGAT` = "darksalmon",
-                              `dmpag_VGluT2` = "cornflowerblue", `dlpag_VGluT2` = "cyan3", `lpag_VGluT2` = "aquamarine3", `vlpag_VGluT2` = "cadetblue3")
-
-colours_celltype = c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255))
-
-# Heatmap palettes
-heatmap_viridis = rev(viridis::magma(100))
-heatmap_blue = colorRampPalette(c("white", "blue"))(100)
-heatmap_VGAT <- colorRampPalette(c("white", "#FF8080"))(100)
-heatmap_VGluT2 <- colorRampPalette(c("white", "#0F99B2"))(100)
-
-# Clustering colours:
-cluster_colours_10 <- c(`1` = "#729ECE", `2` = "#FF9E4A", `3` = "#67BF5C", `4` = "#ED665D", `5` = "#AD8BC9",
-                        `6` = "#A8786E", `7` = "#ED97CA", `8` = "#A2A2A2", `9` = "#CDCC5D", `10` = "#6DCCDA")
-
-cluster_colours_20 <- c(`1` = "#1F77B4", `2` = "#AEC7E8", `3` = "#FF7F0E", `4` = "#FFBB78", `5` = "#2CA02C",
-                        `6` = "#98DF8A", `7` = "#D62728", `8` = "#FF9896", `9` = "#9467BD", `10` = "#C5B0D5",
-                        `11` = "#8C564B", `12` = "#C49C94", `13` = "#E377C2", `14` = "#F7B6D2", `15` = "#7F7F7F", 
-                        `16` = "#C7C7C7", `17` = "#BCBD22", `18` = "#DBDB8D", `19` = "#17BECF", `20` = "#9EDAE5")
-
-cluster_colors <- scater:::.get_palette("tableau10medium") # hidden scater colours
-
-
-# Scater palettes:
-tableau20 = c("#1F77B4", "#AEC7E8", "#FF7F0E", "#FFBB78", "#2CA02C",
-              "#98DF8A", "#D62728", "#FF9896", "#9467BD", "#C5B0D5",
-              "#8C564B", "#C49C94", "#E377C2", "#F7B6D2", "#7F7F7F",
-              "#C7C7C7", "#BCBD22", "#DBDB8D", "#17BECF", "#9EDAE5")
-
-tableau10medium = c("#729ECE", "#FF9E4A", "#67BF5C", "#ED665D",
-                    "#AD8BC9", "#A8786E", "#ED97CA", "#A2A2A2",
-                    "#CDCC5D", "#6DCCDA")
-
-colorblind10 = c("#006BA4", "#FF800E", "#ABABAB", "#595959",
-                 "#5F9ED1", "#C85200", "#898989", "#A2C8EC",
-                 "#FFBC79", "#CFCFCF")
-
-trafficlight = c("#B10318", "#DBA13A", "#309343", "#D82526",
-                 "#FFC156", "#69B764", "#F26C64", "#FFDD71",
-                 "#9FCD99")
-
-purplegray12 = c("#7B66D2", "#A699E8", "#DC5FBD", "#FFC0DA",
-                 "#5F5A41", "#B4B19B", "#995688", "#D898BA",
-                 "#AB6AD5", "#D098EE", "#8B7C6E", "#DBD4C5")
-
-bluered12 = c("#2C69B0", "#B5C8E2", "#F02720", "#FFB6B0", "#AC613C",
-              "#E9C39B", "#6BA3D6", "#B5DFFD", "#AC8763", "#DDC9B4",
-              "#BD0A36", "#F4737A")
-
-greenorange12 = c("#32A251", "#ACD98D", "#FF7F0F", "#FFB977",
-                  "#3CB7CC", "#98D9E4", "#B85A0D", "#FFD94A",
-                  "#39737C", "#86B4A9", "#82853B", "#CCC94D")
-
-cyclic = c("#1F83B4", "#1696AC", "#18A188", "#29A03C", "#54A338",
-           "#82A93F", "#ADB828", "#D8BD35", "#FFBD4C", "#FFB022",
-           "#FF9C0E", "#FF810E", "#E75727", "#D23E4E", "#C94D8C",
-           "#C04AA7", "#B446B3", "#9658B1", "#8061B4", "#6F63BB")
-```
-
 
 ```{r}
 # Annotating the heatmap (from https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2018/SingleCell/practical/crukBioinfoSummerSchoolJuly2018_scRnaSeqCellPopId_practical_run.html#192_detecting_genes_differentially_expressed_between_clusters)
@@ -395,3 +441,95 @@ pheatmap(tmpData[,order(mat_col$cluster.ID)],
          annotation_colors = mat_colors,
          main = "Marker genes for SC3 Cluster 4 (wilcoxon | all | up)")
 ```
+
+### Dot Plots
+```{r}
+# Define colours
+color_vgat <- "#FF8080"
+color_vglut2 <-"#0F99B2"
+
+# Define list of genes
+gene_list_dopamine <- c("Drd1", "Drd2", "Drd3", "Drd4", "Drd5")
+
+# Compose plots
+DA_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                            features = gene_list_dopamine,
+                            exprs_values = "logcounts", detection_limit = 0,
+                            group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                            low_color = "white", high_color = color_vgat,
+                            max_ave = NULL, max_detected = NULL
+                            ) + 
+  ggtitle("Dopamine receptors") + 
+  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+DA_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                              features = gene_list_dopamine,
+                              exprs_values = "logcounts", detection_limit = 0,
+                              group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                              low_color = "white", high_color = color_vglut2,
+                              max_ave = NULL, max_detected = NULL
+                              ) + 
+  ggtitle("Dopamine receptors") + 
+  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+DA_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                         features = gene_list_dopamine,
+                                         exprs_values = "logcounts", detection_limit = 0,
+                                         group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                         low_color = "white", high_color = color_vgat,
+                                         max_ave = NULL, max_detected = NULL
+                                         ) + 
+  ggtitle("Dopamine receptors") + 
+  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+DA_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                           features = gene_list_dopamine,
+                                           exprs_values = "logcounts", detection_limit = 0,
+                                           group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                           low_color = "white", high_color = color_vglut2,
+                                           max_ave = NULL, max_detected = NULL
+                                           ) + 
+  ggtitle("Dopamine receptors") + 
+  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+# Plot them
+DA_dotplot_vgat
+DA_dotplot_vglut2
+DA_dotplot_vgat_subdivisions
+DA_dotplot_vglut2_subdivisions
+
+# Save plots
+ggsave(filename = str_c(date, "_DA_dotplot_vgat.pdf"),
+       plot = DA_dotplot_vgat,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_DA_dotplot_vglut2.pdf"),
+       plot = DA_dotplot_vglut2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_DA_dotplot_vgat_subdivisions.pdf"),
+       plot = DA_dotplot_vgat_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_DA_dotplot_vglut2_subdivisions.pdf"),
+       plot = DA_dotplot_vglut2_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+```
+
