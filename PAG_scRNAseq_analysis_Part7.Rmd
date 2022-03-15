@@ -33,7 +33,6 @@ One of the most common types of analyses when working with bulk RNA-seq data is 
 
 In scRNA-seq we usually do not have a defined set of experimental conditions. Instead, we can identify the cell groups by using an unsupervised clustering approach. Once the groups have been identified one can find differentially expressed genes either by comparing the differences in variance between the groups (like the Kruskal-Wallis test implemented in `SC3`), or by comparing gene expression between clusters in a pairwise manner. In our case, in addition to clusters we have experimental conditions we can test, namely the cell type or PAG subdivision from where the cells were collected, which makes it possible for us to follow either approach.
 
-We continue using the `PAG_sceset_qc_norm_filt_corr_clust` after normalisation, filtering, batch correction, and clustering. We should thus have a `corrected` slot in `assays`:
 ```{r}
 # Set the directory where your data and scripts are:
 setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
@@ -60,6 +59,7 @@ library(patchwork)
 library(extrafont)
 ```
 
+We continue using the `PAG_sceset_qc_norm_filt_corr_clust` after normalisation, filtering, batch correction, and clustering. We should thus have a `corrected` slot in `assays`:
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
 options(stringsAsFactors = FALSE)
@@ -149,6 +149,15 @@ UMAP_cv2_15_001_JaccardLouvain_k13 <- plotReducedDim(PAG_sceset_qc_norm_filt_cor
                                                     point_alpha = 0.6, point_size = 2, theme_size = 11
                                                     ) + labs(title = "Jaccard-Louvain (k = 13)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
 
+# Using SC3 with k = 4
+UMAP_cv2_15_001_SC3_4 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "sc3_4_clusters", shape_by = "cell.type", text_by = "sc3_4_clusters",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2") + theme_args_SNN_clustering
+
+
+
 # Prepare and save composed plots
 library(patchwork)
 
@@ -187,6 +196,12 @@ UMAP_SNN_JaccardLouvain_k13 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_00
                   theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
   plot_layout(ncol = 2, guides = "collect")
 UMAP_SNN_JaccardLouvain_k13
+
+UMAP_SC3_k4 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_SC3_4) +
+  plot_annotation(title = "SC3 clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SC3_k4
 
 ggsave(filename = str_c(date, "_UMAP_SNN_rank_k7_clusters.pdf"),
        plot = UMAP_SNN_RankWalktrap_k7,
@@ -230,6 +245,14 @@ ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k9_clusters.pdf"),
 
 ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k13_clusters.pdf"),
        plot = UMAP_SNN_JaccardLouvain_k13,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+
+ggsave(filename = str_c(date, "_UMAP_sc3_k4_clusters.pdf"),
+       plot = UMAP_SC3_k4,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = path_for_figures,
        width = 8, height = 4, units = "in", dpi = 300,
@@ -439,8 +462,7 @@ Finally, the following code allows us to run the main analysis using `findMarker
 #         assign(marker_set, temp_marker_set) # Assign the results to the created variable
 #         
 #         # Export the results to a .csv file:
-#         write.csv(temp_marker_set, file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
-#                                                 results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+#         write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", #                                                 results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
 #         # Populate the summary data.frame:        
 #         SNN_clusters_marker_set_summary = rbind(SNN_clusters_marker_set_summary,
 #                                                 data.frame(marker_set = marker_set,
@@ -551,8 +573,8 @@ for (test_choice in desired_tests){
     assign(marker_set, temp_marker_set)
     
     # Export the results to a .csv file:
-    write.csv(temp_marker_set, file = str_c(path_for_figures, "cell_type/", "PAG_DE_results_", 
-                                            results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+    write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "cell_type/", "PAG_DE_results_", 
+                                                                     results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
     
     # Populate the summary data.frame:
     celltype_marker_set_summary = rbind(celltype_marker_set_summary,
@@ -567,13 +589,14 @@ for (test_choice in desired_tests){
     }
 }
 
-# Check out the summary: 
+# Check out the summary:
 celltype_marker_set_summary
 ```
 
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_VGAT_wilcox_all_up
+head(marker_set_VGAT_wilcox_all_up[marker_set_VGAT_wilcox_all_up$FDR<0.05,])
+head(marker_set_VGluT2_wilcox_all_up[marker_set_VGluT2_wilcox_all_up$FDR<0.05,])
 ```
 
 Once we have obtained the results for each comparison, we can take a quick look at the top DE genes and filter them according the our custom list of genes we appended to the metadata in the begining of the pipeline.
@@ -584,7 +607,7 @@ names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 
 ```{r}
 # Set the FDR threshold you want to look at.
-fdr_threshold <- 0.01 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
 
 VGAT_de_genes <- rownames(marker_set_VGAT_wilcox_all_up[marker_set_VGAT_wilcox_all_up$FDR<fdr_threshold, ])
 VGluT2_de_genes <- rownames(marker_set_VGluT2_wilcox_all_up[marker_set_VGluT2_wilcox_all_up$FDR<fdr_threshold, ])
@@ -626,6 +649,20 @@ cat("\n--- VGluT2 cells\n")
 VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
 ```
 
+As a final step, we can assign the names of the differentially expressed genes to the `metadata` slot of the `PAG_sceset_qc_norm_filt_corr_clust_de` object, so we can quickly retrieve it for plotting and summarising our results:
+```{r}
+# Set false discovery rate threshold
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+# DE genes in VGAT cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_VGAT_wilcox_all_up <- rownames(marker_set_VGAT_wilcox_all_up[marker_set_VGAT_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in VGluT2 cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_VGluT2_wilcox_all_up <- rownames(marker_set_VGluT2_wilcox_all_up[marker_set_VGluT2_wilcox_all_up$FDR<fdr_threshold, ])
+
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
+```
+
 ## Step 7.3 | Identifying marker genes between cell-type and PAG subdivisions
 To find interesting genes across PAG subdivisions while accounting for cell-type, we can make use of the combined metadata factor `celltype_PAGarea`, in which each cell will be grouped according to both their type and their PAG area. For this, we continue with the `SingleCellExperiment` object we created after excluding the cells assigned to the macrophage-enriched cluster:
 ```{r}
@@ -651,7 +688,7 @@ exclude <- NULL # the levels of groups for which NOT to perform pairwise compari
 print("Parameters back to default values")
 ```
 
-For the `celltype_PAGarea` comparisons, we are up to eight groups (dmPAG, dlPAG, lPAG, vlPAG and VGAT and VGluT2 cells for each of those subdivisions). In this case, we are only interested in the genes specific to each group, so we will set `pval.type=all`. However, after seeing `all` results in nearly no potential markers, we could add `pval.type=some` to the mix (although by doing that we would mainly be getting the cell-type specific markers back in). We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
+For the `celltype_PAGarea` comparisons, we are up to eight groups (dmPAG, dlPAG, lPAG, vlPAG and VGAT and VGluT2 cells for each of those subdivisions). In this case, we are only interested in the genes specific to each group, so we will set `pval.type=all`. However, after seeing `all` results in nearly no potential markers, we could think of adding `pval.type=some` to the mix. In this case, though, by doing that we would mainly be getting the cell-type specific markers back in, so we will stick with `pval.type=all`. We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
 ```{r}
 # Set the groups to be compared (cluster IDs or metadata slot of interest):
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea
@@ -717,8 +754,8 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set)
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "celltype_PAGarea/", "PAG_DE_results_", 
-                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "celltype_PAGarea/", "PAG_DE_results_", 
+                                                                         results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         
         # Populate the summary data.frame:
         celltype_PAGarea_marker_set_summary = rbind(celltype_PAGarea_marker_set_summary,
@@ -741,10 +778,10 @@ celltype_PAGarea_marker_set_summary
 
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_VGluT2_dlpag_wilcox_all_up
+head(marker_set_VGluT2_dlpag_wilcox_all_up[marker_set_VGluT2_dlpag_wilcox_all_up$FDR<0.1,])
 ```
 
-For `pval.type=all`, we found no marker genes for any of the groups that passed the false discovery rate threshold of <0.05. This suggests that if we want to find genes that are differentially expressed across PAG subdivision we can either look at the results from `pval.type=some` or repeat the analysis following one of two approaches:
+For `pval.type=all`, we found no marker genes for any of the groups that passed the false discovery rate threshold of `FDR<0.05`. This suggests that if we want to find genes that are differentially expressed across PAG subdivisions we can either look at the results from `pval.type=some` or repeat the analysis following one of two approaches:
 
 * We could compare PAG subdivisions by using the metadata factor `PAG.area` and ignoring the `cell.type`, which would provide us with marker genes to target specific subdivisions.
 
@@ -841,8 +878,8 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set)
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_",
-                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_",
+                                                                         results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         
         # Populate the summary data.frame:
         PAGarea_marker_set_summary = rbind(PAGarea_marker_set_summary,
@@ -866,13 +903,13 @@ PAGarea_marker_set_summary
 As we can see, even when looking only at the differences between PAG subdivisions without paying attention to the cell-type we still don't find many potential marker genes. Interestingly though, we can see there are less genes for dmPAG, dlPAG, and lPAG compared to vlPAG. Given that we are using `pval.type=all` this may be a hint that vlPAG is more different from all the other subdivisions than what dm/dl/l are between themselves. To test this, we could repeat the analysis by pooling the metadata factors from dm/dl/l into a single one and compare dorsal PAG vs vlPAG.
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_dlpag_wilcox_all_up
+head(marker_set_dlpag_wilcox_all_up[marker_set_dlpag_wilcox_all_up$FDR<0.05,])
 ```
 
 Once we have obtained the results for each comparison, we can take a quick look at the top DE genes and filter them according the our custom list of genes we appended to the metadata in the begining of the pipeline. __Hint: only Transcription Factors have some results.__
 ```{r}
 # Set the FDR threshold you want to look at.
-fdr_threshold <- 0.01 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
 
 dmpag_de_genes <- rownames(marker_set_dmpag_wilcox_all_up[marker_set_dmpag_wilcox_all_up$FDR<fdr_threshold, ])
 dlpag_de_genes <- rownames(marker_set_dlpag_wilcox_all_up[marker_set_dlpag_wilcox_all_up$FDR<fdr_threshold, ])
@@ -938,6 +975,41 @@ cat("--- lPAG cells\n")
 lpag_de_genes[lpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
 cat("--- vlPAG cells\n")
 vlpag_de_genes[vlpag_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+```
+
+Finally, we assign the names of the differentially expressed genes to the `metadata` slot of the `PAG_sceset_qc_norm_filt_corr_clust_de` object, so we can quickly retrieve it for plotting and summarising our results:
+```{r}
+# Set false discovery rate threshold
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+## Results from `pval = all`
+# DE genes in dmPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_dmpag_wilcox_all_up <- rownames(marker_set_dmpag_wilcox_all_up[marker_set_dmpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in dlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_dlpag_wilcox_all_up <- rownames(marker_set_dlpag_wilcox_all_up[marker_set_dlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in lPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_lpag_wilcox_all_up <- rownames(marker_set_lpag_wilcox_all_up[marker_set_lpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in vlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vlpag_wilcox_all_up <- rownames(marker_set_vlpag_wilcox_all_up[marker_set_vlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+## Results from `pval = some`
+# DE genes in dmPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_dmpag_wilcox_some_up <- rownames(marker_set_dmpag_wilcox_some_up[marker_set_dmpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in dlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_dlpag_wilcox_some_up <- rownames(marker_set_dlpag_wilcox_some_up[marker_set_dlpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in lPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_lpag_wilcox_some_up <- rownames(marker_set_lpag_wilcox_some_up[marker_set_lpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in vlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vlpag_wilcox_some_up <- rownames(marker_set_vlpag_wilcox_some_up[marker_set_vlpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# Check results were appended correctly
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 ```
 
 ### 7.3.2 | Marker genes for PAG subdivisions within cell type
@@ -1028,8 +1100,8 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set)
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_", 
-                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_", 
+                                                                         results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         
         # Populate the summary data.frame:
         PAGarea_VGAT_marker_set_summary = rbind(PAGarea_VGAT_marker_set_summary,
@@ -1053,11 +1125,46 @@ PAGarea_VGAT_marker_set_summary
 Again, even when looking only at the differences between PAG subdivisions within VGAT+ neurons we only find some potential markers in vlPAG neurons, again hinting at the possibility that vlPAG is more different from all the other subdivisions than what dm/dl/l are between themselves. To test this, we could repeat the analysis by pooling the metadata factors from dm/dl/l into a single one and compare dorsal PAG vs vlPAG.
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_vgat_vlpag_wilcox_all_up
+head(marker_set_vgat_vlpag_wilcox_all_up[marker_set_vgat_vlpag_wilcox_all_up$FDR<0.05,])
+```
+
+In the case of VGAT neurons, even when seting `pval.type=some` we find very little or no markers in dm/dl/lpag neurons. We nonetheless keep the few we obtained:
+```{r}
+# Set false discovery rate threshold
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+## Results from `pval = all`
+# DE genes in dmPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_dmpag_wilcox_all_up <- rownames(marker_set_vgat_dmpag_wilcox_all_up[marker_set_vgat_dmpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in dlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_dlpag_wilcox_all_up <- rownames(marker_set_vgat_dlpag_wilcox_all_up[marker_set_vgat_dlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in lPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_lpag_wilcox_all_up <- rownames(marker_set_vgat_lpag_wilcox_all_up[marker_set_vgat_lpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in vlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_vlpag_wilcox_all_up <- rownames(marker_set_vgat_vlpag_wilcox_all_up[marker_set_vgat_vlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+## Results from `pval = some`
+# DE genes in dmPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_dmpag_wilcox_some_up <- rownames(marker_set_vgat_dmpag_wilcox_some_up[marker_set_vgat_dmpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in dlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_dlpag_wilcox_some_up <- rownames(marker_set_vgat_dlpag_wilcox_some_up[marker_set_vgat_dlpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in lPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_lpag_wilcox_all_up <- rownames(marker_set_vgat_lpag_wilcox_all_up[marker_set_vgat_lpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in vlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vgat_vlpag_wilcox_all_up <- rownames(marker_set_vgat_vlpag_wilcox_all_up[marker_set_vgat_vlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# Check results were appended correctly
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 ```
 
 #### Marker genes for PAG subdivision in VGluT2+ neurons
-To make sure we don't carry any variables from previous runs, we reset all the parameters to their default values:
+We next repeat the same for VGluT2 neurons. To make sure we don't carry any variables from previous runs, we reset all the parameters to their default values:
 ```{r}
 library(scran)
 # Parameters defaults:
@@ -1141,8 +1248,8 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set)
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_", 
-                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "PAG_subdivision/", "PAG_DE_results_", 
+                                                                         results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         
         # Populate the summary data.frame:
         PAGarea_VGluT2_marker_set_summary = rbind(PAGarea_VGluT2_marker_set_summary,
@@ -1163,17 +1270,52 @@ for (test_choice in desired_tests){
 PAGarea_VGluT2_marker_set_summary
 ```
 
-Even though we are still looking only at the differences between PAG subdivisions within VGluT2+ neurons, in this case we seem to have slightly more potential markers between dmPAG and dlPAG neurons, and nearly none for lPAG and vlPAG. We don't seem to find a clear structure according to PAG subdivision, so we will move on to examining the results from the clustering.
+Even though we are still looking only at the differences between PAG subdivisions within VGluT2+ neurons, in this case we seem to have slightly more potential markers between dmPAG and dlPAG neurons, and nearly none for lPAG and vlPAG. Whereas for VGAT neurons it was the vlPAG that seemed more different than the other three, in the case of VGluT2 neurons it seems to be dm/dlPAG that have more markers than l/vlPAG.
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_vglut2_dlpag_wilcox_all_up
+head(marker_set_vglut2_dlpag_wilcox_all_up[marker_set_vglut2_dlpag_wilcox_all_up$FDR<0.05,])
+```
+
+Again, we store the genes that pass the false discovery rate threshold in the `SingleCellExperiment` object.
+```{r}
+# Set false discovery rate threshold
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+## Results from `pval = all`
+# DE genes in dmPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_dmpag_wilcox_all_up <- rownames(marker_set_vglut2_dmpag_wilcox_all_up[marker_set_vglut2_dmpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in dlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_dlpag_wilcox_all_up <- rownames(marker_set_vglut2_dlpag_wilcox_all_up[marker_set_vglut2_dlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in lPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_lpag_wilcox_all_up <- rownames(marker_set_vglut2_lpag_wilcox_all_up[marker_set_vglut2_lpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+# DE genes in vlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_vlpag_wilcox_all_up <- rownames(marker_set_vglut2_vlpag_wilcox_all_up[marker_set_vglut2_vlpag_wilcox_all_up$FDR<fdr_threshold, ])
+
+## Results from `pval = some`
+# DE genes in dmPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_dmpag_wilcox_some_up <- rownames(marker_set_vglut2_dmpag_wilcox_some_up[marker_set_vglut2_dmpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in dlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_dlpag_wilcox_some_up <- rownames(marker_set_vglut2_dlpag_wilcox_some_up[marker_set_vglut2_dlpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in lPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_lpag_wilcox_some_up <- rownames(marker_set_vglut2_lpag_wilcox_some_up[marker_set_vglut2_lpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# DE genes in vlPAG cells
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_vglut2_vlpag_wilcox_some_up <- rownames(marker_set_vglut2_vlpag_wilcox_some_up[marker_set_vglut2_vlpag_wilcox_some_up$FDR<fdr_threshold, ])
+
+# Check results were appended correctly
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 ```
 
 ## Step 7.4 | Identifying marker genes between clusters
-For the `cluster.ID` comparisons, the number of groups will depend on the parameters we chose. We will run the pairwise comparisons both for a low value of `k` (e.g. `k=5`, which resulted in 11 clusters) and for a higher value of `k` (e.g. `k = 13`, which resulted in 8 clusters). Given that we are still mainly interested in the genes specific to each group, we will set `pval.type=all`. Again, after seeing `all` results in very few potential markers, we will add `some` to the mix. We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
+For the `cluster.ID` comparisons, the number of groups will depend on the parameters we chose. For the graph-based clustering results, we will run the pairwise comparisons both for a low value of `k` (e.g. `k=5`, which resulted in 11 clusters) and for a higher value of `k` (e.g. `k = 13`, which resulted in 8 clusters). For the SC3 clustering results, we will run the comparisons for the case of `k=4`, as it cleanly splits dm/dl/lPAG and vlPAG cells for both inhibitory and excitatory cells. Given that we are still mainly interested in the genes specific to each group, we will set `pval.type=all`. Again, after seeing `all` results in very few potential markers, we could add `some` to the mix. We will also set `direction = "up"` to focus on genes that are more highly expressed in each group. We will again use the Wilcoxon rank sum test and will block for `mouse.sex` to account for any sex specific differences that we are not interested in.
 
 ### 7.4.1 | Marker genes for SNN clusters (k = 5)
-We can refresh the clustering results using `k = 5`:
+We can start by refreshing how the clustering results looked like when using `k = 5`:
 ```{r}
 UMAP_SNN_JaccardLouvain_k5
 ```
@@ -1260,8 +1402,8 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set) # Assign the results to the created variable
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
-                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
+                                                                         results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         # Populate the summary data.frame:        
         SNN_clusters_k5_marker_set_summary = rbind(SNN_clusters_k5_marker_set_summary,
                                                    data.frame(marker_set = marker_set,
@@ -1283,11 +1425,64 @@ SNN_clusters_k5_marker_set_summary
 
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_SNN_k5_5_wilcox_some_up
+head(marker_set_SNN_k5_1_wilcox_some_up[marker_set_SNN_k5_1_wilcox_some_up$FDR<0.05,])[1:2]
+```
+
+As it happened in the case of `celltype_PAGarea`, we observe that using the `pval.type=all` finds little or no marker genes that are specific for each cluster. We do have a few when using `pval.type=some`, so we will store the results from both approaches in the `metadata` slot.
+```{r}
+# Set false discovery rate threshold
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+## Results from `pval = all`
+# DE genes in cluster 1
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_1_wilcox_all_up <- rownames(marker_set_SNN_k5_1_wilcox_all_up[marker_set_SNN_k5_1_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 2
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_2_wilcox_all_up <- rownames(marker_set_SNN_k5_2_wilcox_all_up[marker_set_SNN_k5_2_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 3
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_3_wilcox_all_up <- rownames(marker_set_SNN_k5_3_wilcox_all_up[marker_set_SNN_k5_3_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 4
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_4_wilcox_all_up <- rownames(marker_set_SNN_k5_4_wilcox_all_up[marker_set_SNN_k5_4_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 5
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_5_wilcox_all_up <- rownames(marker_set_SNN_k5_5_wilcox_all_up[marker_set_SNN_k5_5_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 6
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_6_wilcox_all_up <- rownames(marker_set_SNN_k5_6_wilcox_all_up[marker_set_SNN_k5_6_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 7
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_7_wilcox_all_up <- rownames(marker_set_SNN_k5_7_wilcox_all_up[marker_set_SNN_k5_7_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 8
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_8_wilcox_all_up <- rownames(marker_set_SNN_k5_8_wilcox_all_up[marker_set_SNN_k5_8_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 9
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_9_wilcox_all_up <- rownames(marker_set_SNN_k5_9_wilcox_all_up[marker_set_SNN_k5_9_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 11 (we removed cluster 10)
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_10_wilcox_all_up <- rownames(marker_set_SNN_k5_10_wilcox_all_up[marker_set_SNN_k5_10_wilcox_all_up$FDR<fdr_threshold, ])
+
+## Results from `pval = some`
+# DE genes in cluster 1
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_1_wilcox_some_up <- rownames(marker_set_SNN_k5_1_wilcox_some_up[marker_set_SNN_k5_1_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 2
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_2_wilcox_some_up <- rownames(marker_set_SNN_k5_2_wilcox_some_up[marker_set_SNN_k5_2_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 3
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_3_wilcox_some_up <- rownames(marker_set_SNN_k5_3_wilcox_some_up[marker_set_SNN_k5_3_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 4
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_4_wilcox_some_up <- rownames(marker_set_SNN_k5_4_wilcox_some_up[marker_set_SNN_k5_4_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 5
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_5_wilcox_some_up <- rownames(marker_set_SNN_k5_5_wilcox_some_up[marker_set_SNN_k5_5_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 6
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_6_wilcox_some_up <- rownames(marker_set_SNN_k5_6_wilcox_some_up[marker_set_SNN_k5_6_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 7
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_7_wilcox_some_up <- rownames(marker_set_SNN_k5_7_wilcox_some_up[marker_set_SNN_k5_7_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 8
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_8_wilcox_some_up <- rownames(marker_set_SNN_k5_8_wilcox_some_up[marker_set_SNN_k5_8_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 9
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_9_wilcox_some_up <- rownames(marker_set_SNN_k5_9_wilcox_some_up[marker_set_SNN_k5_9_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 11 (we removed cluster 10)
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k5_10_wilcox_some_up <- rownames(marker_set_SNN_k5_10_wilcox_some_up[marker_set_SNN_k5_10_wilcox_some_up$FDR<fdr_threshold, ])
+
+# Check results were appended correctly
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 ```
 
 ### 7.4.2 | Marker genes for SNN clusters (k = 13)
-We can refresh the clustering results using `k = 13`:
+We repeat the analysis for the results obtained using `k = 13`:
 ```{r}
 UMAP_SNN_JaccardLouvain_k13
 ```
@@ -1374,8 +1569,8 @@ for (test_choice in desired_tests){
         assign(marker_set, temp_marker_set) # Assign the results to the created variable
         
         # Export the results to a .csv file:
-        write.csv(temp_marker_set, file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
-                                                results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "SNN_clusters/", "PAG_DE_results_", 
+                                                                         results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
         # Populate the summary data.frame:        
         SNN_clusters_k13_marker_set_summary = rbind(SNN_clusters_k13_marker_set_summary,
                                                    data.frame(marker_set = marker_set,
@@ -1397,123 +1592,251 @@ SNN_clusters_k13_marker_set_summary
 
 ```{r}
 # Take a look at the results from one fo the comparisons
-marker_set_SNN_k13_3_wilcox_all_up
+head(marker_set_SNN_k13_3_wilcox_all_up[marker_set_SNN_k13_3_wilcox_all_up$FDR<0.05,])[1:2]
 ```
 
-## Step 7.5 | Visualising results from differential expression analysis
+Once again, some clusters are left without specific markers when using `pval.type=all`, so we will store the results from both approaches into the `metadata` slot.
+```{r}
+# Set false discovery rate threshold
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+## Results from `pval = all`
+# DE genes in cluster 1
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_1_wilcox_all_up <- rownames(marker_set_SNN_k13_1_wilcox_all_up[marker_set_SNN_k13_1_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 2
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_2_wilcox_all_up <- rownames(marker_set_SNN_k13_2_wilcox_all_up[marker_set_SNN_k13_2_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 3
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_3_wilcox_all_up <- rownames(marker_set_SNN_k13_3_wilcox_all_up[marker_set_SNN_k13_3_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 4
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_4_wilcox_all_up <- rownames(marker_set_SNN_k13_4_wilcox_all_up[marker_set_SNN_k13_4_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 5
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_5_wilcox_all_up <- rownames(marker_set_SNN_k13_5_wilcox_all_up[marker_set_SNN_k13_5_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 6
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_6_wilcox_all_up <- rownames(marker_set_SNN_k13_6_wilcox_all_up[marker_set_SNN_k13_6_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 8 (we removed cluster 7)
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_7_wilcox_all_up <- rownames(marker_set_SNN_k13_7_wilcox_all_up[marker_set_SNN_k13_7_wilcox_all_up$FDR<fdr_threshold, ])
+
+## Results from `pval = some`
+# DE genes in cluster 1
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_1_wilcox_some_up <- rownames(marker_set_SNN_k13_1_wilcox_some_up[marker_set_SNN_k13_1_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 2
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_2_wilcox_some_up <- rownames(marker_set_SNN_k13_2_wilcox_some_up[marker_set_SNN_k13_2_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 3
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_3_wilcox_some_up <- rownames(marker_set_SNN_k13_3_wilcox_some_up[marker_set_SNN_k13_3_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 4
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_4_wilcox_some_up <- rownames(marker_set_SNN_k13_4_wilcox_some_up[marker_set_SNN_k13_4_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 5
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_5_wilcox_some_up <- rownames(marker_set_SNN_k13_5_wilcox_some_up[marker_set_SNN_k13_5_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 6
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_6_wilcox_some_up <- rownames(marker_set_SNN_k13_6_wilcox_some_up[marker_set_SNN_k13_6_wilcox_some_up$FDR<fdr_threshold, ])
+# DE genes in cluster 8 (we removed cluster 7)
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SNN_k13_7_wilcox_some_up <- rownames(marker_set_SNN_k13_7_wilcox_some_up[marker_set_SNN_k13_7_wilcox_some_up$FDR<fdr_threshold, ])
+
+# Check results were appended correctly
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
+```
+
+### 7.4.3 | Marker genes for SC3 clusters (k = 4)
+Finally, we will run the `findMarkers()` function on the results obtained by clustering with SC3 and `k=4`, as it is the clustering approach that better captures the two main clusters for each excitatory and inhibitory cells. This would be the closest to comparing dm/dl versus l/vl without using the actual metadata, and hopefully yields more markers than those obtained with the other approaches. We can first refresh the clustering results using `k = 4`:
+```{r}
+UMAP_SC3_k4
+```
 
 ```{r}
-library(pheatmap)
-best_set_up_all_clusters_cluster_4 <- marker_set_up_all_clusters_cluster_4[1:30,]
-best_set_up_all_clusters_cluster_4_names <- rownames(best_set_up_all_clusters_cluster_4)
-plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
-            features = best_set_up_all_clusters_cluster_4_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k10), 
-            # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
-            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
-            center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
-            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix.
-            # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
-            symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
-            color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "celltype_PAGarea"), # how the columns should be annotated with colours.
-            show_rownames = TRUE, show_colnames = FALSE,
-            cluster_rows = TRUE, cluster_cols = FALSE,
-            main = "Heatmap for Cluster 4 marker genes (t-test | all | up)")
+library(scran)
+# Parameters defaults:
+groups <- NULL # clustering results or group for each cell.
+
+test <- c("t", "wilcox", "binom") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+comparisons <- c("any", "some", "all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all.
+direction <- c("any", "up", "down") # the direction of log-fold changes to be considered in the alternative hypothesis.
+lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+
+block <- NULL # factor specifying the blocking level for each cell.
+design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+print("Parameters back to default values")
 ```
 
 ```{r}
-library(pheatmap)
-best_set_wilcox_up_all_clusters_cluster_4 <- marker_set_wilcox_up_all_clusters_cluster_4[marker_set_wilcox_up_all_clusters_cluster_4$Top <= 6,]
-#best_set_wilcox_up_all_clusters_cluster_4
-AUCs_wilcox_up <- as.matrix(best_set_wilcox_up_all_clusters_cluster_4[,-(1:3)]) # leave only the columns containing logFC values for each comparison
-#AUCs_wilcox_up
-colnames(AUCs_wilcox_up) <- sub("AUC.", "", colnames(AUCs_wilcox_up)) # Remove "AUC." from the colnames, to leave the cluster number alone
-#AUCs_wilcox_up
+# Set the groups to be compared (cluster IDs or metadata slot of interest):
+groups <- PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters
 
-# Plot the AUCs - will plot one column for each comparison, and the top marker genes for the selected group should have a high value for each comparison
-pheatmap(AUCs_wilcox_up, breaks = seq(0, 1, length.out = 21), color = viridis::viridis(21),
-         main = "Heatmap for Cluster 4 AUCs (wilcoxon | all | up)")
+# Set the string to be added to the filename when saving the results:
+results_name <- "SC3_clusters_k4_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
-# Alternative plot - will plot expression of the marker genes
-best_set_wilcox_up_all_clusters_cluster_4_names <- rownames(best_set_wilcox_up_all_clusters_cluster_4)
-plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust,
-            features = best_set_wilcox_up_all_clusters_cluster_4_names, # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust$SNN_clusters_cv2_jaccard_k10), 
-            # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
-            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
-            center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
-            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix.
-            # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
-            symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
-            color = NULL, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("SNN_clusters_cv2_jaccard_k10", "cell.type", "PAG.area"), # how the columns should be annotated with colours.
-            show_rownames = TRUE, show_colnames = FALSE,
-            cluster_rows = TRUE, cluster_cols = FALSE,
-             main = "Heatmap for Cluster 4 marker genes (wilcoxon | all | up)")
+# Create a variable with the tests you want to run:
+desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
+desired_comparisons <- c("all") # how p-values are to be combined across pairwise comparisons for a given group: "any", "some", or "all".
+desired_directions <- c("up") # the direction of log-fold changes to be considered in the alternative hypothesis: "any", "up", "down".
+
+# Initialise an empty `data.frame` to populate with a summary of marker genes:
+SC3_clusters_k4_marker_set_summary <- data.frame()
+
+# Perform comparisons of chosen groups with a set of statistical tests and store/export all the results:
+for (test_choice in desired_tests){
+  test <- test_choice
+  for (comparison_choice in desired_comparisons){
+    comparisons <- comparison_choice
+    for (direction_choice in desired_directions){
+      direction <- direction_choice
+      
+      # Set the remaining parameters:
+      lfc <- 0 # positive numeric scalar specifying the log-fold change threshold to be tested against.
+      block <- PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex # factor specifying the blocking level for each cell. Try PAG_sceset_qc_norm_filt_corr_clust_de$mouse.sex
+      design <- NULL # numeric matrix with blocking terms for uninteresting factors (not to be confounded with groups).
+      restrict <- NULL # the levels of groups for which to perform pairwise comparisons.
+      exclude <- NULL # the levels of groups for which NOT to perform pairwise comparisons.
+      
+      # Run findMarkers:
+      marker_genes <- findMarkers(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                  groups = groups,
+                                  test.type = test,
+                                  pval.type = comparisons,
+                                  direction = direction,
+                                  lfc = lfc,
+                                  assay.type = "logcounts",
+                                  block = block,
+                                  restrict = restrict,
+                                  exclude = exclude)
+      
+      # Save results:
+      saveRDS(marker_genes, file = str_c(path_for_figures, "SC3_clusters/", results_name, 
+                                         "marker_genes_", test, "_", comparisons, "_", direction, ".rds"))
+      
+      # Create a variable with a value for each group name to iterate through:
+      range_of_groups <- 1:paste(length(levels(groups)))
+      
+      # Create and export a separate table of results for each group:
+      for (chosen_group in range_of_groups) {
+        # Compose name of variable where results will be assigned to:
+        marker_set <- str_c("marker_set_SC3_k4_", levels(groups)[chosen_group], "_", test, "_", comparisons, "_", direction)
+        
+        # Assign results of marker genes for current group to a temp variable:
+        temp_marker_set <- marker_genes[[chosen_group]]
+        
+        #print(marker_set) # Print variable name of current group
+        #print(sum(temp_marker_set$FDR<0.05)) # Print the number of genes with a FDR below 0.05
+        #print(temp_marker_set[1:5, 1:3]) # Print top results for current group
+        
+        # Assign the results to the created variable:
+        assign(marker_set, temp_marker_set) # Assign the results to the created variable
+        
+        # Export the results to a .csv file:
+        write.csv(temp_marker_set[temp_marker_set$FDR<0.1,], file = str_c(path_for_figures, "SC3_clusters/", "PAG_DE_results_", 
+                                                                         results_name, marker_set, ".csv"), quote = FALSE, row.names = TRUE)
+        # Populate the summary data.frame:        
+        SC3_clusters_k4_marker_set_summary = rbind(SC3_clusters_k4_marker_set_summary,
+                                                   data.frame(marker_set = marker_set,
+                                                              group = levels(groups)[chosen_group],
+                                                              test = test,
+                                                              comparisons = comparisons,
+                                                              direction = direction,
+                                                              genes_FDR_001 = sum(temp_marker_set$FDR<0.01),
+                                                              genes_FDR_005 = sum(temp_marker_set$FDR<0.05),
+                                                              genes_FDR_01 = sum(temp_marker_set$FDR<0.1)))
+      }
+    }
+  }
+}
+
+# Check out the summary: 
+SC3_clusters_k4_marker_set_summary
 ```
 
-https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2018/SingleCell/practical/crukBioinfoSummerSchoolJuly2018_scRnaSeqCellPopId_practical_run.html#19_clustering_cells_into_putative_subpopulations
+Indeed, this time we get a few more markers with the `pval.type=all`, suggesting that we may have been overclustering with the other approaches.
 ```{r}
-# select some top genes:
-top.markers <- rownames(marker.set)[marker.set$Top <= 10]
+# Take a look at the results from one fo the comparisons
+head(marker_set_SC3_k4_1_wilcox_all_up[marker_set_SC3_k4_1_wilcox_all_up$FDR<0.05,]) # VGluT2 cluster (dm/dl)
+head(marker_set_SC3_k4_4_wilcox_all_up[marker_set_SC3_k4_4_wilcox_all_up$FDR<0.05,]) # VGluT2 cluster (l/vl)
 
-# have matrix to annotate sample with cluster and sample:
-tmpData <- logcounts(nz.sce)[top.markers,]
-# concat sample and barcode names to make unique name across the whole data set
-tmpCellNames <- paste(colData(nz.sce)$Sample, colData(nz.sce)$Barcode, sep="_")
-# use these to namecolumn of matrix the show as heatmap:
-colnames(tmpData) <- tmpCellNames # colData(nz.sce)$Barcode                    
-
-# columns annotation with cell name:
-mat_col <- data.frame(cluster = nz.sce$cluster, sample = nz.sce$Sample)
-rownames(mat_col) <- colnames(tmpData)
-rownames(mat_col) <- tmpCellNames # colData(nz.sce)$Barcode
-
-# Prepare colours for clusters:
-colourCount = length(unique(nz.sce$cluster))
-getPalette = colorRampPalette(brewer.pal(9, "Set1"))
-
-mat_colors <- list(group = getPalette(colourCount))
-names(mat_colors$group) <- unique(nz.sce$cluster)
-
-# plot heatmap:
-pheatmap(tmpData,
-         border_color      = NA,
-         show_colnames     = FALSE,
-         show_rownames     = FALSE,
-         drop_levels       = TRUE,
-         annotation_col    = mat_col,
-         annotation_colors = mat_colors
-         )
-
-# One can sort both the gene and sample dendrograms to improve the heatmap.
-
-library(dendsort)
-
-mat <- tmpData
-mat_cluster_cols <- hclust(dist(t(mat)))
-
-sort_hclust <- function(...) as.hclust(dendsort(as.dendrogram(...)))
-
-mat_cluster_cols <- sort_hclust(mat_cluster_cols)
-#plot(mat_cluster_cols, main = "Sorted Dendrogram", xlab = "", sub = "")
-
-mat_cluster_rows <- sort_hclust(hclust(dist(mat)))
-
-pheatmap(tmpData,
-         border_color      = NA,
-         show_colnames     = FALSE,
-         show_rownames     = FALSE,
-         drop_levels       = TRUE,
-         annotation_col    = mat_col,
-         annotation_colors = mat_colors,
-         cluster_cols      = mat_cluster_cols,
-         cluster_rows      = mat_cluster_rows
-         )
+head(marker_set_SC3_k4_2_wilcox_all_up[marker_set_SC3_k4_2_wilcox_all_up$FDR<0.05,]) # VGAT cluster (dm/dl)
+head(marker_set_SC3_k4_3_wilcox_all_up[marker_set_SC3_k4_3_wilcox_all_up$FDR<0.05,]) # VGAT cluster (l/vl)
 ```
 
-## Step 7.6 | Save the SingleCellExperiment object
+We can quickly examine whether there are any interesting genes
+```{r}
+# Set the FDR threshold you want to look at.
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGluT2_dmdl_cluster_de_genes <- rownames(marker_set_SC3_k4_1_wilcox_all_up[marker_set_SC3_k4_1_wilcox_all_up$FDR<fdr_threshold, ])
+VGluT2_lvl_cluster_de_genes <- rownames(marker_set_SC3_k4_4_wilcox_all_up[marker_set_SC3_k4_4_wilcox_all_up$FDR<fdr_threshold, ])
+VGAT_dmdl_cluster_de_genes <- rownames(marker_set_SC3_k4_2_wilcox_all_up[marker_set_SC3_k4_2_wilcox_all_up$FDR<fdr_threshold, ])
+VGAT_lvl_cluster_de_genes <- rownames(marker_set_SC3_k4_3_wilcox_all_up[marker_set_SC3_k4_3_wilcox_all_up$FDR<fdr_threshold, ])
+
+cat("--- Ion Channels ---\n")
+cat("--- VGluT2 cells (dm/dl cluster)\n")
+VGluT2_dmdl_cluster_de_genes[VGluT2_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+cat("--- VGluT2 cells (l/vl cluster)\n")
+VGluT2_lvl_cluster_de_genes[VGluT2_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+cat("--- VGAT cells (dm/dl cluster)\n")
+VGAT_dmdl_cluster_de_genes[VGAT_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+cat("--- VGAT cells (l/vl cluster)\n")
+VGAT_lvl_cluster_de_genes[VGAT_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+
+cat("\n\n--- Neuromodulators and Neuropeptides ---\n")
+cat("--- VGluT2 cells (dm/dl cluster)\n")
+VGluT2_dmdl_cluster_de_genes[VGluT2_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+cat("--- VGluT2 cells (l/vl cluster)\n")
+VGluT2_lvl_cluster_de_genes[VGluT2_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+cat("--- VGAT cells (dm/dl cluster)\n")
+VGAT_dmdl_cluster_de_genes[VGAT_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+cat("--- VGAT cells (l/vl cluster)\n")
+VGAT_lvl_cluster_de_genes[VGAT_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+
+cat("\n\n--- Monoamines ---\n")
+cat("--- VGluT2 cells (dm/dl cluster)\n")
+VGluT2_dmdl_cluster_de_genes[VGluT2_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+cat("--- VGluT2 cells (l/vl cluster)\n")
+VGluT2_lvl_cluster_de_genes[VGluT2_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+cat("--- VGAT cells (dm/dl cluster)\n")
+VGAT_dmdl_cluster_de_genes[VGAT_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+cat("--- VGAT cells (l/vl cluster)\n")
+VGAT_lvl_cluster_de_genes[VGAT_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+
+cat("\n\n--- Transporters ---\n")
+cat("--- VGluT2 cells (dm/dl cluster)\n")
+VGluT2_dmdl_cluster_de_genes[VGluT2_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+cat("--- VGluT2 cells (l/vl cluster)\n")
+VGluT2_lvl_cluster_de_genes[VGluT2_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+cat("--- VGAT cells (dm/dl cluster)\n")
+VGAT_dmdl_cluster_de_genes[VGAT_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+cat("--- VGAT cells (l/vl cluster)\n")
+VGAT_lvl_cluster_de_genes[VGAT_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+
+cat("\n\n--- Transcription Factors ---\n")
+cat("--- VGluT2 cells (dm/dl cluster)\n")
+VGluT2_dmdl_cluster_de_genes[VGluT2_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+cat("--- VGluT2 cells (l/vl cluster)\n")
+VGluT2_lvl_cluster_de_genes[VGluT2_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+cat("--- VGAT cells (dm/dl cluster)\n")
+VGAT_dmdl_cluster_de_genes[VGAT_dmdl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+cat("--- VGAT cells (l/vl cluster)\n")
+VGAT_lvl_cluster_de_genes[VGAT_lvl_cluster_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+```
+
+We store the results in the `metadata`:
+```{r}
+# Set false discovery rate threshold
+fdr_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+## Results from `pval = all`
+# DE genes in cluster 1
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k4_1_wilcox_all_up <- rownames(marker_set_SC3_k4_1_wilcox_all_up[marker_set_SC3_k4_1_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 2
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k4_2_wilcox_all_up <- rownames(marker_set_SC3_k4_2_wilcox_all_up[marker_set_SC3_k4_2_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 3
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k4_3_wilcox_all_up <- rownames(marker_set_SC3_k4_3_wilcox_all_up[marker_set_SC3_k4_3_wilcox_all_up$FDR<fdr_threshold, ])
+# DE genes in cluster 4
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k44_wilcox_all_up <- rownames(marker_set_SC3_k4_4_wilcox_all_up[marker_set_SC3_k4_4_wilcox_all_up$FDR<fdr_threshold, ])
+
+# Check results were appended correctly
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
+```
+
+## Step 7.5 | Save the SingleCellExperiment object
+After extracting and saving the differential expression results obtained with `findMarkers()`, we save the `SingleCellExperiment` object so we can use it for data visualisation.
 ```{r}
 saveRDS(PAG_sceset_qc_norm_filt_corr_clust_de, file = "PAG_sceset_qc_norm_filt_corr_clust_de.rds")
 print("Part 7 - Done!")
