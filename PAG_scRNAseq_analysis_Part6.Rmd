@@ -2395,6 +2395,12 @@ UMAP_hierarchical_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_
   plot_layout(ncol = 2, guides = "collect")
 UMAP_hierarchical_final_composed
 
+# SC3 clustering
+UMAP_sc3_final_composed <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_sc3_k4) +
+  plot_annotation(title = "SC3 clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_sc3_final_composed
 
 # Save them all
 ggsave(filename = str_c(date, "_UMAP_final_SNN_rank_k7_clusters_composed.pdf"),
@@ -2460,9 +2466,17 @@ ggsave(filename = str_c(date, "_UMAP_final_hierarchical_clusters_composed.pdf"),
        width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
+
+ggsave(filename = str_c(date, "_UMAP_final_sc3_clusters_composed.pdf"),
+       plot = UMAP_sc3_final_composed,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = path_for_figures,
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
 ```
 
-In the plots above, we can see that the best representation is the one obtained from Graph-based clustering with the Jaccard-Louvain (`k = 9`) approach, as it is apparent from the cleanest separation of inhibitory subclusters and the main excitatory subclusters. The clusters obtained with both the K-means and the hierarchical clustering approach do not match well with the UMAP representation of the data. Although this could just be due to working with different metrics, the graph-based clustering approach has consistently generated good results at different parameters, whereas the rest have been erratic and inconsistent. Thus, we will focus on the results obtained from Graph-based clustering with the Jaccard-Louvain approach for our Differential Expression analysis. We will still keep different values of `k`, as this will allow us to ask questions and investigate the structure of our dataset at different resolution.
+In the plots above, we can see that the best representation is the one obtained from Graph-based clustering with the Jaccard-Louvain approach, as it is apparent from the cleanest separation of inhibitory subclusters and the main excitatory subclusters. The clusters obtained with both the K-means and the hierarchical clustering approach do not match well with the UMAP representation of the data. Although this could just be due to working with different metrics, the graph-based clustering approach has consistently generated good results at different parameters, whereas the rest have been erratic and inconsistent. Thus, we will focus on the results obtained from Graph-based clustering with the Jaccard-Louvain approach for our Differential Expression analysis. We will still keep the different values of `k`, as this will allow us to ask questions and investigate the structure of our dataset at different resolution.
 
 ## Step 6.6 | Save the SingleCellExperiment object
 ```{r}
