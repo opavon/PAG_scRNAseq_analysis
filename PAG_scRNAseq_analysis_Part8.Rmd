@@ -28,3 +28,217 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 
 ***
 
+## Step 8.1 | UMAP projection with clustering results
+```{r}
+# Set the directory where your data and scripts are:
+setwd("D:/Dropbox (UCL - SWC)/Project_transcriptomics/analysis/PAG_scRNAseq_analysis")
+
+# Set the path to save figures from this Part:
+path_for_figures <- "D:/Dropbox (UCL - SWC)/Project_transcriptomics/figures/R_figures_Part8_datavis/"
+date <- Sys.Date()
+date <- gsub("-", "_", date)
+
+# Load packages:
+library(tidyverse)
+library(SingleCellExperiment)
+library(scater)
+library(scran)
+library(ggplot2)
+library(pheatmap)
+library(DESeq2)
+library(edgeR)
+library(limma)
+library(monocle)
+library(MAST)
+library(ROCR)
+library(patchwork)
+library(extrafont)
+```
+
+To recapitulate the plots with the clustering results, we load the `PAG_sceset_qc_norm_filt_corr_clust` after normalisation, filtering, batch correction, and clustering. We should thus have a `corrected` slot in `assays`:
+```{r}
+# If starting from stored results, load saved filtered dataset from previous Step:
+options(stringsAsFactors = FALSE)
+
+PAG_sceset_qc_norm_filt_corr_clust <- readRDS("PAG_sceset_qc_norm_filt_corr_clust.rds") # Contains filtered cells and genes, log-normalised, filtered, corrected, and clustered data
+assayNames(PAG_sceset_qc_norm_filt_corr_clust)
+reducedDimNames(PAG_sceset_qc_norm_filt_corr_clust)
+```
+
+To remind ourselves about which clustering results we have available, we can look at the names of the `colData` slot:
+```{r}
+names(colData(PAG_sceset_qc_norm_filt_corr_clust)[grep("cluster", names(colData(PAG_sceset_qc_norm_filt_corr_clust)))])
+```
+
+We can quickly replot the results of our chosen clustering solutions:
+```{r}
+# Set theme parameters
+theme_args_clustering <- theme(plot.title = element_text(size = 11, face = "bold"),
+                               axis.title = element_text(size = 11, face = "plain"),
+                               axis.text = element_text(size = 10, face = "plain"), 
+                               legend.text = element_text(size = 9, face = "plain"), 
+                               strip.text = element_text(size = 10, face = "plain"))
+
+
+### Using UMAP (CV2) - 15_neighbors_0.01_min_dist ###
+UMAP_cv2_15_001_PAGsubdivisions <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "PAG.area", shape_by = "cell.type",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "PAG subdivisions", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+### Graph-based clustering results ###
+# Using HVG from CV2 with rank-based weights
+UMAP_cv2_15_001_RankWalktrap_k7 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k7", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k7",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k = 7)", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+UMAP_cv2_15_001_RankWalktrap_k12 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                  dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                  colour_by = "SNN_clusters_cv2_rank_k12", shape_by = "cell.type", text_by = "SNN_clusters_cv2_rank_k12",
+                                                  point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                  ) + labs(title = "Rank-Walktrap (k = 12)", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+# Using HVG from CV2 with jaccard-based weights
+UMAP_cv2_15_001_JaccardLouvain_k5 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k5", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k5",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 5)", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+UMAP_cv2_15_001_JaccardLouvain_k8 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k8", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k8",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 8)", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+UMAP_cv2_15_001_JaccardLouvain_k9 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k9", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k9",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 9)", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+UMAP_cv2_15_001_JaccardLouvain_k13 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "SNN_clusters_cv2_jaccard_k13", shape_by = "cell.type", text_by = "SNN_clusters_cv2_jaccard_k13",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "Jaccard-Louvain (k = 13)", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+### K-means clustering results ###
+### Hierarchical clustering results ###
+# The clusters obtained with both the K-means and the hierarchical clustering approach do not match well with the UMAP representation of the data. We exclude them from here but can be seen in Part 6 and readded if necessary.
+
+### SC3 clustering results ###
+UMAP_cv2_15_001_SC3_4 <- plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+                                                    dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+                                                    colour_by = "sc3_4_clusters", shape_by = "cell.type", text_by = "sc3_4_clusters",
+                                                    point_alpha = 0.6, point_size = 2, theme_size = 11
+                                                    ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2") + theme_args_clustering
+
+
+
+# Prepare and save composed plots
+library(patchwork)
+
+UMAP_SNN_RankWalktrap_k7 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k7) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_RankWalktrap_k7
+
+UMAP_SNN_RankWalktrap_k12 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_RankWalktrap_k12) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_RankWalktrap_k12
+
+UMAP_SNN_JaccardLouvain_k5 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k5) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k5
+
+UMAP_SNN_JaccardLouvain_k8 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k8) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k8
+
+UMAP_SNN_JaccardLouvain_k9 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k9) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k9
+
+UMAP_SNN_JaccardLouvain_k13 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_JaccardLouvain_k13) +
+  plot_annotation(title = "Graph-based clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SNN_JaccardLouvain_k13
+
+UMAP_SC3_k4 <- (UMAP_cv2_15_001_PAGsubdivisions + UMAP_cv2_15_001_SC3_4) +
+  plot_annotation(title = "SC3 clustering on UMAP (CV2)", tag_levels = "A", 
+                  theme = theme(plot.title = element_text(size = 12, face = "bold"), plot.tag = element_text(size = 11))) + 
+  plot_layout(ncol = 2, guides = "collect")
+UMAP_SC3_k4
+
+
+# # We could save the plots as follows, although we have already done so in earlier parts of the pipeline.
+# ggsave(filename = str_c(date, "_UMAP_SNN_rank_k7_clusters.pdf"),
+#        plot = UMAP_SNN_RankWalktrap_k7,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 8, height = 4, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+# 
+# ggsave(filename = str_c(date, "_UMAP_SNN_rank_k12_clusters.pdf"),
+#        plot = UMAP_SNN_RankWalktrap_k12,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 8, height = 4, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+# 
+# ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k5_clusters.pdf"),
+#        plot = UMAP_SNN_JaccardLouvain_k5,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 8, height = 4, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+# 
+# ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k8_clusters.pdf"),
+#        plot = UMAP_SNN_JaccardLouvain_k8,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 8, height = 4, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+# 
+# ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k9_clusters.pdf"),
+#        plot = UMAP_SNN_JaccardLouvain_k9,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 8, height = 4, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+# 
+# ggsave(filename = str_c(date, "_UMAP_SNN_jaccard_k13_clusters.pdf"),
+#        plot = UMAP_SNN_JaccardLouvain_k13,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 8, height = 4, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+# 
+# ggsave(filename = str_c(date, "_UMAP_sc3_k4_clusters.pdf"),
+#        plot = UMAP_SC3_k4,
+#        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+#        path = path_for_figures,
+#        width = 8, height = 4, units = "in", dpi = 300,
+#        family = "Arial", bg = "transparent"
+#        )
+```
