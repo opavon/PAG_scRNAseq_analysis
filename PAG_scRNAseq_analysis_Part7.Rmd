@@ -1040,7 +1040,7 @@ For the `PAG.area` comparisons within VGAT+ neurons, we are back to having four 
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGAT"]$PAG.area
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "PAG_subdivision_vgat_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "PAG_subdivision_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
@@ -1188,7 +1188,7 @@ For the `PAG.area` comparisons within VGluT2+ neurons, we again have four groups
 groups <- PAG_sceset_qc_norm_filt_corr_clust_de[,PAG_sceset_qc_norm_filt_corr_clust_de$cell.type=="VGluT2"]$PAG.area
 
 # Set the string to be added to the filename when saving the results:
-results_name <- "PAG_subdivision_vglut2_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
+results_name <- "PAG_subdivision_" # one of "SNN_clusters_cv2_jaccard_k5_", "cell_type_", "PAG_subdivision", "celltype_PAGarea_", "celltype_PAGAPaxis_", "VGAT_VGluT2_expression"
 
 # Create a variable with the tests you want to run:
 desired_tests <- c("wilcox") # Pairwise test to perform: t-test "t", Wilcoxon rank sum test "wilcox", binomial test "binom".
