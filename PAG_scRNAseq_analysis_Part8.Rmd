@@ -53,6 +53,8 @@ library(MAST)
 library(ROCR)
 library(patchwork)
 library(extrafont)
+library(RColorBrewer)
+library(viridis)
 ```
 
 To recapitulate the plots with the clustering results, we load the `PAG_sceset_qc_norm_filt_corr_clust` after normalisation, filtering, batch correction, and clustering. We should thus have a `corrected` slot in `assays`:
@@ -270,7 +272,7 @@ library(patchwork)
 library(extrafont)
 ```
 
-To visualise the results from differential expression analysis and marker genes, we load the `PAG_sceset_qc_norm_filt_corr_clust_de` after normalisation, filtering, batch correction, clustering, and DE analysis. We should thus have a `corrected` slot in `assays`:
+To visualise the results from differential expression analysis and marker genes, we load the `PAG_sceset_qc_norm_filt_corr_clust_de` after normalisation, filtering, batch correction, clustering, and DE analysis. We should thus have a `corrected` slot in `assays` and have removed the cells falling into the macrophage-enriched cluster:
 ```{r}
 # If starting from stored results, load saved filtered dataset from previous Step:
 options(stringsAsFactors = FALSE)
@@ -288,13 +290,15 @@ names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 We can define our color palettes as follows:
 ```{r}
 # Colours PAG
+colour_vgat <- "#FF8080"
+colour_vglut2 <-"#0F99B2"
+
+colours_celltype <- c(`VGAT` = "#FF8080", `VGluT2` = "#0F99B2")
+
 colours_celltype_PAGarea <- c(`dmpag_VGAT` = "red", `dlpag_VGAT` = "coral2", `lpag_VGAT` = "salmon", `vlpag_VGAT` = "darksalmon",
                               `dmpag_VGluT2` = "cornflowerblue", `dlpag_VGluT2` = "cyan3", `lpag_VGluT2` = "aquamarine3", `vlpag_VGluT2` = "cadetblue3")
 
-colours_celltype <- c(rgb(255, 119, 124, 255/2, maxColorValue = 255), rgb(0, 156, 181, 255/6, maxColorValue = 255))
-
-color_vgat <- "#FF8080"
-color_vglut2 <-"#0F99B2"
+colours_PAGarea <- c(`dmPAG` = "#729ECE", `dlPAG` = "#FF9E4A", `lPAG` = "#67BF5C", `vlPAG` = "#ED665D")
 
 # Heatmap palettes
 heatmap_viridis <- rev(viridis::magma(100))
@@ -311,7 +315,7 @@ cluster_colours_20 <- c(`1` = "#1F77B4", `2` = "#AEC7E8", `3` = "#FF7F0E", `4` =
                         `11` = "#8C564B", `12` = "#C49C94", `13` = "#E377C2", `14` = "#F7B6D2", `15` = "#7F7F7F", 
                         `16` = "#C7C7C7", `17` = "#BCBD22", `18` = "#DBDB8D", `19` = "#17BECF", `20` = "#9EDAE5")
 
-cluster_colors <- scater:::.get_palette("tableau10medium") # hidden scater colours
+cluster_colours <- scater:::.get_palette("tableau10medium") # hidden scater colours
 
 
 # Scater palettes:
@@ -350,150 +354,784 @@ cyclic <-c("#1F83B4", "#1696AC", "#18A188", "#29A03C", "#54A338",
            "#C04AA7", "#B446B3", "#9658B1", "#8061B4", "#6F63BB")
 ```
 
-### Heatmaps
+### 8.2.0 | Exploring marker genes
+We can first explore the differentially expressed genes identified by `findMarkers` by using the relevant `metadata` slot. However, these are all the gene names that passed the FDR threshold set in the previous part, and we have no other information other than the fact that they are sorted by p value.
+```{r}
+# Take a look at the gene lists we have in the metadata
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
+```
+
+An alternative way to explore marker genes is to load the .RDS file containing the results. This object have a slot for each comparison we carried out and will include the gene names together with their `p.value`, `FDR`, and `AUC`. We can use this to further filter and select them.
+```{r}
+cell_type_marker_genes_wilcox_all_up <- readRDS("D:\\Dropbox (UCL)\\Project_transcriptomics\\figures\\R_figures_Part7_DE\\cell_type\\cell_type_marker_genes_wilcox_all_up.rds")
+names(cell_type_marker_genes_wilcox_all_up) # slots in the object
+names(cell_type_marker_genes_wilcox_all_up$VGAT) # results in a specific slot
+head(cell_type_marker_genes_wilcox_all_up$VGAT) # top markers for VGAT cells
+head(cell_type_marker_genes_wilcox_all_up$VGluT2) # top markers for VGluT2 cells
+```
+
+As a reminder, the Wilcoxon rank sum test directly assesses separation between the expression distributions of different clusters and its test statistic is proportional to the area-under-the-curve (AUC), i.e., the concordance probability, which is the probability of a random cell from one cluster having higher expression than a random cell from another cluster. In a pairwise comparison, AUCs of 1 or 0 indicate that the two clusters have perfectly separated expression distributions. A value greater than 0.5 indicates that the gene is upregulated in the current cluster compared to the other cluster, while values less than 0.5 correspond to downregulation. We would typically expect AUCs of 0.7-0.8 for a strongly upregulated candidate marker. We can thus use the `AUC` value together with the `FDR` to select a subset of genes:
+```{r}
+# Filter by AUC and FDR threshold
+AUC_marker_threshold <- 0.8
+fdr_marker_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+cat("--- VGAT marker genes ---\n")
+VGAT_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGAT[(cell_type_marker_genes_wilcox_all_up$VGAT$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGAT$AUC.VGluT2>AUC_marker_threshold), ])
+VGAT_marker_genes
+cat("\n--- VGluT2 marker genes ---\n")
+VGluT2_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGluT2[(cell_type_marker_genes_wilcox_all_up$VGluT2$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGluT2$AUC.VGAT>AUC_marker_threshold), ])
+VGluT2_marker_genes
+```
+
+We can then use the relevant gene list in our metadata slots to further subclassify and subset the interesting genes we want to plot:
+```{r}
+# Filter by AUC and FDR threshold
+AUC_interesting_threshold <- 0.6
+fdr_interesting_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGAT_de_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGAT[(cell_type_marker_genes_wilcox_all_up$VGAT$FDR<fdr_interesting_threshold & cell_type_marker_genes_wilcox_all_up$VGAT$AUC.VGluT2>AUC_interesting_threshold), ])
+
+VGluT2_de_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGluT2[(cell_type_marker_genes_wilcox_all_up$VGluT2$FDR<fdr_interesting_threshold & cell_type_marker_genes_wilcox_all_up$VGluT2$AUC.VGAT>AUC_interesting_threshold), ])
+
+# Print gene names from different families
+cat("--- Ion Channels ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+
+cat("\n\n--- Potassium Channels ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icPotassium]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icPotassium]
+
+cat("\n\n--- Calcium Channels ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icCalcium]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icCalcium]
+
+cat("\n\n--- Neuromodulators and Neuropeptides ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+
+cat("\n\n--- Monoamines ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Monoamines]
+
+cat("\n\n--- Neurotransmitters ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+
+cat("\n\n--- Transporters ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+
+cat("\n\n--- Transcription Factors ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+```
+
+### 8.2.1 | Heatmaps 
+One way to visualise the results from differentially expressed genes is via a heatmap. We will first take a look at the backbone code to generate a heatmap:
 ```{r}
 library(pheatmap)
 library(RColorBrewer)
 library(viridis)
-best_set_wilcox_up_all_SC3_cluster_4 <- marker_set_SC3_k4_4_wilcox_all_up[marker_set_SC3_k4_4_wilcox_all_up$FDR<0.05,]
-rownames(best_set_wilcox_up_all_SC3_cluster_4)
+
+# Define plot title
+plot_title <- "Marker genes for cell-type"
+
+# Define thresholds and list of genes to plot
+AUC_marker_threshold <- 0.8
+fdr_marker_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGAT_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGAT[(cell_type_marker_genes_wilcox_all_up$VGAT$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGAT$AUC.VGluT2>AUC_marker_threshold), ])
+
+VGluT2_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGluT2[(cell_type_marker_genes_wilcox_all_up$VGluT2$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGluT2$AUC.VGAT>AUC_marker_threshold), ])
+
+# Plot heatmap
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
-            features = rownames(best_set_wilcox_up_all_SC3_cluster_4)[1:15], # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters), 
-            # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            features = c(VGAT_marker_genes, VGluT2_marker_genes), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
-            center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
-            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix.
-            # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
-            symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
-            color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("sc3_4_clusters", "cell.type", "PAG.area"), # how the columns should be annotated with colours.
+            #center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(0, 12), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            #symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            #color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = FALSE, cluster_cols = FALSE,
-            main = "Marker genes for SC3 Cluster 4 (wilcoxon | all | up)")
-```
+            main = plot_title, fontsize = 10
+            )
 
-```{r}
-best_set_wilcox_up_all_SC3_cluster_4 <- marker_set_SC3_k4_4_wilcox_all_up[marker_set_SC3_k4_4_wilcox_all_up$FDR<0.05,]
-#best_set_wilcox_up_all_SC3_cluster_4
-AUCs_wilcox_up <- as.matrix(best_set_wilcox_up_all_SC3_cluster_4[,-(1:2)])
-#AUCs_wilcox_up
-colnames(AUCs_wilcox_up) <- sub("AUC.", "cluster_", colnames(AUCs_wilcox_up)) # Remove "AUC." from the colnames, to leave the cluster number alone
-#AUCs_wilcox_up
-
-# Plot the AUCs - will plot one column for each comparison, and the top marker genes for the selected group should have a high value for each comparison
-pheatmap(AUCs_wilcox_up, breaks = seq(0, 1, length.out = 21), color = viridis::viridis(21),
-         main = "Heatmap for Cluster 4 AUCs (wilcoxon | all | up)")
-
-# Alternative plot - will plot expression of the marker genes
+# Plot heatmap centering expression values
 plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
-            features = rownames(best_set_wilcox_up_all_SC3_cluster_4)[1:15], # vector of row names specifying rows of object to show in the heatmap.
-            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters), 
-            # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            features = c(VGAT_marker_genes, VGluT2_marker_genes), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
             exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
             center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
-            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix.
-            # Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            zlim = c(-5, 5), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
             symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
-            color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-            colour_columns_by = c("sc3_4_clusters", "cell.type", "PAG.area"), # how the columns should be annotated with colours.
+            #color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = FALSE, cluster_cols = FALSE,
-            main = "Marker genes for SC3 Cluster 4 (wilcoxon | all | up)")
+            main = plot_title, fontsize = 10
+            )
 ```
 
-
+We can also make two heatmaps and colour each with a different color palette reflecting the cell type. We could use them to generate a plot in which half of the heatmaps is coloured according to one cell type and the other half is coloured according to the other:
 ```{r}
-# Annotating the heatmap (from https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2018/SingleCell/practical/crukBioinfoSummerSchoolJuly2018_scRnaSeqCellPopId_practical_run.html#192_detecting_genes_differentially_expressed_between_clusters)
+library(pheatmap)
+library(RColorBrewer)
+library(viridis)
 
-tmpData <- logcounts(PAG_sceset_qc_norm_filt_corr_clust_de)[rownames(best_set_wilcox_up_all_SC3_cluster_4)[1:15],]
-dim(tmpData)
+# Define plot title and colours
+plot_title <- "Marker genes for cell-type"
+heatmap_VGAT <- colorRampPalette(c("white", "#FF8080"))(100)
+heatmap_VGluT2 <- colorRampPalette(c("white", "#0F99B2"))(100)
 
-# columns annotation with cell name:
+# Define thresholds and list of genes to plot
+AUC_marker_threshold <- 0.8
+fdr_marker_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGAT_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGAT[(cell_type_marker_genes_wilcox_all_up$VGAT$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGAT$AUC.VGluT2>AUC_marker_threshold), ])
+
+VGluT2_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGluT2[(cell_type_marker_genes_wilcox_all_up$VGluT2$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGluT2$AUC.VGAT>AUC_marker_threshold), ])
+
+# Plot heatmap with VGAT colours
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
+            features = c(VGAT_marker_genes, VGluT2_marker_genes), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            #center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(0, 12), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            #symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            color = heatmap_VGAT, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = FALSE, cluster_cols = FALSE,
+            main = plot_title, fontsize = 10
+            )
+
+# Plot heatmap with VGluT2 colours
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
+            features = c(VGAT_marker_genes, VGluT2_marker_genes), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            #center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(0, 12), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            #symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            color = heatmap_VGluT2, # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = FALSE, cluster_cols = FALSE,
+            main = plot_title, fontsize = 10
+            )
+```
+
+Finally, for more control, we can also make a heatmap in which we customise the colors of the annotations (from https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2018/SingleCell/practical/crukBioinfoSummerSchoolJuly2018_scRnaSeqCellPopId_practical_run.html#192_detecting_genes_differentially_expressed_between_clusters):
+```{r}
+library(pheatmap)
+library(RColorBrewer)
+library(viridis)
+
+# Define plot title
+plot_title <- "Marker genes for cell-type"
+
+# Define thresholds and list of genes to plot
+AUC_marker_threshold <- 0.8
+fdr_marker_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGAT_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGAT[(cell_type_marker_genes_wilcox_all_up$VGAT$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGAT$AUC.VGluT2>AUC_marker_threshold), ])
+
+VGluT2_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGluT2[(cell_type_marker_genes_wilcox_all_up$VGluT2$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGluT2$AUC.VGAT>AUC_marker_threshold), ])
+
+# Make a copy of the data containing only the selected genes
+tmpData <- logcounts(PAG_sceset_qc_norm_filt_corr_clust_de)[c(VGAT_marker_genes, VGluT2_marker_genes),]
+#dim(tmpData)
+
+# Make dataframe with annotations for columns (cells) and cell ID:
 mat_col <- data.frame(cell.type = PAG_sceset_qc_norm_filt_corr_clust_de$cell.type,
-                      PAG.subdivision = PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area,
-                      cluster.ID = PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters)
-rownames(mat_col) <- colnames(PAG_sceset_qc_norm_filt_corr_clust_de)
-dim(mat_col)
+                      PAG.area = PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area,
+                      cell.type_PAG.subdivision = PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea#,
+                      #cluster.ID = PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters
+                      ) # annotations
+rownames(mat_col) <- colnames(PAG_sceset_qc_norm_filt_corr_clust_de) # cell IUD
+#dim(mat_col)
 
-# Prepare colours for clusters:
-colourCount = length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters))
-mat_colors <- list(cluster.ID = tableau10medium[1:length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters))], 
-                   cell.type = c("#FF8080", "#0F99B2"),
-                   PAG.subdivision = tableau10medium[1:length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area))])
-mat_colors
+# Define colours
+colours_celltype <- c(`VGAT` = "#FF8080", `VGluT2` = "#0F99B2")
+colours_PAGarea <- c(`dmpag` = "#729ECE", `dlpag` = "#FF9E4A", `lpag` = "#67BF5C", `vlpag` = "#ED665D")
+colours_celltype_PAGarea <- tableau10medium[1:length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))]
+#colourCount_clusters = length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters)) # choose relevant clustering result
 
-names(mat_colors$cluster.ID) <- sort(unique(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters))
-names(mat_colors$cell.type) <- sort(unique(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
-names(mat_colors$PAG.subdivision) <- sort(unique(PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area))
-mat_colors
+mat_colors <- list(cell.type = colours_celltype,
+                   PAG.area = colours_PAGarea, # alternatively do tableau10medium[1:length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area))]
+                   cell.type_PAG.subdivision = colours_celltype_PAGarea#, 
+                   #cluster.ID = tableau10medium[1:length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters))] # choose relevant clustering result
+                   )
 
-library(pheatmap)
-library(RColorBrewer)
-library(viridis)
-pheatmap(tmpData[,order(mat_col$cluster.ID)],
+# If names haven't been defined (e.g. when using tableau10medium[1:length(unique(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters))])
+#names(mat_colors$cell.type) <- sort(unique(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+#names(mat_colors$PAG.subdivision) <- sort(unique(PAG_sceset_qc_norm_filt_corr_clust_de$PAG.area))
+names(mat_colors$cell.type_PAG.subdivision) <- sort(unique(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+#names(mat_colors$cluster.ID) <- sort(unique(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters))
+#mat_colors
+
+# Plot heatmap
+pheatmap(tmpData[,order(mat_col$cell.type_PAG.subdivision)], # choose how to order the columns
          border_color = NA,
          scale = "none",
-         color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name =         "RdYlBu")))(100)
+         #color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
          show_rownames = TRUE, show_colnames = FALSE,
          cluster_rows = FALSE, cluster_cols = FALSE,
-         annotation_col = mat_col, 
-         annotation_colors = mat_colors,
-         main = "Marker genes for SC3 Cluster 4 (wilcoxon | all | up)")
+         annotation_col = mat_col[,1:2], 
+         annotation_colors = mat_colors[1:2],
+         main = plot_title
+         )
 ```
 
-### Dot Plots
+#### Marker genes for cell-type
+We are now ready to generate a heatmap with a list of genes from our differential expression analysis. We will start by choosing from those genes that were strongly upregulated in either excitatory or inhibitory cells:
 ```{r}
-# Define colours
-color_vgat <- "#FF8080"
-color_vglut2 <-"#0F99B2"
+library(pheatmap)
+library(RColorBrewer)
+library(viridis)
 
-# Define list of genes
-gene_list_dopamine <- c("Drd1", "Drd2", "Drd3", "Drd4", "Drd5")
+# Load data
+cell_type_marker_genes_wilcox_all_up <- readRDS("D:\\Dropbox (UCL)\\Project_transcriptomics\\figures\\R_figures_Part7_DE\\cell_type\\cell_type_marker_genes_wilcox_all_up.rds")
+
+# Define plot title
+plot_title <- "Marker genes for cell-type"
+save_name <- "heatmap_markers_celltype"
+
+# Define thresholds and list of genes to plot
+AUC_marker_threshold <- 0.75
+fdr_marker_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGAT_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGAT[(cell_type_marker_genes_wilcox_all_up$VGAT$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGAT$AUC.VGluT2>AUC_marker_threshold), ])
+
+VGluT2_marker_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGluT2[(cell_type_marker_genes_wilcox_all_up$VGluT2$FDR<fdr_marker_threshold & cell_type_marker_genes_wilcox_all_up$VGluT2$AUC.VGAT>AUC_marker_threshold), ])
+
+# Plot heatmap
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
+            features = c(VGAT_marker_genes[1:6], VGAT_marker_genes[8], 
+                         VGAT_marker_genes[10], VGluT2_marker_genes[1:8]), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            #center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(0, 12), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            #symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            #color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = FALSE, cluster_cols = FALSE,
+            main = plot_title, fontsize = 10
+            )
+
+# Save heatmap
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
+            features = c(VGAT_marker_genes[1:6], VGAT_marker_genes[8], 
+                         VGAT_marker_genes[10], VGluT2_marker_genes[1:8]), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            #center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(0, 12), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            #symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            #color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = FALSE, cluster_cols = FALSE,
+            main = plot_title, fontsize = 10,
+            width = 8, height = 4,
+            filename = paste(path_for_figures, "/heatmaps/", save_name, ".pdf", sep = "")
+            )
+```
+
+#### Marker genes for clusters from SC3 (k = 4)
+We can repeat the code above but this time focusing on genes from the clustering results obtained with `SC3`:
+```{r}
+library(pheatmap)
+library(RColorBrewer)
+library(viridis)
+
+# Load data
+SC3_clusters_k4_marker_genes_wilcox_all_up <- readRDS("D:\\Dropbox (UCL)\\Project_transcriptomics\\figures\\R_figures_Part7_DE\\SC3_clusters\\SC3_clusters_k4_marker_genes_wilcox_all_up.rds")
+
+# Define plot title
+plot_title <- "Marker genes for clusters from SC3 (k = 4)"
+save_name <- "heatmap_markers_SC3_k4_clusters"
+
+# Define thresholds and list of genes to plot
+AUC_marker_threshold <- 0.75
+fdr_marker_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+cluster_1_marker_genes <- rownames(SC3_clusters_k4_marker_genes_wilcox_all_up$`1`[(SC3_clusters_k4_marker_genes_wilcox_all_up$`1`$FDR<fdr_marker_threshold & 
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`1`$AUC.2>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`1`$AUC.3>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`1`$AUC.4>AUC_marker_threshold), ])
+cluster_2_marker_genes <- rownames(SC3_clusters_k4_marker_genes_wilcox_all_up$`2`[(SC3_clusters_k4_marker_genes_wilcox_all_up$`2`$FDR<fdr_marker_threshold & 
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`2`$AUC.1>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`2`$AUC.3>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`2`$AUC.4>AUC_marker_threshold), ])
+cluster_3_marker_genes <- rownames(SC3_clusters_k4_marker_genes_wilcox_all_up$`3`[(SC3_clusters_k4_marker_genes_wilcox_all_up$`3`$FDR<fdr_marker_threshold & 
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`3`$AUC.1>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`3`$AUC.2>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`3`$AUC.4>AUC_marker_threshold), ])
+cluster_4_marker_genes <- rownames(SC3_clusters_k4_marker_genes_wilcox_all_up$`4`[(SC3_clusters_k4_marker_genes_wilcox_all_up$`4`$FDR<fdr_marker_threshold & 
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`4`$AUC.1>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`4`$AUC.2>AUC_marker_threshold &
+                                                                                     SC3_clusters_k4_marker_genes_wilcox_all_up$`4`$AUC.3>AUC_marker_threshold), ])
+
+# Plot heatmap
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
+            features = c(cluster_1_marker_genes, cluster_2_marker_genes[1:2], cluster_3_marker_genes[1:4], 
+                         cluster_4_marker_genes[1:2], cluster_4_marker_genes[4]), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            #center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(0, 12), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            #symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            #color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("sc3_4_clusters", "cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = FALSE, cluster_cols = FALSE,
+            main = plot_title, fontsize = 10
+            )
+
+# Save heatmap
+plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
+            features = c(cluster_1_marker_genes, cluster_2_marker_genes[1:2], cluster_3_marker_genes[1:4], 
+                         cluster_4_marker_genes[1:2], cluster_4_marker_genes[4]), # vector of row names specifying rows of object to show in the heatmap.
+            columns = order(PAG_sceset_qc_norm_filt_corr_clust_de$sc3_4_clusters), # subset of columns to show in heatmap (or column order if cluster_cols=FALSE and order_columns_by=NULL). Defaults to NULL.
+            exprs_values = "logcounts", # assay of object to be used as expression values for colouring the heatmap.
+            #center = TRUE, # whether each row should have its mean expression centered at zero prior to plotting. Useful for examining logFC from the average across all cells.
+            zlim = c(0, 12), # upper and lower bounds for the expression values (after centering). Defaults to the range of the expression matrix. Preserves the dynamic range of colours in the presence of outliers. Defaults to NULL.
+            #symmetric = TRUE, # If TRUE, make zlim symmetric around zero (compute the maximum absolute value of zlim and multipy by c(-1, 1) to redefine zlim). Default is FALSE.
+            #color = colorRampPalette(viridis(n=10))(100), # defaults to heatmap color palette: colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+            colour_columns_by = c("sc3_4_clusters", "cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
+            show_rownames = TRUE, show_colnames = FALSE,
+            cluster_rows = FALSE, cluster_cols = FALSE,
+            main = plot_title, fontsize = 10,
+            width = 8, height = 4,
+            filename = paste(path_for_figures, "/heatmaps/", save_name, ".pdf", sep = "")
+            )
+```
+
+We could use some of the marker genes to colour the UMAP plots stored in the `SingleCellExperiment` object:
+```{r}
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Sncg", shape_by = "cell.type",
+               point_alpha = 0.6, point_size = 2, theme_size = 11
+               ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Sox14", shape_by = "cell.type",
+               point_alpha = 0.6, point_size = 2, theme_size = 11
+               ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Pax5", shape_by = "cell.type",
+               point_alpha = 0.6, point_size = 2, theme_size = 11
+               ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2")
+
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Tcf7l2", shape_by = "cell.type",
+               point_alpha = 0.6, point_size = 2, theme_size = 11
+               ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2")
+
+```
+
+### 8.2.2 | Dot Plots
+Besides heatmaps, another way we can visualise specific marker genes or genes of interest is through dotPlots.
+```{r}
+# Take a look at the gene lists we have in the metadata
+names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))[1:35]
+```
+
+We can first explore the different types of potentially interesting genes we find and select a subset for plotting:
+```{r}
+# Load data
+cell_type_marker_genes_wilcox_all_up <- readRDS("D:\\Dropbox (UCL)\\Project_transcriptomics\\figures\\R_figures_Part7_DE\\cell_type\\cell_type_marker_genes_wilcox_all_up.rds")
+
+# Filter by AUC and FDR threshold
+AUC_interesting_threshold <- 0 # Default to 0 to ignore this filter
+fdr_interesting_threshold <- 0.05 # try 0.1, 0.05, 0.01 depending on how stringent you want your results to be
+
+VGAT_de_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGAT[(cell_type_marker_genes_wilcox_all_up$VGAT$FDR<fdr_interesting_threshold & cell_type_marker_genes_wilcox_all_up$VGAT$AUC.VGluT2>AUC_interesting_threshold), ])
+
+VGluT2_de_genes <- rownames(cell_type_marker_genes_wilcox_all_up$VGluT2[(cell_type_marker_genes_wilcox_all_up$VGluT2$FDR<fdr_interesting_threshold & cell_type_marker_genes_wilcox_all_up$VGluT2$AUC.VGAT>AUC_interesting_threshold), ])
+
+# Print gene names from different families
+cat("--- Ion Channels ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.ionchannels]
+
+cat("\n\n--- Potassium Channels ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icPotassium]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icPotassium]
+
+cat("\n\n--- Non-potassium Channels ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icRest]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icRest]
+
+cat("\n\n--- Neurotransmitters ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters]
+
+cat("\n\n--- Neuromodulators and Neuropeptides ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides]
+
+cat("\n\n--- Transporters ---\n")
+cat("--- VGAT cells\n")
+VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+cat("\n--- VGluT2 cells\n")
+VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transporters]
+
+# cat("\n\n--- Transcription Factors ---\n")
+# cat("--- VGAT cells\n")
+# VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+# cat("\n--- VGluT2 cells\n")
+# VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Transcriptionfactors]
+```
+
+Once we have examined the potential marker genes, we can assign them to variables so they can easily be used to generate plots:
+```{r}
+# Potassium channels
+potassium_channels_genes <- c(VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icPotassium], 
+                              VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icPotassium])
+
+# Calcium channels
+calcium_channels_genes <- c(VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icCalcium], 
+                            VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icCalcium])
+
+# Asic channels
+asic_channels_genes <- metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icAsic[(metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.icAsic %in% rownames(PAG_sceset_qc_norm_filt_corr_clust_de))]
+
+# Other ion channels
+other_channels_genes <- c("Scn7a", "Trpv6", "Ryr1", "P2rx6", "Aqp6")
+
+# Neurotransmitters
+neurotransmitter_genes <- c(VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters], 
+                            VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.Neurotransmitters])
+
+# Neuromodulators and neuropeptides
+nm_np_genes <- c(VGAT_de_genes[VGAT_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides], 
+                 VGluT2_de_genes[VGluT2_de_genes %in% metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$genes.NeuromodulatorsPeptides])
+```
+
+#### Neuropeptides and neuromodulators
+We will first generate plots with a subset of genes that are more expressed in one of the cell types but have similar expression across subdivisions.
+```{r}
+# Set theme parameters
+theme_args_dots <- theme(plot.title = element_text(size = 11, face = "bold"),
+                         axis.title = element_text(size = 11, face = "plain"),
+                         axis.text = element_text(size = 10, face = "plain"), 
+                         legend.text = element_text(size = 9, face = "plain"), 
+                         strip.text = element_text(size = 10, face = "plain"))
+
+# Define colours
+colour_vgat <- "#FF8080"
+colour_vglut2 <-"#0F99B2"
+
+# Define list of genes and title for plots
+nm_np_gene_list <- c("Nxph1", "Pnoc", "Adcyap1", "Nxph4", "Tac1")
+#c("Drd1", "Rxfp2", "Tacr1", Prokr2", "Cartpt", "Grp", "Adra2a", "Spx", "Npy1r", "Lepr")
+plot_title <- "Neuropeptides and Neuromodulators I"
+
+# Make new order
+# If we wanted a customised way to order the dotplot, we could create one as follows:
+# PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea_dotplots <- factor(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea,
+#                                                                           levels = c("VGAT_dmpag", "VGluT2_dmpag",  
+#                                                                                      "VGAT_dlpag",  "VGluT2_dlpag", 
+#                                                                                      "VGAT_lpag", "VGluT2_lpag", 
+#                                                                                      "VGAT_vlpag", "VGluT2_vlpag"))
+
+# Compose plots
+nm_np_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                               features = nm_np_gene_list,
+                               exprs_values = "logcounts", detection_limit = 0,
+                               group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                               low_color = "white", high_color = colour_vgat,
+                               max_ave = NULL, max_detected = NULL
+                               ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+nm_np_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                 features = nm_np_gene_list,
+                                 exprs_values = "logcounts", detection_limit = 0,
+                                 group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                 low_color = "white", high_color = colour_vglut2,
+                                 max_ave = NULL, max_detected = NULL
+                                 ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+nm_np_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                            features = nm_np_gene_list,
+                                            exprs_values = "logcounts", detection_limit = 0,
+                                            group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                            low_color = "white", high_color = colour_vgat,
+                                            max_ave = NULL, max_detected = NULL
+                                            ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+nm_np_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                              features = nm_np_gene_list,
+                                              exprs_values = "logcounts", detection_limit = 0,
+                                              group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                              low_color = "white", high_color = colour_vglut2,
+                                              max_ave = NULL, max_detected = NULL
+                                              ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+# Plot them
+nm_np_dotplot_vgat
+nm_np_dotplot_vglut2
+nm_np_dotplot_vgat_subdivisions
+nm_np_dotplot_vglut2_subdivisions
+
+# Save plots
+ggsave(filename = str_c(date, "_dotplot_nm_np_1_vgat.pdf"),
+       plot = nm_np_dotplot_vgat,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_nm_np_1_vglut2.pdf"),
+       plot = nm_np_dotplot_vglut2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_nm_np_1_vgat_subdivisions.pdf"),
+       plot = nm_np_dotplot_vgat_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_nm_np_1_vglut2_subdivisions.pdf"),
+       plot = nm_np_dotplot_vglut2_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+```
+
+Now we will generate plots with a subset of genes that show a preferential expression for one or two subdivisions:
+```{r}
+# Set theme parameters
+theme_args_dots <- theme(plot.title = element_text(size = 11, face = "bold"),
+                         axis.title = element_text(size = 11, face = "plain"),
+                         axis.text = element_text(size = 10, face = "plain"), 
+                         legend.text = element_text(size = 9, face = "plain"), 
+                         strip.text = element_text(size = 10, face = "plain"))
+
+# Define colours
+colour_vgat <- "#FF8080"
+colour_vglut2 <-"#0F99B2"
+
+# Define list of genes and title for plots
+nm_np_gene_list_2 <- c("Drd1", "Rxfp2", "Tacr1", "Galr1", "Prokr2", "Cartpt", "Grp", "Spx", "Adra2a")
+plot_title <- "Neuropeptides and Neuromodulators II"
+
+# Make new order
+# If we wanted a customised way to order the dotplot, we could create one as follows:
+# PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea_dotplots <- factor(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea,
+#                                                                           levels = c("VGAT_dmpag", "VGluT2_dmpag",  
+#                                                                                      "VGAT_dlpag",  "VGluT2_dlpag", 
+#                                                                                      "VGAT_lpag", "VGluT2_lpag", 
+#                                                                                      "VGAT_vlpag", "VGluT2_vlpag"))
+
+# Compose plots
+nm_np_dotplot_vgat_2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                 features = nm_np_gene_list_2,
+                                 exprs_values = "logcounts", detection_limit = 0,
+                                 group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                 low_color = "white", high_color = colour_vgat,
+                                 max_ave = NULL, max_detected = NULL
+                                 ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list_2)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+nm_np_dotplot_vglut2_2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                   features = nm_np_gene_list_2,
+                                   exprs_values = "logcounts", detection_limit = 0,
+                                   group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                   low_color = "white", high_color = colour_vglut2,
+                                   max_ave = NULL, max_detected = NULL
+                                   ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list_2)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+nm_np_dotplot_vgat_subdivisions_2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                              features = nm_np_gene_list_2,
+                                              exprs_values = "logcounts", detection_limit = 0,
+                                              group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                              low_color = "white", high_color = colour_vgat,
+                                              max_ave = NULL, max_detected = NULL
+                                              ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list_2)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+nm_np_dotplot_vglut2_subdivisions_2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                                features = nm_np_gene_list_2,
+                                                exprs_values = "logcounts", detection_limit = 0,
+                                                group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                                low_color = "white", high_color = colour_vglut2,
+                                                max_ave = NULL, max_detected = NULL
+                                                ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(nm_np_gene_list_2)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+# Plot them
+nm_np_dotplot_vgat_2
+nm_np_dotplot_vglut2_2
+nm_np_dotplot_vgat_subdivisions_2
+nm_np_dotplot_vglut2_subdivisions_2
+
+# Save plots
+ggsave(filename = str_c(date, "_dotplot_nm_np_2_vgat.pdf"),
+       plot = nm_np_dotplot_vgat_2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_nm_np_2_vglut2.pdf"),
+       plot = nm_np_dotplot_vglut2_2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_nm_np_2_vgat_subdivisions.pdf"),
+       plot = nm_np_dotplot_vgat_subdivisions_2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_nm_np_2_vglut2_subdivisions.pdf"),
+       plot = nm_np_dotplot_vglut2_subdivisions_2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+```
+#### Dopamine receptors
+```{r}
+# Set theme parameters
+theme_args_dots <- theme(plot.title = element_text(size = 11, face = "bold"),
+                         axis.title = element_text(size = 11, face = "plain"),
+                         axis.text = element_text(size = 10, face = "plain"), 
+                         legend.text = element_text(size = 9, face = "plain"), 
+                         strip.text = element_text(size = 10, face = "plain"))
+
+# Define colours
+colour_vgat <- "#FF8080"
+colour_vglut2 <-"#0F99B2"
+
+# Define list of genes and title for plots
+dopamine_gene_list <- c("Drd1", "Drd2", "Drd3", "Drd4", "Drd5")
+plot_title <- "Dopamine receptors"
+
+# Make new order
+# If we wanted a customised way to order the dotplot, we could create one as follows:
+# PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea_dotplots <- factor(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea,
+#                                                                           levels = c("VGAT_dmpag", "VGluT2_dmpag",  
+#                                                                                      "VGAT_dlpag",  "VGluT2_dlpag", 
+#                                                                                      "VGAT_lpag", "VGluT2_lpag", 
+#                                                                                      "VGAT_vlpag", "VGluT2_vlpag"))
 
 # Compose plots
 DA_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                            features = gene_list_dopamine,
+                            features = dopamine_gene_list,
                             exprs_values = "logcounts", detection_limit = 0,
                             group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
-                            low_color = "white", high_color = color_vgat,
+                            low_color = "white", high_color = colour_vgat,
                             max_ave = NULL, max_detected = NULL
                             ) + 
-  ggtitle("Dopamine receptors") + 
-  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(dopamine_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
 
 DA_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                              features = gene_list_dopamine,
+                              features = dopamine_gene_list,
                               exprs_values = "logcounts", detection_limit = 0,
                               group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
-                              low_color = "white", high_color = color_vglut2,
+                              low_color = "white", high_color = colour_vglut2,
                               max_ave = NULL, max_detected = NULL
                               ) + 
-  ggtitle("Dopamine receptors") + 
-  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(dopamine_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
 
 DA_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                                         features = gene_list_dopamine,
+                                         features = dopamine_gene_list,
                                          exprs_values = "logcounts", detection_limit = 0,
                                          group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
-                                         low_color = "white", high_color = color_vgat,
+                                         low_color = "white", high_color = colour_vgat,
                                          max_ave = NULL, max_detected = NULL
                                          ) + 
-  ggtitle("Dopamine receptors") + 
-  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(dopamine_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
 
 DA_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                                           features = gene_list_dopamine,
+                                           features = dopamine_gene_list,
                                            exprs_values = "logcounts", detection_limit = 0,
                                            group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
-                                           low_color = "white", high_color = color_vglut2,
+                                           low_color = "white", high_color = colour_vglut2,
                                            max_ave = NULL, max_detected = NULL
                                            ) + 
-  ggtitle("Dopamine receptors") + 
-  scale_y_discrete(limits = rev(gene_list_dopamine)) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(dopamine_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
 
 # Plot them
@@ -503,33 +1141,139 @@ DA_dotplot_vgat_subdivisions
 DA_dotplot_vglut2_subdivisions
 
 # Save plots
-ggsave(filename = str_c(date, "_DA_dotplot_vgat.pdf"),
+ggsave(filename = str_c(date, "_dotplot_dopamine_vgat.pdf"),
        plot = DA_dotplot_vgat,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
+       path = str_c(path_for_figures, "/dotplots"),
        width = 4, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_DA_dotplot_vglut2.pdf"),
+ggsave(filename = str_c(date, "_dotplot_dopamine_vglut2.pdf"),
        plot = DA_dotplot_vglut2,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
+       path = str_c(path_for_figures, "/dotplots"),
        width = 4, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_DA_dotplot_vgat_subdivisions.pdf"),
+ggsave(filename = str_c(date, "_dotplot_dopamine_vgat_subdivisions.pdf"),
        plot = DA_dotplot_vgat_subdivisions,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
+       path = str_c(path_for_figures, "/dotplots"),
        width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_DA_dotplot_vglut2_subdivisions.pdf"),
+ggsave(filename = str_c(date, "_dotplot_dopamine_vglut2_subdivisions.pdf"),
        plot = DA_dotplot_vglut2_subdivisions,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
-       path = path_for_figures,
+       path = str_c(path_for_figures, "/dotplots"),
        width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
 ```
 
+#### Asic and Cacna2d1 channels
+```{r}
+# Set theme parameters
+theme_args_dots <- theme(plot.title = element_text(size = 11, face = "bold"),
+                         axis.title = element_text(size = 11, face = "plain"),
+                         axis.text = element_text(size = 10, face = "plain"), 
+                         legend.text = element_text(size = 9, face = "plain"), 
+                         strip.text = element_text(size = 10, face = "plain"))
+
+# Define colours
+colour_vgat <- "#FF8080"
+colour_vglut2 <-"#0F99B2"
+
+# Define list of genes and title for plots
+asic_a2d1_gene_list <- c("Asic1", "Asic4", "Cacna1a", "Cacna2d1", "Cacna2d2")
+plot_title <- "ASIC and Calcium channels"
+
+# Make new order
+# If we wanted a customised way to order the dotplot, we could create one as follows:
+# PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea_dotplots <- factor(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea,
+#                                                                           levels = c("VGAT_dmpag", "VGluT2_dmpag",  
+#                                                                                      "VGAT_dlpag",  "VGluT2_dlpag", 
+#                                                                                      "VGAT_lpag", "VGluT2_lpag", 
+#                                                                                      "VGAT_vlpag", "VGluT2_vlpag"))
+
+# Compose plots
+asic_a2d1_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                   features = asic_a2d1_gene_list,
+                                   exprs_values = "logcounts", detection_limit = 0,
+                                   group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                   low_color = "white", high_color = colour_vgat,
+                                   max_ave = NULL, max_detected = NULL
+                                   ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+asic_a2d1_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                     features = asic_a2d1_gene_list,
+                                     exprs_values = "logcounts", detection_limit = 0,
+                                     group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                     low_color = "white", high_color = colour_vglut2,
+                                     max_ave = NULL, max_detected = NULL
+                                     ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+asic_a2d1_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                                features = asic_a2d1_gene_list,
+                                                exprs_values = "logcounts", detection_limit = 0,
+                                                group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                                low_color = "white", high_color = colour_vgat,
+                                                max_ave = NULL, max_detected = NULL
+                                                ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+asic_a2d1_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                                  features = asic_a2d1_gene_list,
+                                                  exprs_values = "logcounts", detection_limit = 0,
+                                                  group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                                  low_color = "white", high_color = colour_vglut2,
+                                                  max_ave = NULL, max_detected = NULL
+                                                  ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+# Plot them
+asic_a2d1_dotplot_vgat
+asic_a2d1_dotplot_vglut2
+asic_a2d1_dotplot_vgat_subdivisions
+asic_a2d1_dotplot_vglut2_subdivisions
+
+# Save plots
+ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vgat.pdf"),
+       plot = asic_a2d1_dotplot_vgat,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vglut2.pdf"),
+       plot = asic_a2d1_dotplot_vglut2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vgat_subdivisions.pdf"),
+       plot = asic_a2d1_dotplot_vgat_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vglut2_subdivisions.pdf"),
+       plot = asic_a2d1_dotplot_vglut2_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+```
