@@ -1829,7 +1829,7 @@ metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k4_2_wilcox_all_u
 # DE genes in cluster 3
 metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k4_3_wilcox_all_up <- rownames(marker_set_SC3_k4_3_wilcox_all_up[marker_set_SC3_k4_3_wilcox_all_up$FDR<fdr_threshold, ])
 # DE genes in cluster 4
-metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k44_wilcox_all_up <- rownames(marker_set_SC3_k4_4_wilcox_all_up[marker_set_SC3_k4_4_wilcox_all_up$FDR<fdr_threshold, ])
+metadata(PAG_sceset_qc_norm_filt_corr_clust_de)$marker_set_SC3_k4_wilcox_all_up <- rownames(marker_set_SC3_k4_4_wilcox_all_up[marker_set_SC3_k4_4_wilcox_all_up$FDR<fdr_threshold, ])
 
 # Check results were appended correctly
 names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
