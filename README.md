@@ -10,18 +10,17 @@ Other key resources include [Bioconductor](http://www.bioconductor.org/) (Huber 
 To go through this pipeline, you will need to install the following: [R3.6.1](https://cran.r-project.org/) | [RTools35](https://cran.r-project.org/bin/windows/Rtools/) | [RStudio 1.1.463](https://www.rstudio.com/products/rstudio/download/) | [Git](https://git-scm.com/) | [Bioconductor 3.10](https://www.bioconductor.org/install/).
 
 ## List of notebooks
-Mostly completed:
+Completed:
 * [Part I: from a gene expression matrix to a SingleCellExperiment object](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part1.Rmd)
 * [Part II: pre-processing and data quality control](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part2.Rmd)
-* [Part III: normalization](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part3.Rmd)
+* [Part III: normalisation](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part3.Rmd)
 * [Part IV: modelling technical noise and feature selection](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part4.Rmd)
 * [Part V: batch correction and dimensionality reduction](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part5.Rmd)
 * [Part VI: clustering](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part6.Rmd)
+* [Part VII: differential expression analysis](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part7.Rmd)
 
 Under development:
-* [Part VII: differential expression analysis](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part7.Rmd)
-* [Part VIII: data exploration via violin, heatmaps, and other plots](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part8.Rmd)
-* [Part IX: gene set enrichment analysis](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part9.Rmd)
+* [Part VIII: data visualisation](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part8.Rmd)
 
 Other notebooks:
 * [Possibly useful plotting tools](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_PlottingDevel.Rmd)
