@@ -972,7 +972,7 @@ colour_vgat <- "#FF8080"
 colour_vglut2 <-"#0F99B2"
 
 # Define list of genes and title for plots
-nm_np_gene_list_2 <- c("Drd1", "Rxfp2", "Tacr1", "Galr1", "Prokr2", "Cartpt", "Grp", "Spx", "Adra2a")
+nm_np_gene_list_2 <- c("Drd1", "Rxfp2", "Rxfp3", "Tacr1", "Galr1", "Prokr2", "Cartpt", "Grp", "Spx", "Adra1a", "Adra2a")
 plot_title <- "Neuropeptides and Neuromodulators II"
 
 # Make new order
@@ -1171,7 +1171,7 @@ ggsave(filename = str_c(date, "_dotplot_dopamine_vglut2_subdivisions.pdf"),
        )
 ```
 
-#### Asic and Cacna2d1 channels
+#### Asic channels
 ```{r}
 # Set theme parameters
 theme_args_dots <- theme(plot.title = element_text(size = 11, face = "bold"),
@@ -1185,8 +1185,8 @@ colour_vgat <- "#FF8080"
 colour_vglut2 <-"#0F99B2"
 
 # Define list of genes and title for plots
-asic_a2d1_gene_list <- c("Asic1", "Asic4", "Cacna1a", "Cacna2d1", "Cacna2d2")
-plot_title <- "ASIC and Calcium channels"
+asic_gene_list <- c("Asic1", "Asic2", "Asic4")
+plot_title <- "ASIC channels"
 
 # Make new order
 # If we wanted a customised way to order the dotplot, we could create one as follows:
@@ -1197,80 +1197,300 @@ plot_title <- "ASIC and Calcium channels"
 #                                                                                      "VGAT_vlpag", "VGluT2_vlpag"))
 
 # Compose plots
-asic_a2d1_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                                   features = asic_a2d1_gene_list,
+asic_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                              features = asic_gene_list,
+                              exprs_values = "logcounts", detection_limit = 0,
+                              group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                              low_color = "white", high_color = colour_vgat,
+                              max_ave = NULL, max_detected = NULL
+                              ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+asic_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                features = asic_gene_list,
+                                exprs_values = "logcounts", detection_limit = 0,
+                                group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                low_color = "white", high_color = colour_vglut2,
+                                max_ave = NULL, max_detected = NULL
+                                ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+asic_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                           features = asic_gene_list,
+                                           exprs_values = "logcounts", detection_limit = 0,
+                                           group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                           low_color = "white", high_color = colour_vgat,
+                                           max_ave = NULL, max_detected = NULL
+                                           ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+asic_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                             features = asic_gene_list,
+                                             exprs_values = "logcounts", detection_limit = 0,
+                                             group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                             low_color = "white", high_color = colour_vglut2,
+                                             max_ave = NULL, max_detected = NULL
+                                             ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(asic_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+# Plot them
+asic_dotplot_vgat
+asic_dotplot_vglut2
+asic_dotplot_vgat_subdivisions
+asic_dotplot_vglut2_subdivisions
+
+# Save plots
+ggsave(filename = str_c(date, "_dotplot_asic_vgat.pdf"),
+       plot = asic_dotplot_vgat,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_asic_vglut2.pdf"),
+       plot = asic_dotplot_vglut2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_asic_vgat_subdivisions.pdf"),
+       plot = asic_dotplot_vgat_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_asic_vglut2_subdivisions.pdf"),
+       plot = asic_dotplot_vglut2_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+```
+
+#### Calcium channels
+```{r}
+# Set theme parameters
+theme_args_dots <- theme(plot.title = element_text(size = 11, face = "bold"),
+                         axis.title = element_text(size = 11, face = "plain"),
+                         axis.text = element_text(size = 10, face = "plain"), 
+                         legend.text = element_text(size = 9, face = "plain"), 
+                         strip.text = element_text(size = 10, face = "plain"))
+
+# Define colours
+colour_vgat <- "#FF8080"
+colour_vglut2 <-"#0F99B2"
+
+# Define list of genes and title for plots
+calcium_gene_list <- c("Cacna1a", "Cacna1b", "Cacna1c", "Cacna1d", "Cacna1e", # alpha subunits
+                       "Cacna2d1", "Cacna2d2") # a2d subunits
+plot_title <- "Calcium channels"
+
+# Make new order
+# If we wanted a customised way to order the dotplot, we could create one as follows:
+# PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea_dotplots <- factor(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea,
+#                                                                           levels = c("VGAT_dmpag", "VGluT2_dmpag",  
+#                                                                                      "VGAT_dlpag",  "VGluT2_dlpag", 
+#                                                                                      "VGAT_lpag", "VGluT2_lpag", 
+#                                                                                      "VGAT_vlpag", "VGluT2_vlpag"))
+
+# Compose plots
+calcium_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                 features = calcium_gene_list,
+                                 exprs_values = "logcounts", detection_limit = 0,
+                                 group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                 low_color = "white", high_color = colour_vgat,
+                                 max_ave = NULL, max_detected = NULL
+                                 ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(calcium_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+calcium_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                   features = calcium_gene_list,
+                                   exprs_values = "logcounts", detection_limit = 0,
+                                   group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                   low_color = "white", high_color = colour_vglut2,
+                                   max_ave = NULL, max_detected = NULL
+                                   ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(calcium_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
+
+calcium_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                              features = calcium_gene_list,
+                                              exprs_values = "logcounts", detection_limit = 0,
+                                              group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                              low_color = "white", high_color = colour_vgat,
+                                              max_ave = NULL, max_detected = NULL
+                                              ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(calcium_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+calcium_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                                features = calcium_gene_list,
+                                                exprs_values = "logcounts", detection_limit = 0,
+                                                group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
+                                                low_color = "white", high_color = colour_vglut2,
+                                                max_ave = NULL, max_detected = NULL
+                                                ) + 
+  labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
+  scale_y_discrete(limits = rev(calcium_gene_list)) + 
+  scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
+
+# Plot them
+calcium_dotplot_vgat
+calcium_dotplot_vglut2
+calcium_dotplot_vgat_subdivisions
+calcium_dotplot_vglut2_subdivisions
+
+# Save plots
+ggsave(filename = str_c(date, "_dotplot_calcium_vgat.pdf"),
+       plot = calcium_dotplot_vgat,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_calcium_vglut2.pdf"),
+       plot = calcium_dotplot_vglut2,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 4, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_calcium_vgat_subdivisions.pdf"),
+       plot = calcium_dotplot_vgat_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+ggsave(filename = str_c(date, "_dotplot_calcium_vglut2_subdivisions.pdf"),
+       plot = calcium_dotplot_vglut2_subdivisions,
+       device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
+       path = str_c(path_for_figures, "/dotplots"),
+       width = 8, height = 4, units = "in", dpi = 300,
+       family = "Arial", bg = "transparent"
+       )
+```
+
+#### Potassium channels
+```{r}
+# Set theme parameters
+theme_args_dots <- theme(plot.title = element_text(size = 11, face = "bold"),
+                         axis.title = element_text(size = 11, face = "plain"),
+                         axis.text = element_text(size = 10, face = "plain"), 
+                         legend.text = element_text(size = 9, face = "plain"), 
+                         strip.text = element_text(size = 10, face = "plain"))
+
+# Define colours
+colour_vgat <- "#FF8080"
+colour_vglut2 <-"#0F99B2"
+
+# Define list of genes and title for plots
+potassium_gene_list <- c("Kcnh1", # non-inactivating delayed rectifier (ether-a-go-go)
+                         "Kcnh5", # non-inactivating outward rectifier (ether-a-go-go)
+                         "Kcnq5", # M-type current, slowly activating and deactivating potassium conductance
+                         "Kcnj3", # inward rectifier (GIRK-1)
+                         "Kcnk9"  # pH-dependent, voltage-insensitive, background two-pore potassium channel (TASK3)
+                         )
+plot_title <- "potassium channels"
+
+# Make new order
+# If we wanted a customised way to order the dotplot, we could create one as follows:
+# PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea_dotplots <- factor(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea,
+#                                                                           levels = c("VGAT_dmpag", "VGluT2_dmpag",  
+#                                                                                      "VGAT_dlpag",  "VGluT2_dlpag", 
+#                                                                                      "VGAT_lpag", "VGluT2_lpag", 
+#                                                                                      "VGAT_vlpag", "VGluT2_vlpag"))
+
+# Compose plots
+potassium_dotplot_vgat <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                   features = potassium_gene_list,
                                    exprs_values = "logcounts", detection_limit = 0,
                                    group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
                                    low_color = "white", high_color = colour_vgat,
                                    max_ave = NULL, max_detected = NULL
                                    ) + 
   labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
-  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_y_discrete(limits = rev(potassium_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
 
-asic_a2d1_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                                     features = asic_a2d1_gene_list,
+potassium_dotplot_vglut2 <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                     features = potassium_gene_list,
                                      exprs_values = "logcounts", detection_limit = 0,
                                      group = "cell.type", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
                                      low_color = "white", high_color = colour_vglut2,
                                      max_ave = NULL, max_detected = NULL
                                      ) + 
   labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
-  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_y_discrete(limits = rev(potassium_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$cell.type))
 
-asic_a2d1_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                                                features = asic_a2d1_gene_list,
+potassium_dotplot_vgat_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                                features = potassium_gene_list,
                                                 exprs_values = "logcounts", detection_limit = 0,
                                                 group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
                                                 low_color = "white", high_color = colour_vgat,
                                                 max_ave = NULL, max_detected = NULL
                                                 ) + 
   labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
-  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_y_discrete(limits = rev(potassium_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
 
-asic_a2d1_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
-                                                  features = asic_a2d1_gene_list,
+potassium_dotplot_vglut2_subdivisions <- plotDots(PAG_sceset_qc_norm_filt_corr_clust_de,
+                                                  features = potassium_gene_list,
                                                   exprs_values = "logcounts", detection_limit = 0,
                                                   group = "celltype_PAGarea", #"cell.type", "celltype_PAGarea", "celltype_PAGAPaxis"
                                                   low_color = "white", high_color = colour_vglut2,
                                                   max_ave = NULL, max_detected = NULL
                                                   ) + 
   labs(title = plot_title, x = NULL, y = NULL) + theme_args_dots +
-  scale_y_discrete(limits = rev(asic_a2d1_gene_list)) + 
+  scale_y_discrete(limits = rev(potassium_gene_list)) + 
   scale_x_discrete(limits = levels(PAG_sceset_qc_norm_filt_corr_clust_de$celltype_PAGarea))
 
 # Plot them
-asic_a2d1_dotplot_vgat
-asic_a2d1_dotplot_vglut2
-asic_a2d1_dotplot_vgat_subdivisions
-asic_a2d1_dotplot_vglut2_subdivisions
+potassium_dotplot_vgat
+potassium_dotplot_vglut2
+potassium_dotplot_vgat_subdivisions
+potassium_dotplot_vglut2_subdivisions
 
 # Save plots
-ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vgat.pdf"),
-       plot = asic_a2d1_dotplot_vgat,
+ggsave(filename = str_c(date, "_dotplot_potassium_vgat.pdf"),
+       plot = potassium_dotplot_vgat,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = str_c(path_for_figures, "/dotplots"),
        width = 4, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vglut2.pdf"),
-       plot = asic_a2d1_dotplot_vglut2,
+ggsave(filename = str_c(date, "_dotplot_potassium_vglut2.pdf"),
+       plot = potassium_dotplot_vglut2,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = str_c(path_for_figures, "/dotplots"),
        width = 4, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vgat_subdivisions.pdf"),
-       plot = asic_a2d1_dotplot_vgat_subdivisions,
+ggsave(filename = str_c(date, "_dotplot_potassium_vgat_subdivisions.pdf"),
+       plot = potassium_dotplot_vgat_subdivisions,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = str_c(path_for_figures, "/dotplots"),
        width = 8, height = 4, units = "in", dpi = 300,
        family = "Arial", bg = "transparent"
        )
-ggsave(filename = str_c(date, "_dotplot_asic_a2d1_vglut2_subdivisions.pdf"),
-       plot = asic_a2d1_dotplot_vglut2_subdivisions,
+ggsave(filename = str_c(date, "_dotplot_potassium_vglut2_subdivisions.pdf"),
+       plot = potassium_dotplot_vglut2_subdivisions,
        device = "pdf", # or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only).
        path = str_c(path_for_figures, "/dotplots"),
        width = 8, height = 4, units = "in", dpi = 300,
