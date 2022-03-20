@@ -531,7 +531,7 @@ dev.off()
 
 Our assumption is that each of the top PCs capturing biological signal should explain much more variance than the remaining PCs. Thus, there should be a sharp drop in the percentage of variance explained when we move past the last “biological” PC. This manifests as an elbow in the scree plot, the location of which serves as a natural choice for `d`. As we see in the scree plots using the `counts` assay, the first component explains most of the variance. After log-normalisation with `scran`, that correlate is gone and we can properly assess a more appropriate elbow for our data.
 
-we can also print the percentage of variance explained by each component, and look at the cumulative sum throughout any selected subset of PCs:
+We can also print the percentage of variance explained by each component, and look at the cumulative sum throughout any selected subset of PCs:
 ```{r}
 # Other ways to look at the variance explained by each PC:
 summary(attr(reducedDim(PAG_sceset_qc_norm_filt, "PCA_HVG_cv2_corrected"), "percentVar"))

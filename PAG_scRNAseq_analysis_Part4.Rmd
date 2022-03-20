@@ -65,7 +65,7 @@ assayNames(PAG_sceset_qc_norm)
 ```
 
 ## Step 4.1 | Quantifying per-gene variation
-Variability in the observed expression values across genes can be driven by genuine biological heterogeneity or uninteresting technical noise. To distinguish between these two possibilties, we need to model the technical component of the variability of the expression values for each gene.
+Variability in the observed expression values across genes can be driven by genuine biological heterogeneity or uninteresting technical noise. To distinguish between these two possibilities, we need to model the technical component of the variability of the expression values for each gene.
 
 ### 4.1.1 | Variance of the log-counts
 The simplest approach to quantifying per-gene variation is to compute the variance of the _log-normalised expression_ values (referred to as “logcounts” for simplicity) for each gene across all cells in the population (A. T. L. Lun, McCarthy, and Marioni 2016). This has an advantage in that the feature selection is based on the same log-values that are used for later downstream steps. In particular, genes with the largest variances in log-values will contribute the most to the Euclidean distances between cells. By using log-values here, we ensure that our quantitative definition of heterogeneity is consistent throughout the entire analysis.
