@@ -539,7 +539,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
             colour_columns_by = c("cell.type", "PAG.area"), # how the columns should be annotated with colours. Can add clustering "sc3_4_clusters"
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = FALSE, cluster_cols = FALSE,
-            main = plot_title, fontsize = 10
+            main = plot_title, fontsize = 10, family = "Arial", bg = "transparent"
             )
 ```
 
@@ -657,7 +657,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = FALSE, cluster_cols = FALSE,
             main = plot_title, fontsize = 10,
-            width = 8, height = 4,
+            width = 8, height = 4, family = "Arial", bg = "transparent",
             filename = paste(path_for_figures, "/heatmaps/", save_name, ".pdf", sep = "")
             )
 ```
@@ -727,7 +727,7 @@ plotHeatmap(PAG_sceset_qc_norm_filt_corr_clust_de,
             show_rownames = TRUE, show_colnames = FALSE,
             cluster_rows = FALSE, cluster_cols = FALSE,
             main = plot_title, fontsize = 10,
-            width = 8, height = 4,
+            width = 8, height = 4, family = "Arial", bg = "transparent",
             filename = paste(path_for_figures, "/heatmaps/", save_name, ".pdf", sep = "")
             )
 ```
