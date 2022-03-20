@@ -1112,7 +1112,7 @@ for(j in range_of_neighbors) {
                                        exprs_values = "corrected",
                                        subset_row = metadata(PAG_sceset_qc_norm_filt)$hvg_var_out_no_spikes_block_filt, 
                                        dimred = "PCA_HVG_var_corrected",
-                                       n_dimred = 25, # Choose the number of dimensions to use from the specificed dimred, try 12 or 25                                       
+                                       n_dimred = 12, # Choose the number of dimensions to use from the specificed dimred, try 12 or 25                                       
                                        n_neighbors = j, # Larger values result in more global views of the manifold, while smaller values result in more local data being preserved.
                                        ncomponents = 2, # Defaults to 2 for easy visualization, but could be used in a similar way to PCA and obtain between 2 to 100 components.
                                        metric = "euclidean", # Other distance metrics to find nearest neighbors can be selected, such as "cosine", "manhattan", among others.
@@ -1829,7 +1829,7 @@ expression_UMAP_composed <- ((expression_UMAP_PAGarea / expression_UMAP_gene) | 
 expression_UMAP_composed
 ```
 
-### 5.4.5 | Final notes on interpeting dimensionality reduction plots
+### 5.4.5 | Final notes on interpreting dimensionality reduction plots
 Dimensionality reduction for visualization necessarily involves discarding information and distorting the distances between cells in order to fit high-dimensional data into a 2-dimensional space. One might wonder whether the results of such extreme data compression can be trusted. There is, however, some value to be extracted from them provided that they are accompanied by an analysis of a higher-rank representation.
 
 To illustrate, consider the interaction between clustering and t-SNE/UMAP. As a general rule, we would not perform clustering on the t-SNE coordinates. Rather, we would cluster on the first 10-50 PCs and then visualize the cluster identities on the t-SNE/UMAP plot. This ensures that clustering makes use of the information that was lost during compression into two dimensions. The t-SNE/UMAP plot can then be used for a diagnostic inspection of the clustering output. In particular, the plot is most useful for checking whether two clusters are actually neighboring subclusters or whether a cluster can be split into further subclusters, which are generally safe interpretations of t-SNE/UMAP coordinates.
