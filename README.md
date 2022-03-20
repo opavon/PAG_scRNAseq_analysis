@@ -18,8 +18,6 @@ Completed:
 * [Part V: batch correction and dimensionality reduction](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part5.Rmd)
 * [Part VI: clustering](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part6.Rmd)
 * [Part VII: differential expression analysis](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part7.Rmd)
-
-Under development:
 * [Part VIII: data visualisation](https://github.com/opavon/PAG_scRNAseq_analysis/blob/master/PAG_scRNAseq_analysis_Part8.Rmd)
 
 Other notebooks:
