@@ -1780,13 +1780,13 @@ Cell-type markers from Allen Institute papers:
 
 Some markers for Dorsal Raphe 5-HT neurons (Okaty, Sturrock, et al. eLife 2020):
 
-* "Vsx2": corresponds to the Chx10 gene and should label a subset of VGluT2 neurons in vlPAG
+* "Vsx2": corresponds to the Chx10 gene and should label a subset of VGluT2 neurons in vlPAG.
 
-* "Drd2" or "Pet1" (transcription factor): expressed by a subset of cells in the top lateral sides of DRN which innervate auditory processing centers and also mating, parenting, etc. - might be useful to differentiate from vlPAG cells 
+* "Drd2" or "Pet1" (transcription factor): expressed by a subset of cells in the top lateral sides of DRN which innervate auditory processing centers and also mating, parenting, etc. - might be useful to differentiate from vlPAG cells.
 
-* "Tph2": rate limiting enzyme in serotonin synthesis
+* "Tph2": rate limiting enzyme in serotonin synthesis.
 
-* "Met" or "Slc17a8" (VGluT3)
+* "Met" or "Slc17a8" (VGluT3).
 ```{r}
 # Set theme parameters
 theme_args_expression_UMAP <- theme(plot.title = element_text(size = 11, face = "bold"),
