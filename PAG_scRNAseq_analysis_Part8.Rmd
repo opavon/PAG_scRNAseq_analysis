@@ -361,7 +361,7 @@ We can first explore the differentially expressed genes identified by `findMarke
 names(metadata(PAG_sceset_qc_norm_filt_corr_clust_de))
 ```
 
-An alternative way to explore marker genes is to load the .RDS file containing the results. This object have a slot for each comparison we carried out and will include the gene names together with their `p.value`, `FDR`, and `AUC`. We can use this to further filter and select them.
+An alternative way to explore marker genes is to load the .RDS file containing the results. This object has a slot for each comparison we carried out and will include the gene names together with their `p.value`, `FDR`, and `AUC`. We can use this to further filter and select them.
 ```{r}
 cell_type_marker_genes_wilcox_all_up <- readRDS("D:\\Dropbox (UCL)\\Project_transcriptomics\\figures\\R_figures_Part7_DE\\cell_type\\cell_type_marker_genes_wilcox_all_up.rds")
 names(cell_type_marker_genes_wilcox_all_up) # slots in the object
@@ -758,6 +758,12 @@ plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust,
                point_alpha = 0.6, point_size = 2, theme_size = 11
                ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2")
 
+plotReducedDim(PAG_sceset_qc_norm_filt_corr_clust, 
+               dimred = "UMAP_cv2_corrected_15_neighbors_0.01_min_dist",
+               colour_by = "Tac1", shape_by = "cell.type",
+               point_alpha = 0.6, point_size = 2, theme_size = 11
+               ) + labs(title = "SC3 (k = 4)", x = "UMAP 1", y = "UMAP 2")
+
 ```
 
 ### 8.2.2 | Dot Plots
@@ -864,7 +870,7 @@ colour_vgat <- "#FF8080"
 colour_vglut2 <-"#0F99B2"
 
 # Define list of genes and title for plots
-nm_np_gene_list <- c("Nxph1", "Pnoc", "Adcyap1", "Nxph4", "Tac1")
+nm_np_gene_list <- c("Nxph1", "Pnoc", "Adcyap1", "Nxph4", "Tac1") #  c("Pnoc", "Oprl1")
 #c("Drd1", "Rxfp2", "Tacr1", Prokr2", "Cartpt", "Grp", "Adra2a", "Spx", "Npy1r", "Lepr")
 plot_title <- "Neuropeptides and Neuromodulators I"
 
